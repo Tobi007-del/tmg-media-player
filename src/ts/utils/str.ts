@@ -1,6 +1,6 @@
 import { uid as _uid } from "@t007/utils";
-import { LUID_KEY } from "../consts/generics";
-import type { TitleCase, CamelCase, NoCamelCase } from "../types/str";
+import { LUID_KEY } from "@consts/generics";
+import type { TitleCase, CamelCase, NoCamelCase } from "@defs/str";
 
 // Case Conversion
 export function capitalize<T extends string>(word: T = "" as T): TitleCase<T> {

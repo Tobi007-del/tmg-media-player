@@ -1,11 +1,6 @@
 import { DeepPartial } from "sia-reactor";
-import { Gesture, GestureGeneral, GestureTouch, GestureWheel } from ".";
-import { IS_MOBILE } from "../../../utils";
-
-export const GESTURE_GENERAL_BUILD: Partial<GestureGeneral> = {
-  click: IS_MOBILE ? false : "paused",
-  dblClick: IS_MOBILE ? "paused" : "fullscreen",
-};
+import { Gesture, GestureTouch, GestureWheel } from ".";
+import { IS_MOBILE } from "@utils/browser";
 
 export const GESTURE_TOUCH_BUILD: Partial<GestureTouch> = {
   volume: true,
@@ -29,7 +24,8 @@ export const GESTURE_WHEEL_BUILD: Partial<GestureWheel> = {
 };
 
 export const GESTURE_BUILD: DeepPartial<Gesture> = {
-  ...GESTURE_GENERAL_BUILD,
-  touch: GESTURE_TOUCH_BUILD,
-  wheel: GESTURE_WHEEL_BUILD,
+  click: IS_MOBILE ? false : "paused",
+  dblClick: IS_MOBILE ? "paused" : "fullscreen",
+  // touch: GESTURE_TOUCH_BUILD,
+  // wheel: GESTURE_WHEEL_BUILD,
 };

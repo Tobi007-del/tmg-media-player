@@ -30,30 +30,32 @@
     "./assets/*": "./dist/assets/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit --watch",
+    "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "@types/youtube": "^0.2.0",
     "@vimeo/player": "^2.30.4",
     "dashjs": "^5.1.1",
     "esbuild-sass-plugin": "^3.6.0",
     "hls.js": "^1.6.16",
+    "madge": "^8.0.0",
     "sass": "^1.98.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@t007/dialog": "^0.0.30",
     "@t007/input": "^0.0.31",
     "@t007/toast": "^0.0.31",
     "@t007/utils": "^0.0.33",
-    "sia-reactor": "^0.0.34"
+    "sia-reactor": "^0.0.34",
+    "vite": "^8.0.14"
   }
 }

@@ -1,6 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { ControlPanel, ControlPanelDraggable } from "./types";
-import { IS_MOBILE } from "../../../utils";
+import { IS_MOBILE } from "@utils/browser";
 
 export const ROWS_ARR = [1, 2, 3] as const;
 
@@ -23,10 +23,13 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanel> = {
     seek: {
       sync: false,
       relative: !IS_MOBILE,
-      cancel: { delta: 15, timeout: 2000 },
+      cancel: {
+        delta: 15,
+        timeout: 2000,
+      },
     },
     previews: false,
   },
   progressBar: IS_MOBILE,
-  draggable: CONTROL_PANEL_DRAGGABLE_BUILD,
+  // draggable: CONTROL_PANEL_DRAGGABLE_BUILD,
 };

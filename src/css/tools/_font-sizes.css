@@ -33,12 +33,12 @@
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-playback-rate-notifier-content, .tmg-media-volume-notifier-content, .tmg-media-brightness-notifier-content, .tmg-media-object-fit-notifier-content, .tmg-media-touch-vb-content) {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
-.tmg-media-playback-rate-notifier,
+.tmg-media-fast-play-notifier,
 .tmg-media-scrub-notifier,
 .tmg-media-cancel-scrub-notifier {
   font-size: calc(var(--tmg-media-current-unit) / 2.4);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-playback-rate-notifier, .tmg-media-scrub-notifier, .tmg-media-cancel-scrub-notifier) {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-fast-play-notifier, .tmg-media-scrub-notifier, .tmg-media-cancel-scrub-notifier) {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
 .tmg-media-touch-timeline-notifier {

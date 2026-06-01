@@ -1,4 +1,4 @@
-import { PosterPreview } from "../../../types/generics";
+import { PosterPreview } from "@defs/generics";
 import { Control, BigControl } from "../../settings/controlPanel";
 
 export interface LightState {

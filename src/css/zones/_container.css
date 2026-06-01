@@ -90,7 +90,7 @@ body:where(:has(.tmg-media-floating-player)) {
   --tmg-media-current-touch-slider-height: calc(var(--tmg-media-current-unit) * 8.5);
 }
 .tmg-host-container:is([data-size-tier^="xxxx"], .tmg-media-mobile, .tmg-media-no-previews) {
-  --tmg-media-preview-border-color: var(--tmg-media-no-preview-pointer-color);
+  --tmg-media-seek-previews-border-color: var(--tmg-media-seek-no-previews-pointer-color);
 }
 .tmg-host-container[data-size-tier^="x"] {
   --tmg-media-current-unit: calc(var(--tmg-media-relative-unit) / 1.1);
@@ -123,7 +123,7 @@ body:where(:has(.tmg-media-floating-player)) {
 }
 .tmg-media-container[data-curtain="cover"]:is(.tmg-media-previewing, .tmg-media-scrubbing),
 .tmg-media-container[data-curtain="cover"] :is(.tmg-media-top-curtain, .tmg-media-bottom-curtain),
-.tmg-media-container:has(:is(.tmg-media-playback-rate-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active) {
+.tmg-media-container:has(:is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active) {
   --tmg-media-current-curtain-color: transparent;
 }
 .tmg-media-container.tmg-media-scrubbing {
@@ -133,11 +133,18 @@ body:where(:has(.tmg-media-floating-player)) {
   --tmg-media-current-seek-thumb-scale: 1.35;
 }
 .tmg-host-container:has(.tmg-media-cancel-scrub-notifier.tmg-media-control-active) {
-  --tmg-media-current-seek-thumb-scale: 1;
+  --tmg-media-current-seek-thumb-scale: 0.9;
 }
-.tmg-media-container:is([data-seek-thumb="false"], [data-seek-thumb="auto"]:has(.tmg-media-timeline-container:not(:hover)), :not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-playback-rate-notifier.tmg-media-control-active)).tmg-media-progress-bar) {
+.tmg-media-container:is([data-seek-thumb="false"], [data-seek-thumb="auto"]:has(.tmg-media-timeline-container:not(:hover)), :not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar) {
   --tmg-media-current-seek-thumb-scale: 0;
 }
 .tmg-media-container:has(.tmg-media-notifier.tmg-media-control-persist) {
   --tmg-media-notifiers-animation-time: var(--tmg-media-slow-transition-time);
+}
+.tmg-media-controls-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background-color: transparent;
+  border-radius: inherit;
 }

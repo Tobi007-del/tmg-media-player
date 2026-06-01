@@ -1,23 +1,29 @@
-import { BasePlug, Frame, FRAME_BUILD, type KeysPlug, type ToastsPlug } from "../..";
-import { createEl, clamp, parseCSSTime, formatMediaTime, getDominantColor, getRGBBri, getRGBSat, safeNum } from "../../../utils";
+﻿import { BasePlug } from "../../base";
+import type { Frame } from "./types";
+import { FRAME_BUILD } from "./build";
+import { getDominantColor, getRGBBri, getRGBSat } from "@utils/color";
+import { createEl } from "@utils/dom";
+import { clamp, isSafeNum, safeNum } from "@utils/num";
+import { parseCSSTime } from "@utils/str";
+import { formatMediaTime } from "@utils/time";
 
 export class FramePlug extends BasePlug<Frame> {
-  public static readonly plugName: string = "frame";
+  public static readonly plugName = "frame";
   public static readonly BUILD = FRAME_BUILD;
   public exportCanvas: HTMLCanvasElement = createEl("canvas");
   public exportContext: CanvasRenderingContext2D = this.exportCanvas.getContext("2d", { willReadFrequently: true })!;
 
   public override wire(): void {
     // Post Wiring
-    const keys = this.ctlr.plug<KeysPlug>("keys");
+    const keys = this.ctlr.plug("settings.keys");
     keys?.register("capture", (e) => this.capture(e.altKey ? "monochrome" : ""), { phase: "keyup" });
     keys?.register("stepFwd", () => this.moveFrame("forwards"), { phase: "keydown" });
     keys?.register("stepBwd", () => this.moveFrame("backwards"), { phase: "keydown" });
   }
 
-  public async extract(display: any, time?: number, raw?: false, min?: number, video?: HTMLVideoElement): Promise<{ blob: Blob | null; url: string }>;
-  public async extract(display: any, time?: number, raw?: true, min?: number, video?: HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }>;
-  public async extract(display: any = "", time = safeNum(this.media.state.currentTime), raw = false, min = 0, video = this.media.pseudoElement as HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D } | { blob: Blob | null; url: string }> {
+  public async extract(display: "" | "monochrome", time?: number, raw?: false, min?: number, video?: HTMLVideoElement): Promise<{ blob: Blob | null; url: string }>;
+  public async extract(display: "" | "monochrome", time?: number, raw?: true, min?: number, video?: HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }>;
+  public async extract(display: string = "", time = safeNum(this.media.state.currentTime), raw = false, min = 0, video = this.media.pseudoElement as HTMLVideoElement): Promise<any> {
     if (video !== this.media.element) {
       await this.ctlr.state.frameReadyPromise; // wait for it to get set by last getter 5 lines below
       if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
@@ -36,12 +42,12 @@ export class FramePlug extends BasePlug<Frame> {
     return { blob: blob || null, url: blob ? URL.createObjectURL(blob) : "" };
   }
 
-  public async capture(display: any = "", time = safeNum(this.media.state.currentTime)): Promise<void> {
-    // JS: this.notify("capture");
-    const toast = this.ctlr.plug<ToastsPlug>("toasts")?.toast,
+  public async capture(display: "" | "monochrome" = "", time = safeNum(this.media.state.currentTime)): Promise<void> {
+    this.ctlr.plug("settings.notifiers")?.notify("capture");
+    const toast = this.ctlr.plug("settings.toasts")?.toast,
       tTxt = formatMediaTime({ time, format: "human", showMs: true }),
       fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,
-      frameToastId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.ctlr.settings.css.notifiersAnimationTime), image: window.TMG_VIDEO_ALT_IMG_SRC, tag: `tmg-${this.ctlr.config.media.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
+      frameToastId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.ctlr.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.ctlr.config.media.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
       frame = await this.extract(display, time, false, 0, this.media.element as HTMLVideoElement),
       filename = `${this.ctlr.config.media.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_"); // system filename safe
     const Save = () => {
@@ -68,14 +74,26 @@ export class FramePlug extends BasePlug<Frame> {
     return null;
   }
 
-  public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config = {}): Promise<string | [number, number, number] | null> {
+  public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config = {}): Promise<string | null> {
     return getDominantColor(poster ? poster : (await this.extract("", time ? time : (await this.findGoodTime(config)) ?? undefined, true, 1)).canvas);
   }
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
-    this.media.state.paused && this.ctlr.throttle("frameStepping", () => (this.media.intent.currentTime = clamp(0, Math.round(this.media.state.currentTime * this.config.fps) + (dir === "backwards" ? -1 : 1), Math.floor(this.media.status.duration * this.config.fps)) / this.config.fps), Math.round(1000 / this.config.fps));
+    this.media.state.paused && this.ctlr.throttle("frameStepping", () => isSafeNum(this.media.status.duration) && (this.media.intent.currentTime = clamp(0, Math.round(this.media.state.currentTime * this.config.fps) + (dir === "backwards" ? -1 : 1), Math.floor(this.media.status.duration * this.config.fps)) / this.config.fps), Math.round(1000 / this.config.fps));
   }
 } // Video only
+
+declare module "@defs/registries" {
+  interface PlugRegistryMap {
+    "settings.frame": typeof FramePlug;
+  }
+}
+
+declare module "@defs/config" {
+  interface Settings {
+    frame: Frame;
+  }
+}
 
 export type * from "./types";
 export * from "./build";

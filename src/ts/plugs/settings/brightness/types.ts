@@ -1,9 +1,7 @@
-import { OptRange } from "../../../types/generics";
+import { OptRange } from "@defs/generics";
 
-export interface Brightness extends OptRange {
-  dark: boolean;
-}
+export interface Brightness extends OptRange {}
 
 export interface BrightnessState {
-  aptBrightness: number;
+  aptValue: number;
 }

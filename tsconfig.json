@@ -4,12 +4,27 @@
     "module": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "allowArbitraryExtensions": true,
     "resolveJsonModule": true,
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "preserveSymlinks": true,
-    "types": ["node", "youtube"]
+    "types": ["node", "youtube"],
+    "paths": {
+      "@src": ["./src/*"],
+      "@core/*": ["./src/ts/core/*"],
+      "@defs/*": ["./src/ts/types/*"],
+      "@tools/*": ["./src/ts/tools/*"],
+      "@techs/*": ["./src/ts/techs/*"],
+      "@plugs/*": ["./src/ts/plugs/*"],
+      "@utils/*": ["./src/ts/utils/*"],
+      "@consts/*": ["./src/ts/consts/*"],
+      "@components/*": ["./src/ts/components/*"],
+      "@styles/*": ["./src/css/*"]
+    }
   }
 }

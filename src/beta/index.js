@@ -13,12 +13,12 @@
     return Math.min(Math.max(val, min), max);
   }
 
-  // ../sia-reactor/dist/chunk-RI45W4O6.js
+  // ../sia-reactor/dist/chunk-N556W6SK.js
   function createEl(tag, props, dataset, styles, el = tag ? document?.createElement(tag) : null) {
-    return assignEl(el, props, dataset, styles), el;
+    return assignEl(el, props, dataset, styles);
   }
   function assignEl(el, props, dataset, styles) {
-    if (!el) return;
+    if (!el) return null;
     if (props) {
       for (const k of Object.keys(props)) if (props[k] !== void 0) el[k] = props[k];
     }
@@ -28,11 +28,13 @@
     if (styles) {
       for (const k of Object.keys(styles)) if (styles[k] !== void 0) el.style[k] = styles[k];
     }
+    return el;
   }
   function getActiveEl(root) {
     const activeEl = (root ?? document).activeElement;
     return !activeEl ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
   }
+  var KEYS_BLOCKS = ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"];
   function parseKeyCombo(combo) {
     const parts = cleanKeyCombo(combo).toLowerCase().split("+");
     return { ctrlKey: parts.includes("ctrl"), shiftKey: parts.includes("shift"), altKey: parts.includes("alt"), metaKey: parts.includes("meta") || parts.includes("cmd"), key: parts.find((p) => !["ctrl", "shift", "alt", "meta", "cmd"].includes(p)) || "" };
@@ -76,7 +78,10 @@
     return terms;
   }
   function keyEventAllowed(e, settings) {
-    if (settings.disabled || (e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable='true']")) return false;
+    if (settings.disabled) return false;
+    const activeEl = getActiveEl(e.target?.ownerDocument);
+    if ((e.key === " " || e.key === "Enter") && activeEl?.matches("button,input[type='button'],input[type='submit']")) return false;
+    if (e.currentTarget !== activeEl && activeEl?.matches("input,textarea,[contenteditable]") && !(e.key === "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey)) return false;
     const combo = stringifyKeyEvent(e), { override, block, action, whitelisted } = getTermsForKey(combo, settings);
     if (block) return false;
     if (override) e.preventDefault();
@@ -123,14 +128,18 @@
     });
   }
 
-  // ../sia-reactor/dist/chunk-4PLMBUCP.js
+  // ../sia-reactor/dist/chunk-KNCCTKGY.js
   var CTX = {
     /** Flag indicating whether the application is running in development mode. */
     isDevEnv: "undefined" !== typeof process ? true : true,
-    /** Flag indicating whether a cascade is currently ongoing so reactors can allow all writes. */
-    isCascading: false,
+    /** Flag indicating whether an operation is bypassing checks so reactors can allow all writes. */
+    usingForce: false,
     /** Active `Autotracker` instance, override for automatic dependency collection on `Reactor` traps. */
-    autotracker: null
+    autotracker: null,
+    /** Current `Transaction` object. */
+    tx: null,
+    /** Unique identifier for the current transaction. */
+    txId: 0
   };
   var RAW = /* @__PURE__ */ Symbol.for("S.I.A_RAW");
   var INERTIA = /* @__PURE__ */ Symbol.for("S.I.A_INERTIA");
@@ -141,10 +150,25 @@
   var SSVERSION = /* @__PURE__ */ Symbol.for("S.I.A_SNAPSHOT_VERSION");
   var RTR_BATCH = "undefined" !== typeof window ? ("undefined" !== typeof queueMicrotask ? queueMicrotask : setTimeout).bind(window) : "undefined" !== typeof process && process.nextTick ? process.nextTick : setTimeout;
   var RTR_LOG = console.log.bind(console, "[S.I.A Reactor]");
-  var EVT_OPTS = { LISTENER: ["capture", "depth", "once", "signal", "immediate"], MEDIATOR: ["lazy", "signal", "immediate"] };
+  var EVT_OPTS = { LISTENER: ["capture", "depth", "once", "signal", "init"], MEDIATOR: ["lazy", "signal", "init"] };
   var NIL = Object.freeze({});
   var NOOP = () => {
   };
+  function startTx(label = `Tx ${CTX.txId + 1}`) {
+    const tx = { id: ++CTX.txId, label, parent: CTX.tx };
+    return CTX.tx = tx, tx;
+  }
+  function endTx(tx) {
+    if (CTX.tx === tx) CTX.tx = tx.parent;
+  }
+  function transaction(fn, label) {
+    const tx = startTx(label);
+    try {
+      return fn();
+    } finally {
+      endTx(tx);
+    }
+  }
   var arrRegex = /^([^\[\]]+)\[(\d+)\]$/;
   function isObj(obj, arraycheck = true) {
     return "object" === typeof obj && obj !== null && (arraycheck ? !Array.isArray(obj) : true);
@@ -240,15 +264,24 @@
     }
     return result;
   }
+  function matchPaths(paths, target) {
+    for (let i = 0, len = paths.length; i < len; i++) {
+      const p = paths[i];
+      if (target === p || target.startsWith(p + ".")) return true;
+    }
+    return false;
+  }
+  function getDepth(path, depth = !path ? 0 : 1) {
+    for (let i = 0, len = path.length; i < len; i++) if (path.charCodeAt(i) === 46) depth++;
+    return depth;
+  }
   function parseEvtOpts(options, opts, boolOpt = opts[0], result = {}) {
     return Object.assign(result, "boolean" === typeof options ? { [boolOpt]: options } : options), result;
   }
   function fanout(a, b, c, d) {
     const isEvPd = !!a?.target, isPath = !isEvPd && "string" === typeof b, [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b, c || NIL, void 0], target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
     if (isEvPd && type !== "set" && type !== "delete" || !target || !canHandle(news, opts)) return;
-    const prev = CTX.isCascading;
-    CTX.isCascading = isEvPd;
-    try {
+    const func = () => {
       const walk = (target2, obj, depth = isEvPd ? 1 : Infinity, keys2 = Object.keys(obj)) => {
         for (let i = 0, len = keys2.length; i < len; i++) {
           const key = keys2[i], val = obj[key];
@@ -262,11 +295,19 @@
       };
       if ((opts.atomic ?? true) && Array.isArray(news) && isPath) setPath(state2, path, news), getPath(state2, path).length = news.length;
       else walk(target, opts.merge ? mergeObjs(olds, news, opts) : news, opts.depth === true ? Infinity : opts.depth);
-    } finally {
-      CTX.isCascading = prev;
-    }
+    };
+    force(() => transaction(func, opts.txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${CTX.txId + 1})`), isEvPd);
   }
   var fanoutOptsArr = ["merge", "depth", "atomic"];
+  function force(task, bool = true) {
+    const prev = CTX.usingForce;
+    CTX.usingForce = bool;
+    try {
+      return task();
+    } finally {
+      CTX.usingForce = prev;
+    }
+  }
   function mergeObjs(o1, o2, config, pojocheck = true) {
     if (pojocheck && (!isPOJO(o1 || NIL, config) || !isPOJO(o2 || NIL, config))) return o2;
     const merged = { ...o1 ||= {}, ...o2 ||= {} }, keys2 = Object.keys(merged);
@@ -317,7 +358,7 @@
     }
   }
 
-  // ../sia-reactor/dist/chunk-T2CAL5F4.js
+  // ../sia-reactor/dist/chunk-4P55K6JH.js
   var ReactorEvent = class _ReactorEvent {
     /** No active propagation phase. */
     static NONE = 0;
@@ -329,12 +370,9 @@
     static BUBBLING_PHASE = 3;
     /** Current propagation phase for this event instance. */
     eventPhase = _ReactorEvent.NONE;
-    /** Current event type for the active propagation path, clone immediately if async */
+    /** Current event type for the active propagation path, use immediately if async */
     type;
-    /**
-     * Current target context for the active propagation path, clone immediately if async.
-     * Also use to survive future object shape changes from nesting for a path callback.
-     */
+    /** Current target context for the active propagation path, use immediately if async. Also use to survive future object shape changes from nesting for a path callback. */
     currentTarget;
     /** Original event type before propagation remapping. */
     staticType;
@@ -350,12 +388,11 @@
     oldValue;
     /** Whether resolve/reject intent semantics are allowed for this event instance. */
     rejectable;
+    /** Transaction context for this event payload, `null` if outside of a transaction. */
+    tx;
     /** Whether this event instance wave can bubble back up to ancestors or just capture down. */
     bubbles;
-    /**
-     * `DOMHighResTimeStamp` for this event instance payload for native event parity and accuracy.
-     * Enable `eventTimeStamps` option, then use this over custom timestamps in listeners for accuracy.
-     * */
+    /** `DOMHighResTimeStamp` for this event payload for native event parity, Enable `eventTimeStamps` config, then use this over custom timestamps for accuracy. */
     timestamp;
     /** The `Reactor` instance that dispatched this event instance. */
     reactor;
@@ -367,18 +404,19 @@
      * @param payload Source payload for this event instance.
      * @param reactor The `Reactor` instance creating this event instance.
      */
-    constructor(payload, reactor) {
+    constructor(payload) {
       this.staticType = this.type = payload.type;
       this.target = payload.target;
       this.currentTarget = payload.currentTarget;
       this.root = payload.root;
+      this.reactor = payload.reactor;
       this.path = payload.target.path;
       this.value = payload.target.value;
       this.oldValue = payload.target.oldValue;
       this.rejectable = payload.rejectable;
-      this.bubbles = !!reactor.config.eventBubbling;
-      if (reactor.config.eventTimeStamps) this.timestamp = performance.now();
-      this.reactor = reactor;
+      this.tx = payload.tx;
+      this.bubbles = !!this.reactor.config.eventBubbling;
+      if (this.reactor.config.eventTimeStamps) this.timestamp = performance.now();
     }
     /** Whether propagation has been stopped. */
     get propagationStopped() {
@@ -427,10 +465,7 @@
       if (this.eventPhase !== _ReactorEvent.CAPTURING_PHASE) this.reactor.log(`[ReactorEvent] Rejecting an intent on ${this.staticType} at "${this.path}" outside of the capture phase is unadvised.`);
       if (this.rejectable) this.reactor.log(`[ReactorEvent] ${this._rejected = reason || `${this.staticType} intent rejected at "${this.path}"`}`);
     }
-    /**
-     * Returns event path values from target to root.
-     * @returns Composed path values in bubbling order.
-     */
+    /** Returns event path values from target to root in bubbling order. */
     composedPath() {
       return getTrailRecords(this.root, this.path, true).map((r) => r[2]);
     }
@@ -496,7 +531,7 @@
             for (let i = 0, len = this.config.lineageTracing ? paths.length : 1; i < len; i++) {
               const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.getters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, key: keyStr, hadKey: true, object: receiver }, payload = { type: "get", target: target2, currentTarget: target2, root: this.core, rejectable };
+              const target2 = { path: currPath, value, key: keyStr, hadKey: true, object: receiver }, payload = { type: "get", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, tx: CTX.tx };
               if (cords) value = this.mediate(currPath, payload, "get", cords);
               if (!wildcords) continue;
               target2.value = value;
@@ -514,14 +549,14 @@
             safeValue = value?.[RAW] || value;
             unchanged = this.config.equalityFunction(safeValue, safeOldValue);
           }
-          if (!indiffable && unchanged && !CTX.isCascading) return this.log(`\u{1F504} [Reactor \`set\` Trap] Unchanged for "${keyStr}" on "${paths}"`), true;
+          if (!indiffable && unchanged && !CTX.usingForce && keyStr !== "length") return this.log(`\u{1F504} [Reactor \`set\` Trap] Unchanged for "${keyStr}" on "${paths}"`), true;
           if (this.config.set) terminated = (value = this.config.set(object, key2, value, oldValue, receiver, paths)) === TERMINATOR;
           if (this.setters) {
             const wildcords = this.setters.get("*");
             for (let i = 0; i < loopLen; i++) {
               const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.setters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "set", target: target2, currentTarget: target2, root: this.core, terminated, rejectable };
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, tx: CTX.tx };
               if (cords) {
                 const result2 = this.mediate(currPath, payload, "set", cords);
                 if (!(terminated ||= payload.terminated)) value = result2;
@@ -539,7 +574,7 @@
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
               const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
-              this.notify(currPath, { type: "set", target: target2, currentTarget: target2, root: this.core, terminated, rejectable });
+              this.notify(currPath, { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, tx: CTX.tx });
             }
           return true;
         },
@@ -553,7 +588,7 @@
             for (let i = 0; i < loopLen; i++) {
               const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.deleters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "delete", target: target2, currentTarget: target2, root: this.core, rejectable };
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, tx: CTX.tx };
               if (cords) {
                 const result2 = this.mediate(currPath, payload, "delete", cords);
                 if (!(terminated ||= payload.terminated)) value = result2;
@@ -570,7 +605,7 @@
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
               const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
-              this.notify(currPath, { type: "delete", target: target2, currentTarget: target2, root: this.core, rejectable });
+              this.notify(currPath, { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, tx: CTX.tx });
             }
           return true;
         },
@@ -682,7 +717,7 @@
       if (this.queue?.size) for (const task of this.queue) task(), this.queue.delete(task);
     }
     wave(path, payload) {
-      const e = new ReactorEvent(payload, this), chain = getTrailRecords(this.core, path);
+      const e = new ReactorEvent(payload), chain = getTrailRecords(this.core, path);
       e.eventPhase = ReactorEvent.CAPTURING_PHASE;
       for (let i = 0; i <= chain.length - 2; i++) {
         if (e.propagationStopped) break;
@@ -709,7 +744,7 @@
         if (e.immediatePropagationStopped) break;
         if (cord.capture !== isCapture) continue;
         if (cord.depth !== void 0) {
-          tDepth ??= this.getDepth(e.target.path);
+          tDepth ??= getDepth(e.target.path);
           if (tDepth > cord.lDepth + cord.depth) continue;
         }
         cord.cb(e);
@@ -756,13 +791,9 @@
     nostall(task) {
       return this.queue?.delete(task);
     }
-    getDepth(path, depth = !path ? 0 : 1) {
-      for (let i = 0, len = path.length; i < len; i++) if (path.charCodeAt(i) === 46) depth++;
-      return depth;
-    }
-    getContext(path) {
-      const last = path.lastIndexOf("."), value = getPath(this.core, path), object = last === -1 ? this.core : getPath(this.core, path.slice(0, last));
-      return { path, value, key: path.slice(last + 1) || "", hadKey: true, object };
+    context(path) {
+      const last = path.lastIndexOf("."), key = path.slice(last + 1) || "", object = last === -1 ? this.core : getPath(this.core, path.slice(0, last));
+      return { path, value: getPath(this.core, path), key, hadKey: key in object, object };
     }
     bindSignal(cord, sig) {
       if (sig) sig.aborted ? cord.clup() : sig.addEventListener("abort", cord.clup, { once: true });
@@ -789,8 +820,8 @@
       if (!raw && this.config.smartCloning) this.snapCache.set(obj, clone), obj[SSVERSION] = version;
       return clone;
     }
-    addSync(key, path, cb, opts, onImmediate = NOOP) {
-      const { lazy = false, once = false, signal, immediate = false } = parseEvtOpts(opts, EVT_OPTS.MEDIATOR), store = this[`${key}${key.endsWith("t") ? "t" : ""}ers`] ??= /* @__PURE__ */ new Map();
+    addSync(key, path, cb, opts, onInit = NOOP) {
+      const { once = false, signal, lazy = false, init = false, initType } = parseEvtOpts(opts, EVT_OPTS.MEDIATOR), store = this[`${key}${key.endsWith("t") ? "t" : ""}ers`] ??= /* @__PURE__ */ new Map();
       let cords = store.get(path), cord;
       if (cords)
         for (let i = 0, len = cords.length; i < len; i++) {
@@ -804,7 +835,7 @@
       let task;
       cord = { cb, once, clup: () => (lazy && this.nostall(task), this[`no${key}`](path, cb)) };
       task = () => (cords ?? (store.set(path, cords = []), cords)).push(cord);
-      immediate && onImmediate(immediate), lazy ? this.stall(task) : task();
+      init && (init !== "auto" || hasPath(this.core, path)) && onInit(initType), lazy ? this.stall(task) : task();
       return this.bindSignal(cord, signal);
     }
     dropSync(store, path, cb) {
@@ -826,7 +857,7 @@
      * const cleanup = rtr.get("user.name", (value) => String(value).trim());
      */
     get(path, callback, options) {
-      return this.addSync("get", path, callback, options, (imm) => (imm !== "auto" || hasPath(this.core, path)) && getPath(this.core, path));
+      return this.addSync("get", path, callback, options, () => getPath(this.core, path));
     }
     /** Registers a get mediator for a path that only triggers once. */
     gonce(path, callback, options) {
@@ -851,7 +882,7 @@
      * rtr.set("user.name", (value) => String(value).trim());
      */
     set(path, callback, options) {
-      return this.addSync("set", path, callback, options, (imm) => (imm !== "auto" || hasPath(this.core, path)) && setPath(this.core, path, getPath(this.core, path)));
+      return this.addSync("set", path, callback, options, () => setPath(this.core, path, getPath(this.core, path)));
     }
     /** Registers a set mediator for a path that only triggers once. */
     sonce(path, callback, options) {
@@ -876,7 +907,7 @@
      * rtr.delete("cache.temp", () => TERMINATOR);
      */
     delete(path, callback, options) {
-      return this.addSync("delete", path, callback, options, (imm) => (imm !== "auto" || hasPath(this.core, path)) && deletePath(this.core, path));
+      return this.addSync("delete", path, callback, options, () => deletePath(this.core, path));
     }
     /** Registers a delete mediator for a path that only triggers once. */
     donce(path, callback, options) {
@@ -902,7 +933,7 @@
      * const cleanup = rtr.watch("user.name", (value) => console.log(value));
      */
     watch(path, callback, options) {
-      return this.addSync("watch", path, callback, options, (imm) => (imm !== "auto" || hasPath(this.core, path)) && (imm === "strict" ? setPath(this.core, path, getPath(this.core, path)) : ((target) => callback(target.value, { type: "init", target, currentTarget: target, root: this.core, rejectable: false }))(this.getContext(path))));
+      return this.addSync("watch", path, callback, options, (type) => !type ? ((target) => callback(target.value, { type: "init", target, currentTarget: target, root: this.core, rejectable: false }))(this.context(path)) : type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path));
     }
     /** Registers a watcher for a path that only triggers once. */
     wonce(path, callback, options) {
@@ -929,7 +960,7 @@
      */
     on(path, callback, options) {
       this.listeners ??= /* @__PURE__ */ new Map();
-      const { capture = false, once = false, signal, immediate = false, depth } = parseEvtOpts(options, EVT_OPTS.LISTENER);
+      const { capture = false, once = false, signal, init = false, initType: type, depth } = parseEvtOpts(options, EVT_OPTS.LISTENER);
       let cords = this.listeners.get(path), cord;
       if (cords)
         for (let i = 0, len = cords.length; i < len; i++) {
@@ -940,13 +971,8 @@
           }
         }
       if (cord) return cord.clup;
-      cord = { cb: callback, capture, depth, once, clup: () => this.off(path, callback, options), lDepth: depth !== void 0 ? this.getDepth(path) : depth };
-      if (immediate && (immediate !== "auto" || hasPath(this.core, path)))
-        if (immediate === "strict") setPath(this.core, path, getPath(this.core, path));
-        else {
-          const target = this.getContext(path);
-          callback(new ReactorEvent({ type: "init", target, currentTarget: target, root: this.core, rejectable: false }, this));
-        }
+      cord = { cb: callback, capture, depth, once, clup: () => this.off(path, callback, options), lDepth: depth !== void 0 ? getDepth(path) : depth };
+      init && (init !== "auto" || hasPath(this.core, path)) && (!type ? ((target) => callback(new ReactorEvent({ type: "init", target, currentTarget: target, root: this.core, reactor: this, rejectable: false, tx: null })))(this.context(path)) : (type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path), this.tick(path)));
       (cords ?? (this.listeners.set(path, cords = []), cords)).push(cord);
       return this.bindSignal(cord, signal);
     }
@@ -1032,8 +1058,8 @@
     return target[RAW] || target;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-4O76EZJ4.js
-  var INTERACTIVE_SELECTOR = ":is(button,[href],input:not([type='hidden']),select,textarea,details>summary,[contenteditable='true'],iframe,audio[controls],video[controls],[tabindex]):not([disabled],[tabindex='-1'],[data-focus-guard],[inert],[inert] *)";
+  // ../t007-tools/packages/utils/dist/chunk-VJKDEBIE.js
+  var INTERACTIVE_SELECTOR = ":is(button,[href],input:not([type='hidden']),select,textarea,details>summary,[contenteditable],iframe,audio[controls],video[controls],[tabindex]):not([disabled],[tabindex='-1'],[data-focus-guard],[inert],[inert] *)";
   var isInteractive = (target) => target instanceof HTMLElement && target.matches(INTERACTIVE_SELECTOR);
   var VIRTUAL_RESOURCE = /* @__PURE__ */ Symbol.for("T007_VIRTUAL_RESOURCE");
   function loadResource(req, type = "style", { module, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, attempts = 3, retryKey = false } = {}, w = window) {
@@ -1118,7 +1144,7 @@
     window.T007_DIALOG_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest/dist/index.min.css`;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-QJ72EQCJ.js
+  // ../t007-tools/packages/utils/dist/chunk-WMVUETBY.js
   function rippleHandler(e, { target, forceCenter = false, wrapperClassName = "t007-ripple-wrapper", className = "t007-ripple", holdClassName = "t007-ripple-hold", fadeClassName = "t007-ripple-fade" } = NIL) {
     const el = target || e.currentTarget;
     if (!el || e.target !== e.currentTarget && isInteractive(e.target) || el.hasAttribute("disabled") || e.pointerType === "mouse" && e.button !== 0) return;
@@ -1211,7 +1237,7 @@
   }
   var removeScrollAssist = (el) => t007._scrollers.get(el)?.destroy();
 
-  // ../sia-reactor/dist/chunk-VIDZLTP2.js
+  // ../sia-reactor/dist/chunk-2EYASJHW.js
   var BaseReactorModule = class {
     static moduleName;
     get name() {
@@ -1219,7 +1245,7 @@
     }
     ac = new AbortController();
     signal = this.ac.signal;
-    rtrs = /* @__PURE__ */ new Map();
+    deps = /* @__PURE__ */ new Map();
     rids = /* @__PURE__ */ new WeakMap();
     // for quick 0(1) lookups over iteration
     wired = false;
@@ -1243,16 +1269,18 @@
      * @example
      * const persist = new PersistModule(config).attach(sessState, "session").attach(adminState, "session.admin"); // don't use "*", causes de-serialization issues.
      */
-    attach(target, id = this.rtrs.size) {
+    attach(target, id = this.deps.size) {
       const rtr = getReactor(target);
-      if (!rtr || this.rtrs.has(id)) return this;
-      return this.rids.set((this.rtrs.set(id, rtr), rtr), id), this.onAttach(rtr, id), this;
+      if (!rtr || this.deps.has(id)) return this;
+      return this.rids.set((this.deps.set(id, rtr), rtr), id), this.onAttach(rtr, id), this;
     }
     onAttach(_rtr, _rid) {
     }
-    attachPaths(rtr, rid) {
-      const paths = this.getPaths(this.config.whitelist, rid);
-      for (let i = 0, len = paths.length; i < len; i++) !this.config.disabled ? rtr.on(paths[i], this.handlePath, { signal: this.signal }) : rtr.off(paths[i], this.handlePath);
+    attachPaths(rtr, rid, forEach = NOOP, paths = this.getPaths(this.config.whitelist, rid)) {
+      for (let i = 0, len = paths.length; i < len; i++) {
+        const path = paths[i];
+        forEach(rtr, path), !this.config.disabled ? this.config.synchronous ? rtr.watch(path, this.handlePathSync, { signal: this.signal }) : rtr.on(path, this.handlePath, { signal: this.signal }) : this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath);
+      }
     }
     /**
      * Entry point called to initialize module wiring, calls `.attach(target, id)` first, `Reactor.use()` calls this internally.
@@ -1267,28 +1295,29 @@
       return this.attach(target, id), !this.wired && (this.wire(), this.wired = true), this;
     }
     destroy() {
-      this.ac.abort();
-      this.onDestroy?.();
+      this.ac.abort(), this.onDestroy?.();
     }
     handleWhitelist({ value: paths, oldValue: prevs }) {
-      for (const [rid, rtr] of this.rtrs) {
-        const prevPaths = this.getPaths(prevs, rid), newPaths = this.getPaths(paths, rid);
-        for (let i = 0, len = prevPaths.length; i < len; i++) rtr.off(prevPaths[i], this.handlePath);
-        for (let i = 0, len = newPaths.length; i < len; i++) !this.config.disabled && rtr.on(newPaths[i], this.handlePath, { signal: this.signal });
-      }
-    }
-    handlePath(e, rid = this.rids.get(e.reactor)) {
-      if (this.config.blacklist) {
-        const paths = this.getPaths(this.config.blacklist, rid);
-        for (let i = 0, len = paths.length; i < len; i++) {
-          const path = paths[i];
-          if (e.path === path || e.path.startsWith(path + ".")) return;
+      for (const [rid, rtr] of this.deps) {
+        const prevPaths = this.getPaths(prevs, rid);
+        for (let i = 0, len = prevPaths.length; i < len; i++) {
+          const path = prevPaths[i];
+          this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath);
         }
+        this.attachPaths(rtr, rid, NOOP, this.getPaths(paths, rid));
       }
-      this.onPath(e, rid);
     }
+    // child wires when ready
+    handlePath(e, rid = this.rids.get(e.reactor)) {
+      (!this.config.blacklist || !matchPaths(this.getPaths(this.config.blacklist, rid), e.path)) && this.onPath(e, rid);
+    }
+    handlePathSync = (_, p) => this.handlePath(p);
     onPath(_e, _rid) {
     }
+    handleSynchronous({ oldValue }) {
+      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid, (rtr2, path) => oldValue ? rtr2.nowatch(path, this.handlePathSync) : rtr2.off(path, this.handlePath));
+    }
+    // child wires when ready
     /**
      * Path resolution utility for modules, provides automatic reactor id resolution for multi-reactor setups.
      * @param paths Paths to filter by, supports same formats as `ModulePaths`, will be resolved with the module's reactor id if applicable.
@@ -1306,7 +1335,7 @@
      * window.addEventListener("resize", this.guard(() => this.syncLayout(true)), { signal: this.signal });
      */
     guard = (fn) => {
-      return guardMethod(fn, (e) => this.rtrs.values().next().value?.log(`[Reactor "${this.name}" Module] Error: ${e}`));
+      return guardMethod(fn, (e) => this.deps.values().next().value?.log(`[Reactor "${this.name}" Module] Error: ${e}`));
     };
     // `()=>{}`: needs to be bounded even before initialization
   };
@@ -1314,7 +1343,7 @@
 
   // ../sia-reactor/dist/modules.js
   var BaseStorageAdapter = class {
-    name = "StorageAdapter";
+    name = "BaseStorageAdapter";
     config;
     warn = (act = "", mssg = "Support issue or Private Mode", key = "", store = "") => this.config.debug && console.warn(`[${this.constructor.name} \`${act}\`] Failed${key ? `for ${key}` : ""} ${store ? ` on "${store}"` : ""} ${this.config.dbName ? ` at ${this.config.dbName}` : ""} (${mssg})`);
     constructor(config) {
@@ -1322,7 +1351,7 @@
     }
   };
   var StorageAdapter = class extends BaseStorageAdapter {
-    name = "SyncStorageAdapter";
+    name = "StorageAdapter";
   };
   var AsyncStorageAdapter = class extends BaseStorageAdapter {
     name = "AsyncStorageAdapter";
@@ -1338,7 +1367,8 @@
       try {
         const v = localStorage.getItem(key);
         return v ? JSON.parse(v, reviver) : void 0;
-      } catch {
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
         return void 0;
       }
     }
@@ -1352,6 +1382,7 @@
       try {
         return localStorage.setItem(key, JSON.stringify(value, replacer)), true;
       } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("setItem", void 0, key), false;
       }
     }
@@ -1364,6 +1395,7 @@
       try {
         return localStorage.removeItem(key), true;
       } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("removeItem", void 0, key), false;
       }
     }
@@ -1375,9 +1407,21 @@
       try {
         return localStorage.clear(), true;
       } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("clear", void 0), false;
       }
     }
+  };
+  var INDEXED_DB_ADAPTER_BUILD = {
+    dbName: "REACTOR_IDB",
+    stores: ["VAULT"],
+    version: 1,
+    onidb: NOOP,
+    onupgradeneeded: NOOP,
+    onversionchange: NOOP,
+    onsuccess: NOOP,
+    onerror: NOOP,
+    onblocked: NOOP
   };
   var IndexedDBAdapter = class extends AsyncStorageAdapter {
     name = "IndexedDB";
@@ -1410,7 +1454,8 @@
       try {
         const req = (await this.idb()).transaction(store, "readonly", options).objectStore(store).get(key);
         return new Promise((res) => req.onsuccess = () => res(req.result));
-      } catch {
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("get", void 0, store), void 0;
       }
     }
@@ -1426,6 +1471,7 @@
         const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).put(value, key);
         return new Promise((res) => req.onsuccess = () => res(true));
       } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("put", void 0, store), false;
       }
     }
@@ -1440,6 +1486,7 @@
         const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).delete(key);
         return new Promise((res) => req.onsuccess = () => res(true));
       } catch (e) {
+        if (this.config.throwErrors) throw e;
         return this.warn("delete", void 0, store), false;
       }
     }
@@ -1455,22 +1502,45 @@
           const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).clear();
           await new Promise((res) => req.onsuccess = () => res(true));
         } catch (e) {
+          if (this.config.throwErrors) throw e;
           this.warn("clear", void 0, store), success = false;
         }
       return success;
     }
   };
-  var INDEXED_DB_ADAPTER_BUILD = { dbName: "REACTOR_IDB", stores: ["VAULT"], version: 1, onidb: NOOP, onupgradeneeded: NOOP, onversionchange: NOOP, onsuccess: NOOP, onerror: NOOP, onblocked: NOOP };
+  var PERSIST_MODULE_BUILD = {
+    disabled: false,
+    key: "REACTOR_STORE",
+    throttle: 2500,
+    snapshot: false,
+    mirrorWriteTo: true,
+    onSave: NOOP,
+    strict: true
+  };
   var PersistModule = class extends BaseReactorModule {
     static moduleName = "persist";
     adapter;
     hydrateSeq = 0;
+    saveSeq = 0;
     saveTimeoutId = 0;
+    /**
+     * Compute the serialized payload for all attached reactors.
+     * If multiple reactors are attached, returns a merged object keyed by reactor id.
+     * Honors `whitelist`, `snapshot` and `mirrorWriteTo` configuration on each reactor.
+     * @returns The payload to persist (or `undefined` for empty single-reactor payload).
+     */
     get payload() {
-      let res = this.rtrs.size > 1 ? {} : void 0;
-      for (const [rid, rtr] of this.rtrs) {
-        const snap = this.config.useSnapshot ? (this.config.useSnapshot === true && (rtr.config.referenceTracking = rtr.config.smartCloning = true), rtr.snapshot()) : rtr.core, paths = this.getPaths(this.config.whitelist, rid), val = this.config.whitelist ? paths.reduce((acc, p) => (setPath(acc, p, getPath(snap, p)), acc), {}) : snap;
-        this.rtrs.size > 1 ? setPath(res, rid, val) : res = val;
+      let res = this.deps.size > 1 ? {} : void 0;
+      for (const [rid, rtr] of this.deps) {
+        const snap = this.config.snapshot ? (this.config.snapshot === true && (rtr.config.referenceTracking = rtr.config.smartCloning = true), rtr.snapshot()) : rtr.core, val = this.config.whitelist ? {} : snap;
+        if (this.config.whitelist) {
+          const paths = this.getPaths(this.config.whitelist, rid);
+          for (let i = 0, len = paths.length; i < len; i++) {
+            const _path = paths[i], path = !this.config.mirrorWriteTo || !_path.includes("state") ? _path : _path.replace("state", "intent");
+            setPath(val, path, getPath(snap, path));
+          }
+        }
+        this.deps.size > 1 ? setPath(res, rid, val) : res = val;
       }
       return res;
     }
@@ -1480,71 +1550,108 @@
     wire() {
       "undefined" !== typeof window && window.addEventListener("pagehide", this.onDestroy, { signal: this.signal });
       "undefined" !== typeof document && document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && this.onDestroy(), { signal: this.signal });
-      this.config.on("adapter", this.handleAdapter, { signal: this.signal, immediate: true });
-      this.config.on("disabled", this.handleDisabled, { signal: this.signal, immediate: true });
-      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, immediate: true });
+      this.config.on("adapter", this.handleAdapter, { signal: this.signal, init: true });
+      this.config.on("disabled", this.handleDisabled, { signal: this.signal, init: true });
+      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, init: true });
+      this.config.on("synchronous", this.handleSynchronous, { signal: this.signal });
     }
     onAttach = this.attachPaths;
     onPath(e, rid) {
       if (!this.state.hydrated) return e.stopImmediatePropagation();
-      if (!this.saveTimeoutId) this.saveTimeoutId = setTimeout2(() => (this.adapter.set(this.config.key, this.payload), this.saveTimeoutId = 0), this.config.throttle, this.signal);
+      const persist = async () => {
+        const seq = ++this.saveSeq;
+        let payload = this.payload;
+        if (this.config.beforeSave) {
+          const res = this.config.beforeSave(payload);
+          if (res === false) return;
+          if (res && res !== true) payload = res;
+        }
+        this.saveTimeoutId = 0;
+        if (this.config.onSave === NOOP) return this.adapter.set(this.config.key, payload);
+        try {
+          const bool = await this.adapter.set(this.config.key, payload);
+          if (seq !== this.saveSeq) return;
+          this.config.onSave(payload, bool ?? true);
+        } catch (e2) {
+          this.config.onSave(payload, false, e2);
+        }
+      };
+      this.saveTimeoutId ||= setTimeout2(persist, this.config.throttle, this.signal);
     }
     async handleAdapter({ value = LocalStorageAdapter }) {
       const seq = ++this.hydrateSeq;
       if (this.adapter && value === this.adapter.constructor) return;
       this.state.hydrated = false;
       this.adapter?.remove(this.config.key);
-      this.adapter = "function" === typeof value ? new value({ debug: !!this.rtrs.values().next().value?.canLog }) : (value.config.debug = !!this.rtrs.values().next().value?.canLog, value);
+      this.adapter = "function" === typeof value ? new value({ debug: !!this.deps.values().next().value?.canLog }) : (value.config.debug = !!this.deps.values().next().value?.canLog, value);
       try {
         let saved = this.adapter.get(this.config.key);
-        const isAsync = saved instanceof Promise, { depth, merge = true } = parseEvtOpts(this.config.fanout ?? isAsync, fanoutOptsArr, "depth");
+        const isAsync = saved instanceof Promise, { depth, merge = true, atomic } = parseEvtOpts(this.config.fanout ?? isAsync, fanoutOptsArr, "depth");
         saved = !isAsync ? saved : await saved;
+        if (this.config.beforeHydrate && saved) {
+          const res = this.config.beforeHydrate(saved);
+          if (res === false) return;
+          if (res && res !== true) saved = res;
+        }
         if (seq !== this.hydrateSeq || !saved) return;
-        for (const [rid, rtr] of this.rtrs) {
-          const paths = this.getPaths(this.config.whitelist, rid), entry = this.rtrs.size > 1 ? getPath(saved, rid) : saved;
+        for (const [rid, rtr] of this.deps) {
+          const entry = this.deps.size > 1 ? getPath(saved, rid) : saved;
           if (!entry) continue;
-          const set = (p, news, olds) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(news, olds) : olds, depth ? { depth, crossRealms: rtr.config.crossRealms } : void 0), setPaths = this.config.whitelist ? paths : wpArr;
-          for (let i = 0, len = setPaths.length; i < len; i++) {
-            const path = setPaths[i];
+          const paths = this.getPaths(this.config.whitelist, rid), set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev) : prev, depth ? { depth, atomic, crossRealms: rtr.config.crossRealms } : void 0);
+          for (let i = 0, len = paths.length; i < len; i++) {
+            const path = paths[i];
             set(path, getPath(rtr.core, path), getPath(entry, path));
           }
         }
-        for (const [rid, rtr] of this.rtrs) rtr.tick(depth ? "*" : this.config.whitelist ? this.getPaths(this.config.whitelist, rid) : "*");
+        for (const [rid, rtr] of this.deps) rtr.tick(depth ? "*" : this.config.whitelist ? this.getPaths(this.config.whitelist, rid) : "*");
       } finally {
         if (seq === this.hydrateSeq) this.state.hydrated = true;
       }
     }
     handleDisabled({ value }) {
-      for (const [rid, rtr] of this.rtrs) this.onAttach(rtr, rid);
+      for (const [rid, rtr] of this.deps) this.onAttach(rtr, rid);
       value && this.adapter?.remove(this.config.key);
     }
-    /** Clears persisted payload for this module instance and drops any pending save. */
+    /**
+     * Clears persisted payload for this module instance and drops any pending save.
+     * Cancels scheduled saves and removes the stored key from the adapter.
+     */
     clear() {
       clearTimeout(this.saveTimeoutId);
       this.saveTimeoutId = -1;
-      for (const rtr of this.rtrs.values()) rtr.stall(() => this.saveTimeoutId = 0);
+      queueMicrotask(() => this.saveTimeoutId = 0);
       this.adapter?.remove(this.config.key);
     }
     onDestroy() {
-      this.state.hydrated && !this.config.disabled && this.adapter?.set(this.config.key, this.payload);
+      this.config.strict && this.state.hydrated && !this.config.disabled && this.adapter?.set(this.config.key, this.payload);
     }
   };
-  var PERSIST_MODULE_BUILD = { disabled: false, key: "REACTOR_STORE", throttle: 2500, useSnapshot: false };
+  var TIME_TRAVEL_MODULE_BUILD = {
+    limit: 1e9,
+    playbackRate: 1,
+    maxPlaybackDelay: 2e3,
+    mirrorReadFrom: true,
+    mirrorWriteTo: true,
+    onApply: NOOP
+  };
   var TimeTravelModule = class extends BaseReactorModule {
     static moduleName = "timeTravel";
+    txMap = /* @__PURE__ */ new WeakMap();
+    isTracking = true;
+    // only explicit per-session tracking
     lastTimestamp = 0;
-    playbackTimeoutId = -1;
+    playbackSeq = 0;
     constructor(config, rtr) {
-      super({ ...TIME_TRAVEL_MODULE_BUILD, ...config }, rtr, { initialState: {}, history: [], currentFrame: 0, paused: true });
+      super({ ...TIME_TRAVEL_MODULE_BUILD, ...config }, rtr, { initialState: {}, history: [], tracking: true, currentFrame: 0, paused: true, forward: true });
     }
     // ===========================================================================
     // THE FOUNDATION & WIRETAP (Passive Recording)
     // ===========================================================================
     wire() {
       this.lastTimestamp = performance.now();
-      this.state.set("currentFrame", (v = 0) => clamp(0, v, this.state.history.length), { signal: this.signal, immediate: true });
-      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, immediate: true });
-      !this.state.paused && this.play();
+      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, init: true });
+      this.config.on("synchronous", this.handleSynchronous, { signal: this.signal });
+      !this.state.paused && this.automove(this.state.forward);
     }
     onAttach(rtr, rid) {
       rtr.config.referenceTracking = rtr.config.smartCloning = rtr.config.eventTimeStamps = true;
@@ -1554,94 +1661,181 @@
     onPath = this.record;
     /** Chronicling the lifecycle of the system, Captures the essence of every mutation wave that bubbles up. */
     record(e, rid = this.rids.get(e.reactor)) {
-      if (!this.state.paused) return;
-      if (this.state.currentFrame < this.state.history.length) fanout(this.state, "history", this.state.history.slice(0, this.state.currentFrame), { atomic: true });
-      if (this.state.history.length >= this.config.maxHistoryLength) fanout(this.state, "history", this.state.history.slice(1), { atomic: true });
-      const en = { path: e.target.path, value: e.reactor.snapshot(false, e.target.value), oldValue: e.reactor.snapshot(false, e.target.oldValue), type: e.staticType, deltat: e.timestamp - this.lastTimestamp, rid };
-      e.rejected && (en.rejected = e.rejected), !e.target.hadKey && (en.hadKey = false), this.state.history.push(en);
+      if (!this.state.paused || !this.isTracking) return;
+      if (this.state.currentFrame < this.state.history.length) this.state.history.length = this.state.currentFrame;
+      const timestamp = e.timestamp ?? performance.now();
+      let en = { path: e.target.path, to: e.reactor.snapshot(false, e.target.value), from: !this.config.mirrorReadFrom || !e.target.path.includes("intent") ? e.reactor.snapshot(false, e.target.oldValue) : getPath(e.reactor.core, e.target.path.replace("intent", "state")), type: e.staticType ?? e.type, rid, deltat: timestamp - this.lastTimestamp };
+      e.rejected && (en.rejected = e.rejected), !e.target.hadKey && (en.hadKey = false);
+      if (this.config.beforeEntry) {
+        const res = this.config.beforeEntry(en, this.state.history);
+        if (res === false) return;
+        if (res && res !== true) en = res;
+      }
+      if (e.tx) {
+        let histTx = this.txMap.get(e.tx);
+        if (!histTx) {
+          this.txMap.set(e.tx, histTx = { id: e.tx.id, label: e.tx.label, nodes: [en], deltat: en.deltat, start: timestamp, end: timestamp });
+          const parentTx = e.tx.parent ? this.txMap.get(e.tx.parent) : null;
+          (parentTx ? parentTx.nodes : this.state.history).push(histTx);
+        } else histTx.nodes.push(en), histTx.end = timestamp;
+      } else this.state.history.push(en);
       this.state.currentFrame = this.state.history.length;
-      this.lastTimestamp = e.timestamp;
+      while (this.state.history.length > this.config.limit) this.state.history.shift(), this.state.currentFrame--;
+      this.lastTimestamp = timestamp;
     }
-    /** Clears timeline history and resets playhead/genesis to the current reactor state. */
+    /** Resumes the passive recording of state changes. */
+    track() {
+      this.state.tracking = this.isTracking = true, !this.state.paused && this.automove(this.state.forward);
+    }
+    /**
+     * Pauses the passive recording of state changes and returns `this`.
+     * Useful to call at creation time to avoid recording hydration waves.
+     * @returns `this`
+     */
+    untrack() {
+      this.lastTimestamp = performance.now();
+      return this.state.tracking = this.isTracking = false, this;
+    }
+    /** Clears timeline history and resets the playhead and initial snapshots to current reactor state. */
     clear() {
       this.pause();
-      this.playbackTimeoutId = -1;
       this.state.history.length = this.state.currentFrame = 0;
-      this.state.initialState = Object.fromEntries(this.rtrs.entries().map(([rid, rtr]) => [rid, rtr.snapshot()]));
+      this.state.initialState = Object.fromEntries(this.deps.entries().map(([rid, rtr]) => [rid, rtr.snapshot()]));
       this.lastTimestamp = performance.now();
     }
     // ===========================================================================
     // THE TIME MACHINE (Manual Controls)
     // ===========================================================================
-    /** Instant state reconstruction (Teleport). Glides through deltas natively. */
+    /** Re-enacting a node that represents a point in time be it a transaction of transactions or a solitary mutation. */
+    applyNode(node, forward = true) {
+      if ("nodes" in node) for (let i = forward ? 0 : node.nodes.length - 1; forward ? i < node.nodes.length : i >= 0; forward ? i++ : i--) this.applyNode(node.nodes[i], forward);
+      else {
+        const rtr = this.deps.get(node.rid) || this.deps.values().next().value, path = !this.config.mirrorWriteTo || !node.path.includes("intent") ? node.path : node.path.replace("state", "intent");
+        if (forward) node.type === "delete" ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.to, rtr.config));
+        else node.hadKey === false ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.from, rtr.config));
+        if (node.rejected) rtr.log(`[Reactor ${this.name} Module] ${forward ? "Replaying" : "Reversing"} REJECTED intent at "${node.path}"`);
+      }
+    }
+    /**
+     * Instant state reconstruction (teleport) to a given history frame index.
+     * Applies recorded nodes forward or backward until the playhead reaches `index`.
+     * @param index Target history frame index to jump to (clamped to bounds).
+     * @param keepShield If true, keep the paused shield active after applying.
+     */
     jumpTo(index = 0, keepShield = false) {
       this.state.paused = false;
       const target = clamp(0, index, this.state.history.length), forward = target > this.state.currentFrame;
       while (this.state.currentFrame !== target) {
-        const e = this.state.history[forward ? this.state.currentFrame : this.state.currentFrame - 1];
-        if (!e) break;
-        const rtr = this.rtrs.get(e.rid) || this.rtrs.values().next().value;
-        if (forward) e.type === "delete" ? deletePath(rtr.core, e.path) : setPath(rtr.core, e.path, deepClone(e.value, rtr.config));
-        else e.hadKey === false ? deletePath(rtr.core, e.path) : setPath(rtr.core, e.path, deepClone(e.oldValue, rtr.config));
+        const frame = this.state.history[forward ? this.state.currentFrame : this.state.currentFrame - 1];
+        this.applyNode(frame, forward);
         forward ? this.state.currentFrame++ : this.state.currentFrame--;
-        if (e.rejected) rtr.log(`[Reactor ${this.name} Module] ${forward ? "Replaying" : "Reversing"} REJECTED intent at "${e.path}"`);
+        this.config.onApply(frame, forward);
       }
-      for (const rtr of this.rtrs.values()) rtr.tick();
+      for (const rtr of this.deps.values()) rtr.tick();
       if (!keepShield) this.state.paused = true;
     }
-    /** Step through time, Moves the playhead and teleports the state. */
+    /**
+     * Step through time by a number of frames.
+     * @param stride Number of frames to move the playhead by.
+     * @param forward Direction: `true` for forward, `false` for backward.
+     */
     step(stride = 1, forward = true) {
       if (forward ? this.state.currentFrame >= this.state.history.length : this.state.currentFrame <= 0) return;
       this.pause(), forward ? this.jumpTo(this.state.currentFrame + stride) : this.jumpTo(this.state.currentFrame - stride);
     }
-    /** Step back in time, Moves the playhead backward and teleports the state. */
-    undo() {
-      this.step(1, false);
+    /** Returns `true` if there is history to step back into. */
+    get canUndo() {
+      return this.state.currentFrame > 0;
     }
-    /** Step forward in time, Restores previously undone actions. */
-    redo() {
-      this.step(1, true);
+    /**
+     * Step back in time (undo).
+     * @param stride Optional `number` of frames to undo.
+     */
+    undo(stride) {
+      this.step(arguments.length && "number" === typeof stride ? stride : 1, false);
+    }
+    /** Returns `true` if there is a future to step forward into. */
+    get canRedo() {
+      return this.state.currentFrame < this.state.history.length;
+    }
+    /**
+     * Step forward in time (redo).
+     * @param stride Optional `number` of frames to redo.
+     */
+    redo(stride) {
+      this.step(arguments.length && "number" === typeof stride ? stride : 1, true);
     }
     // ===========================================================================
     // THE VCR (Automated Playback)
     // ===========================================================================
-    /** Core automove engine. Replays or rewinds the "Story" by respecting time gaps. */
+    /**
+     * Core automove engine. Replays or rewinds the recorded history honoring recorded time gaps.
+     * @param forward Direction of playback: `true` to play forward, `false` to rewind.
+     * @returns Promise<void> Resolves when playback completes or is paused/stopped.
+     */
     async automove(forward = true) {
+      const seq = ++this.playbackSeq;
       this.state.paused = false;
-      while ((forward ? this.state.currentFrame < this.state.history.length : this.state.currentFrame > 0) && !this.state.paused) {
-        const idx = forward ? this.state.currentFrame : this.state.currentFrame - 1, e = this.state.history[forward ? idx + 1 : idx - 1];
-        this.jumpTo(this.state.currentFrame + (forward ? 1 : -1), true);
-        if (e?.deltat > 0) await new Promise((res) => this.playbackTimeoutId = setTimeout2(() => res(0), Math.min(e.deltat, this.config.maxPlaybackDelay), this.signal));
+      this.state.forward = forward;
+      while (seq === this.playbackSeq && !this.state.paused && (forward ? this.state.currentFrame < this.state.history.length : this.state.currentFrame > 0)) {
+        const dFrame = this.state.history[this.state.currentFrame + (forward ? 0 : -1)], delay = Math.min(("nodes" in dFrame ? dFrame.end - dFrame.start + dFrame.deltat : dFrame.deltat) / this.config.playbackRate, this.config.maxPlaybackDelay);
+        if (delay > 0) await new Promise((res) => setTimeout2(() => res(0), delay, this.signal));
+        if (!this.state.paused) this.jumpTo(this.state.currentFrame + (forward ? 1 : -1), true);
       }
-      this.state.paused = true;
+      if (seq === this.playbackSeq) this.state.paused = true;
     }
-    /** Start chronological re-enactment of the session. */
-    play = () => this.automove(true);
-    /** Start reverse chronological re-enactment of the session. */
-    rewind = () => this.automove(false);
-    /** Pauses the live VCR playback. */
-    pause = () => (this.state.paused = true, clearTimeout(this.playbackTimeoutId));
+    /**
+     * Start chronological re-enactment of the session (play forward).
+     * @returns Promise<void> Resolves when playback completes.
+     */
+    play() {
+      return this.automove(true);
+    }
+    /**
+     * Start reverse chronological re-enactment of the session (rewind).
+     * @returns Promise<void> Resolves when rewind completes.
+     */
+    rewind() {
+      return this.automove(false);
+    }
+    /** Pause any ongoing playback or rewinding. */
+    pause() {
+      this.playbackSeq++, this.state.paused = true;
+    }
     // ===========================================================================
     // TELEMETRY & I/O (Session Import/Export)
     // ===========================================================================
-    /** Exports the current session as a JSON string. */
+    /**
+     * Export the current time-travel session state as a JSON string.
+     * @param replacer Optional replacer function used by `JSON.stringify`.
+     * @param space Optional spacing parameter for pretty-printing.
+     * @returns The serialized session JSON.
+     */
     export(replacer, space) {
       return JSON.stringify(this.state, replacer, space);
     }
-    /** Imports a session from a JSON string, allowing you to replay or analyze past states. */
-    import(json, reviver) {
+    /**
+     * Import a serialized session JSON and reconstruct internal state and snapshots.
+     * @param json The serialized session JSON produced by `export()`.
+     * @param reviver Optional reviver function used by `JSON.parse`.
+     */
+    import(json, reviver, start = this.state.currentFrame, resume = !this.state.paused, forward = this.state.forward) {
       setPath(this.state, "*", JSON.parse(json, reviver));
       this.lastTimestamp = performance.now();
-      const resume = !this.state.paused, target = this.state.currentFrame;
       this.state.paused = false;
-      for (const [rid, rtr] of this.rtrs) fanout(rtr.core, "*", deepClone(this.state.initialState[rid], rtr.config));
-      for (const rtr of this.rtrs.values()) rtr.tick();
-      this.state.currentFrame = 0, this.jumpTo(target), resume && this.play();
+      for (const [rid, rtr] of this.deps) {
+        const paths = this.getPaths(this.config.whitelist, rid);
+        for (let i = 0, len = paths.length; i < len; i++) {
+          const path = paths[i];
+          fanout(rtr.core, path, getPath(this.state.initialState[rid], path));
+        }
+      }
+      for (const [rid, rtr] of this.deps) rtr.tick(this.config.whitelist ? this.getPaths(this.config.whitelist, rid) : "*");
+      this.state.currentFrame = 0, this.jumpTo(start), resume && this.automove(forward);
     }
   };
-  var TIME_TRAVEL_MODULE_BUILD = { maxPlaybackDelay: 2e3 };
 
-  // ../sia-reactor/dist/chunk-CEPDD5XN.js
+  // ../sia-reactor/dist/chunk-GR6BJY63.js
   var Autotracker = class {
     proxy;
     deps = /* @__PURE__ */ new Map();
@@ -1782,17 +1976,29 @@
       CTX.autotracker = prev;
     }
   }
+  function effect(callback, options = NIL) {
+    const atrkr = new Autotracker();
+    let destroyed = false;
+    const cleanup = () => (destroyed = true, atrkr.destroy());
+    (function execute() {
+      if (destroyed) return;
+      withTracker(atrkr, callback);
+      options.once ? cleanup() : atrkr.callback(execute, options);
+    })();
+    return cleanup;
+  }
   var keys = {
-    overrides: ["Ctrl+z", "Cmd+z", "Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z", "Home", "End", ",", ".", "ArrowLeft", "ArrowRight", "Space", "Alt+Space", "Escape", "Delete", "e", "i", "c"],
-    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", ending: "End", prevFrame: ",", nextFrame: ".", skipBwd: "ArrowLeft", skipFwd: "ArrowRight", playPause: "Space", rewind: "Alt+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
+    blocks: KEYS_BLOCKS,
+    overrides: ["Ctrl+z", "Cmd+z", "Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z", "Home", "End", ",", ".", "ArrowLeft", "ArrowRight", "Space", "Alt+Space", "Escape", "Delete", "t", "e", "i", "c"],
+    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", prevFrame: ",", nextFrame: ".", skipBwd: "ArrowLeft", skipFwd: "ArrowRight", playPause: "Space", rewind: "Alt+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
   };
-  var TimeTravelOverlay = class _TimeTravelOverlay {
+  var TimeTravelConsole = class _TimeTravelConsole {
     static count = 0;
-    index = _TimeTravelOverlay.count;
+    index = _TimeTravelConsole.count;
     config;
-    state = reactive({ open: false, import: "" });
+    state = reactive({ open: false, import: "", stride: 1 });
     time;
-    els;
+    host;
     clups = [];
     keyup;
     /** Creates a docked TimeTravel overlay bound to a module instance.
@@ -1801,18 +2007,18 @@
      */
     constructor(time, build = {}) {
       this.time = time;
-      this.config = reactive({ title: `Time Travel Overlay ${this.index = ++_TimeTravelOverlay.count}`, ...build });
+      this.config = reactive({ title: `Time Travel Console ${this.index = ++_TimeTravelConsole.count}`, ...build });
       this.state.open = !!this.config.startOpen;
       let wlLive = false, blLive = false;
-      const s = this.time.state, host = createEl("div", { className: "tt-overlay-host" }), toggle = createEl("button", { className: "tt-overlay-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "tt-overlay", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyForDisplay(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory, false), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyForDisplay(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo, false), onclick: this.time.undo }), redo = createEl("button", { textContent: `Redo${formatKeyForDisplay(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo, false), onclick: this.time.redo }), genesis = createEl("button", { textContent: `Genesis${formatKeyForDisplay(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis, false), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause, false) }), rewind = createEl("button", { textContent: `Rewind${formatKeyForDisplay(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind, false), onclick: this.time.rewind }), range = createEl("input", { type: "range", min: "0", max: "0", value: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyForDisplay(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export, false), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyForDisplay(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import, false), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyForDisplay(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear, false), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "tt-footnote", textContent: "Want this in your app? " }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "tt-status-box" }), status = createEl("div", { className: "tt-status-row" }), filters = createEl("div", { className: "tt-status-row" }), filterBox = createEl("div", { className: "tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), filterRow1 = createEl("div", { className: "tt-filter-row" }), filterRow2 = createEl("div", { className: "tt-filter-row" }), row1 = createEl("div", { className: "tt-row" }), row2 = createEl("div", { className: "tt-row" }), row3 = createEl("div", { className: "tt-row" });
+      const s = this.time.state, host = this.host = createEl("div", { className: "tt-console-host" }), toggle = createEl("button", { className: "tt-console-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "tt-console", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyForDisplay(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory, false), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyForDisplay(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo, false), onclick: () => this.time.undo(this.state.stride) }), redo = createEl("button", { textContent: `Redo${formatKeyForDisplay(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo, false), onclick: () => this.time.redo(this.state.stride) }), genesis = createEl("button", { textContent: `Genesis${formatKeyForDisplay(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis, false), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause, false) }), rewind = createEl("button", { textContent: `Rewind${formatKeyForDisplay(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind, false), onclick: this.time.rewind }), trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack, false) }), range = createEl("input", { type: "range", min: "0", max: "0", value: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyForDisplay(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export, false), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyForDisplay(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import, false), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyForDisplay(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear, false), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "tt-footnote", innerHTML: "<span>Want this in your app? </span>" }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "tt-status-box" }), status = createEl("div", { className: "tt-status-row" }), filters = createEl("div", { className: "tt-status-row" }), filterBox = createEl("div", { className: "tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), speed = createEl("select", { className: "tt-speed", title: "Playback Speed", onchange: () => this.time.config.playbackRate = Number(speed.value) }), stride = createEl("input", { className: "tt-stride tt-button tt-mini-input", type: "number", min: "1", value: String(this.state.stride), title: "Skip Stride i.e. how many steps count as one unit", oninput: () => this.state.stride = Math.max(1, Number(stride.value) || 1) }), stats = createEl("span", { className: "tt-stats" }), limit = createEl("input", { className: "tt-limit tt-mini-input tt-button", type: "number", min: "1", value: String(this.time.config.limit), title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => this.time.config.limit = Math.max(1, Number(limit.value) || 1) }), delay = createEl("input", { className: "tt-delay tt-mini-input tt-button", type: "number", min: "0", step: "50", value: String(this.time.config.maxPlaybackDelay), title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0) }), read = createEl("label", { className: "tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }), readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReadFrom, onchange: () => this.time.config.mirrorReadFrom = readBox.checked }), write = createEl("label", { className: "tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }), writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWriteTo, onchange: () => this.time.config.mirrorWriteTo = writeBox.checked }), filterRow1 = createEl("div", { className: "tt-filter-row" }), filterRow2 = createEl("div", { className: "tt-filter-row" }), row1 = createEl("div", { className: "tt-row" }), row2 = createEl("div", { className: "tt-row" }), row3 = createEl("div", { className: "tt-row" }), row4 = createEl("div", { className: "tt-row" }), row5 = createEl("div", { className: "tt-row tt-config-row" });
+      [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4, 8, 16, 32].forEach((v) => speed.append(createEl("option", { value: String(v), textContent: `${v}x`, selected: v === this.time.config.playbackRate })));
       status.append((box.append(frame), box), clrHistory);
       filters.append((filterBox.append((filterRow1.append(whitelistLabel, whitelist), filterRow1), (filterRow2.append(blacklistLabel, blacklist), filterRow2)), filterBox));
-      panel.append(title, status, (row1.append(undo, redo, genesis), row1), (row2.append(playPause, rewind), row2), payload, range, filters, (row3.append(exp, imp, clr), row3), io, (foot.appendChild(link), foot));
-      host.append(toggle, panel);
-      this.els = { host, toggle, panel, title, frame, clrHistory, undo, redo, genesis, playPause, rewind, range, exp, imp, clr, payload, io };
+      panel.append(title, status, (row1.append(playPause, rewind, genesis), row1), (row2.append(undo, redo, trackUntrack, stride), row2), payload, (row3.append(speed, range), row3), filters, (row4.append(exp, imp, clr), row4), io, (row5.append(delay, limit, (read.append(readBox, " Read Mirror"), read), (write.append(writeBox, " Write Mirror"), write)), row5), (foot.prepend(stats), foot.append(link), foot));
+      this.host.append(toggle, panel);
       this.keyup = (e) => {
         const a = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true) && keyEventAllowed(e, keys);
-        a === "undo" ? this.time.undo() : a === "redo" ? this.time.redo() : a === "genesis" ? this.time.jumpTo(0) : a === "ending" ? this.time.jumpTo(s.history.length) : a === "prevFrame" ? this.time.step(1, false) : a === "nextFrame" ? this.time.step(1, true) : a === "skipBwd" ? this.time.step(5, false) : a === "skipFwd" ? this.time.step(5, true) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export() : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = "");
+        a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "prevFrame" ? this.time.step(this.state.stride, false) : a === "nextFrame" ? this.time.step(this.state.stride, true) : a === "skipBwd" ? this.time.step(5 * this.state.stride, false) : a === "skipFwd" ? this.time.step(5 * this.state.stride, true) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export() : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = "");
       };
       window.addEventListener("keydown", this.keyup);
       const sync = [
@@ -1824,37 +2030,44 @@
         }),
         effect(() => toggle.textContent = `${(panel.hidden = !this.state.open) ? "Show" : "Hide"} ${title.textContent = this.config.title ?? ""}`),
         effect(() => playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyForDisplay(keys.shortcuts.playPause)}`),
+        effect(() => trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyForDisplay(keys.shortcuts.trackUntrack)}`),
         effect(() => {
           frame.textContent = `Frame: ${s.currentFrame} / ${s.history.length}`;
-          range.disabled = clrHistory.disabled = !s.history.length;
-          genesis.disabled = undo.disabled = !s.currentFrame;
+          genesis.disabled = undo.disabled = !this.time.canUndo;
           rewind.disabled = !s.paused || !s.currentFrame;
-          playPause.disabled = redo.disabled = s.currentFrame >= s.history.length;
-          range.max = String(s.history.length);
+          playPause.disabled = redo.disabled = !this.time.canRedo;
           range.value = String(Math.min(s.currentFrame, s.history.length));
-          payload.value = JSON.stringify(s.currentFrame ? s.history[s.currentFrame - 1] : { type: "genesis", value: s.initialState }, null, 2);
+          payload.value = JSON.stringify(s.currentFrame ? s.history[s.currentFrame - 1] : { genesis: true, value: s.initialState }, null, 2);
         }),
         effect(() => {
           clr.disabled = imp.disabled = !this.state.import.trim().length;
           io.value !== this.state.import && (io.value = this.state.import);
         }),
-        effect(() => (!wlLive && (whitelist.value = formatPaths(this.time.config.whitelist, "*")), !blLive && (blacklist.value = formatPaths(this.time.config.blacklist, ""))))
+        effect(() => (!wlLive && (whitelist.value = formatPaths(this.time.config.whitelist, "*")), !blLive && (blacklist.value = formatPaths(this.time.config.blacklist, "")))),
+        effect((sets = 0, txs = 0) => {
+          range.max = String(s.history.length);
+          range.disabled = clrHistory.disabled = !s.history.length;
+          for (let i = 0, len = s.history.length; i < len; i++) {
+            const frame2 = s.history[i];
+            "nodes" in frame2 ? txs++ : frame2.type === "set" && sets++;
+          }
+          stats.textContent = `Sets: ${sets} | Deletes: ${s.history.length - sets - txs} | Txs: ${txs}`;
+        })
       ];
       this.clups.push(...sync);
     }
     destroy() {
       for (const clup of this.clups) clup();
       this.keyup && window.removeEventListener("keydown", this.keyup);
-      this.els.host.remove();
-      nuke(this), --_TimeTravelOverlay.count;
+      this.host.remove(), nuke(this), --_TimeTravelConsole.count;
     }
   };
   function getDock(container) {
     const host = container && container !== document.documentElement ? container : document.body;
     if (host !== document.body && getComputedStyle(host).position === "static") host.style.position = "relative";
-    const layer = host.querySelector(":scope > .tt-overlay-layer") || createEl("div", { className: "tt-overlay-layer" }, void 0, { position: host === document.body ? "fixed" : "absolute" });
+    const layer = host.querySelector(":scope > .tt-console-layer") || createEl("div", { className: "tt-console-layer" }, void 0, { position: host === document.body ? "fixed" : "absolute" });
     if (layer.parentElement !== host) host.appendChild(layer);
-    const dock = layer.querySelector(":scope > .tt-overlay-dock") || createEl("div", { className: "tt-overlay-dock" });
+    const dock = layer.querySelector(":scope > .tt-console-dock") || createEl("div", { className: "tt-console-dock" });
     return dock.parentElement !== layer && layer.appendChild(dock), dock;
   }
   function formatPaths(paths, emptyText) {
@@ -1872,17 +2085,6 @@
       }
     const list = text.split(",").map((p) => p.trim()).filter(Boolean);
     return list.length ? list : allowEmpty ? void 0 : wpArr;
-  }
-  function effect(callback, options = NIL) {
-    const atrkr = new Autotracker();
-    let destroyed = false;
-    const cleanup = () => (destroyed = true, atrkr.destroy());
-    (function execute() {
-      if (destroyed) return;
-      withTracker(atrkr, callback);
-      options.once ? cleanup() : atrkr.callback(execute, options);
-    })();
-    return cleanup;
   }
 
   // src/beta/beta.js
@@ -1947,7 +2149,7 @@
     }
     plugMedia() {
       this.setImgLoadState({ target: this.DOM.videoProfile });
-      ["media.title", "media.artist", "media.profile"].forEach((e) => this.config.watch(e, (value) => this.settings.controlPanel[e.replace("media.", "")] = value, { immediate: "auto" }));
+      ["media.title", "media.artist", "media.profile"].forEach((e) => this.config.watch(e, (value) => this.settings.controlPanel[e.replace("media.", "")] = value, { init: "auto" }));
       ["media.links.title", "media.links.artist", "media.links.profile"].forEach(
         (p) => this.config.on(
           p,
@@ -1955,11 +2157,11 @@
             const el = key !== "profile" ? this.DOM[`video${tmg.capitalize(key)}`] : this.DOM.videoProfile?.parentElement;
             el && Object.entries({ href: value, "tab-index": value ? "0" : null, target: value ? "_blank" : null, rel: value ? "noopener noreferrer" : null }).forEach(([attr, val]) => val ? el.setAttribute(attr, val) : el.removeAttribute(attr));
           },
-          { immediate: true }
+          { init: true }
         )
       );
-      this.config.on("media.artwork", ({ currentTarget: { value } }) => this.setPosterState(value?.[0]?.src), { immediate: true });
-      this.config.on("media", () => !this.video.paused && this.syncMediaSession(), { immediate: true });
+      this.config.on("media.artwork", ({ currentTarget: { value } }) => this.setPosterState(value?.[0]?.src), { init: true });
+      this.config.on("media", () => !this.video.paused && this.syncMediaSession(), { init: true });
     }
     async autoGenerateMedia() {
       const url = this.config.media.artwork?.[0]?.src;
@@ -2003,7 +2205,7 @@
       this.config.on("settings.toasts", ({ type, target: { path, key, value } }) => type === "update" && !path.match(/disabled|nextVideoPreview|captureAutoClose/) && t007.toast.doForAll("update", { [key]: value }, this.id));
     };
     get toast() {
-      return !this.settings.toasts.disabled ? t007.toaster({ idPrefix: this.id, rootElement: this.videoContainer, ...this.settings.toasts }) : null;
+      return !this.settings.toasts.disabled ? t007.toaster({ groupId: this.id, rootElement: this.videoContainer, ...this.settings.toasts }) : null;
     }
     bindAllMethods() {
       tmg.bindAllMethods(this, (method) => {
@@ -2099,8 +2301,8 @@
         { option: "Custom Hue", value: "custom" },
         { option: "Video Derived", value: "auto" }
       ], gcolors = options.slice(0, -2).map((opt) => opt.value), defs = { brand: this.settings.css.brandColor ?? "#e26e02", theme: this.settings.css.themeColor ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] }, bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : defs.brand }), cBField = t007.field({ type: "color" }), tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : defs.theme }), cTField = t007.field({ type: "color" }), bWrapper = tmg.createEl("div"), tWrapper = tmg.createEl("div");
-      this.config.watch("settings.css.brandColor", (v = defs.brand) => (v = v.toLowerCase(), cBField.inputEl.value = v, cBField.style.setProperty("--input-color", v), bField.inputEl.value = !defs.bcolors.includes(v) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : v), { immediate: true });
-      this.config.watch("settings.css.themeColor", (v = defs.theme) => (v = v.toLowerCase(), cTField.inputEl.value = v, cTField.style.setProperty("--input-color", v), tField.inputEl.value = !defs.tcolors.includes(v) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : v), { immediate: true });
+      this.config.watch("settings.css.brandColor", (v = defs.brand) => (v = v.toLowerCase(), cBField.inputEl.value = v, cBField.style.setProperty("--input-color", v), bField.inputEl.value = !defs.bcolors.includes(v) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : v), { init: true });
+      this.config.watch("settings.css.themeColor", (v = defs.theme) => (v = v.toLowerCase(), cTField.inputEl.value = v, cTField.style.setProperty("--input-color", v), tField.inputEl.value = !defs.tcolors.includes(v) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : v), { init: true });
       this.queryDOM(".tmg-video-settings-bottom-panel").append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
       const id = { theme: "", brand: "" }, sync = (cb, req = true, type = "brand") => (this.settings.css.syncWithMedia[`${type}Color`] = req, cb(req)), assert = (opts, type = "brand") => this.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }), onBColorChange = ({ target: { value: val } }) => {
         this.throttle(
@@ -2253,12 +2455,8 @@
         prevnextnotifier: _batch(tmg.createEl("div", { className: "tmg-video-notifier tmg-video-prev-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-prev-icon"><rect x="4" y="5.14" width="2.5" height="14" transform="translate(2.1,0)"/><path d="M17,5.14V19.14L6,12.14L17,5.14Z" transform="translate(2.5,0)" /></svg>` }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-next-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-next-icon"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5,0)" /><rect x="19" y="5.14" width="2.5" height="14" transform="translate(-2.5,0)"/></svg>` })),
         captionsnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-captions-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-subtitles-icon"><path style="scale: 0.5;" d="M44,6H4A2,2,0,0,0,2,8V40a2,2,0,0,0,2,2H44a2,2,0,0,0,2-2V8A2,2,0,0,0,44,6ZM12,26h4a2,2,0,0,1,0,4H12a2,2,0,0,1,0-4ZM26,36H12a2,2,0,0,1,0-4H26a2,2,0,0,1,0,4Zm10,0H32a2,2,0,0,1,0-4h4a2,2,0,0,1,0,4Zm0-6H22a2,2,0,0,1,0-4H36a2,2,0,0,1,0,4Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-captions-icon" style="scale: 1.15;"><path d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z"></path></svg>` }),
         capturenotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-capture-notifier", innerHTML: `<svg viewBox="0 0 24 24" class="tmg-video-capture-icon"><path fill-rule="evenodd" d="M6.937 5.845c.07-.098.15-.219.25-.381l.295-.486C8.31 3.622 8.913 3 10 3h4c1.087 0 1.69.622 2.518 1.978l.295.486c.1.162.18.283.25.381q.071.098.12.155H20a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h2.816q.05-.057.121-.155M4 8a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-3c-.664 0-1.112-.364-1.56-.987a8 8 0 0 1-.329-.499c-.062-.1-.27-.445-.3-.492C14.36 5.282 14.088 5 14 5h-4c-.087 0-.36.282-.812 1.022-.029.047-.237.391-.3.492a8 8 0 0 1-.327.5C8.112 7.635 7.664 8 7 8zm15 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-7 7a5 5 0 1 1 0-10 5 5 0 0 1 0 10m0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>` }),
-        playbackratenotifier: _batch(
-          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" /></svg><p class="tmg-video-playback-rate-notifier-text"></p><svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" /></svg>` }),
-          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-notifier-content" }),
-          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-up-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5, 0)" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" transform="translate(-2.5, 0)" /></svg>` }),
-          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-down-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" transform="translate(2.5, 0)" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" transform="translate(2.5, 0)" /></svg>` })
-        ),
+        fastplaynotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-fast-play-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" /></svg><p class="tmg-video-fast-play-notifier-text"></p><svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" /></svg>` }),
+        playbackratenotifier: _batch(tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-notifier-content" }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-up-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5, 0)" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" transform="translate(-2.5, 0)" /></svg>` }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-down-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" transform="translate(2.5, 0)" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" transform="translate(2.5, 0)" /></svg>` })),
         volumenotifier: _batch(
           tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-notifier-content" }),
           tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-up-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-volume-up-notifier-icon" ><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg>` }),
@@ -2369,7 +2567,7 @@
         return cover.append(zone), { cover, zone };
       };
       const controlsContainer = this.queryDOM(".tmg-video-controls-container"), notifiersContainer = tmg.createEl("div", { className: "tmg-video-notifiers-container" }, { notify: "" });
-      notifiersContainer?.append(...[HTML.playpausenotifier, HTML.prevnextnotifier, HTML.captionsnotifier, HTML.capturenotifier, HTML.objectfitnotifier, HTML.playbackratenotifier, HTML.volumenotifier, HTML.brightnessnotifier, HTML.fwdnotifier, HTML.bwdnotifier, HTML.scrubnotifier, HTML.cancelscrubnotifier, HTML.touchtimelinenotifier, HTML.touchvolumenotifier, HTML.touchbrightnessnotifier].flat().filter(Boolean));
+      notifiersContainer?.append(...[HTML.playpausenotifier, HTML.prevnextnotifier, HTML.captionsnotifier, HTML.capturenotifier, HTML.objectfitnotifier, HTML.fastplaynotifier, HTML.playbackratenotifier, HTML.volumenotifier, HTML.brightnessnotifier, HTML.fwdnotifier, HTML.bwdnotifier, HTML.scrubnotifier, HTML.cancelscrubnotifier, HTML.touchtimelinenotifier, HTML.touchvolumenotifier, HTML.touchbrightnessnotifier].flat().filter(Boolean));
       this.zoneWs = { top: {}, center: {}, bottom: { 1: {}, 2: {}, 3: {} } }, this.cZoneWs = { top: {}, center: [], bottom: { 1: {}, 2: {}, 3: {} } };
       const topWrapper = tmg.createEl("div", { className: "tmg-video-top-controls-wrapper tmg-video-apt-controls-wrapper" }, { dropZone: "", dragId: "wrapper" });
       this.zoneWs.top.left = buildWSkel("left", false), this.zoneWs.top.center = buildWSkel("center", false), this.zoneWs.top.right = buildWSkel("right", true);
@@ -2390,9 +2588,9 @@
           fillSWrapper(topWrapper, [this.cZoneWs.top.left = getZoneW(t1.left, this.zoneWs.top.left), this.cZoneWs.top.center = getZoneW(t1.center, this.zoneWs.top.center), this.cZoneWs.top.right = getZoneW(t1.right, this.zoneWs.top.right)]);
           fillZone(this.cZoneWs.top.left, t1.left), fillZone(this.cZoneWs.top.center, t1.center), fillZone(this.cZoneWs.top.right, t1.right);
         },
-        { immediate: true }
+        { init: true }
       );
-      this.config.on("settings.controlPanel.center", ({ currentTarget: { value } }) => fillZone(this.cZoneWs.center, value), { immediate: true });
+      this.config.on("settings.controlPanel.center", ({ currentTarget: { value } }) => fillZone(this.cZoneWs.center, value), { init: true });
       this.config.on(
         "settings.controlPanel.bottom",
         ({ currentTarget: { value } }) => {
@@ -2402,14 +2600,14 @@
             fillZone(this.cZoneWs.bottom[i].left, bn.left), fillZone(this.cZoneWs.bottom[i].center, bn.center), fillZone(this.cZoneWs.bottom[i].right, bn.right);
           });
         },
-        { immediate: true }
+        { init: true }
       );
       this.retrieveDOM();
-      ["settings.controlPanel.title", "settings.controlPanel.artist", "settings.controlPanel.profile"].forEach((e) => this.config.on(e, ({ target: { key, value } }) => value !== true && (this.DOM[`video${tmg.capitalize(key)}`][key === "profile" ? "src" : "textContent"] = this.DOM[`video${tmg.capitalize(key)}`].dataset["video" + tmg.capitalize(key)] = value || ""), { immediate: true }));
-      this.config.on("settings.controlPanel.buffer", ({ value }) => this.videoContainer.dataset.buffer = value, { immediate: true });
-      this.config.on("settings.controlPanel.timeline.thumbIndicator", ({ value }) => this.videoContainer.dataset.thumbIndicator = value, { immediate: true });
-      this.config.on("settings.controlPanel.progressBar", ({ value }) => this.videoContainer.classList.toggle("tmg-video-progress-bar", value), { immediate: true });
-      this.config.on("settings.controlPanel.draggable", ({ value }) => this.setDragEventListeners(value ? "add" : "remove"), { immediate: true });
+      ["settings.controlPanel.title", "settings.controlPanel.artist", "settings.controlPanel.profile"].forEach((e) => this.config.on(e, ({ target: { key, value } }) => value !== true && (this.DOM[`video${tmg.capitalize(key)}`][key === "profile" ? "src" : "textContent"] = this.DOM[`video${tmg.capitalize(key)}`].dataset["video" + tmg.capitalize(key)] = value || ""), { init: true }));
+      this.config.on("settings.controlPanel.buffer", ({ value }) => this.videoContainer.dataset.buffer = value, { init: true });
+      this.config.on("settings.controlPanel.timeline.thumbIndicator", ({ value }) => this.videoContainer.dataset.thumbIndicator = value, { init: true });
+      this.config.on("settings.controlPanel.progressBar", ({ value }) => this.videoContainer.classList.toggle("tmg-video-progress-bar", value), { init: true });
+      this.config.on("settings.controlPanel.draggable", ({ value }) => this.setDragEventListeners(value ? "add" : "remove"), { init: true });
     }
     getUIZoneWCoord(target, zoneW = false) {
       let key;
@@ -2448,8 +2646,8 @@
         thumbnailCanvas: this.queryDOM("canvas.tmg-video-thumbnail"),
         videoBuffer: this.queryDOM(".tmg-video-buffer"),
         notifiersContainer: this.queryDOM(".tmg-video-notifiers-container"),
-        playbackRateNotifier: this.queryDOM(".tmg-video-playback-rate-notifier"),
-        playbackRateNotifierText: this.queryDOM(".tmg-video-playback-rate-notifier-text"),
+        fastPlayNotifier: this.queryDOM(".tmg-video-fast-play-notifier"),
+        fastPlayNotifierText: this.queryDOM(".tmg-video-fast-play-notifier-text"),
         playbackRateNotifierContent: this.queryDOM(".tmg-video-playback-rate-notifier-content"),
         volumeNotifierContent: this.queryDOM(".tmg-video-volume-notifier-content"),
         brightnessNotifierContent: this.queryDOM(".tmg-video-brightness-notifier-content"),
@@ -2535,7 +2733,7 @@
           this.DOM.controlsContainer.addEventListener("click", this._handleLightStateClick);
         }
       });
-      this.config.on("lightState.controls", () => this.queryDOM("[data-control-id]", false, true).forEach((c) => c.dataset.lightControl = this.isLight(c.dataset.controlId) ? "true" : "false"), { immediate: true });
+      this.config.on("lightState.controls", () => this.queryDOM("[data-control-id]", false, true).forEach((c) => c.dataset.lightControl = this.isLight(c.dataset.controlId) ? "true" : "false"), { init: true });
       this.config.on("lightState.preview.usePoster", ({ target: { value, object }, root }) => !root.lightState.disabled && (!value || !this.video.poster) && (this.settings.time.value = object.time));
       this.config.on("lightState.preview.time", ({ target: { object }, root }) => !root.lightState.disabled && (!object.usePoster || !this.video.poster) && (this.settings.time.value = object.time));
     }
@@ -3090,7 +3288,7 @@
     }
     plugTimeSettings() {
       this.config.get("settings.time.value", () => tmg.safeNum(this.video.currentTime));
-      this.config.watch("settings.time.value", (value) => this.video.currentTime = tmg.safeNum(tmg.clamp(this.settings.time.min, value, this.settings.time.max)), { immediate: "auto" });
+      this.config.watch("settings.time.value", (value) => this.video.currentTime = tmg.safeNum(tmg.clamp(this.settings.time.min, value, this.settings.time.max)), { init: "auto" });
       this.config.set("settings.time.previews", (value, _, { target: { oldValue } }) => tmg.isObj(value) && tmg.isObj(oldValue) ? tmg.mergeObjs(oldValue, value) : value);
       this.config.on(
         "settings.time.previews",
@@ -3106,7 +3304,7 @@
           this.previewContext ??= this.DOM.previewCanvas?.getContext("2d"), this.thumbnailContext ??= this.DOM.thumbnailCanvas?.getContext("2d");
           !this.loaded && (this.setCanvasFallback(this.DOM.previewCanvas, this.previewContext), this.setCanvasFallback(this.DOM.thumbnailCanvas, this.thumbnailContext), this.pseudoVideo.ontimeupdate = null);
         },
-        { immediate: true }
+        { init: true }
       );
       this.config.on("settings.css.currentThumbnailWidth", ({ value }) => this.DOM.thumbnailCanvas.width = parseFloat(value));
       this.config.on("settings.css.currentThumbnailHeight", ({ value }) => this.DOM.thumbnailCanvas.height = parseFloat(value));
@@ -3218,7 +3416,7 @@
       this.video.paused && this._handleTimeUpdateLoop(false, t.vc, t.s);
       if (t.c < t.s.time.min || t.c > t.s.time.max) this.settings.time.value = t.s.time.loop ? t.s.time.min : t.c, !t.s.time.loop && this.togglePlay(false);
       this.DOM.currentTimeElement.textContent = this.toTimeText(t.vc, true);
-      if (this.speedCheck && !this.video.paused) this.DOM.playbackRateNotifier?.setAttribute("data-current-time", this.toTimeText(t.vc, true));
+      if (this.speedCheck && !this.video.paused) this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(t.vc, true));
       if (this.video.readyState && t.c && this.readyState > 1) {
         if (Math.floor((t.s.time.end ?? t.d) - t.c) <= t.s.auto.next) this.autonextVideo();
         t.s.time.start = t.c > 3 && t.c < (t.s.time.end ?? t.d) - 3 ? t.c : this.actualTimeStart;
@@ -3317,26 +3515,26 @@
     }
     _handlePlaybackRateChange() {
       this.DOM.playbackRateNotifierContent.textContent = `${this.settings.playbackRate.value}x`;
-      this.DOM.playbackRateNotifierText.textContent = `${this.settings.playbackRate.value}x`;
+      this.DOM.fastPlayNotifierText.textContent = `${this.settings.playbackRate.value}x`;
       this.setControlsState("playbackrate");
     }
     fastPlay(pos) {
       if (this.speedCheck) return;
       this.speedCheck = true;
       this.wasPaused = this.video.paused, this.lastPlaybackRate = this.settings.playbackRate.value;
-      this.DOM.playbackRateNotifier?.classList.add("tmg-video-control-active");
+      this.DOM.fastPlayNotifier?.classList.add("tmg-video-control-active");
       setTimeout(pos === "backwards" && this.settings.fastPlay.rewind ? this.rewind : this.fastForward, 0);
     }
     fastForward(rate = this.settings.fastPlay.playbackRate) {
       this.settings.playbackRate.value = rate;
-      this.DOM.playbackRateNotifier?.classList.remove("tmg-video-rewind");
-      this.DOM.playbackRateNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
+      this.DOM.fastPlayNotifier?.classList.remove("tmg-video-rewind");
+      this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
       this.togglePlay(true);
     }
     rewind(rate = this.settings.fastPlay.playbackRate) {
       this.settings.playbackRate.value = 1, this.rewindPlaybackRate = rate;
-      this.DOM.playbackRateNotifierText.textContent = `${rate}x`;
-      this.DOM.playbackRateNotifier?.classList.add("tmg-video-rewind");
+      this.DOM.fastPlayNotifierText.textContent = `${rate}x`;
+      this.DOM.fastPlayNotifier?.classList.add("tmg-video-rewind");
       this.video.addEventListener("play", this.rewindReset);
       this.speedIntervalId = setInterval(this.rewindVideo, this.pframeDelay - 20);
     }
@@ -3344,7 +3542,7 @@
       !this.video.paused && this.togglePlay(false);
       this.settings.time.value -= this.rewindPlaybackRate / this.pfps;
       this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = tmg.safeNum(this.video.currentTime / this.video.duration);
-      this.DOM.playbackRateNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
+      this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
     }
     rewindReset() {
       if (this.speedIntervalId) {
@@ -3361,7 +3559,7 @@
       this.settings.playbackRate.value = this.lastPlaybackRate, this.rewindPlaybackRate = 0;
       this.togglePlay(this.settings.fastPlay.reset ? !this.wasPaused : true);
       this.removeOverlay();
-      this.DOM.playbackRateNotifier?.classList.remove("tmg-video-control-active", "tmg-video-rewind");
+      this.DOM.fastPlayNotifier?.classList.remove("tmg-video-control-active", "tmg-video-rewind");
     }
     setCaptionsState() {
       this.textTrackIndex = 0;
@@ -4137,7 +4335,7 @@
       return terms;
     }
     keyEventAllowed(e) {
-      if (this.settings.keys.disabled || (e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable='true']")) return false;
+      if (this.settings.keys.disabled || (e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable]")) return false;
       const combo = tmg.stringifyKeyEvent(e), { override, block, action, allowed } = this.getTermsForKey(combo);
       if (block) return false;
       if (override) e.preventDefault();
@@ -4419,15 +4617,15 @@
     PersistModule,
     IndexedDBAdapter,
     TimeTravelModule,
-    TimeTravelOverlay,
+    TimeTravelConsole,
     async timeTravel() {
-      await tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-overlay.min.css`);
+      await tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
       for (let i = 0, n = 0, len = tmg.Controllers.length; i < len; i++) {
         const con = tmg.Controllers[i];
         if (con.config.__Reactor__.modules?.has(window[`TTM${n + 1}`])) continue;
         con.config.use(window[`TTM${++n}`] = new TimeTravelModule({ blacklist: ["settings.css.syncWithMedia"] }));
-        window[`TTO${n}`] = new TimeTravelOverlay(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
-        con.config.watch("settings.css.brandColor", (v) => window[`TTO${n}`].config.color = v, { immediate: true });
+        window[`TTO${n}`] = new TimeTravelConsole(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
+        con.config.watch("settings.css.brandColor", (v) => window[`TTO${n}`].config.color = v, { init: true });
       }
     },
     breath: (w = window) => new Promise((res) => w.requestAnimationFrame(res)),
@@ -4678,6 +4876,7 @@
     },
     setPath,
     getPath,
+    fanout,
     bindAllMethods,
     reactive,
     TERMINATOR,
@@ -4846,9 +5045,9 @@
       }
       add = (task, id, cancelled, preTask) => new Promise((resolve) => (this.jobs.push({ task, id, preTask, cancelled, resolve }), this._handle()));
       drop(id) {
-        const job = this.jobs.find((j) => j.id === id);
-        job?.resolve({ success: false, cancelled: true, dropped: true });
-        return job && this.jobs.splice(this.jobs.indexOf(job), 1), !!job;
+        const idx = this.jobs.findIndex((j) => j.id === id);
+        this.jobs[idx]?.resolve({ success: false, cancelled: true, dropped: true });
+        return idx !== -1 && this.jobs.splice(idx, 1), !!~idx;
       }
       cancel(id) {
         const job = this.jobs.find((j) => j.id === id);

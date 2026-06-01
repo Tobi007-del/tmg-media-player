@@ -1,12 +1,14 @@
-import { Controller } from "../core/controller";
+import { Controller } from "@core/controller";
 import { Controllers } from "./runtime";
-import { loadResource, isIter, setHTMLConfig, isObj, luid } from "../utils";
-import { CONFIG_BUILD } from "../consts";
-import { PLAYLIST_ITEM_BUILD } from "../plugs";
-import type { CtlrConfig } from "../types/config";
+import { loadResource } from "@utils/dom";
+import { isIter, isObj, setHTMLConfig } from "@utils/obj";
+import { luid } from "@utils/str";
+import { CONFIG_BUILD } from "@consts/config";
+import { PLAYLIST_ITEM_BUILD } from "@plugs/main/playlist/build";
+import type { CtlrConfig } from "@defs/config";
 import { DeepPartial, Paths, PathValue } from "sia-reactor";
 import { mergeObjs, parsePathObj } from "sia-reactor/utils";
-import { MediaType } from "../types/generics";
+import { MediaType } from "@defs/generics";
 
 export type BuildParam = DeepPartial<CtlrConfig> & Record<Paths<CtlrConfig>, PathValue<CtlrConfig>>;
 
@@ -18,24 +20,22 @@ export class Player {
   public get Controller() {
     return this.controller;
   }
-
-  constructor(customBuild: BuildParam = {} as BuildParam) {
-    this.configure({ ...customBuild, id: customBuild.id ?? `${luid()}_Controller_${Controllers.length + 1}` });
-  }
-
   public get build(): CtlrConfig {
     return this._build;
   }
-  public set build(customBuild: BuildParam) {
-    this.configure(customBuild);
-  }
-  private queryBuild(): boolean {
-    return (!this.active ? true : this.notice({ error: "Already deployed the custom controls of your build configuration", tip: "Consider setting your build configuration before attaching your media element" }), false);
+  public set build(build: BuildParam) {
+    this.configure(build);
   }
 
-  public configure(customBuild: BuildParam): void {
-    if (!this.queryBuild() || !isObj(customBuild)) return;
-    this._build = mergeObjs(this._build, parsePathObj(customBuild));
+  constructor(build: BuildParam = {} as BuildParam) {
+    this.configure({ ...build, id: build.id ?? `${luid()}_Controller_${Controllers.length + 1}` });
+  }
+
+  private queryBuild(): boolean {
+    return !this.active ? true : (this.notice({ error: "Already deployed the custom controls of your build configuration", tip: "Consider setting your build configuration before attaching your media element" }), false);
+  }
+  public configure(build: BuildParam): void {
+    if (this.queryBuild() && isObj(build)) this._build = mergeObjs(this._build, parsePathObj(build));
   }
 
   public async attach(medium: HTMLMediaElement) {
@@ -45,8 +45,8 @@ export class Player {
     Controllers.push(this._build.id as any); // dummy for liveness
     medium.tmgPlayer = this;
     this.medium = medium;
-    (await this.fetchOptions(), await this.deployController());
-    return (this.controller?.fire("tmgattached", this.controller.payload), medium);
+    await this.fetchOptions(), await this.deployController();
+    return this.controller?.fire("tmgattached", this.controller.payload), medium;
   }
   public detach() {
     if (!this.active) return;
@@ -54,8 +54,8 @@ export class Player {
     this.controller && Controllers.splice(Controllers.indexOf(this.controller), 1);
     medium.classList?.remove(`tmg-${this._build.mediaType}`, "tmg-media", "tmg-host");
     medium.tmgcontrols = this.active = false;
-    this.controller?.fire("tmgdetached", this.controller.payload);
-    return ((medium.tmgPlayer = this.controller = this.medium = null), medium);
+    // this.controller?.fire("tmgdetached", this.controller.payload);
+    return (medium.tmgPlayer = this.controller = this.medium = null), medium;
   }
 
   public async fetchOptions() {
@@ -69,11 +69,11 @@ export class Player {
         .then((json) => this.configure(json))
         .catch(({ message }) => this.notice({ error: message, tip: "A valid JSON file is required for parsing your build configuration" }));
     }
-    const customBuild = {} as BuildParam,
+    const build = {} as BuildParam,
       attributes = this.medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
-    attributes?.forEach((attr) => setHTMLConfig<BuildParam>(customBuild, attr as `tmg--${Paths<CtlrConfig, "--">}`, this.medium!.getAttribute(attr)!));
+    attributes?.forEach((attr) => setHTMLConfig<BuildParam>(build, attr as `tmg--${Paths<CtlrConfig, "--">}`, this.medium!.getAttribute(attr)!));
     if (this.medium instanceof HTMLVideoElement && this.medium.poster) this.configure({ "media.artwork[0].src": this.medium.poster } as any);
-    this.configure(customBuild);
+    this.configure(build);
   }
 
   private async deployController() {
@@ -84,11 +84,18 @@ export class Player {
     this.medium.controls = false;
     this.medium.tmgcontrols = this.active = true;
     this.medium.classList.add(`tmg-${this._build.mediaType}`, "tmg-media", "tmg-host");
-    await Promise.all([loadResource(window.TMG_VIDEO_CSS_SRC!), loadResource(window.T007_TOAST_JS_SRC!, "script", { module: true }), loadResource(window.T007_INPUT_JS_SRC!, "script")]);
+    await Promise.all([loadResource(window.TMG_MEDIA_CSS_SRC!), loadResource(window.T007_TOAST_JS_SRC!, "script", { module: true }), loadResource(window.T007_INPUT_JS_SRC!, "script")]); // await
+    console.time(`TMG Controller ${Controllers.indexOf(this._build.id as any) + 1} INIT`);
     Controllers[Controllers.indexOf(this._build.id as any)] = this.controller = new Controller(this.medium, this._build);
+    console.timeEnd(`TMG Controller ${Controllers.indexOf(this.controller) + 1} INIT`);
   }
 
   private notice({ error, warning, tip }: Partial<Record<"error" | "warning" | "tip", string>>): void {
-    (error && console.error(`[TMG Player] ${error}`), warning && console.warn(`[TMG Player] ${warning}`), tip && console.info(`[TMG Player] ${tip}`));
+    error && console.error(`[TMG Player] ${error}`), warning && console.warn(`[TMG Player] ${warning}`), tip && console.info(`[TMG Player] ${tip}`);
   }
+}
+
+export function getCtlrIndex(ctlr: Controller): number {
+  const i = Controllers.indexOf(ctlr.config.id as any);
+  return i === -1 ? Controllers.indexOf(ctlr) : i; // a magician never reveals his tricks :)
 }

@@ -1,6 +1,9 @@
 import { Player } from "./player";
-import { type Controller } from "../core/controller";
-import { setTimeout, queryFullscreen, observeMutation, type Dimensions } from "../utils";
+import { type Controller } from "@core/controller";
+import { type Dimensions } from "@defs/generics";
+import { setTimeout } from "@utils/fn";
+import { queryFullscreen, observeMutation } from "@utils/dom";
+const win = "undefined" !== typeof window ? window : undefined;
 
 // Defines states explicitly managed by the TMG Environment Observers
 export interface CtlrState {
@@ -9,21 +12,20 @@ export interface CtlrState {
   mediaIntersecting: boolean;
   mediaParentIntersecting: boolean;
   dimensions: { container: Dimensions & { tier: string }; pseudoContainer: Dimensions & { tier: string }; window: Dimensions };
-  screenOrientation: ScreenOrientation;
+  screenOrientation: { type: string; angle: number };
   docVisibilityState: DocumentVisibilityState;
   docInFullscreen: boolean;
   frameReadyPromise?: Promise<null> | null;
 }
 
 // --- GLOBAL STATE ---
-export const win = "undefined" !== typeof window ? window : undefined;
 const flagMutationSet = new WeakSet<HTMLElement>(); // weak set for true magic
 let flagMutationId: number | undefined;
 // --- EXPORTS ---
 export let AUDIO_CONTEXT: AudioContext | null = null;
 export let AUDIO_LIMITER: DynamicsCompressorNode | null = null;
 export let IS_DOC_TRANSIENT = false;
-export const STATE_BUILD: CtlrState = { readyState: 0, audioContextReady: !!AUDIO_CONTEXT, mediaIntersecting: true, mediaParentIntersecting: true, dimensions: { container: { width: 0, height: 0, tier: "x" }, pseudoContainer: { width: 0, height: 0, tier: "x" }, window: { width: win?.innerWidth!, height: win?.innerHeight! } }, screenOrientation: win?.screen.orientation!, docVisibilityState: win?.document.visibilityState!, docInFullscreen: queryFullscreen() };
+export const STATE_BUILD: CtlrState = { readyState: 0, audioContextReady: !!AUDIO_CONTEXT, mediaIntersecting: true, mediaParentIntersecting: true, dimensions: { container: { width: 0, height: 0, tier: "x" }, pseudoContainer: { width: 0, height: 0, tier: "x" }, window: { width: win?.innerWidth!, height: win?.innerHeight! } }, screenOrientation: { type: win?.screen.orientation.type!, angle: win?.screen.orientation.angle! }, docVisibilityState: win?.document.visibilityState!, docInFullscreen: queryFullscreen() };
 export const Controllers: Controller[] = [];
 
 export function handleVidMutation(mutations: MutationRecord[]): void {
@@ -122,8 +124,8 @@ export function init(): void {
     medium.tmgcontrols = medium.hasAttribute("tmgcontrols");
   });
   observeMutation(document.documentElement, handleDOMMutation, { childList: true, subtree: true });
-  win!.addEventListener("resize", () => Controllers.forEach((c) => c.state && (c.state.dimensions.window = { width: win!.innerWidth, height: win!.innerHeight })));
-  screen.orientation.addEventListener("change", (e) => Controllers.forEach((c) => c.state && (c.state.screenOrientation = e?.target as ScreenOrientation)));
+  win!.addEventListener("resize", () => Controllers.forEach((c) => c.state && ((c.state.dimensions.window.width = win!.innerWidth), (c.state.dimensions.window.height = win!.innerHeight))));
+  screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => Controllers.forEach((c) => c.state && ((c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle))));
   document.addEventListener("visibilitychange", () => Controllers.forEach((c) => c.state && (c.state.docVisibilityState = document.visibilityState)));
   ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"].forEach((e) => document.addEventListener(e, () => Controllers.forEach((c) => (c.state.docInFullscreen = queryFullscreen()))));
 }

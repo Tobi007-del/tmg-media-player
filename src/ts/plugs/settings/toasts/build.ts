@@ -1,9 +1,9 @@
-import { IS_MOBILE } from "../../../utils";
+import { IS_MOBILE } from "@utils/browser";
 import { Toasts } from "./types";
 
 export const TOASTS_BUILD = {
   disabled: false,
-  maxToasts: 7,
+  limit: 7,
   position: "bottom-left",
   hideProgressBar: true,
   closeButton: !IS_MOBILE,

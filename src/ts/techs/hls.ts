@@ -1,9 +1,12 @@
 import { HTML5Tech } from "./html5";
-import type { Controller } from "../core/controller";
-import type { BaseTechConfig } from ".";
-import type { CtlrMedia } from "../types/contract";
+import type { Controller } from "@core/controller";
+import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import type { REvent } from "sia-reactor";
-import { HLS_EXTENSIONS, isNum, isSameURL, loadResource, TrackType } from "../utils";
+import { HLS_EXTENSIONS } from "@utils/matcher";
+import { isNum } from "@utils/obj";
+import { isSameURL } from "@utils/str";
+import { loadResource } from "@utils/dom";
+import type { TrackType } from "@utils/media";
 import type Hls from "hls.js";
 
 export class HLSTech extends HTML5Tech {
@@ -12,9 +15,14 @@ export class HLSTech extends HTML5Tech {
   public static override canPlaySource(src: string): boolean {
     return HLS_EXTENSIONS.test(src);
   }
-  constructor(ctlr: Controller, config: BaseTechConfig) {
-    super(ctlr, config);
-    this.features.currentAudioTrack = this.features.currentLevel = this.features.autoLevel = this.features.bandwidth = this.features.audioTracks = true;
+  constructor(ctlr: Controller, features?: MediaFeatures) {
+    // prettier-ignore
+    super(ctlr, {
+      // States & Currents (HLS.js specific)
+      autoLevel: true, currentLevel: true, currentAudioTrack: true, 
+      // Status & Lists
+      bandwidth: true, levels: true, audioTracks: true, ...features
+    });
   }
   // --- API Injection ---
   protected async initHls(src: string = "") {
@@ -60,14 +68,14 @@ export class HLSTech extends HTML5Tech {
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
     if (type === "Video" || _type === "video") return super.wireCurrentTrack(type); // HLS.js doesn't support video tracks
     this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : this.hls?.[`${_type === "text" ? "subtitle" : _type}Tracks`]?.findIndex((t) => t.id === term || t.name === term || t.lang === term) ?? -1), { signal: this.signal });
-    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHlsTrackIntent(e, _type), this.eOpts.REACTOR); // State sync: driven by AUDIO_TRACK_SWITCHED in initHls, not native audioTracks change event
+    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHlsTrackIntent(e, _type), this.evtOpts.CONFIG); // State sync: driven by AUDIO_TRACK_SWITCHED in initHls, not native audioTracks change event
   }
   protected wireCurrentLevel(): void {
-    this.config.set("intent.currentLevel", (v) => (isNum(v) ? v : Number(v)), { signal: this.signal });
-    this.config.on("intent.currentLevel", this.handleCurrentLevelIntent, this.eOpts.REACTOR);
+    this.config.set("intent.currentLevel", (v) => (isNum(v) ? v : Number(v)), { signal: this.signal }); // #VALIDATOR: rules enforcement
+    this.config.on("intent.currentLevel", this.handleCurrentLevelIntent, this.evtOpts.CONFIG);
   }
   protected wireAutoLevel(): void {
-    this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.eOpts.REACTOR);
+    this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
   protected override wireActiveCue(): void {
     super.wireActiveCue(false); // HLS.js dynamically injects tracks into the DOM, so the HLS index and DOM index don't match.
@@ -104,5 +112,11 @@ export class HLSTech extends HTML5Tech {
   }
   protected override onDestroy(): void {
     this.destroyHls(), super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface TechRegistryMap {
+    hls: typeof HLSTech;
   }
 }

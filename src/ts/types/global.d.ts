@@ -1,5 +1,5 @@
-import { Player } from "../tools/player";
-import * as TMGGlobal from "../../api";
+import { Player } from "@tools/player";
+import * as TMGGlobal from "../../index";
 import * as _ from "@t007/toast";
 import * as __ from "@t007/input";
 import * as ___ from "@t007/dialog";
@@ -26,9 +26,9 @@ declare global {
   interface Window {
     /** Shared TMG namespace. */
     tmg: TMGNamespace;
-    TMG_VIDEO_ALT_IMG_SRC?: string;
+    TMG_MEDIA_ALT_IMG_SRC?: string;
     /** CDN stylesheet for `tmg-media-player`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
-    TMG_VIDEO_CSS_SRC?: string | symbol;
+    TMG_MEDIA_CSS_SRC?: string | symbol;
     /** CDN js entrypoint for `hls.js`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
     TMG_HLS_JS_SRC?: string | symbol;
     /** CDN js entrypoint for `dashjs`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */

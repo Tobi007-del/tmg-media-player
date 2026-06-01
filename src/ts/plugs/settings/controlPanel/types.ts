@@ -1,5 +1,5 @@
-import { TimelineConfig } from "../../../components";
-import { CONTROLS, BIG_CONTROLS } from "../../../consts";
+import type { TimelineConfig } from "@components/controls/timeline/types";
+import { CONTROLS, BIG_CONTROLS } from "@consts/generics";
 import { ROWS_ARR } from "./build";
 
 export interface ControlPanel {
@@ -26,18 +26,18 @@ export type ControlPanelBottomTuple = Record<Row, AnyControl[]>;
 export type ControlPanelDraggable = ("" | "big" | "wrapper")[] | boolean;
 
 export type Row = (typeof ROWS_ARR)[number];
-export interface ZoneW {
-  cover?: HTMLElement;
+export interface PanelShell {
+  cover: HTMLElement;
   zone: HTMLElement;
 }
-export type ZoneSlot = ZoneW | HTMLElement;
-export interface ControlPanelZoneWs {
-  top: Record<"left" | "center" | "right", ZoneW>;
-  center: ZoneW;
-  bottom: Record<Row, Record<"left" | "center" | "right", ZoneW>>;
+export type PanelSlot = PanelShell | HTMLElement;
+export interface ControlPanelShells {
+  top: Record<"left" | "center" | "right", PanelShell>;
+  center: PanelShell;
+  bottom: Record<Row, Record<"left" | "center" | "right", PanelShell>>;
 }
-export interface ControlPanelCurrentZoneWs {
-  top: Record<"left" | "center" | "right", ZoneSlot>;
-  center: ZoneSlot;
-  bottom: Record<Row, Record<"left" | "center" | "right", ZoneSlot>>;
+export interface ControlPanelSlots {
+  top: Record<"left" | "center" | "right", PanelSlot>;
+  center: PanelSlot;
+  bottom: Record<Row, Record<"left" | "center" | "right", PanelSlot>>;
 }

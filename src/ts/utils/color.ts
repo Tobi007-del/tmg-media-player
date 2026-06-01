@@ -1,4 +1,6 @@
-import { isStr, createEl, clamp } from ".";
+import { isStr } from "@t007/utils";
+import { createEl } from "@utils/dom";
+import { clamp } from "@utils/num";
 
 // Types
 type RGB = [number, number, number];

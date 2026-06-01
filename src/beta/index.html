@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -9,15 +9,7 @@
       html {
         scroll-behavior: smooth;
         background-color: rgb(10, 10, 10);
-        font-family:
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          Roboto,
-          "Helvetica Neue",
-          Arial,
-          sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         --tmg-video-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
       body {
@@ -34,14 +26,19 @@
         text-align: center;
       }
     </style>
-    <link rel="stylesheet" href="index-video.css" />
-    <script src="index.js" defer></script>
+    <!-- <link rel="stylesheet" href="index-video.css" /> -->
+    <!-- <script src="index.js" defer></script> -->
+    <script>
+      window.TMG_MEDIA_ALT_IMG_SRC = "/assets/icons/movie-tape.png";
+      window.TMG_MEDIA_CSS_SRC = window.T007_INPUT_JS_SRC = window.T007_INPUT_CSS_SRC = window.T007_TOAST_JS_SRC = window.T007_TOAST_CSS_SRC = window.T007_DIALOG_JS_SRC = window.T007_DIALOG_CSS_SRC = Symbol.for("T007_VIRTUAL_RESOURCE");
+    </script>
+    <script type="module" src="../ts/super.ts"></script>
     <script src="Test.js" defer></script>
   </head>
   <body>
     <div class="container">
       <h2>Single Media</h2>
-      <video poster="../../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--title="Justice League Teaser" tmg--settings--time--previews--address="../../assets/images/previews/preview$.jpg" tmg--settings--time--previews--spf="10" tmg--settings--overlay--behavior="persistent" class="tmg-media">
+      <video poster="../../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--title="Justice League Teaser" tmg--settings--control-panel--timeline--previews--address="../../assets/images/previews/preview$.jpg" tmg--settings--control-panel--timeline--previews--spf="10" tmg--settings--overlay--behavior="persistent" class="tmg-media">
         <!-- <track default kind="captions" src="../assets/subtitles/test-captions-ultimate.vtt" /> -->
         <track kind="subtitles" srclang="en" src="../../assets/subtitles/justice_league_preview.vtt" label="English" />
       </video>
@@ -50,11 +47,11 @@
       <h2>Media Playlist</h2>
       <video muted type="video/mp4" tmg--media--artist="TMG Media Prototype" tmg--media--profile="../../assets/icons/tmg-icon.jpeg" tmg--media--links--artist="../" tmg--media--links--profile="https://github.com/Tobi007-del/tmg-media-player" tmg--settings--overlay--behavior="persistent" class="tmg-media"></video>
     </div>
-    <button type="button" id="beta-time-travel" onclick="__betaTimeTravel()" style="position: fixed; bottom: 0; right: 0; z-index: 9999">Time travel?</button>
+    <!-- <button type="button" id="beta-time-travel" onclick="__betaTimeTravel()" style="position: fixed; bottom: 0; right: 0; z-index: 9999">Time travel?</button>
     <script>
       function __betaTimeTravel() {
         window.tmg?.Controllers?.length && (window.tmg.timeTravel(), document.getElementById("beta-time-travel")?.remove());
       }
-    </script>
+    </script> -->
   </body>
 </html>

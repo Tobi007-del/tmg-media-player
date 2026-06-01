@@ -1,7 +1,9 @@
 import { Controller } from "./controller";
 import { type Reactive, reactive } from "sia-reactor";
 import { nuke } from "sia-reactor/utils";
-import { guardAllMethods, isObj } from "../utils";
+import { guardAllMethods } from "@utils/methd";
+import { isObj } from "@utils/obj";
+import { isFunc } from "@t007/utils";
 
 // A lifecylce controlled by it's Controller
 // Try to use methods for most things so they can be customized when extended and also auto guarded
@@ -31,7 +33,7 @@ export abstract class Controllable<Config = any, State = any> {
 
   public destroy(): void {
     !this.signal.aborted && this.ac.abort(`[TMG Controllable] Instance is being destroyed`); // incase controller already aborted, kills all listeners and timers before proper destruction below
-    this.onDestroy(), ((this.state as any)?.destroy?.(), (this.config as any)?.destroy?.()); // Can I clean here?... Anatoly :)
+    this.onDestroy(), (this.state as any)?.destroy?.(), isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
     nuke(this);
   }
   protected onDestroy(): void {}

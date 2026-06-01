@@ -1,7 +1,7 @@
 import { Paths } from "sia-reactor";
-import { TimelineConfig } from "../../../components";
-import { CtlrConfig } from "../../../types/config";
-import { OptRange } from "../../../types/generics";
+import type { TimelineConfig } from "@components/controls/timeline/types";
+import { CtlrConfig } from "@defs/config";
+import { OptRange } from "@defs/generics";
 
 export interface CTime extends OptRange {
   mode: "elapsed" | "remaining";

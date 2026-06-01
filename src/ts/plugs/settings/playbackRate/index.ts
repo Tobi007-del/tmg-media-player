@@ -1,73 +1,78 @@
-import { BasePlug, type KeysPlug, type KeyMod, PlaybackRate, PLAYBACK_RATE_BUILD } from "../..";
+﻿import { BasePlug } from "../../base";
+import type { KeyMod } from "../keys";
+import type { PlaybackRate } from "./types";
+import { PLAYBACK_RATE_BUILD } from "./build";
 import type { REvent } from "sia-reactor";
-import { CtlrConfig } from "../../../types/config";
-import type { CtlrMedia } from "../../../types/contract";
-import { clamp, rotateAny } from "../../../utils";
+import { CtlrConfig } from "@defs/config";
+import type { CtlrMedia } from "@defs/contract";
+import { clamp, rotateAny } from "@utils/num";
 
 export class PlaybackRatePlug extends BasePlug<PlaybackRate> {
-  public static readonly plugName: string = "playbackRate";
+  public static readonly plugName = "playbackRate";
   public static readonly BUILD = PLAYBACK_RATE_BUILD;
 
   public override wire(): void {
-    // Ctlr Config Getters
-    this.ctlr.config.get("settings.playbackRate.value", () => this.media.state.playbackRate, { signal: this.signal, lazy: true }); // #VIRTUAL: reliable return value
-    // ---- Media Setters
-    this.media.set("intent.playbackRate", (value) => clamp(this.config.min, value!, this.config.max), { signal: this.signal });
-    // ---- Config Watchers
-    this.ctlr.config.watch("settings.playbackRate.value", this.forwardPlaybackRate, { signal: this.signal, immediate: "auto" });
+    // Ctlr Media Setters
+    this.media.set("intent.playbackRate", (value) => clamp(this.config.min, value!, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // ---- Media Listeners
-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { signal: this.signal });
+    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.playbackRate.min", this.handleMin, { signal: this.signal });
-    this.ctlr.config.on("settings.playbackRate.max", this.handleMax, { signal: this.signal });
+    this.ctlr.config.on("settings.playbackRate.min", this.handleMin, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.playbackRate.max", this.handleMax, { init: true, signal: this.signal });
     // Post Wiring
-    const keys = this.ctlr.plug<KeysPlug>("keys");
+    const keys = this.ctlr.plug("settings.keys");
     keys?.register("playbackRateUp", this.handleKeyRateUp, { phase: "keydown" });
     keys?.register("playbackRateDown", this.handleKeyRateDown, { phase: "keydown" });
   }
 
-  protected forwardPlaybackRate(value?: number): void {
-    this.media.intent.playbackRate = value!;
-  }
-
   protected handleMin({ value: min }: REvent<CtlrConfig, "settings.playbackRate.min">): void {
-    if (this.config.value! < min) this.config.value = min;
+    if (this.media.state.playbackRate < min) this.media.intent.playbackRate = min;
   }
 
   protected handleMax({ value: max }: REvent<CtlrConfig, "settings.playbackRate.max">): void {
-    if (this.config.value! > max) this.config.value = max;
+    if (this.media.state.playbackRate > max) this.media.intent.playbackRate = max;
   }
 
   protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {
-    // JS: this.DOM.playbackRateNotifierContent.textContent = `${this.settings.playbackRate.value}x`;
-    // JS: this.DOM.playbackRateNotifierText.textContent = `${this.settings.playbackRate.value}x`;
-    // JS: this.setControlsState("playbackrate");
+    this.media.settings.defaultPlaybackRate = value; // UX boost
   }
 
   protected handleKeyRateUp(_: KeyboardEvent, mod: KeyMod): void {
-    this.changeRate(this.ctlr.plug<KeysPlug>("keys")!.getModded("playbackRate", mod, this.config.skip));
+    this.changeValue(this.ctlr.plug("settings.keys")!.getModded("playbackRate", mod, this.config.skip));
   }
   protected handleKeyRateDown(_: KeyboardEvent, mod: KeyMod): void {
-    this.changeRate(-this.ctlr.plug<KeysPlug>("keys")!.getModded("playbackRate", mod, this.config.skip));
+    this.changeValue(-this.ctlr.plug("settings.keys")!.getModded("playbackRate", mod, this.config.skip));
   }
 
   public rotateRate(dir: "forwards" | "backwards" = "forwards"): void {
-    this.config.value = rotateAny(this.config.value!, { min: this.config.min, max: this.config.max, step: this.config.skip }, dir);
+    this.media.intent.playbackRate = rotateAny(this.media.state.playbackRate, { min: this.config.min, max: this.config.max, step: this.config.skip }, dir);
   }
 
-  public changeRate(value: number): void {
+  public changeValue(value: number): void {
     const sign = value >= 0 ? "+" : "-";
     value = Math.abs(value);
-    const rate = this.config.value!;
+    const rate = this.media.state.playbackRate;
     if (sign === "-") {
-      if (rate > this.config.min) this.config.value -= rate % value ? rate % value : value;
-      // JS: return this.notify("playbackratedown");
+      if (rate > this.config.min) this.media.intent.playbackRate = rate - (rate % value || value);
+      this.ctlr.plug("settings.notifiers")?.notify("playbackratedown");
     } else {
-      if (rate < this.config.max) this.config.value += rate % value ? value - (rate % value) : value;
-      // JS: return this.notify("playbackrateup");
+      if (rate < this.config.max) this.media.intent.playbackRate = rate + (rate % value ? value - (rate % value) : value);
+      this.ctlr.plug("settings.notifiers")?.notify("playbackrateup");
     }
   }
 }
 
 export type * from "./types";
 export * from "./build";
+
+declare module "@defs/registries" {
+  interface PlugRegistryMap {
+    "settings.playbackRate": typeof PlaybackRatePlug;
+  }
+}
+
+declare module "@defs/config" {
+  interface Settings {
+    playbackRate: PlaybackRate;
+  }
+}

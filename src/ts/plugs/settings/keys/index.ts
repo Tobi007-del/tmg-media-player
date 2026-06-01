@@ -1,20 +1,23 @@
-import { BasePlug, KeyHandler, KeyMod, KeyPhase, KeyRegOptions, Keys, KEYS_BUILD, type FastPlayPlug, type GesturePlug, type ModesPlug, type OverlayPlug, type TimePlug, type VolumePlug } from "../..";
-import type { ModdedKeyShortcutAction } from "../../../types/generics";
-import { isArr, keyEventAllowed as allowed } from "../../../utils";
+﻿import { BasePlug } from "../../base";
+import type { KeyHandler, KeyMod, KeyPhase, KeyRegOptions, Keys, KeyHook, KeyShortcutMods } from "./types";
+import { KEYS_BUILD } from "./build";
+import { isArr } from "@t007/utils";
+import { keyEventAllowed as allowed } from "@utils/keys";
 
 export class KeysPlug extends BasePlug<Keys> {
-  public static readonly plugName: string = "keys";
+  public static readonly plugName = "keys";
   public static readonly BUILD = KEYS_BUILD;
-  protected playTriggerCounter = 0;
+  protected readonly handlers: Record<KeyPhase, Record<string, KeyHook>> = { keydown: {}, keyup: {} };
+  protected playTriggerSeq = 0;
 
   public override wire(): void {
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.disabled", this.syncKeyEventListeners, { signal: this.signal, immediate: true });
-    this.ctlr.config.on("disabled", this.syncKeyEventListeners, { signal: this.signal });
-    this.ctlr.config.on("settings.locked.disabled", this.syncKeyEventListeners, { signal: this.signal });
+    this.ctlr.config.on("settings.keys.disabled", this.syncEventListeners, { init: true, signal: this.signal });
+    this.ctlr.config.on("disabled", this.syncEventListeners, { signal: this.signal });
+    this.ctlr.config.on("settings.locked.disabled", this.syncEventListeners, { signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("readyState", this.syncKeyEventListeners, { signal: this.signal });
-    this.ctlr.state.on("mediaParentIntersecting", this.syncKeyEventListeners, { signal: this.signal });
+    !this.ctlr.payload.wired && this.ctlr.state.wonce("readyState", this.syncEventListeners, { signal: this.signal });
+    this.ctlr.state.on("mediaIntersecting", this.syncEventListeners, { signal: this.signal });
     // Post Wiring
     this.register(" ", this.handlePlayTriggerDown, { phase: "keydown" });
     this.register("escape", this.handleEscape, { phase: "keydown" });
@@ -27,33 +30,28 @@ export class KeysPlug extends BasePlug<Keys> {
     this.register("end", () => (this.media.intent.currentTime = this.media.status.duration), { phase: "keyup" });
     "123456789".split("").forEach((n) => this.register(n, () => (this.media.intent.currentTime = (+n / 10) * this.media.status.duration), { phase: "keyup" }));
     this.register("playpause", this.handlePlayTriggerDown, { phase: "keydown" });
-    // JS: this.register("settings", () => this.toggleSettingsView(), { phase: "keyup", zen: true }); // will be in Settings Plug
   }
 
   public register(action: string, handler: KeyHandler, options: KeyRegOptions = {}): void {
-    (options.phase ? (isArr(options.phase) ? options.phase : [options.phase]) : ["keyup"]).forEach((phase) => (this.config._handlers[phase as KeyPhase][action] = { fn: handler, zen: !!options.zen }));
+    for (const phase of options.phase ? (isArr(options.phase) ? options.phase : [options.phase]) : ["keyup"]) this.handlers[phase as KeyPhase][action] = { fn: handler, zen: !!options.zen };
     if (options.shortcut && ((this.config.shortcuts as any)[action] == null || options.overwrite)) (this.config.shortcuts as any)[action] = options.shortcut;
   }
 
   public unregister(action: string, phase?: KeyPhase): void {
-    if (phase) return void delete this.config._handlers[phase][action];
-    delete this.config._handlers.keydown[action], delete this.config._handlers.keyup[action];
-  }
-
-  public syncKeyEventListeners(): void {
-    this.setEventListeners(this.shouldListen() ? "add" : "remove");
+    if (phase) return void delete this.handlers[phase][action];
+    delete this.handlers.keydown[action], delete this.handlers.keyup[action];
   }
 
   protected handleKeyDown(e: KeyboardEvent, action = allowed(e, this.ctlr.settings.keys), mod = this.getMod(e)): void {
     if (action === false) return;
-    action && this.ctlr.plug<OverlayPlug>("overlay")?.show();
-    this.ctlr.throttle("keyDown", () => this.config._handlers.keydown[action]?.fn(e, mod), 30);
+    action && this.ctlr.plug("settings.overlay")?.show();
+    this.ctlr.throttle("keyDown", () => this.handlers.keydown[action]?.fn(e, mod), 30);
   }
 
   protected handleKeyUp(e: KeyboardEvent, zen = false, action = allowed(e, this.ctlr.settings.keys), mod = this.getMod(e)): void {
     if (action === false) return;
-    action && this.ctlr.plug<OverlayPlug>("overlay")?.show();
-    const hook = this.config._handlers.keyup[action];
+    action && this.ctlr.plug("settings.overlay")?.show();
+    const hook = this.handlers.keyup[action];
     hook && (!zen || hook.zen) && hook.fn(e, mod);
   }
   protected handleZenKeyUp(e: KeyboardEvent): void {
@@ -61,20 +59,20 @@ export class KeysPlug extends BasePlug<Keys> {
   }
 
   protected handlePlayTriggerDown(e: KeyboardEvent): void {
-    this.playTriggerCounter++;
-    this.playTriggerCounter === 1 && (e.currentTarget as Window | null)?.addEventListener("keyup", this.handlePlayTriggerUp, { signal: this.signal });
-    this.playTriggerCounter === 2 && this.ctlr.settings.fastPlay.key && this.ctlr.plug<FastPlayPlug>("fastPlay")?.fastPlay(e.shiftKey ? "backwards" : "forwards");
+    this.playTriggerSeq++;
+    this.playTriggerSeq === 1 && (e.currentTarget as Window | null)?.addEventListener("keyup", this.handlePlayTriggerUp, { signal: this.signal });
+    this.playTriggerSeq === 2 && this.ctlr.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.fastPlay(e.shiftKey ? "backwards" : "forwards");
   }
 
   protected handlePlayTriggerUp(e: KeyboardEvent, action = allowed(e, this.ctlr.settings.keys)): void {
-    action && this.ctlr.plug<OverlayPlug>("overlay")?.show();
+    action && this.ctlr.plug("settings.overlay")?.show();
     if (action !== false && [" ", "playpause"].includes(action)) {
       e.stopImmediatePropagation();
-      if (this.playTriggerCounter === 1) this.media.intent.paused = !this.media.state.paused;
-      // JS: this.media.state.paused ? this.notify("mediapause") : this.notify("mediaplay");
+      if (this.playTriggerSeq === 1) this.media.intent.paused = !this.media.state.paused;
+      this.ctlr.plug("settings.notifiers")?.notify(this.media.state.paused ? "mediapause" : "mediaplay");
     }
-    if (this.playTriggerCounter > 1 && this.ctlr.plug<FastPlayPlug>("fastPlay")?.speedCheck) this.ctlr.plug<FastPlayPlug>("fastPlay")?.slowDown();
-    this.playTriggerCounter = 0;
+    if (this.playTriggerSeq > 1 && this.ctlr.plug("settings.fastPlay")?.speedCheck) this.ctlr.plug("settings.fastPlay")?.slowDown();
+    this.playTriggerSeq = 0;
     (e.currentTarget as Window | null)?.removeEventListener("keyup", this.handlePlayTriggerUp);
   }
 
@@ -84,22 +82,22 @@ export class KeysPlug extends BasePlug<Keys> {
   }
 
   protected handleArrowLeft(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug<GesturePlug>("gesture")?.general?.deactivateSkipPersist();
-    this.ctlr.plug<TimePlug>("time")?.skip(-this.getModded("skip", mod, 5));
-    // JS: this.notify("bwd");
+    this.ctlr.plug("settings.gesture")?.deactivateSkipPersist();
+    this.ctlr.plug("settings.time")?.skip(-this.getModded("skip", mod, 5));
+    this.ctlr.plug("settings.notifiers")?.notify("bwd");
   }
   protected handleArrowRight(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug<GesturePlug>("gesture")?.general?.deactivateSkipPersist();
-    this.ctlr.plug<TimePlug>("time")?.skip(this.getModded("skip", mod, 5));
-    // JS: this.notify("fwd");
+    this.ctlr.plug("settings.gesture")?.deactivateSkipPersist();
+    this.ctlr.plug("settings.time")?.skip(this.getModded("skip", mod, 5));
+    this.ctlr.plug("settings.notifiers")?.notify("fwd");
   }
   protected handleArrowUp(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug<VolumePlug>("volume")?.setAptValue(this.getModded("volume", mod, 5));
-    // JS: this.notify("volumeup");
+    this.ctlr.plug("settings.volume")?.changeAptValue(this.getModded("volume", mod, 5));
+    this.ctlr.plug("settings.notifiers")?.notify("volumeup");
   }
   protected handleArrowDown(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug<VolumePlug>("volume")?.setAptValue(-this.getModded("volume", mod, 5));
-    // JS: this.settings.volume.value === 0 ? this.notify("volumemuted") : this.notify("volumedown");
+    this.ctlr.plug("settings.volume")?.changeAptValue(-this.getModded("volume", mod, 5));
+    this.ctlr.plug("settings.notifiers")?.notify(!this.media.state.volume ? "volumemuted" : "volumedown");
   }
 
   public setEventListeners(action: "add" | "remove" = "add", zen = this.ctlr.isUIActive("settings")): void {
@@ -109,21 +107,36 @@ export class KeysPlug extends BasePlug<Keys> {
     !zen && ws.forEach((w) => w.addEventListener("keydown", this.handleKeyDown, { signal: this.signal }));
     ws.forEach((w) => w.addEventListener("keyup", !zen ? this.handleKeyUp : this.handleZenKeyUp, { signal: this.signal }));
   }
+  public syncEventListeners(): void {
+    this.setEventListeners(this.shouldListen() ? "add" : "remove");
+  }
   protected shouldListen(): boolean {
-    return this.ctlr.state.readyState > 1 && this.ctlr.state.mediaParentIntersecting && !this.ctlr.config.disabled && !this.config.disabled && this.ctlr.settings.locked.disabled;
+    return this.ctlr.payload.wired && this.ctlr.state.mediaIntersecting && !this.ctlr.config.disabled && !this.config.disabled && this.ctlr.settings.locked.disabled;
   }
 
   protected getWindows(): Window[] {
-    const floating = this.ctlr.plug<ModesPlug>("modes")?.pip?.floatingWindow;
+    const floating = this.ctlr.plug("settings.modes")?.pictureInPicture?.floatingWindow;
     return floating ? [floating, window] : [window];
   }
   protected getMod(e: KeyboardEvent): KeyMod {
     return this.config.mods.disabled ? "" : e.ctrlKey ? "ctrl" : e.altKey ? "alt" : e.shiftKey ? "shift" : "";
   }
-  public getModded(action: ModdedKeyShortcutAction, mod: KeyMod, fallback: number): number {
-    return mod ? this.config.mods[action]?.[mod] ?? fallback : fallback;
+  public getModded(action: keyof KeyShortcutMods, mod: KeyMod, base: number): number {
+    return mod ? this.config.mods[action]?.[mod] ?? base : base;
   }
 }
 
 export type * from "./types";
 export * from "./build";
+
+declare module "@defs/registries" {
+  interface PlugRegistryMap {
+    "settings.keys": typeof KeysPlug;
+  }
+}
+
+declare module "@defs/config" {
+  interface Settings {
+    keys: Keys;
+  }
+}

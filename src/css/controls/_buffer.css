@@ -5,7 +5,7 @@
   pointer-events: none;
 }
 .tmg-media-container:is(:not(.tmg-media-buffering), [data-buffer="false"]) .tmg-media-buffer,
-.tmg-media-container:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-playback-rate-notifier, .tmg-media-touch-vb-notifier, .tmg-media-touch-timeline-notifier).tmg-media-control-active) .tmg-media-buffer {
+.tmg-media-container:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier, .tmg-media-touch-timeline-notifier).tmg-media-control-active) .tmg-media-buffer {
   display: none;
 }
 .tmg-media-buffer-accent {

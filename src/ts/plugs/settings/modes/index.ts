@@ -1,43 +1,42 @@
-import { Controller } from "../../../core/controller";
-import { BasePlug, type KeysPlug, ModesFullscreenPin, ModesTheaterPin, ModesPictureInPicturePin, ModesMiniplayerPin, Modes, MODES_BUILD } from "../..";
+﻿import { Controller } from "@core/controller";
+import { BasePlug } from "../../base";
+import { ModesFullscreenPin } from "./fullscreen";
+import { ModesTheaterPin } from "./theater";
+import { ModesPictureInPicturePin } from "./pictureInPicture";
+import { ModesMiniplayerPin } from "./miniplayer";
+import type { Modes } from "./types";
+import { MODES_BUILD } from "./build";
+import { PinRegistry } from "@core/registries";
 
 export class ModesPlug extends BasePlug<Modes> {
-  public static readonly plugName: string = "modes";
+  public static readonly plugName = "modes";
   public static readonly BUILD = MODES_BUILD;
-  public fullscreen!: ModesFullscreenPin;
-  public theater!: ModesTheaterPin;
-  public pip!: ModesPictureInPicturePin;
-  public miniplayer!: ModesMiniplayerPin;
+  public fullscreen?: ModesFullscreenPin;
+  public theater?: ModesTheaterPin;
+  public pictureInPicture?: ModesPictureInPicturePin;
+  public miniplayer?: ModesMiniplayerPin;
 
-  constructor(ctlr: Controller, config: Modes) {
+  constructor(ctlr: Controller, config: Modes = ctlr.config.settings.modes) {
     super(ctlr, config);
-    // Variables Assignment
-    this.fullscreen = new ModesFullscreenPin(this.ctlr, this.config.fullscreen).setup();
-    this.theater = new ModesTheaterPin(this.ctlr, this.config.theater).setup();
-    this.pip = new ModesPictureInPicturePin(this.ctlr, this.config.pictureInPicture).setup();
-    this.miniplayer = new ModesMiniplayerPin(this.ctlr, this.config.miniplayer).setup();
-    if (this.ctlr.config.initialMode) this.media.intent[this.ctlr.config.initialMode] = true; // one-time courtesy, use for theater mode maybe
+    const FullscreenPin = PinRegistry.get("modes.fullscreen"),
+      TheaterPin = PinRegistry.get("modes.theater"),
+      PictureInPicturePin = PinRegistry.get("modes.pictureInPicture"),
+      MiniplayerPin = PinRegistry.get("modes.miniplayer");
+    FullscreenPin && (this.fullscreen = new FullscreenPin(this.ctlr, this.config.fullscreen)), TheaterPin && (this.theater = new TheaterPin(this.ctlr, this.config.theater)), PictureInPicturePin && (this.pictureInPicture = new PictureInPicturePin(this.ctlr, this.config.pictureInPicture)), MiniplayerPin && (this.miniplayer = new MiniplayerPin(this.ctlr, this.config.miniplayer));
+  }
+
+  public override mount(): void {
+    // Utility Injection
+    this.fullscreen?.mount?.(), this.theater?.mount?.(), this.pictureInPicture?.mount?.(), this.miniplayer?.mount?.();
   }
 
   public override wire(): void {
     // Utility Injection
-    this.fullscreen.wire();
-    this.theater.wire();
-    this.pip.wire();
-    this.miniplayer.wire();
-    // Post Wiring
-    const keys = this.ctlr.plug<KeysPlug>("keys");
-    keys?.register("fullscreen", () => (this.media.intent.fullscreen = !this.media.state.fullscreen), { phase: "keyup" });
-    keys?.register("theater", () => !this.ctlr.isUIActive("fullscreen") && !this.ctlr.isUIActive("miniplayer") && !this.ctlr.isUIActive("floatingPlayer") && (this.media.intent.theater = !this.media.state.theater), { phase: "keyup" });
-    keys?.register("pictureInPicture", () => (this.media.intent.pictureInPicture = !this.media.state.pictureInPicture), { phase: "keyup" });
+    this.fullscreen?.wire(), this.theater?.wire(), this.pictureInPicture?.wire(), this.miniplayer?.wire();
   }
 
   protected override onDestroy(): void {
-    super.onDestroy();
-    this.fullscreen?.destroy();
-    this.theater?.destroy();
-    this.pip?.destroy();
-    this.miniplayer?.destroy();
+    this.fullscreen?.destroy(), this.theater?.destroy(), this.pictureInPicture?.destroy(), this.miniplayer?.destroy(), super.onDestroy();
   }
 }
 
@@ -47,3 +46,15 @@ export * from "./fullscreen";
 export * from "./theater";
 export * from "./pictureInPicture";
 export * from "./miniplayer";
+
+declare module "@defs/registries" {
+  interface PlugRegistryMap {
+    "settings.modes": typeof ModesPlug;
+  }
+}
+
+declare module "@defs/config" {
+  interface Settings {
+    modes: Modes;
+  }
+}

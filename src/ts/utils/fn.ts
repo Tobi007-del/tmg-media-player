@@ -1,5 +1,5 @@
-import { FN_KEY } from "../consts/generics";
-import { uid } from ".";
+import { FN_KEY } from "@consts/generics";
+import { uid } from "@t007/utils";
 import { limited as limitedOrig, LimitedOptions, LimitedHandle } from "@t007/utils";
 import { setTimeout, requestAnimationFrame } from "@t007/utils";
 

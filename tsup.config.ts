@@ -4,7 +4,7 @@ import { sassPlugin } from "esbuild-sass-plugin";
 
 const isProd = process.env.NODE_ENV === "production" || process.argv.includes("--prod");
 const config: Options = {
-  dts: true,
+  dts: { compilerOptions: { incremental: false } },
   target: "es2020",
   platform: "browser",
   minify: isProd,

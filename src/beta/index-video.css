@@ -254,6 +254,7 @@
   --t007-dialog-message-color: var(--tmg-video-theme-color);
   --t007-dialog-confirm-button-color: rgb(from var(--tmg-video-theme-color) calc(r - 100) calc(g - 100) calc(b - 100));
   --t007-dialog-cancel-button-color: var(--tmg-video-brand-color);
+  --t007-dialog-entry-duration: var(--tmg-video-switch-transition-time);
 }
 /* computed variables */
 .tmg-media-container {
@@ -513,6 +514,16 @@
 .tmg-media-container svg {
   width: var(--tmg-video-current-unit);
   height: var(--tmg-video-current-unit);
+}
+:is(.tmg-video-big-controls-wrapper > *, :where(button[class^="tmg-video-big-"])) > svg {
+  --size: calc(var(--tmg-video-current-unit) * var(--tmg-video-current-big-controls-scale));
+  width: var(--size);
+  height: var(--size);
+}
+.tmg-video-big-play-pause-btn > svg {
+  --size: calc(var(--tmg-video-current-unit) * var(--tmg-video-current-big-controls-scale) * var(--tmg-video-large-scale));
+  width: var(--size);
+  height: var(--size);
 }
 .tmg-media-container svg:where(:not(.no-css-fill)) {
   color: var(--tmg-video-icons-color);
@@ -814,7 +825,7 @@ body:where(:has(.tmg-video-floating-player)) {
 }
 .tmg-video-container[data-curtain="cover"]:is(.tmg-video-previewing, .tmg-video-scrubbing),
 .tmg-video-container[data-curtain="cover"] :is(.tmg-video-top-curtain, .tmg-video-bottom-curtain),
-.tmg-video-container:has(:is(.tmg-video-playback-rate-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active) {
+.tmg-video-container:has(:is(.tmg-video-fast-play-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active) {
   --tmg-video-current-curtain-color: transparent;
 }
 .tmg-video-container.tmg-video-scrubbing {
@@ -826,7 +837,7 @@ body:where(:has(.tmg-video-floating-player)) {
 .tmg-media-container:has(.tmg-video-cancel-scrub-notifier.tmg-video-control-active) {
   --tmg-video-current-thumb-indicator-scale: 1;
 }
-.tmg-video-container:is([data-thumb-indicator="false"], [data-thumb-indicator="auto"]:has(.tmg-video-timeline-container:not(:hover)), :not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-playback-rate-notifier.tmg-video-control-active)).tmg-video-progress-bar) {
+.tmg-video-container:is([data-thumb-indicator="false"], [data-thumb-indicator="auto"]:has(.tmg-video-timeline-container:not(:hover)), :not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-fast-play-notifier.tmg-video-control-active)).tmg-video-progress-bar) {
   --tmg-video-current-thumb-indicator-scale: 0;
 }
 .tmg-video-container:has(.tmg-video-notifier.tmg-video-control-persist) {
@@ -854,7 +865,7 @@ body:where(:has(.tmg-video-floating-player)) {
 .tmg-video-container.tmg-video-disabled * {
   animation: none !important;
 }
-.tmg-video-container:is(.tmg-video-locked, #o#o#o#o#o) *:is(.tmg-video-settings, .tmg-video-top-controls-wrapper, .tmg-video-controls-container > *:not(.tmg-video-captions-container), .tmg-video-bottom-controls-wrapper) {
+.tmg-video-container:is(.tmg-video-locked, #o#o#o#o#o) *:is(.tmg-video-settings, .tmg-video-top-controls-wrapper, .tmg-video-controls-container > *:not(.tmg-video-captions-container), .tmg-video-bottom-controls-wrapper > * > *:not(.tmg-video-timeline-container)) {
   display: none;
 }
 .tmg-video-container:is(.tmg-video-disabled, #o#o#o#o#o) .tmg-video {
@@ -882,10 +893,6 @@ body:where(:has(.tmg-video-floating-player)) {
 /* ==================== AI SETTINGS BLOCK ===================== */
 .tmg-video-container.tmg-video-settings-view .tmg-video-container-content-wrapper {
   transform: rotateY(180deg);
-}
-.tmg-video-container.tmg-video-settings-view .tmg-video-settings {
-  opacity: 1;
-  pointer-events: all;
 }
 .tmg-video-container.tmg-video-settings-view .tmg-video-container-content .tmg-video {
   filter: var(--tmg-video-filter) blur(10px);
@@ -931,9 +938,7 @@ body:where(:has(.tmg-video-floating-player)) {
   transform: rotateY(180deg);
   -webkit-backdrop-filter: blur(3.5px);
   backdrop-filter: blur(3.5px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--tmg-video-settings-view-transition-time) var(--tmg-video-bounce-timing);
+  backface-visibility: hidden;
 }
 .tmg-video-settings-content {
   width: 100%;
@@ -944,10 +949,8 @@ body:where(:has(.tmg-video-floating-player)) {
   color: var(--tmg-video-settings-text-color);
   border-radius: inherit;
 }
-.tmg-video-settings-content > div {
-  display: flex;
-}
 .tmg-video-settings-top-panel {
+  display: flex;
   padding-block-end: var(--tmg-video-settings-content-padding);
   border-bottom: 1px solid var(--tmg-video-settings-border-color);
 }
@@ -960,6 +963,7 @@ body:where(:has(.tmg-video-floating-player)) {
   margin-right: auto;
 }
 .tmg-video-settings-bottom-panel {
+  display: flex;
   flex-grow: 1;
   flex-direction: column;
   align-items: center;
@@ -1107,12 +1111,12 @@ body:where(:has(.tmg-video-floating-player)) {
 .tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-playback-rate-notifier-content, .tmg-video-volume-notifier-content, .tmg-video-brightness-notifier-content, .tmg-video-object-fit-notifier-content, .tmg-video-touch-vb-content) {
   font-size: calc(var(--tmg-video-current-unit) / 1.65);
 }
-.tmg-video-playback-rate-notifier,
+.tmg-video-fast-play-notifier,
 .tmg-video-scrub-notifier,
 .tmg-video-cancel-scrub-notifier {
   font-size: calc(var(--tmg-video-current-unit) / 2.4);
 }
-.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-playback-rate-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier) {
+.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-fast-play-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier) {
   font-size: calc(var(--tmg-video-current-unit) / 1.65);
 }
 .tmg-video-touch-timeline-notifier {
@@ -1414,12 +1418,6 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   background-color: var(--tmg-video-brand-complement-color);
   border-radius: 50%;
 }
-:is(.tmg-video-big-controls-wrapper > *, :where(button[class^="tmg-video-big-"])) > svg {
-  transform: scale(var(--tmg-video-current-big-controls-scale));
-}
-.tmg-video-big-play-pause-btn > svg {
-  transform: scale(calc(var(--tmg-video-current-big-controls-scale) * var(--tmg-video-large-scale)));
-}
 .tmg-video-buffer {
   width: calc(var(--tmg-video-big-controls-size) + (var(--tmg-video-current-buffer-thickness) * 1.75));
   height: calc(var(--tmg-video-big-controls-size) + (var(--tmg-video-current-buffer-thickness) * 1.75));
@@ -1427,7 +1425,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   pointer-events: none;
 }
 .tmg-video-container:is(:not(.tmg-video-buffering), [data-buffer="false"]) .tmg-video-buffer,
-.tmg-video-container:has(.tmg-video-notifier.tmg-video-control-persist, :is(.tmg-video-playback-rate-notifier, .tmg-video-touch-vb-notifier, .tmg-video-touch-timeline-notifier).tmg-video-control-active) .tmg-video-buffer {
+.tmg-video-container:has(.tmg-video-notifier.tmg-video-control-persist, :is(.tmg-video-fast-play-notifier, .tmg-video-touch-vb-notifier, .tmg-video-touch-timeline-notifier).tmg-video-control-active) .tmg-video-buffer {
   display: none;
 }
 .tmg-video-buffer-accent {
@@ -1491,7 +1489,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
 /* ==================== AI OVERLAY BLOCK ===================== */
 
 .tmg-video-container:is(.tmg-video-overlay, :has(:focus-visible)) .tmg-video-container-content,
-.tmg-video-container:is(:has(.tmg-video-notifier.tmg-video-control-persist, :is(.tmg-video-playback-rate-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active)) .tmg-video-container-content {
+.tmg-video-container:is(:has(.tmg-video-notifier.tmg-video-control-persist, :is(.tmg-video-fast-play-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active)) .tmg-video-container-content {
   cursor: auto;
 }
 .tmg-video-container.tmg-video-miniplayer :is(.tmg-video-container-content, .tmg-video-settings),
@@ -1570,8 +1568,8 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   justify-content: space-between;
   align-items: center;
 }
-.tmg-video-apt-controls-wrapper:has(.tmg-video-center-side-controls-wrapper [data-displayed="true"]),
-.tmg-video-apt-controls-wrapper:has(> :first-child [data-displayed="true"]):has(> :last-child [data-displayed="true"]):has(> .tmg-video-meta-wrapper) {
+.tmg-video-apt-controls-wrapper:where(:has(.tmg-video-center-side-controls-wrapper [data-displayed="true"])),
+.tmg-video-apt-controls-wrapper:where(:has(> :first-child [data-displayed="true"]):has(> :last-child [data-displayed="true"])):has(> .tmg-video-meta-wrapper) {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
 }
@@ -1885,10 +1883,10 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
 
 /* ==================== AI SETTINGS BLOCK ===================== */
 .tmg-video-captions-container {
-  --f-f: var(--cmptd-cue-font-factor);
   --cmptd-cue-font-size: calc(var(--tmg-video-captions-font-size-base) * var(--f-f));
   --cmptd-cue-box-floor: calc(var(--tmg-video-current-captions-offset-bottom) + (var(--tmg-video-current-captions-container-height) / 2));
   --cmptd-cue-box-ceil: calc(100% - (var(--tmg-video-current-captions-offset-top) + (var(--tmg-video-current-captions-container-height) / 2)));
+  --f-f: var(--cmptd-cue-font-factor);
   display: none;
   position: absolute;
   bottom: clamp(min(calc(100% - (var(--tmg-video-current-captions-container-height) / 2)), var(--cmptd-cue-box-floor)), var(--tmg-video-current-captions-y), var(--cmptd-cue-box-ceil)); /* offset edgecase handling */
@@ -1960,7 +1958,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   cursor: pointer;
   container-type: size;
 }
-.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-playback-rate-notifier.tmg-video-control-active)).tmg-video-progress-bar :is(.tmg-video-timeline-container, .tmg-video-seek-bars-wrapper),
+.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-fast-play-notifier.tmg-video-control-active)).tmg-video-progress-bar :is(.tmg-video-timeline-container, .tmg-video-seek-bars-wrapper),
 .tmg-video-container[data-size-tier^="xxxxx"] .tmg-video-bottom-controls-wrapper:not(:hover) :is(.tmg-video-timeline-container, .tmg-video-seek-bars-wrapper) {
   position: absolute;
   bottom: 0.1px;
@@ -1968,7 +1966,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   margin-inline: 0;
   border-radius: 0;
 }
-.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-playback-rate-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-timeline-container {
+.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-fast-play-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-timeline-container {
   opacity: var(--tmg-video-progress-bar-opacity);
   pointer-events: none;
 }
@@ -2006,7 +2004,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   transform: scaleX(calc(var(--tmg-video-current-buffered-position) * 100%));
   background: var(--tmg-video-buffered-seek-bar-background);
 }
-.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-playback-rate-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-buffered-seek-bar {
+.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-fast-play-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-buffered-seek-bar {
   display: none;
 }
 .tmg-video-preview-seek-bar {
@@ -2024,7 +2022,7 @@ body:not(:has(.tmg-video-container.tmg-video-miniplayer)) .tmg-pseudo-video-cont
   transform: scaleX(calc(var(--tmg-video-current-played-position) * 100%));
   background: var(--tmg-video-played-seek-bar-background);
 }
-.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-playback-rate-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-played-seek-bar {
+.tmg-video-container:not(.tmg-video-overlay, :has(:focus-visible, .tmg-video-fast-play-notifier.tmg-video-control-active)).tmg-video-progress-bar .tmg-video-played-seek-bar {
   background: var(--tmg-video-progress-bar-background);
 }
 .tmg-video-thumb-indicator {
@@ -2202,10 +2200,10 @@ div.tmg-video-thumbnail {
   padding: calc(var(--tmg-video-current-unit) / 4) calc(var(--tmg-video-current-unit) / 2);
   border-radius: calc(var(--tmg-video-current-unit) / 10);
 }
-.tmg-video-notifiers-container :is(.tmg-video-playback-rate-notifier, .tmg-video-touch-timeline-notifier, .tmg-video-touch-vb-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier).tmg-video-control-active {
+.tmg-video-notifiers-container :is(.tmg-video-fast-play-notifier, .tmg-video-touch-timeline-notifier, .tmg-video-touch-vb-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier).tmg-video-control-active {
   opacity: 1;
 }
-.tmg-video-playback-rate-notifier,
+.tmg-video-fast-play-notifier,
 .tmg-video-scrub-notifier,
 .tmg-video-cancel-scrub-notifier,
 .tmg-video-touch-timeline-notifier {
@@ -2216,38 +2214,38 @@ div.tmg-video-thumbnail {
   font-weight: 700;
   border-radius: var(--tmg-video-current-unit);
 }
-.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-playback-rate-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier, .tmg-video-touch-timeline-notifier) {
+.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-fast-play-notifier, .tmg-video-scrub-notifier, .tmg-video-cancel-scrub-notifier, .tmg-video-touch-timeline-notifier) {
   min-height: calc(var(--tmg-video-current-unit) * 1.25);
 }
-.tmg-video-playback-rate-notifier,
+.tmg-video-fast-play-notifier,
 .tmg-video-scrub-notifier,
 .tmg-video-cancel-scrub-notifier {
   top: min(var(--tmg-video-current-unit), 5%);
   min-width: calc(var(--tmg-video-current-unit) * 1.3);
 }
-.tmg-video-playback-rate-notifier:not(.tmg-video-rewind)::before,
-.tmg-video-playback-rate-notifier.tmg-video-rewind::after {
+.tmg-video-fast-play-notifier:not(.tmg-video-rewind)::before,
+.tmg-video-fast-play-notifier.tmg-video-rewind::after {
   content: attr(data-current-time);
   display: none;
   font-weight: normal;
 }
-.tmg-video-playback-rate-notifier:not(.tmg-video-rewind)::before {
+.tmg-video-fast-play-notifier:not(.tmg-video-rewind)::before {
   display: block;
   margin-inline-end: calc(var(--tmg-video-current-unit) / 3.5);
 }
-.tmg-video-playback-rate-notifier.tmg-video-rewind::after {
+.tmg-video-fast-play-notifier.tmg-video-rewind::after {
   display: block;
   margin-inline-start: calc(var(--tmg-video-current-unit) / 3.5);
 }
-.tmg-video-playback-rate-notifier svg {
+.tmg-video-fast-play-notifier svg {
   display: none;
   height: calc(var(--tmg-video-current-unit) / 3.25);
 }
-.tmg-video-playback-rate-notifier.tmg-video-rewind svg:nth-of-type(1) {
+.tmg-video-fast-play-notifier.tmg-video-rewind svg:nth-of-type(1) {
   display: block;
   margin-inline-end: calc(var(--tmg-video-current-unit) / 5);
 }
-.tmg-video-playback-rate-notifier:not(.tmg-video-rewind) svg:nth-of-type(2) {
+.tmg-video-fast-play-notifier:not(.tmg-video-rewind) svg:nth-of-type(2) {
   display: block;
   margin-inline-start: calc(var(--tmg-video-current-unit) / 5);
 }
@@ -2266,11 +2264,11 @@ div.tmg-video-thumbnail {
   display: flex;
   align-items: center;
 }
-:is(.tmg-video-playback-rate-notifier, .tmg-video-scrub-notifier) svg {
+:is(.tmg-video-fast-play-notifier, .tmg-video-scrub-notifier) svg {
   width: calc(var(--tmg-video-current-unit) / 3.25);
   scale: 1.75;
 }
-.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-playback-rate-notifier, .tmg-video-scrub-notifier) svg {
+.tmg-media-container:is([data-size-tier^="xx"], .tmg-video-mobile) :is(.tmg-video-fast-play-notifier, .tmg-video-scrub-notifier) svg {
   width: calc(var(--tmg-video-current-unit) / 2.25);
 }
 .tmg-video-touch-vb-notifier {
@@ -2437,13 +2435,13 @@ div.tmg-video-thumbnail {
 .tmg-video-top-controls-wrapper,
 .tmg-video-big-controls-wrapper-cover,
 .tmg-video-bottom-controls-wrapper > * > *:not(.tmg-video-timeline-container),
-.tmg-video-container:not(.tmg-video-progress-bar, :has(.tmg-video-playback-rate-notifier.tmg-video-control-active)) .tmg-video-timeline-container {
+.tmg-video-container:not(.tmg-video-progress-bar, :has(.tmg-video-fast-play-notifier.tmg-video-control-active)) .tmg-video-timeline-container {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--tmg-video-fade-transition-time) ease;
 }
 .tmg-video-container:is(.tmg-video-overlay, :has(:focus-visible)) :is(.tmg-video-top-controls-wrapper, .tmg-video-big-controls-wrapper-cover, .tmg-video-bottom-controls-wrapper > * > *:not(.tmg-video-timeline-container)),
-.tmg-video-container:is(.tmg-video-overlay, :has(:focus-visible)):not(.tmg-video-progress-bar, :has(.tmg-video-playback-rate-notifier.tmg-video-control-active)) .tmg-video-timeline-container {
+.tmg-video-container:is(.tmg-video-overlay, :has(:focus-visible)):not(.tmg-video-progress-bar, :has(.tmg-video-fast-play-notifier.tmg-video-control-active)) .tmg-video-timeline-container {
   opacity: 1;
   pointer-events: all;
 }
@@ -2451,10 +2449,10 @@ div.tmg-video-thumbnail {
   pointer-events: none;
 }
 .tmg-video-container:is(.tmg-video-overlay, :has(:focus-visible)) .tmg-video-curtain,
-.tmg-video-container:has(.tmg-video-playback-rate-notifier.tmg-video-control-active) .tmg-video-bottom-curtain {
+.tmg-video-container:has(.tmg-video-fast-play-notifier.tmg-video-control-active) .tmg-video-bottom-curtain {
   opacity: 1;
 }
-.tmg-video-container:is(:is(.tmg-video-miniplayer, .tmg-video-mobile):is(.tmg-video-scrubbing, :has(.tmg-video-notifier.tmg-video-control-persist)), :has(:is(.tmg-video-playback-rate-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active)) :is(.tmg-video-top-curtain, .tmg-video-bottom-curtain, .tmg-video-top-controls-wrapper, .tmg-video-big-controls-wrapper-cover, .tmg-video-bottom-controls-wrapper > * > *:not(.tmg-video-timeline-container)),
+.tmg-video-container:is(:is(.tmg-video-miniplayer, .tmg-video-mobile):is(.tmg-video-scrubbing, :has(.tmg-video-notifier.tmg-video-control-persist)), :has(:is(.tmg-video-fast-play-notifier, .tmg-video-touch-vb-notifier).tmg-video-control-active)) :is(.tmg-video-top-curtain, .tmg-video-bottom-curtain, .tmg-video-top-controls-wrapper, .tmg-video-big-controls-wrapper-cover, .tmg-video-bottom-controls-wrapper > * > *:not(.tmg-video-timeline-container)),
 .tmg-video-container:has(.tmg-video-touch-vb-notifier.tmg-video-control-active) :is(.tmg-video-bottom-curtain, .tmg-video-bottom-controls-wrapper .tmg-video-timeline-container) {
   opacity: 0;
   pointer-events: none;
@@ -2476,7 +2474,8 @@ div.tmg-video-thumbnail {
   opacity: 1;
 }
 .tmg-video-container.tmg-video-light :is([data-control-id]:not([data-light-control="true"]), .tmg-video-settings, .tmg-video-cover-curtain, .tmg-video-captions-container),
-.tmg-video-container:is(.tmg-video-light, .tmg-video-stall) :is(.tmg-video-play-notifier, .tmg-video-pause-notifier, .tmg-video-buffer, .tmg-video-big-play-pause-btn svg) {
+.tmg-video-container:is(.tmg-video-light, .tmg-video-stall) :is(.tmg-video-play-notifier, .tmg-video-pause-notifier, .tmg-video-buffer, .tmg-video-big-play-pause-btn svg),
+.tmg-video-container.tmg-video-stall .tmg-video-big-controls-wrapper > * {
   display: none;
 }
 .tmg-video-container:is(.tmg-video-light, .tmg-video-stall) :is(.tmg-video-big-controls-wrapper-cover, .tmg-video-big-play-pause-btn .tmg-video-play-icon),

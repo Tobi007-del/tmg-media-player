@@ -1,19 +1,21 @@
-import type { CtlrConfig } from "../types/config";
+import type { CtlrConfig } from "@defs/config";
 import type { DeepPartial } from "sia-reactor";
 
 export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
-  mediaPlayer: "TMG",
   mediaType: "video",
-  debug: true,
+  mediaPlayer: "TMG",
+  startup: { intent: { playsInline: true, brightness: 100 } },
   settings: {},
+  debug: true,
+  noPlugList: ["settings.persist"], // "settings.persist" dev
 };
 
 /*
-import { AUTO_BUILD, CSS_BUILD, BRIGHTNESS_BUILD, CAPTIONS_BUILD, CONTROL_PANEL_BUILD, ERROR_MESSAGES_BUILD, FAST_PLAY_BUILD, GESTURE_BUILD, KEYS_BUILD, LOCKED_BUILD, MODES_BUILD, NOTIFIERS_BUILD, OBJECT_FIT_BUILD, OVERLAY_BUILD, PERSIST_BUILD, PLAYBACK_RATE_BUILD, TIME_BUILD, FRAME_BUILD, TOASTS_BUILD, VOLUME_BUILD, PLAYS_INLINE_BUILD, LIGHT_STATE_BUILD, MEDIA_BUILD, DISABLED_BUILD } from "../plugs";
+import { AUTO_BUILD, CSS_BUILD, BRIGHTNESS_BUILD, CAPTIONS_BUILD, CONTROL_PANEL_BUILD, ERROR_MESSAGES_BUILD, FAST_PLAY_BUILD, GESTURE_BUILD, KEYS_BUILD, LOCKED_BUILD, MODES_BUILD, NOTIFIERS_BUILD, OBJECT_FIT_BUILD, OVERLAY_BUILD, PERSIST_BUILD, PLAYBACK_RATE_BUILD, TIME_BUILD, FRAME_BUILD, TOASTS_BUILD, VOLUME_BUILD, LIGHT_STATE_BUILD, MEDIA_BUILD, DISABLED_BUILD } from "@plugs";
 
 export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
-  mediaPlayer: "TMG",
   mediaType: "video",
+  mediaPlayer: "TMG",
   media: MEDIA_BUILD,
   disabled: DISABLED_BUILD,
   lightState: LIGHT_STATE_BUILD,
@@ -35,7 +37,6 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
     overlay: OVERLAY_BUILD,
     persist: PERSIST_BUILD,
     playbackRate: PLAYBACK_RATE_BUILD,
-    playsInline: PLAYS_INLINE_BUILD,
     time: TIME_BUILD,
     frame: FRAME_BUILD,
     toasts: TOASTS_BUILD,

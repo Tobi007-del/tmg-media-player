@@ -1,19 +1,23 @@
-import { BaseTech, type BaseTechConfig } from ".";
-import type { Controller } from "../core/controller";
-import type { CtlrMedia } from "../types/contract";
+import { BaseTech } from "./base";
+import type { Controller } from "@core/controller";
+import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import { type REvent } from "sia-reactor";
-import { MATCH_URL_YOUTUBE, createEl, createTimeRanges, enterFullscreen, exitFullscreen, isSameURL, loadResource, queryFullscreenEl, supportsFullscreen, setInterval } from "../utils";
+import { createEl, enterFullscreen, exitFullscreen, loadResource, queryFullscreenEl, supportsFullscreen } from "@utils/dom";
+import { createTimeRanges } from "@utils/time";
+import { MATCH_URL_YOUTUBE } from "@utils/matcher";
+import { isSameURL } from "@utils/str";
+import { setInterval } from "@utils/fn";
 
-export class YouTubeTech extends BaseTech<BaseTechConfig, HTMLElement> {
+export class YouTubeTech extends BaseTech<HTMLElement> {
   public static readonly techName = "youtube";
   protected yt: YT.Player | null = null;
   protected ytReady = false;
   public static override canPlaySource(src: string): boolean {
     return MATCH_URL_YOUTUBE.test(src);
   }
-  constructor(ctlr: Controller, config: BaseTechConfig) {
+  constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
-    super(ctlr, config, {
+    super(ctlr,{
       // Engine Inputs
       volume: true, muted: true, playbackRate: true,
       // Modes
@@ -22,8 +26,10 @@ export class YouTubeTech extends BaseTech<BaseTechConfig, HTMLElement> {
       poster: true, autoplay: true, loop: true, playsInline: true, controls: true, crossOrigin: true,
       // Infos
       readyState: true, error: true, waiting: true, seeking: true, buffered: true, seekable: true,
-      loadedMetadata: true, loadedData: true, canPlay: true, canPlayThrough: true
+      loadedMetadata: true, loadedData: true, canPlay: true, canPlayThrough: true, ...features
     });
+    ctlr.config.mediaPlayer = "YouTube"; // Don't say, I never did nothing for you
+    this.element = createEl("div", { className: `youtube-placeholder ${this.el.className}` });
   }
   // --- API Injection ---
   protected async initYT(videoId: string) {
@@ -59,34 +65,35 @@ export class YouTubeTech extends BaseTech<BaseTechConfig, HTMLElement> {
   // ===========================================================================
   // --- Core Wiring ---
   protected override wireSrc(): void {
-    this.config.on("intent.src", this.handleSrcIntent, this.eOpts.REACTOR);
+    this.config.on("intent.src", this.handleSrcIntent, this.evtOpts.CONFIG);
   }
   protected override wireCurrentTime(): void {
-    this.config.on("intent.currentTime", this.handleCurrentTimeIntent, this.eOpts.REACTOR);
+    this.config.get("state.currentTime", (v) => this.yt?.getCurrentTime() ?? v, { signal: this.signal }); // #VIRTUAL: reliable return value
+    this.config.on("intent.currentTime", this.handleCurrentTimeIntent, this.evtOpts.CONFIG);
   }
   protected override wireDuration(): void {} // Polled dynamically in sync loop; YT emits no explicit duration event
   protected override wirePaused(): void {
-    this.config.on("intent.paused", this.handlePausedIntent, this.eOpts.REACTOR);
+    this.config.on("intent.paused", this.handlePausedIntent, this.evtOpts.CONFIG);
   }
   protected override wireEnded(): void {} // Handled strictly within handleYTStateChange
   // --- Engine Inputs Wiring ---
   protected wireVolume(): void {
-    this.config.on("intent.volume", this.handleVolumeIntent, this.eOpts.REACTOR);
+    this.config.on("intent.volume", this.handleVolumeIntent, this.evtOpts.CONFIG);
   }
   protected wireMuted(): void {
-    this.config.on("intent.muted", this.handleMutedIntent, this.eOpts.REACTOR);
+    this.config.on("intent.muted", this.handleMutedIntent, this.evtOpts.CONFIG);
   }
   protected wirePlaybackRate(): void {
-    this.config.on("intent.playbackRate", this.handlePlaybackRateIntent, this.eOpts.REACTOR);
+    this.config.on("intent.playbackRate", this.handlePlaybackRateIntent, this.evtOpts.CONFIG);
   }
   // --- Presentation Modes Wiring ---
   protected wireFullscreen(): void {
-    this.ctlr.state.watch("docInFullscreen", this.setFullscreenChangeState, this.eOpts.REACTOR);
-    this.config.on("intent.fullscreen", this.handleFullscreenIntent, this.eOpts.REACTOR);
+    this.ctlr.state.watch("docInFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
+    this.config.on("intent.fullscreen", this.handleFullscreenIntent, this.evtOpts.CONFIG);
   }
   // --- Attribute Wiring ---
   protected wireLoop(): void {
-    this.config.on("intent.loop", this.handleLoopIntent, this.eOpts.REACTOR);
+    this.config.on("intent.loop", this.handleLoopIntent, this.evtOpts.CONFIG);
   }
   // ===========================================================================
   // HANDLERS (The Logic - Auto-Guarded by Controllable)
@@ -190,7 +197,7 @@ export class YouTubeTech extends BaseTech<BaseTechConfig, HTMLElement> {
       case YT_STATE.ENDED:
         s.paused = true;
         st.ended = e.data === 0;
-        st.seeking = false;
+        st.seeking = st.waiting = false;
         this.ctlr.cancelRAFLoop("ytCurrentTimeUpdating");
         this.syncCurrentTime();
         break;
@@ -220,5 +227,11 @@ export class YouTubeTech extends BaseTech<BaseTechConfig, HTMLElement> {
   }
   protected override onDestroy(): void {
     this.destroyYT(), super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface TechRegistryMap {
+    youtube: typeof YouTubeTech;
   }
 }

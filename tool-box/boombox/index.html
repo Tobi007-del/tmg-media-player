@@ -33,7 +33,7 @@
         /* prettier-ignore */
         background: 
           /* 1. The Core: Tighter and fainter, just hugging the Boombox */
-          radial-gradient(circle at 50% 50%, rgb(from var(--highlight) r g b / 0.07) 0%, transparent 35%),
+          radial-gradient(circle at 50% 50%, rgb(from var(--highlight) r g b / 0.07) 0%, transparent 1005%),
           /* 2. Top-Left Edge Bleed: Pulled back deep into the corner */ 
           radial-gradient(circle at 0% 0%, rgb(from var(--highlight) r g b / 0.14) 0%, transparent 25%),
           /* 3. Bottom-Right Edge Bleed: Balances the top-left */ 
@@ -55,9 +55,8 @@
       }
       .container.tmg-media-container .t007-input-field {
         --t007-input-color: var(--brand);
-        --t007-input-font-size: 15px;
+        --t007-input-unit: 14px;
         --t007-input-height: 39px;
-        --t007-input-border-radius: calc(var(--t007-input-height) / 2);
         max-width: calc(var(--tmg-video-current-unit) * 30.77);
         margin-bottom: 8px;
       }
@@ -90,11 +89,7 @@
       .dual-field-wrapper > :first-child {
         flex-grow: 1;
       }
-      .dual-field-wrapper > :last-child {
-        --t007-input-width: var(--t007-input-height);
-        --t007-input-padding: 0;
-      }
-      .dual-field-wrapper > :last-child .t007-input-wrapper {
+      .dual-field-wrapper > .t007-input-field:last-child .t007-input-wrapper {
         box-shadow: 0 0 12px rgb(from var(--brand) r g b / 1);
       }
     </style>
@@ -181,7 +176,7 @@
         wrapper.classList.add("dual-field-wrapper");
         wrapper.append(colorField, cColorField);
         fileInput.insertAdjacentElement("afterend", wrapper);
-        bbInst.store.on("ui.color", ({ target: { value: v = defs.color } }) => ((v = v.toLowerCase()), (cColorField.inputEl.value = v), (colorField.inputEl.value = colors.includes(v) ? v : "custom")), { immediate: true });
+        bbInst.store.on("ui.color", ({ target: { value: v = defs.color } }) => ((v = v.toLowerCase()), (cColorField.inputEl.value = v), (colorField.inputEl.value = colors.includes(v) ? v : "custom")), { init: true });
         colorField.inputEl.addEventListener("input", onColorChange);
         cColorField.inputEl.addEventListener("input", onColorChange);
       });

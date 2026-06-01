@@ -1,7 +1,8 @@
-import { TimeTravelOverlayConfig } from "sia-reactor/adapters/vanilla";
+import { TimeTravelConsoleConfig } from "sia-reactor/adapters/vanilla";
 import { TimeTravelConfig } from "sia-reactor/modules";
 
-export type TimeTravel = {
+export interface TimeTravel {
   module: TimeTravelConfig<any>;
-  overlay: TimeTravelOverlayConfig;
-};
+  overlay: TimeTravelConsoleConfig;
+  persist: boolean;
+}

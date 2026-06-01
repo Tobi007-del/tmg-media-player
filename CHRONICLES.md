@@ -365,7 +365,7 @@ This architecture allows for **Stubborn Competence**. A Plugin (eg: Volume Audio
 
 That is the Art of Resolution.
 
-There's `immediate: true` now as an option for all listeners so the same logic can be shared for initialization and subsequent state updates. You can also pass a signal so it's on par with modern JS event listener patterns and for more cleaner code, easier on the garbage collector too; avoiding churn.
+There's `init: true` now as an option for all listeners so the same logic can be shared for initialization and subsequent state updates. You can also pass a signal so it's on par with modern JS event listener patterns and for more cleaner code, easier on the garbage collector too; avoiding churn.
 
 ### The Data-Centric View (Shared Identity)
 

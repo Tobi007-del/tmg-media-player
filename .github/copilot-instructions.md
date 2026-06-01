@@ -77,7 +77,7 @@ Dash convention:
 ```ts
 public override wire(): void {
   // Variables Assignment         <- plug refs, DOM refs, computed initial values (for other methods too)
-  // DOM Injection                <-  goes in mount(), create()
+  // Features Gating              <- tech.features.X hides based on tech capabilities, run before listeners and init on ctlr.payload.initialized
   // Event Listeners              <- native addEventListener
   // Plug Listeners               <- where applicable if plug has reactive state
   // [If this.config or this.state is reactive -- own listeners come BEFORE ctlr.*] - S->C
@@ -93,9 +93,7 @@ public override wire(): void {
   // ---- Media Listeners         <- (short dashes: MSC shifts to Media, intro "Listeners")
   // ---- State --------          <- (short dashes + fill: same op, next MSC tier - no repeat)
   // ---- Config -------          <- same
-
-  // Features Gating              <- tech.features.X hides or disables based on tech capabilities
-  // Post Wiring|Mounting                  <- final imperative calls (tech.features.X = true, etc.)
+  // Post Wiring                <- final imperative calls (tech.features.X = true, etc.)
 }
 ```
 
@@ -113,8 +111,8 @@ Not every section is always present. Use only what the plug needs.
 ```ts
 public override mount(): void {
   // Variables Assignment    <- createEl(), ComponentRegistry.init()
-  // DOM Injection           <- append/prepend/insertAdjacentHTML, can apply to modules too
-  // Utility Injection       <- rare but for subs like pins, modules. can apply to modules too
+  // DOM Injection           <- append/prepend/insertAdjacentHTML, can contain reactive wiring if config determines DOM structure, those sub-blocks will act with GSWL-MSC pattern and be prefixed with `DOM! -> `.
+  // Utility Injection       <- rare but for subs like pins, modules, e.t.c. use for wire() too
   // Post Mounting
 }
 ```
@@ -164,13 +162,11 @@ export class MyComp extends BaseComponent<MyConfig, MyState, HTMLButtonElement> 
 | `ctlr.config`                                       | `Reactive<VideoBuild>` - full build config                             |
 | `ctlr.state`                                        | `Reactive<RuntimeState>` - readyState, dimensions                      |
 | `ctlr.media`                                        | `Reactive<CtlrMedia>` - state, intent, status, settings, tech, element |
-| `ctlr.videoContainer`                               | Main wrapper div                                                       |
 | `ctlr.DOM`                                          | Cached DOM refs                                                        |
 | `ctlr.throttle(key, fn, ms)`                        | Named throttle                                                         |
 | `ctlr.RAFLoop(key, fn)` / `ctlr.cancelRAFLoop(key)` | Named RAF loops                                                        |
 | `ctlr.fire(type, detail)`                           | Custom event dispatch                                                  |
 | `ctlr.setReadyState(n?)`                            | Advance readyState (+1, clamped 0-3)                                   |
-| `ctlr.pseudoVideo`                                  | Hidden cloned video for canvas frame preview                           |
 
 ---
 
@@ -196,7 +192,7 @@ export class MyComp extends BaseComponent<MyConfig, MyState, HTMLButtonElement> 
 - `.set()` mediators run FIFO - first registered = highest authority
 - `.get()` mediators run LIFO - last registered gets first look
 - `.watch()` - sync, fires before `.on()` listeners
-- `.on()` - async batched; use `{ immediate: true }` to also fire on wire
+- `.on()` - async batched; use `{ init: true }` to also fire on wire
 - Always use `{ signal: this.signal }` - auto-cleanup on destroy
 - **Never add `window`/`document` event listeners when the state is already tracked in `ctlr.state`** (e.g. `screenOrientation`, `docInFullscreen`, `mediaParentIntersecting`, `docVisibilityState`). Use `ctlr.state.watch()`/`.on()` instead.
 
@@ -280,9 +276,10 @@ Canonical example: `volume.ts` on `media.intent.volume` and `media.intent.muted`
 
 ## Additional Coding Rules
 
+- **Notable changes**: `tmg-video` is now `tmg-media` on all fronts to allow for the new supports. Keep your eyes open on new patterns.
 - **No arrow function class properties**: `getMainColor = async () =>` and `moveFrame = () =>` are anonymous — they bypass `guardAllMethods` binding. Always use named method syntax: `public async getMainColor(...) {}`, `public moveFrame(...) {}`. Arrow functions are fine for inline callbacks (`.then()`, Promise constructors, `throttle`, event listeners passed inline).
 - **`onDestroy` stays minimal**: `nullify()` on `Controllable` nukes all reactive state at end-of-life. Do NOT reset arrays, null out refs, or clear maps manually in `onDestroy` — only run `this.clups`, any `removeScrollAssist` calls, and destroy child instances/pins.
-- **`immediate: "auto"` vs `immediate: true`**: use `"auto"` for forwarding watchers (value may not exist yet); use `true` only for always-valid computed values wired at startup.
+- **`init: "auto"` vs `init: true`**: use `"auto"` for forwarding watchers (value may not exist yet); use `true` only for always-valid computed values wired at startup.
 - **Semantic property naming**: if a property already lives on a typed class, don't repeat the class in the name. `PlaylistPlug.currentIndex` not `currentPlaylistIndex` — the class already provides the namespace.
 - **Imports in all files**: always import from `"."` (the barrel index), except when a direct path is required to break a circular dependency or the folder has not index.ts.
 

@@ -1,8 +1,9 @@
 import type { Controller } from "./controller";
 import type { Inert, Intent, State, Volatile } from "sia-reactor";
-import type { Sources, Src, SrcObject, Tracks, ObjectFit, CueLike } from "../plugs";
-import type { BaseTech } from "../techs";
-import { MediaType } from "./generics";
+import { MediaType, Sources, Src, SrcObject, Tracks } from "./generics";
+import type { ObjectFit } from "@plugs/settings/objectFit/types";
+import type { CueLike } from "@plugs/settings/captions/types";
+import type { BaseTech } from "@techs/base";
 
 export interface MediaContract {
   // "Must Haves" to be considered media
@@ -28,7 +29,7 @@ export interface MediaState {
   pictureInPicture: boolean;
   fullscreen: boolean;
   theater: boolean;
-  miniplayer: "auto" | boolean;
+  miniplayer: boolean;
   // --- Casting (Connection Handshakes) ---
   airplay: boolean; // Apple AirPlay
   chromecast: boolean; // Google Cast
@@ -142,6 +143,7 @@ export interface MediaReport {
 
 export type CtlrMedia = MediaReport & {
   tech: Inert<BaseTech>;
+  features: Reactive<MediaFeatures>;
   container: Inert<HTMLElement>;
   pseudoContainer: Inert<HTMLElement>; // a replacement when container needs to eject, e.t.c
 } & (

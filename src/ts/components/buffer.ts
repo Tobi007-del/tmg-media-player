@@ -1,5 +1,5 @@
-import { BaseComponent, ComponentState } from "./";
-import { createEl } from "../utils";
+import { BaseComponent, ComponentState } from "./base";
+import { createEl } from "@utils/dom";
 
 export type BufferConfig = undefined;
 
@@ -13,5 +13,11 @@ export class Buffer extends BaseComponent<BufferConfig, ComponentState, HTMLDivE
   public override mount(): void {
     // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.element);
+  }
+}
+
+declare module "@defs/registries" {
+  interface ComponentRegistryMap {
+    buffer: typeof Buffer;
   }
 }

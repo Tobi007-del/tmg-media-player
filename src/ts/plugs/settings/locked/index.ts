@@ -1,35 +1,42 @@
-import { BasePlug, KeysPlug, Locked, LOCKED_BUILD, LockedState, OverlayPlug } from "../..";
-import type { Controller } from "../../../core/controller";
-import type { FullscreenLockButton } from "../../../components";
-import type { CtlrConfig } from "../../../types/config";
+﻿import { BasePlug } from "../../base";
+import type { Locked, LockedState } from "./types";
+import { LOCKED_BUILD } from "./build";
+import type { Controller } from "@core/controller";
+import type { ScreenLockButton } from "@components/screenlock";
+import type { CtlrConfig } from "@defs/config";
 import type { REvent } from "sia-reactor";
-import { ComponentRegistry } from "../../../core/registry";
-import { setTimeout, parseCSSTime, mockAsync, createEl } from "../../../utils";
+import { ComponentRegistry } from "@core/registries";
+import { createEl } from "@utils/dom";
+import { setTimeout, mockAsync } from "@utils/fn";
+import { parseCSSTime } from "@utils/str";
 
 export class LockedPlug extends BasePlug<Locked, LockedState> {
-  public static readonly plugName: string = "locked";
+  public static readonly plugName = "locked";
   public static readonly BUILD = LOCKED_BUILD;
   public lockOverlayDelayId = -1;
   public wrapper!: HTMLDivElement;
-  public control: FullscreenLockButton | null = null;
+  public control: ScreenLockButton | null = null;
 
-  constructor(ctlr: Controller, config: Locked) {
+  constructor(ctlr: Controller, config: Locked = ctlr.config.settings.locked) {
     super(ctlr, config, { visible: false });
   }
 
   public override mount(): void {
     // Variables Assignment
     this.wrapper = createEl("div", { className: "tmg-media-screen-locked-wrapper", innerHTML: `<p>Screen Locked</p><p>Tap to Unlock</p>` });
-    this.control = ComponentRegistry.init<FullscreenLockButton>("screenlock", this.ctlr);
+    this.control = ComponentRegistry.init("screenlock", this.ctlr);
     // DOM Injection
     this.ctlr.DOM.containerContentWrapper?.append(this.wrapper);
+  }
+  public override unmount(): void {
+    this.wrapper.remove();
   }
 
   public override wire(): void {
     // Event Listeners
     this.media.container.addEventListener("click", this.handleScreenClick, { signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.locked.disabled", this.handleDisabled, { signal: this.signal, immediate: true });
+    this.ctlr.config.on("settings.locked.disabled", this.handleDisabled, { init: true, signal: this.signal });
   }
 
   protected handleScreenClick(): void {
@@ -38,18 +45,18 @@ export class LockedPlug extends BasePlug<Locked, LockedState> {
 
   protected async handleDisabled({ value }: REvent<CtlrConfig, "settings.locked.disabled">): Promise<void> {
     if (!value) {
-      // JS: this.ctlr.leaveSettingsView?.();
+      this.ctlr.plug("settings.settingsView")?.leaveView();
       setTimeout(this.showOverlay, 0, this.signal);
       this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar");
-      this.ctlr.plug<OverlayPlug>("overlay")?.remove("force");
-      this.ctlr.plug<KeysPlug>("keys")?.setEventListeners("remove");
+      this.ctlr.plug("settings.overlay")?.remove("force");
+      this.ctlr.plug("settings.keys")?.setEventListeners("remove");
     } else {
       this.removeOverlay();
       await mockAsync(parseCSSTime(this.ctlr.settings.css.switchTransitionTime));
       this.media.container.classList.toggle("tmg-media-progress-bar", this.ctlr.settings.controlPanel.progressBar);
       this.media.container.classList.remove("tmg-media-locked");
-      this.ctlr.plug<OverlayPlug>("overlay")?.show();
-      this.ctlr.plug<KeysPlug>("keys")?.setEventListeners("add");
+      this.ctlr.plug("settings.overlay")?.show();
+      this.ctlr.plug("settings.keys")?.setEventListeners();
     }
   }
 
@@ -76,3 +83,15 @@ export class LockedPlug extends BasePlug<Locked, LockedState> {
 
 export type * from "./types";
 export * from "./build";
+
+declare module "@defs/registries" {
+  interface PlugRegistryMap {
+    "settings.locked": typeof LockedPlug;
+  }
+}
+
+declare module "@defs/config" {
+  interface Settings {
+    locked: Locked;
+  }
+}

@@ -1,26 +1,24 @@
-import { MEDIA_INTENT_BUILD, MEDIA_SETTINGS_BUILD, MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "../consts/media";
-import { MediaState, MediaReport } from "../types/contract";
-import type { Source, Sources, Track, Tracks } from "../plugs";
-import { isStr, isNum, createEl, isIter, isSameURL, loadResource, queryFullscreenEl, queryPictureInPictureEl, cleanURL } from ".";
-import { MediaType } from "../types/generics";
+import { MEDIA_INTENT_BUILD, MEDIA_SETTINGS_BUILD, MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
+import { MediaState, MediaStatus, MediaSettings, MediaReport } from "@defs/contract";
+import { isStr, isNum, isIter, isSameURL, cleanURL } from "@t007/utils";
+import { createEl } from "@utils/dom";
+import { queryFullscreenEl, queryPictureInPictureEl } from "@utils/dom";
+import { Dimensions, MediaType, Source, Sources, Track, Tracks } from "@defs/generics";
 
 // ============ Video Utilities ============
 // Types
-export type Dimensions = Record<"width" | "height", number>;
 type SourceLike = Source | (HTMLSourceElement & Record<string, any>);
 type TrackLike = Track | (HTMLTrackElement & Record<string, any>);
 
 // Report Generation
-export function getMediaReport(m: HTMLMediaElement): MediaReport {
-  const isVid = m instanceof HTMLVideoElement,
-    txtTrackIdx = getTrackIdx(m, "Text");
-  const report = {
-    state: { src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? m.poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) },
-    status: { readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? m.videoWidth : 0, videoHeight: isVid ? m.videoHeight : 0, textTracks: m.textTracks, audioTracks: (m as any).audioTracks, videoTracks: (m as any).videoTracks, activeCue: m.textTracks[txtTrackIdx]?.activeCues?.[0] || null },
-    settings: { defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate },
-  };
+export function getMediaReport(m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement): MediaReport {
+  const _txtTrackIdx = getTrackIdx(m, "Text"),
+    report = { state: getMediaState(m, isVid, _txtTrackIdx), status: getMediaStatus(m, isVid, _txtTrackIdx), settings: getMediaSettings(m) };
   return { state: { ...MEDIA_STATE_BUILD, ...report.state }, intent: { ...MEDIA_INTENT_BUILD, ...report.state }, status: { ...MEDIA_STATUS_BUILD, ...report.status }, settings: { ...MEDIA_SETTINGS_BUILD, ...report.settings } };
 }
+export const getMediaState = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): MediaState => ({ src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume * 100, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: _txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? m.poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) });
+export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): MediaStatus => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? m.videoWidth : 0, videoHeight: isVid ? m.videoHeight : 0, textTracks: m.textTracks, audioTracks: (m as any).audioTracks, videoTracks: (m as any).videoTracks, activeCue: m.textTracks[_txtTrackIdx]?.activeCues?.[0] || null });
+export const getMediaSettings = (m: HTMLMediaElement): MediaSettings => ({ defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate });
 
 // Geometry
 export function getRenderedBox(elem: HTMLElement & { videoWidth?: number; videoHeight?: number }): Partial<Dimensions & { left: number; top: number }> {
@@ -156,22 +154,22 @@ export function isSameTracks(a?: Tracks, b?: Tracks): boolean {
 const isTrack = (type: TrackType, term: any) => `${type}Track` in window && term instanceof (window as any)[`${type}Track`];
 export function getTrackIdx(medium: HTMLMediaElement, type: TrackType, term: any = "active", list = (medium as any)[`${type.toLowerCase()}Tracks`]): number {
   if (isNum(term)) return term;
-  if (term === "active") {
-    if (type === "Text") for (let i = 0; i < +list?.length; i++) if (list[i].mode === "showing") return i;
-    if (type === "Audio") for (let i = 0; i < +list?.length; i++) if (list[i].enabled) return i;
+  if (list && term === "active") {
+    if (type === "Text") for (let i = 0; i < +list.length; i++) if (list[i].mode === "showing") return i;
+    if (type === "Audio") for (let i = 0; i < +list.length; i++) if (list[i].enabled) return i;
     if (type === "Video") return list.selectedIndex ?? -1;
   }
-  if (isTrack(type, term)) return Array.prototype.indexOf.call(list, term);
-  if (isStr(term)) {
+  if (list && isTrack(type, term)) return Array.prototype.indexOf.call(list, term);
+  if (list && isStr(term)) {
     term = term.toLowerCase();
-    return !isNaN(+term) ? +term : Array.prototype.findIndex.call(list, (t: any) => t.id.toLowerCase() === term || t.label.toLowerCase() === term || t.srclang.toLowerCase() === term || t.language.toLowerCase() === term || isSameURL(t.src, term));
+    return !isNaN(+term) ? +term : Array.prototype.findIndex.call(list, (t: any) => t.id.toLowerCase() === term || t.label.toLowerCase() === term || t.srclang?.toLowerCase() === term || t.language.toLowerCase() === term || isSameURL(t.src, term));
   }
   return -1;
 }
 export function setCurrentTrack(medium: HTMLMediaElement, type: TrackType, term: any, flush = false, list = (medium as any)[`${type.toLowerCase()}Tracks`]): void {
   const idx = getTrackIdx(medium, type, term, list);
-  if (type !== "Video") for (let i = 0; i < list.length; i++) type === "Text" ? (list[i].mode = i === idx ? "showing" : flush ? "disabled" : "hidden") : (list[i].enabled = i === idx);
-  else list[idx] && (list[idx].selected = true);
+  if (list && type !== "Video") for (let i = 0; i < list.length; i++) type === "Text" ? (list[i].mode = i === idx ? "showing" : flush ? "disabled" : "hidden") : (list[i].enabled = i === idx);
+  else list?.[idx] && (list[idx].selected = true);
 }
 
 // Capbailities

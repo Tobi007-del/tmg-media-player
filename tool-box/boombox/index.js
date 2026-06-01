@@ -36,12 +36,13 @@ class Boombox {
   }
   constructor() {
     tmg.bindAllMethods(this);
-    tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-overlay.min.css`);
+    // tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
+    tmg.loadResource("/sia-reactor/src/css/time-travel-console.css");
     this.store = window.bbStore = tmg.reactive(structuredClone(bbStore));
-    window.TTM = new tmg.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
-    window.TTP = new tmg.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new tmg.IndexedDBAdapter({ durability: "relaxed" }), useSnapshot: true, throttle: 150 }).attach(TTM.state, "timeTravel");
-    this.store.use(TTP, "app"), TTP.state.once("hydrated", () => this.store.use(TTM));
-    window.TTO = new tmg.TimeTravelOverlay(window.TTM, { title: `NINO's Boombox Tape` });
+    window.TTM = new tmg.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] }).untrack();
+    window.PMP = new tmg.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new tmg.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150 }).attach(TTM.state, "timeTravel.state");
+    this.store.use(PMP, "app").use(TTM), PMP.state.once("hydrated", TTM.track);
+    window.TTC = new tmg.TimeTravelConsole(window.TTM, { title: `NINO's Boombox Tape` });
     this.media = new Audio("/tmg-media-player/assets/media/Subway-Surfers-Theme-Sound-Effect.mp3");
     this.media.loop = true;
     this.bbSens = { translate: 1.2, rotate: 0.6, zoom: 2.4, overflow: 70 }; // S.I.A. configuration
@@ -63,21 +64,21 @@ class Boombox {
   }
   wire() {
     // State Listeners: using watchers for forwarded intents so it doesn't take two microtasks, listeners otherwise
-    this.store.watch("ui.color", this.handleColor, { immediate: true });
-    this.store.on("audio.intent.paused", this.handlePausedIntent, { immediate: true });
-    this.store.on("audio.state.paused", this.handlePausedState, { immediate: true });
-    this.store.watch("audio.settings.volume.value", this.onVolume, { immediate: true });
-    this.store.on("audio.settings.volume.value", this.handleVolume, { immediate: true });
-    this.store.on("audio.settings.volume.min", this.handleMin, { immediate: true });
-    this.store.on("audio.settings.volume.max", this.handleMax, { immediate: true });
-    this.store.watch("audio.settings.volume.muted", this.onMuted, { immediate: true });
-    this.store.on("audio.settings.volume.muted", this.handleMuted, { immediate: true });
-    this.store.on("audio.settings.pan", this.handlePan, { immediate: true });
-    this.store.on("audio.settings.boost", this.handleBoost, { immediate: true });
-    this.store.on("audio.settings.moveMode", this.handleMoveMode, { immediate: true });
-    this.store.on("audio.settings.vibe", this.handleVibe, { immediate: true });
-    this.store.on("audio.settings.vibeDisabled", this.handleVibeDisabled, { immediate: true });
-    this.store.on("transform", this.handleTransform, { immediate: true });
+    this.store.watch("ui.color", this.handleColor, { init: true });
+    this.store.on("audio.intent.paused", this.handlePausedIntent, { init: true });
+    this.store.on("audio.state.paused", this.handlePausedState, { init: true });
+    this.store.watch("audio.settings.volume.value", this.onVolume, { init: true });
+    this.store.on("audio.settings.volume.value", this.handleVolume, { init: true });
+    this.store.on("audio.settings.volume.min", this.handleMin, { init: true });
+    this.store.on("audio.settings.volume.max", this.handleMax, { init: true });
+    this.store.watch("audio.settings.volume.muted", this.onMuted, { init: true });
+    this.store.on("audio.settings.volume.muted", this.handleMuted, { init: true });
+    this.store.on("audio.settings.pan", this.handlePan, { init: true });
+    this.store.on("audio.settings.boost", this.handleBoost, { init: true });
+    this.store.on("audio.settings.moveMode", this.handleMoveMode, { init: true });
+    this.store.on("audio.settings.vibe", this.handleVibe, { init: true });
+    this.store.on("audio.settings.vibeDisabled", this.handleVibeDisabled, { init: true });
+    this.store.on("transform", this.handleTransform, { init: true });
     this.store.set("transform.x", this.setTransformX); // UI Guard: prevents out of bounds behaviour with respect to overflow
     this.store.set("transform.y", this.setTransformY); // UI Guard: ---------------------------------------------------------
     this.store.set("transform.z", (v) => tmg.clamp(0.1, v, 2)); // UI Guard: We clamp it at 0.1 so it can never pass through the listener's head.
@@ -159,7 +160,7 @@ class Boombox {
     this.analyser.connect(tmg._limiter);
   }
   handleColor(color) {
-    document.documentElement.style.setProperty("--brand", (window.TTO.config.color = color.toLowerCase()));
+    document.documentElement.style.setProperty("--brand", (window.TTC.config.color = color.toLowerCase()));
   }
   handlePausedIntent({ value: paused }) {
     !paused ? this.media.play().catch((e) => (t007.toast.error(e?.message || "Something went wrong"), console.error(e))) : this.media.pause(); // dummy
@@ -185,7 +186,7 @@ class Boombox {
     if (value <= this.settings.volume.value) this.settings.volume.value = value;
     this.volumeSlider.max = value;
   }
-  onMuted(muted, { target: { oldValue } }) {
+  onMuted(muted) {
     if (muted) {
       this.lastVolume = this.settings.volume.value;
       this.settings.volume.value = 0;
@@ -223,7 +224,7 @@ class Boombox {
       } = this.store.transform,
       // --- POSITION MATH ---
       // WebAudio space is much smaller than screen pixels.
-      // We map your CSS % to an n-unit grid. CSS Y is down (+), WebAudio Y is up (+), so we invert Y.
+      // We map your CSS % to an n-unit: grid. CSS Y is down (+), WebAudio Y is up (+), so we invert Y.
       audioX = ((x / 100) * 1.2) / z,
       audioY = (-(y / 100) * 0.6) / z,
       // Depth: We start the boombox at Z = -1 (in front of the listener's face).
@@ -267,7 +268,7 @@ class Boombox {
   resetPos(e) {
     this.bbBody.style.transition = "transform 0.8s cubic-bezier(0.1, 0, 0, 1)"; // Adds a snnapy transition for the reset
     this.bbBody.ontransitionend = () => this.bbBody.style.removeProperty("transition");
-    Object.assign(this.store.transform, bbStore.transform); // Smoothly reset the state to the defaults
+    tmg.fanout(this.store.transform, bbStore.transform); // Smoothly reset the state to the defaults
     this.eS = { lastX: 0, lastY: 0, isZSliding: false, auxDown: false }; // Reset the event store to prevent jumps
   }
   startVibing() {

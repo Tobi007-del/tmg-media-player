@@ -27,7 +27,7 @@
 .tmg-media-container.tmg-media-disabled * {
   animation: none !important;
 }
-.tmg-media-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper) {
+.tmg-media-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
   display: none;
 }
 .tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) .tmg-media {

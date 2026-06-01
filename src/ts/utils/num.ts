@@ -1,16 +1,15 @@
-import { AptRange } from "../types/generics";
-import { isNum, clamp, NOOP } from "@t007/utils";
-import { noExtension } from "./file";
+import { AptRange } from "@defs/generics";
+import { isNum, clamp } from "@t007/utils";
 
 // Validators
 export { clamp };
 
-export function isValidNum(val: any): boolean {
+export function isSafeNum(val: any): boolean {
   return isNum(val) && !isNaN(val ?? NaN) && val !== Infinity;
 }
 
 export function safeNum(number: any, fallback = 0): number {
-  return isValidNum(number) ? number : fallback;
+  return isSafeNum(number) ? number : fallback;
 }
 
 // Parsers

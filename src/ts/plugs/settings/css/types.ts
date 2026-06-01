@@ -1,5 +1,7 @@
-export type Css = Record<string, string | number> & {
-  captionsCharacterEdgeStyle: "none" | "raised" | "depressed" | "outline" | "drop-shadow";
-  captionsTextAlignment: "left" | "center" | "right";
+export interface CSSMap {
+  [key: string]: string | number;
+}
+
+export type Css = CSSMap & {
   syncWithMedia: Record<string, boolean>; // not a live synced key
 };

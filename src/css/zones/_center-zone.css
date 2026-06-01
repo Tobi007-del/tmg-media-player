@@ -5,6 +5,10 @@
 .tmg-media-big-controls-wrapper-cover {
   max-width: 100%;
 }
+.tmg-media-big-controls-wrapper-cover,
+.tmg-media-container:is(.tmg-media-previewing, .tmg-media-scrubbing, :has(.tmg-media-touch-timeline-notifier.tmg-media-control-active)) .tmg-media-big-controls-wrapper-cover {
+  display: none;
+}
 .tmg-media-container:is(.tmg-media-replay, .tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) .tmg-media-big-controls-wrapper-cover,
 .tmg-media-big-controls-wrapper-cover:has(.tmg-media-big-controls-wrapper > :not(:where(button[class^="tmg-media-big-"]))[data-displayed="true"]),
 .tmg-media-container:has(.tmg-media-control-dragging:not([data-drag-id="wrapper"])) .tmg-media-big-controls-wrapper-cover {
@@ -38,16 +42,9 @@
 .tmg-host-container[data-size-tier^="xxxx"] .tmg-media-big-controls-wrapper {
   gap: calc(var(--tmg-media-current-unit) * 1.5);
 }
-
 :is(.tmg-media-big-controls-wrapper, .tmg-media-notifiers-container) > * {
   justify-content: center;
   align-items: center;
   background-color: var(--tmg-media-brand-complement-color);
   border-radius: 50%;
-}
-:is(.tmg-media-big-controls-wrapper > *, :where(button[class^="tmg-media-big-"])) > svg {
-  transform: scale(var(--tmg-media-current-big-controls-scale));
-}
-.tmg-media-big-play-pause-btn > svg {
-  transform: scale(calc(var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale)));
 }

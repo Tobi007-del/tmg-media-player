@@ -1,19 +1,40 @@
 import {
   ERROR_CODES,
   MODES,
-  KEYSHORTCUT_ACTIONS,
-  MODDED_KEYSHORTCUT_ACTIONS,
+  WHITELISTED_KEYS,
+  KEY_SHORTCUT_ACTIONS,
+  KEY_SHORTCUT_MOD_ACTIONS,
   APT_AUTOPLAY_OPTIONS,
   ORIENTATION_OPTIONS,
-} from "../consts/generics";
+} from "@consts/generics";
 
 export type MediaType = "video" | "audio";
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export type Mode = (typeof MODES)[number];
-export type KeyShortcutAction = (typeof KEYSHORTCUT_ACTIONS)[number];
-export type ModdedKeyShortcutAction = (typeof MODDED_KEYSHORTCUT_ACTIONS)[number];
+export type WhitelistedKey = (typeof WHITELISTED_KEYS)[number];
+export type KeyShortcutAction = (typeof KEY_SHORTCUT_ACTIONS)[number];
+export type KeyShortcutModAction = (typeof KEY_SHORTCUT_MOD_ACTIONS)[number];
 export type AptAutoplayOption = (typeof APT_AUTOPLAY_OPTIONS)[number];
 export type OrientationOption = (typeof ORIENTATION_OPTIONS)[number];
+export type Dimensions = Record<"width" | "height", number>;
+
+export interface Source {
+  src: string;
+  type: string;
+  media: string;
+}
+export type Sources = Source[];
+export type SrcObject = MediaSource | null;
+
+export interface Track {
+  kind: string;
+  label: string;
+  srclang: string;
+  src: string;
+  default: boolean;
+  id: string;
+}
+export type Tracks = Track[];
 
 export interface PosterPreview {
   usePoster: boolean;
@@ -30,6 +51,5 @@ export interface AptRange {
 export interface OptRange {
   min: number;
   max: number;
-  value: number;
   skip: number;
 }

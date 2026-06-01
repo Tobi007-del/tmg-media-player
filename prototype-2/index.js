@@ -1552,7 +1552,7 @@ class T_M_G_Video_Controller {
     const v = this.playlist?.find((v) => (v.media.id && v.media.id === this.media.id) || tmg.isSameURL(v.src, this.src));
     this.currentPlaylistIndex = v ? this.playlist.indexOf(v) : 0;
     if (v) {
-      this.media = v.media ? { ...this.media, ...v.media } : (v.media ?? null);
+      this.media = v.media ? { ...this.media, ...v.media } : v.media ?? null;
       this.setPosterState();
       this.settings.time.start = v.settings.time.start;
       this.settings.time.end = v.settings.time.end;
@@ -1576,7 +1576,7 @@ class T_M_G_Video_Controller {
     this.loaded = false;
     this.currentPlaylistIndex = index;
     const v = this.playlist[index];
-    this.media = v.media ? tmg.mergeObjs(this.media, v.media) : (v.media ?? null);
+    this.media = v.media ? tmg.mergeObjs(this.media, v.media) : v.media ?? null;
     this.setPosterState();
     this.settings.time.start = v.settings.time.start;
     this.settings.time.end = v.settings.time.end;
@@ -2865,7 +2865,7 @@ class T_M_G_Video_Controller {
     return terms;
   }
   keyEventAllowed(e) {
-    if (this.settings.keys.disabled || ((e.key === " " || e.key === "Enter") && e.currentTarget.document.activeElement?.tagName === "BUTTON") || e.currentTarget.document.activeElement?.matches("input,textarea,[contenteditable='true']")) return false;
+    if (this.settings.keys.disabled || ((e.key === " " || e.key === "Enter") && e.currentTarget.document.activeElement?.tagName === "BUTTON") || e.currentTarget.document.activeElement?.matches("input,textarea,[contenteditable]")) return false;
     const combo = tmg.stringifyKeyCombo(e);
     const { override, block, action, allowed } = this.getTermsForCombo(combo);
     if (block) return false;

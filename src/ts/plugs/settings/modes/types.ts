@@ -1,4 +1,4 @@
-import { OrientationOption } from "../../../types/generics";
+import { OrientationOption } from "@defs/generics";
 
 export type ModesFullscreen = {
   disabled: boolean;

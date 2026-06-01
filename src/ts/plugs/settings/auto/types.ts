@@ -1,4 +1,4 @@
-import { AptAutoplayOption, PosterPreview } from "../../../types/generics";
+import { AptAutoplayOption, PosterPreview } from "@defs/generics";
 
 export interface Auto {
   play: boolean | AptAutoplayOption;

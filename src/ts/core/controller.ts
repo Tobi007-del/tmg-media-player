@@ -1,20 +1,28 @@
-import type { CtlrConfig } from "../types/config";
-import type { CtlrMedia } from "../types/contract";
-import { TechRegistry, PlugRegistry } from "./registry";
-import { STATE_BUILD, type CtlrState } from "../tools/runtime";
-import { TechConstructor, HTML5Tech } from "../techs";
-import { PlugConstructor, ToastsPlug, type BasePlug as Plug } from "../plugs";
-import { guardAllMethods, guardMethod, setTimeout, getWindow, clamp, uncamelize, cloneMedia, getMediaReport, isSameURL, isSameSources, observeIntersection, observeResize, getSizeTier, createEl, throttle, cancelRAFLoop, RAFLoop, rafLoopMap } from "../utils";
+﻿import type { CtlrConfig } from "@defs/config";
+import type { CtlrMedia } from "@defs/contract";
+import { TechRegistry, PlugRegistry } from "./registries";
+import { STATE_BUILD, type CtlrState } from "@tools/runtime";
+import { HTML5Tech } from "@techs/html5";
+import type { TechConstructor } from "@techs/base";
+import { PlugConstructor as PC, type BasePlug as Plug } from "@plugs/base";
+import { guardAllMethods, guardMethod } from "@utils/methd";
+import { setTimeout, throttle, cancelRAFLoop, RAFLoop, rafLoopMap, breath } from "@utils/fn";
+import { getWindow } from "@utils/dom";
+import { clamp } from "@utils/num";
+import { observeIntersection, observeResize } from "@utils/dom";
+import { uncamelize, isSameURL } from "@utils/str";
+import { cloneMedia, getMediaReport, isSameSources, getSizeTier } from "@utils/media";
+import { createEl } from "@utils/dom";
 import { type Volatile, reactive, type Reactive, inert, intent, state, volatile } from "sia-reactor";
-import { nuke } from "sia-reactor/utils";
+import { fanout, nuke } from "sia-reactor/utils";
+import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
 
 // --- CONTROLLER (The Orchestrator) ---
 export class Controller {
   // --- CORE SYSTEM ---
-  public readonly id: string;
-  public plugs = new Map<string, Plug>();
   private ac = new AbortController();
   public readonly signal = this.ac.signal;
+  public plugs = new Map<string, Plug>();
   // --- RUNTIME (Global Controller States) ---
   public config: Reactive<Volatile<CtlrConfig>>;
   public state: Reactive<CtlrState> & Record<string, any>; // runtime state and states to be populated for easy reach
@@ -22,56 +30,59 @@ export class Controller {
   public settings!: CtlrConfig["settings"]; // for easy reach, better devx
   // --- MEMORY ---
   public _build: CtlrConfig; // Build Cache
-  private _payload: { readyState: number; initialized: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any; // must use getter for payload
+  private _payload: { readyState: number; initialized: boolean; wired: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any; // must use getter for payload
   // DOM References (Utilized by Plugs)
-  public DOM: Record<string, HTMLElement | null> = {}; // To be populated with common elements for easy reach
+  public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
   // --- FLAGS (Essential Only) ---
   public mutatingDOMM = true; // Critical for Player wrapper to know when swapping modes
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
     this.setReadyState(0, medium);
     guardAllMethods(this, this.guard);
-    this.id = build.id;
-    this.config = reactive(volatile(build)); // `lineageTracing: false` so clone before reassigning "already in state" objects
-    this.state = reactive<CtlrState>(STATE_BUILD);
     const defs = getMediaReport(medium); // returns defaults and initials
-    this.media = reactive({ intent: volatile(intent(defs.intent)), state: state(defs.state), status: state(defs.status), settings: state(defs.settings), tech: inert({}), type: build.mediaType, element: inert(medium), pseudoElement: inert(createEl(build.mediaType)), container: inert(createEl("div")), pseudoContainer: inert(createEl("div")) }) as any;
+    this.config = reactive(volatile(build), { debug: false, referenceTracking: true, smartCloning: true }); // `lineageTracing: false` so clone before reassigning "already in state" objects
+    this.state = reactive<CtlrState>(structuredClone(STATE_BUILD), { debug: false });
+    this.media = reactive({ intent: volatile(intent({ ...defs.intent, ...build.startup.intent })), state: state(defs.state), status: state(defs.status), settings: state({ ...defs.settings, ...build.startup.settings }), tech: inert({}), features: reactive({}), type: build.mediaType, element: inert(medium), pseudoElement: inert(createEl(build.mediaType)), container: inert(createEl("div")), pseudoContainer: inert(createEl("div")) }, { debug: false }) as any;
     this.media.set("tech", (t) => inert(t!), { signal: this.signal });
-    this.config.watch("settings", (v) => (this.settings = v), { immediate: true, signal: this.signal }); // COMPUTED: settings can lose reference
-    this._build = this.config.snapshot(); // clone initial config for resets and fast subsequent cloning
+    this.config.watch("settings", (v) => (this.settings = v), { init: true, signal: this.signal }); // COMPUTED: settings can lose reference
+    this.log((this._build = this.config.snapshot())); // clone initial config for resets and fast subsequent cloning
     this.boot();
   }
 
-  private boot(): void {
-    this.connectPlugs(), this.wireTechHandler(), this.wireStateHandler();
-    this.setReadyState(); // boot complete
+  private async boot(): Promise<void> {
+    await breath(), await this.connectPlugs();
+    this.wireTechHandler(), this.wireStateHandler();
+    await breath(), this.setReadyState(); // stalling wiring b4 boot complete
     !this.media.state.paused ? this.setReadyState() : this.media.wonce("state.paused", () => this.setReadyState(), { signal: this.signal }); // first play(ed)
-    setTimeout(() => (this.mutatingDOMM = false), 0, this.signal);
+    setTimeout(() => (this.mutatingDOMM = false), 0, this.signal); // everything banks on "a video can't load in less than 2 RAFs"
   }
 
-  private connectPlugs(): void {
-    for (const PlugClass of PlugRegistry.getOrdered()) this.plugIn(PlugClass, PlugClass.isMain ? (this.config as any)[PlugClass.plugName] : (this.config.settings as any)[PlugClass.plugName]);
+  public async connectPlugs(Plugs = PlugRegistry.getOrdered()): Promise<void> {
+    for (const Plug of Plugs) this.plugIn(Plug), await breath();
   }
-  public plugIn(PlugClass: PlugConstructor, config?: any) {
-    if (this.config.noPlugList.includes(PlugClass.plugName) && !PlugClass.isCore) return; // Core plugs are mandatory
-    this.plug(PlugClass.plugName)?.destroy();
-    return this.plugs.set(PlugClass.plugName, new PlugClass(this, config).setup()), this; // for devx chaining
+  public disconnectPlugs(): void {
+    for (const plug of [...this.plugs.values()].reverse()) plug.destroy();
   }
-  public plug<T extends Plug = Plug>(name: string): T | undefined {
-    return this.plugs.get(name) as T | undefined;
+  public plugIn(Plug: PC, config?: any): this {
+    return (!this.config.noPlugList.includes(Plug.fullName) || Plug.isCore) && new Plug(this, config).setup(), this; // #RESPONSIBLE: no external setup
+  }
+  public plug<K extends keyof PlugRegistryMap>(fullName: K): InstanceType<PlugRegistryMap[K]> | undefined;
+  public plug<T extends Plug = Plug>(fullName: string): T | undefined;
+  public plug(fullName: string): any {
+    return this.plugs.get(fullName);
   }
 
   protected wireTechHandler(): void {
-    this.media.on("intent.src", () => this.handleTech(), { capture: true, signal: this.signal, immediate: true }); // load initial
+    this.media.on("intent.src", () => this.handleTech(), { capture: true, signal: this.signal, init: true }); // load initial
     this.media.on("intent.sources", () => this.handleTech(), { capture: true, signal: this.signal });
-    this.media.on("state.src", () => this.handleTech("state"), { capture: true, signal: this.signal }); // just in case :)
-    this.media.on("state.sources", () => this.handleTech("state"), { capture: true, signal: this.signal }); // just in case :)
+    this.media.on("state.src", () => this.handleTech("state"), { capture: true, signal: this.signal }); // wingardium leviosa !
+    this.media.on("state.sources", () => this.handleTech("state"), { capture: true, signal: this.signal }); // wingardium leviosa !
     this.media.on("settings.srcObject", () => this.handleTech(), { capture: true, signal: this.signal });
   }
   protected handleTech(pref: "state" | "intent" = "intent"): void {
     const { src: prefSrc, sources: prefSources } = pref === "intent" ? this.media.intent : this.media.state,
       { src: altSrc, sources: altSources } = pref === "intent" ? this.media.state : this.media.intent;
-    if (this.media.settings.srcObject) return this.switchTech();
+    if (this.media.settings.srcObject) return this.useTech();
     let selectedTech: TechConstructor | null = null,
       selectedSource: string | null = null;
     if (!isSameURL(prefSrc, altSrc)) {
@@ -87,25 +98,26 @@ export class Controller {
         }
       }
     }
-    this.switchTech(selectedTech || undefined);
-    if (selectedSource !== prefSrc && !this.media.tech.features.sources) this.media.intent.src = selectedSource!; // since tech can't handle sources
+    this.useTech(selectedTech || undefined);
+    if (selectedSource !== prefSrc && !this.media.features.sources) this.media.intent.src = selectedSource!; // since tech can't handle sources
   }
-  public switchTech(TechClass: TechConstructor = HTML5Tech, config = this.media): void {
-    if (this.media.tech && TechClass === this.media.tech.constructor) return;
-    if (this.media.tech) this.media.tech.destroy(), this.log(`Switching tech from '${this.media.tech.name}' -> '${TechClass.name}'`);
-    this.media.tech = new TechClass(this, config).setup();
+  public useTech(TechClass: TechConstructor = HTML5Tech): void {
+    TechClass !== this.media.tech.constructor && new TechClass(this).setup(); // #RESPONSIBLE: no external setup
+  }
+  public get isNativeTech(): boolean {
+    return this.media.element === this.media.tech.element;
   }
 
   private wireStateHandler(): void {
     observeIntersection(this.media.container.parentElement!, (entry) => (this.state.mediaParentIntersecting = entry.isIntersecting), this.signal);
     observeIntersection(this.media.container, (entry) => (this.state.mediaIntersecting = entry.isIntersecting), this.signal);
-    observeResize(this.media.container, () => (this.state.dimensions.container = getSizeTier(this.media.container)), this.signal);
-    observeResize(this.media.pseudoContainer, () => (this.state.dimensions.pseudoContainer = getSizeTier(this.media.pseudoContainer)), this.signal);
+    observeResize(this.media.container, () => fanout(this.state.dimensions.container, getSizeTier(this.media.container)), this.signal);
+    observeResize(this.media.pseudoContainer, () => fanout(this.state.dimensions.pseudoContainer, getSizeTier(this.media.pseudoContainer)), this.signal);
   }
 
   public get payload() {
     const rS = this.state?.readyState ?? 0;
-    return ((this._payload.readyState = rS), (this._payload.initialized = rS > 0), (this._payload.destroyed = rS < 0)), this._payload;
+    return ((this._payload.readyState = rS), (this._payload.initialized = rS > 0), (this._payload.wired = rS > 1), (this._payload.destroyed = rS < 0)), this._payload;
   } // cached due to frequent access
   public setReadyState(state?: number, medium?: HTMLMediaElement): void {
     const readyState = !this.state ? 0 : clamp(0, state ?? this.state.readyState + 1, 3);
@@ -113,7 +125,7 @@ export class Controller {
   }
 
   public guard = <Fn extends Function>(fn: Fn, { silent = false } = {}) => {
-    return guardMethod(fn, (e) => (this.log(e, "error", "swallow"), !silent && this.plug<ToastsPlug>("toasts")?.toast?.("Something went wrong", { tag: "tmg-stwr" }))); // treated as one log identity
+    return guardMethod(fn, (e) => (this.log(e, "error", "swallow"), !silent && this.plug("settings.toasts")?.toast?.("Something went wrong", { tag: "tmg-stwr" }))); // treated as one log identity
   }; // `()=>{}`: needs to be bounded even before initialization
 
   public log(mssg: any, type: "error" | "warn" | "log" = "log", action?: "swallow") {
@@ -127,17 +139,17 @@ export class Controller {
   }
 
   public throttle(key: string, fn: Function, delay = 30, strict = true) {
-    throttle(this.id + key, fn, delay, strict, this.signal, getWindow(this.media.container));
+    throttle(this.config.id + key, fn, delay, strict, this.signal, getWindow(this.media.container));
   }
 
   public RAFLoop(key: string, fn: Function): void {
-    RAFLoop(this.id + key, fn, this.signal, getWindow(this.media.container));
+    RAFLoop(this.config.id + key, fn, this.signal, getWindow(this.media.container));
   }
   public cancelRAFLoop(key: string): void {
-    cancelRAFLoop(this.id + key);
+    cancelRAFLoop(this.config.id + key);
   }
   public cancelAllLoops(): void {
-    rafLoopMap.keys().forEach((k) => k.startsWith(this.id) && this.cancelRAFLoop(k));
+    rafLoopMap.keys().forEach((k) => k.startsWith(this.config.id) && this.cancelRAFLoop(k));
   }
 
   public isUIActive(mode: string, el = this.media.container): boolean {
@@ -156,19 +168,19 @@ export class Controller {
     img instanceof HTMLImageElement && img?.setAttribute("data-loaded", String(img.complete && img.naturalWidth > 0));
   }
   setImgFallback<Ev extends Pick<Event, "target">>({ target: img }: Ev): void {
-    img instanceof HTMLImageElement && (img.src = window.TMG_VIDEO_ALT_IMG_SRC!);
+    img instanceof HTMLImageElement && img.src !== window.TMG_MEDIA_ALT_IMG_SRC && (img.src = window.TMG_MEDIA_ALT_IMG_SRC!);
   }
   setCanvasFallback(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, img?: HTMLImageElement): void {
-    img = canvas && createEl("img", { src: window.TMG_VIDEO_ALT_IMG_SRC, onload: () => context?.drawImage(img!, 0, 0, canvas.width, canvas.height) });
+    img = canvas && createEl("img", { src: window.TMG_MEDIA_ALT_IMG_SRC, onload: () => context?.drawImage(img!, 0, 0, canvas.width, canvas.height) });
   }
 
   public destroy() {
     this.mutatingDOMM = true; // destruction will mutate, flag external watchers
+    const el = this.config.cloneOnDetach ? cloneMedia(this.media.element) : this.media.element;
     this.setReadyState(-1);
     this.ac.abort("[TMG Controller] Instance is being destroyed");
-    [...this.plugs.values()].reverse().forEach((p) => p.destroy()), this.media.tech.destroy();
-    this.media.destroy(), this.state.destroy(), this.config.destroy(), this.plugs.clear();
-    const el = this.config.cloneOnDetach ? cloneMedia(this.media.element) : this.media.element;
+    this.disconnectPlugs(), this.media.tech.destroy();
+    this.state.destroy(), this.config.destroy(); // this.media.destroy() already handled by tech i.e. tech.config.destroy()
     return nuke(this), el;
   }
 }

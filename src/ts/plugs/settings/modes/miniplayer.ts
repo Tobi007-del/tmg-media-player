@@ -1,13 +1,21 @@
-import { BasePin, ModesMiniplayer, ModesPlug, OverlayPlug, SkeletonPlug } from "../..";
+﻿import { BasePin } from "../../base";
+import { MODES_MINIPLAYER_BUILD } from "./build";
+import type { ModesMiniplayer } from "./types";
+import { ModesPlug } from "./index";
 import type { REvent } from "sia-reactor";
-import type { CtlrMedia } from "../../../types/contract";
-import type { CtlrConfig } from "../../../types/config";
-import { clamp, inDocView, inBoolArrOpt, setTimeout } from "../../../utils";
+import type { CtlrMedia } from "@defs/contract";
+import type { CtlrConfig } from "@defs/config";
+import { inDocView } from "@utils/dom";
+import { setTimeout } from "@utils/fn";
+import { clamp } from "@utils/num";
 import { isInteractive } from "@t007/utils";
 
 export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayer> {
-  public static readonly pinName: string = "miniplayer";
-  public static readonly plugName: string = "modes";
+  public static readonly pinName = "miniplayer";
+  public static get Plug() {
+    return ModesPlug;
+  }
+  public static readonly BUILD = MODES_MINIPLAYER_BUILD;
   protected lastMiniplayerPosX = 0;
   protected lastMiniplayerPosY = 0;
   protected lastMiniplayerPtrX = 0;
@@ -19,64 +27,56 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayer> {
 
   public override wire(): void {
     // Ctlr State Watchers
-    this.ctlr.state.watch("dimensions.window.width", this.handleWindowWidth, { signal: this.signal });
+    this.ctlr.state.watch("dimensions.window.width", () => !this.ctlr.isUIActive("fullscreen") && this.toggle(), { signal: this.signal });
     // ---- Media  Listeners
-    this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, signal: this.signal });
-    this.media.on("state.paused", this.handlePausedState, { signal: this.signal, immediate: true });
+    this.media.on("tech", () => !this.config.disabled && (this.media.features.miniplayer ||= true), { signal: this.signal });
+    this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("mediaParentIntersecting", this.handleMediaParentIntersecting, { signal: this.signal });
+    this.ctlr.state.on("mediaParentIntersecting", () => this.ctlr.payload.wired && this.toggle(), { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.modes.miniplayer.disabled", this.handleDisabled, { signal: this.signal, immediate: true });
-  }
-
-  protected handleWindowWidth(width: number): void {
-    if (!this.ctlr.isUIActive("fullscreen")) this.media.intent.miniplayer = "auto";
-  }
-
-  protected handleMediaParentIntersecting(): void {
-    if (this.ctlr.state.readyState > 2) this.media.intent.miniplayer = "auto";
+    this.ctlr.config.on("settings.modes.miniplayer.disabled", this.handleDisabled, { init: true, signal: this.signal });
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.miniplayer.disabled">): void {
-    this.media.tech.features.miniplayer = !value;
-    if (value) this.media.intent.miniplayer = false;
-  }
-
-  protected handlePausedState({ value }: REvent<CtlrMedia, "state.paused">): void {
-    if (!value) this.media.intent.miniplayer = "auto";
+    this.media.features.miniplayer = !value;
+    if (value && this.ctlr.isUIActive("miniplayer")) this.media.intent.miniplayer = false;
   }
 
   protected handleMiniplayerIntent(e: REvent<CtlrMedia, "intent.miniplayer">): void {
     if (e.resolved) return;
     const active = this.ctlr.isUIActive("miniplayer");
     if (this.config.disabled && !active) return e.resolve(this.name);
-    const modes = this.ctlr.plug<ModesPlug>("modes");
-    if ((e.value === true && !active) || (!active && !this.ctlr.isUIActive("pictureInPicture") && !modes?.pip.inFloatingPlayer && !modes?.fullscreen.inFullscreen && !this.ctlr.state.mediaParentIntersecting && window.innerWidth >= this.config.minWindowWidth && !this.media.state.paused)) this.enter();
-    else if ((e.value === false && active) || (active && this.ctlr.state.mediaParentIntersecting) || (active && window.innerWidth < this.config.minWindowWidth)) this.exit();
+    e.value && !active ? this.enter() : active && this.exit();
     e.resolve(this.name); // btw this is a smart behavioral implementation rather than just a toggler
   }
 
   protected enter(): void {
-    this.ctlr.plug<SkeletonPlug>("skeleton")?.activatePseudoMode();
+    this.ctlr.plug("skeleton")?.activatePseudoMode();
     this.media.container.classList.add("tmg-media-miniplayer", "tmg-media-progress-bar");
     ["mousedown", "touchstart"].forEach((type) => this.media.container.addEventListener(type, this.handleDragStart, { signal: this.signal }));
     this.media.state.miniplayer = true;
-  }
+  } // #STANDALONE: partner courtesy
 
   protected exit(behavior?: ScrollBehavior): void {
     if (behavior && inDocView(this.media.pseudoContainer)) this.media.pseudoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
-    this.ctlr.plug<SkeletonPlug>("skeleton")?.deactivatePseudoMode();
+    this.ctlr.plug("skeleton")?.deactivatePseudoMode();
     this.media.container.classList.remove("tmg-media-miniplayer");
     this.media.container.classList.toggle("tmg-media-progress-bar", this.ctlr.settings.controlPanel.progressBar);
     ["mousedown", "touchstart"].forEach((type) => this.media.container.removeEventListener(type, this.handleDragStart));
     this.media.state.miniplayer = false;
-  }
-
+  } // #STANDALONE: needs scoped behavior
   public expand(): void {
     this.media.container.classList.contains("tmg-media-miniplayer") && this.exit("smooth");
   }
   public remove(): void {
     (this.media.intent.paused = true), this.exit();
+  }
+  public toggle(bool?: boolean): void {
+    const active = this.ctlr.isUIActive("miniplayer"),
+      modes = this.ctlr.plug("settings.modes");
+    if ((bool === true && !active) || (!active && !this.ctlr.isUIActive("pictureInPicture") && !modes?.pictureInPicture?.inFloatingPlayer && !modes?.fullscreen?.inFullscreen && !this.ctlr.state.mediaParentIntersecting && window.innerWidth >= this.config.minWindowWidth && !this.media.state.paused)) this.media.intent.miniplayer = true;
+    else if ((bool === false && active) || (active && this.ctlr.state.mediaParentIntersecting) || (active && window.innerWidth < this.config.minWindowWidth)) this.media.intent.miniplayer = false;
   }
 
   protected handleDragStart(e: globalThis.Event): void {
@@ -98,7 +98,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayer> {
   protected handleDragging(e: globalThis.Event): void {
     if ((e as TouchEvent).touches?.length > 1) return;
     e.preventDefault();
-    this.ctlr.plug<OverlayPlug>("overlay")?.remove("force");
+    this.ctlr.plug("settings.overlay")?.remove("force");
     this.media.container.classList.add("tmg-media-player-dragging");
     this.ctlr.RAFLoop("miniplayerDragging", () => {
       const { innerWidth: ww, innerHeight: wh } = window,
@@ -132,5 +132,12 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayer> {
     document.removeEventListener("touchmove", this.handleDragging);
     ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach((type) => document.removeEventListener(type, this.handleDragEnd));
     ["mousedown", "touchstart"].forEach((type) => this.media.container.removeEventListener(type, this.handleDragStart));
+    super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface PinRegistryMap {
+    "modes.miniplayer": typeof ModesMiniplayerPin;
   }
 }

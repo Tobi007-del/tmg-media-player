@@ -1,8 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { Playlist, PlaylistItemConfig } from "./types";
 
-export const timeKeys = ["min", "max", "start", "end", "previews"] as const;
-
 export const PLAYLIST_BUILD: DeepPartial<Playlist> = null;
 
 export const PLAYLIST_ITEM_BUILD: DeepPartial<PlaylistItemConfig> = {
@@ -13,12 +11,20 @@ export const PLAYLIST_ITEM_BUILD: DeepPartial<PlaylistItemConfig> = {
       title: "",
     },
   },
-  src: "",
-  tracks: [],
+  startup: {
+    intent: {
+      src: "",
+      tracks: [],
+    },
+  },
   settings: {
     time: {
       start: 0,
-      previews: false,
+    },
+    controlPanel: {
+      timeline: {
+        previews: false,
+      },
     },
   },
 }; // for a playlist

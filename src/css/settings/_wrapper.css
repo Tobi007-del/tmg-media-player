@@ -1,10 +1,6 @@
 .tmg-media-container.tmg-media-settings-view .tmg-media-container-content-wrapper {
   transform: rotateY(180deg);
 }
-.tmg-media-container.tmg-media-settings-view .tmg-media-settings {
-  opacity: 1;
-  pointer-events: all;
-}
 .tmg-media-container.tmg-media-settings-view .tmg-media-container-content .tmg-media {
   filter: var(--tmg-media-filter) blur(10px);
 }
@@ -49,9 +45,7 @@
   transform: rotateY(180deg);
   -webkit-backdrop-filter: blur(3.5px);
   backdrop-filter: blur(3.5px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--tmg-media-settings-view-transition-time) var(--tmg-media-bounce-timing);
+  backface-visibility: hidden;
 }
 .tmg-media-settings-content {
   width: 100%;
@@ -62,25 +56,46 @@
   color: var(--tmg-media-settings-text-color);
   border-radius: inherit;
 }
-.tmg-media-settings-content > div {
-  display: flex;
-}
 .tmg-media-settings-top-panel {
+  display: flex;
   padding-block-end: var(--tmg-media-settings-content-padding);
   border-bottom: 1px solid var(--tmg-media-settings-border-color);
 }
-.tmg-media-settings-close-btn {
+.tmg-media-settings-bottom-panel {
   display: flex;
+  flex-grow: 1;
+  flex-direction: column;
   align-items: center;
+  padding-block: calc(var(--tmg-media-current-unit));
+  overflow-y: auto;
+}
+.tmg-media-settings-top-panel > * {
   gap: calc(var(--tmg-media-current-unit) / 7.5);
   height: calc(var(--tmg-media-current-unit) / 1.25);
-  font-size: calc(var(--tmg-media-current-unit) / 1.35);
+  font-size: calc(var(--tmg-media-current-unit) / 1.5);
 }
-.tmg-media-settings-bottom-panel {
-  flex-grow: 1;
-  justify-content: center;
-  align-items: center;
+.tmg-media-settings-top-panel > *:first-child {
+  margin-right: auto;
+}
+.tmg-media-settings-bottom-panel > p {
   color: var(--tmg-media-brand-accent-color);
   font-size: calc(var(--tmg-media-current-unit));
   text-align: center;
+  margin-block: auto calc(var(--tmg-media-current-unit) / 3);
+}
+
+/* #BETA: clean swap-in with beta for now */
+.tmg-media-settings-bottom-panel > div {
+  width: calc(var(--tmg-media-current-unit) * 11);
+  display: flex;
+  gap: calc(var(--tmg-media-current-unit) / 1.75);
+}
+.tmg-media-settings-bottom-panel > div:last-child {
+  margin-block-end: auto;
+}
+.tmg-media-settings-bottom-panel > div > :first-child {
+  flex-grow: 1;
+}
+.tmg-media-settings-bottom-panel .t007-input-field {
+  margin-block-end: calc(var(--tmg-media-current-unit) / 6);
 }

@@ -1,10 +1,16 @@
-import { type GesturePlug, type FastPlayPlug } from "../..";
-import { clamp, setTimeout } from "../../../utils";
+﻿import { GESTURE_WHEEL_BUILD } from "./build";
+import { GesturePlug } from "./index";
+import { clamp } from "@utils/num";
+import { setTimeout } from "@utils/fn";
 import { GestureBasePin } from "./base";
 import { GestureWheel } from "./types";
 
 export class GestureWheelPin extends GestureBasePin<GestureWheel> {
-  public static readonly pinName: string = "wheel";
+  public static readonly pinName = "wheel";
+  public static get Plug() {
+    return GesturePlug;
+  }
+  public static readonly BUILD = GESTURE_WHEEL_BUILD;
   protected timeoutId: number | null = null;
   protected zone: { x: "left" | "right"; y: "top" | "bottom" } | null = null;
   protected xCheck = false;
@@ -20,7 +26,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return !this.ctlr.settings.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug<GesturePlug>("gesture")?.touch.xCheck && !this.ctlr.plug<GesturePlug>("gesture")?.touch.yCheck && !this.ctlr.plug<FastPlayPlug>("fastPlay")?.speedCheck;
+    return this.ctlr.settings.locked.disabled && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.speedCheck && (this.ctlr.isUIActive("fullscreen") || this.ctlr.isUIActive("floatingPlayer"));
   }
 
   protected handleWheel(e: WheelEvent): void {
@@ -51,6 +57,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
     if (deltaX || shiftKey) {
       if (!wc.timeline || this.yCheck) return this.handleStop();
       this.xCheck = true;
+      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.active();
       this.applyTimeline({ percent: xPercent, sign: xSign, multiplier: this.timeMultiplier });
       if (shiftKey) return;
     }
@@ -64,6 +71,8 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
         currentXZone = x - rect.left > width * 0.5 ? "right" : "left";
       if (cancel || currentXZone !== this.zone?.x) return this.handleStop();
       this.yCheck = true;
+      // prettier-ignore
+      this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
       const ySign = -deltaY >= 0 ? "+" : "-",
         yPercent = clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
       this.zone?.x === "right" ? this.applyRange("volume", yPercent, ySign) : this.applyRange("brightness", yPercent, ySign);
@@ -72,10 +81,22 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
 
   protected handleStop(): void {
     this.timeoutId = null;
-    if (this.yCheck) this.yCheck = false;
+    if (this.yCheck) {
+      this.yCheck = false;
+      this.ctlr.plug("settings.overlay")?.remove();
+      this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive();
+      this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
+    }
     if (this.xCheck) {
       this.xCheck = false;
+      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.inactive();
       this.media.intent.currentTime = this.nextTime;
     }
+  }
+}
+
+declare module "@defs/registries" {
+  interface PinRegistryMap {
+    "gesture.wheel": typeof GestureWheelPin;
   }
 }

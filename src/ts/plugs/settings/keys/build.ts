@@ -1,5 +1,5 @@
 import { DeepPartial } from "sia-reactor";
-import { KEYS_BLOCKS, KEYS_WHITELIST } from "../../../consts";
+import { KEYS_BLOCKS, KEYS_WHITELIST } from "@consts/generics";
 import { Keys } from "./types";
 
 export const KEYS_BUILD: DeepPartial<Keys> = {
@@ -62,9 +62,5 @@ export const KEYS_BUILD: DeepPartial<Keys> = {
       ctrl: 1,
     },
     captionsFontSize: {},
-  },
-  _handlers: {
-    keydown: {},
-    keyup: {},
   },
 };

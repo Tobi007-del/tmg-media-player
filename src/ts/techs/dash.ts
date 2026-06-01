@@ -1,9 +1,12 @@
 import { HTML5Tech } from "./html5";
-import type { Controller } from "../core/controller";
-import type { BaseTechConfig } from ".";
-import type { CtlrMedia } from "../types/contract";
+import type { Controller } from "@core/controller";
+import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import type { REvent } from "sia-reactor";
-import { DASH_EXTENSIONS, capitalize, isNum, isSameURL, loadResource, TrackType } from "../utils";
+import { DASH_EXTENSIONS } from "@utils/matcher";
+import { capitalize, isSameURL } from "@utils/str";
+import { isNum } from "@utils/obj";
+import { loadResource } from "@utils/dom";
+import type { TrackType } from "@utils/media";
 import type * as dashjs from "dashjs";
 
 interface DashMediaPlayer extends dashjs.MediaPlayerClass {
@@ -17,10 +20,15 @@ export class DashTech extends HTML5Tech {
   public static override canPlaySource(src: string): boolean {
     return DASH_EXTENSIONS.test(src);
   }
-  constructor(ctlr: Controller, config: BaseTechConfig) {
-    super(ctlr, config);
-    this.features.currentAudioTrack = this.features.currentLevel = this.features.autoLevel = this.features.bandwidth = this.features.textTracks = this.features.audioTracks = this.features.protection = true;
-    this.features.currentVideoTrack = this.features.videoTracks = this.config.type === "video";
+  constructor(ctlr: Controller, features?: MediaFeatures) {
+    const isVid = ctlr.media.type === "video";
+    // prettier-ignore
+    super(ctlr, {
+      // States & Currents (DASH.js specific)
+      autoLevel: true, currentLevel: true, currentAudioTrack: true, currentVideoTrack: isVid,
+      // Status & Lists & Settings
+      bandwidth: true, levels: true, audioTracks: true, textTracks: true, videoTracks: isVid, protection: true, ...features
+    });
   }
   // --- API Injection ---
   protected async initDash(src: string = "") {
@@ -57,20 +65,20 @@ export class DashTech extends HTML5Tech {
   // ===========================================================================
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
     this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : this.dash?.getTracksFor(_type)?.findIndex((t) => t.id === term || t.lang === term) ?? -1), { signal: this.signal });
-    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentDashTrackIntent(e, _type), this.eOpts.REACTOR);
+    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentDashTrackIntent(e, _type), this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {
-    this.config.set("intent.currentLevel", (v) => (isNum(v) ? v : Number(v)), { signal: this.signal });
-    this.config.on("intent.currentLevel", this.handleCurrentLevelIntent, this.eOpts.REACTOR);
+    this.config.set("intent.currentLevel", (v) => (isNum(v) ? v : Number(v)), { signal: this.signal }); // #VALIDATOR: rules enforcement
+    this.config.on("intent.currentLevel", this.handleCurrentLevelIntent, this.evtOpts.CONFIG);
   }
   protected wireAutoLevel(): void {
-    this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.eOpts.REACTOR);
+    this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
   protected override wireActiveCue(): void {
     super.wireActiveCue(false); // DASHJS dynamically injects tracks into the DOM, so the Dash index and DOM index don't match.
   }
   protected wireProtection(): void {
-    this.config.on("settings.protection", this.handleProtectionSetting, this.eOpts.REACTOR);
+    this.config.on("settings.protection", this.handleProtectionSetting, this.evtOpts.CONFIG);
   }
   // ===========================================================================
   // HANDLERS
@@ -108,5 +116,11 @@ export class DashTech extends HTML5Tech {
   }
   protected override onDestroy(): void {
     this.destroyDash(), super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface TechRegistryMap {
+    dash: typeof DashTech;
   }
 }

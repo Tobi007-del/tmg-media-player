@@ -1,10 +1,16 @@
-import { OverlayPlug, type FastPlayPlug } from "../..";
-import { clamp, setTimeout } from "../../../utils";
+﻿import { GESTURE_TOUCH_BUILD } from "./build";
+import { GesturePlug } from "./index";
+import { clamp } from "@utils/num";
+import { setTimeout } from "@utils/fn";
 import { GestureBasePin } from "./base";
 import { GestureTouch } from "./types";
 
 export class GestureTouchPin extends GestureBasePin<GestureTouch> {
-  public static readonly pinName: string = "touch";
+  public static readonly pinName = "touch";
+  public static get Plug() {
+    return GesturePlug;
+  }
+  public static readonly BUILD = GESTURE_TOUCH_BUILD;
   protected lastX = 0;
   protected lastY = 0;
   protected zone: { x: "left" | "right"; y: "top" | "bottom" } | null = null;
@@ -20,7 +26,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
   }
 
   protected canHandle(e: TouchEvent): boolean {
-    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug<FastPlayPlug>("fastPlay")?.speedCheck;
+    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.speedCheck;
   }
 
   protected handleStart(e: TouchEvent): void {
@@ -35,7 +41,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
 
   protected handleInit(e: Event): void {
     const te = e as TouchEvent;
-    if (te.touches?.length > 1 || this.ctlr.plug<FastPlayPlug>("fastPlay")?.speedCheck) return;
+    if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.speedCheck) return;
     te.preventDefault();
     const tc = this.config,
       rect = this.media.container.getBoundingClientRect(),
@@ -63,8 +69,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
     const te = e as TouchEvent;
     if (this.canCancel) return this.handleEnd();
     te.preventDefault();
-    // JS: this.DOM.touchTimelineNotifier?.classList.add("tmg-media-control-active");
-    this.ctlr.DOM.touchTimelineNotifier?.classList.add("tmg-media-control-active");
+    this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.active();
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
@@ -89,8 +94,8 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
     const te = e as TouchEvent;
     if (this.canCancel || !this.ctlr.isUIActive("fullscreen")) return this.handleEnd();
     te.preventDefault();
-    // JS: (this.zone?.x === "right" ? this.DOM.touchVolumeNotifier : this.DOM.touchBrightnessNotifier)?.classList.add("tmg-media-control-active");
-    (this.zone?.x === "right" ? this.ctlr.DOM.touchVolumeNotifier : this.ctlr.DOM.touchBrightnessNotifier)?.classList.add("tmg-media-control-active");
+    // prettier-ignore
+    this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
@@ -112,8 +117,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
     if (this.xCheck) {
       this.xCheck = false;
       this.media.container.removeEventListener("touchmove", this.handleXMove);
-      // JS: this.DOM.touchTimelineNotifier?.classList.remove("tmg-media-control-active");
-      this.ctlr.DOM.touchTimelineNotifier?.classList.remove("tmg-media-control-active");
+      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.inactive();
       if (!this.canCancel) this.media.intent.currentTime = this.nextTime;
     }
     if (this.yCheck) {
@@ -122,19 +126,23 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
       clearTimeout(this.sliderTimeoutId);
       this.sliderTimeoutId = setTimeout(
         () => {
-          // JS: this.DOM.touchVolumeNotifier?.classList.remove("tmg-media-control-active");
-          this.ctlr.DOM.touchVolumeNotifier?.classList.remove("tmg-media-control-active");
-          // JS: this.DOM.touchBrightnessNotifier?.classList.remove("tmg-media-control-active");
-          this.ctlr.DOM.touchBrightnessNotifier?.classList.remove("tmg-media-control-active");
+          this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive();
+          this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
         },
         this.config.sliderTimeout,
         this.signal
       );
-      if (!this.canCancel) this.ctlr.plug<OverlayPlug>("overlay")?.remove();
+      if (!this.canCancel) this.ctlr.plug("settings.overlay")?.remove();
     }
     clearTimeout(this.cancelTimeoutId);
     this.canCancel = true;
     this.media.container.removeEventListener("touchmove", this.handleInit);
     ["touchend", "touchcancel"].forEach((evt) => this.media.container.removeEventListener(evt, this.handleEnd));
+  }
+}
+
+declare module "@defs/registries" {
+  interface PinRegistryMap {
+    "gesture.touch": typeof GestureTouchPin;
   }
 }

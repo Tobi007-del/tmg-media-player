@@ -17,8 +17,8 @@
   justify-content: space-between;
   align-items: center;
 }
-.tmg-media-apt-controls-wrapper:has(.tmg-media-center-side-controls-wrapper [data-displayed="true"]),
-.tmg-media-apt-controls-wrapper:has(> :first-child [data-displayed="true"]):has(> :last-child [data-displayed="true"]):has(> .tmg-media-meta-wrapper) {
+.tmg-media-apt-controls-wrapper:where(:has(.tmg-media-center-side-controls-wrapper [data-displayed="true"])),
+.tmg-media-apt-controls-wrapper:where(:has(> :first-child [data-displayed="true"]):has(> :last-child [data-displayed="true"])):has(> .tmg-media-meta-wrapper) {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
 }

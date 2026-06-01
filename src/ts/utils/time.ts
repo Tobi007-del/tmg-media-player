@@ -1,4 +1,4 @@
-import { isNum } from ".";
+import { isNum } from "@t007/utils";
 
 // Media Time Formatting
 export function formatMediaTime({ time, format = "digital", elapsed = true, showMs = false, casing = "normal" }: { time?: number; format?: string; elapsed?: boolean; showMs?: boolean; casing?: "normal" | "upper" | "title" } = { time: 0 }): string {

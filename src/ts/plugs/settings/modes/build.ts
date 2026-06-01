@@ -1,5 +1,5 @@
 import { DeepPartial } from "sia-reactor";
-import { IS_MOBILE } from "../../../utils";
+import { IS_MOBILE } from "@utils/browser";
 import { ModesFullscreen, ModesPictureInPicture, ModesMiniplayer, Modes, ModesTheater } from "./types";
 
 export const MODES_FULLSCREEN_BUILD: Partial<ModesFullscreen> = {
@@ -9,7 +9,7 @@ export const MODES_FULLSCREEN_BUILD: Partial<ModesFullscreen> = {
 };
 
 export const MODES_THEATER_BUILD: Partial<ModesTheater> = {
-  disabled: !IS_MOBILE,
+  disabled: IS_MOBILE,
 };
 
 export const MODES_PICTURE_IN_PICTURE_BUILD: Partial<ModesPictureInPicture> = {
@@ -29,8 +29,8 @@ export const MODES_MINIPLAYER_BUILD: Partial<ModesMiniplayer> = {
 };
 
 export const MODES_BUILD: DeepPartial<Modes> = {
-  fullscreen: MODES_FULLSCREEN_BUILD,
-  theater: MODES_THEATER_BUILD,
-  pictureInPicture: MODES_PICTURE_IN_PICTURE_BUILD,
-  miniplayer: MODES_MINIPLAYER_BUILD,
+  // fullscreen: MODES_FULLSCREEN_BUILD,
+  // theater: MODES_THEATER_BUILD,
+  // pictureInPicture: MODES_PICTURE_IN_PICTURE_BUILD,
+  // miniplayer: MODES_MINIPLAYER_BUILD,
 };

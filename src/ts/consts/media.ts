@@ -1,5 +1,5 @@
-import { createTimeRanges } from "../utils";
-import type { MediaIntent, MediaState, MediaStatus, MediaSettings } from "../types/contract";
+import { createTimeRanges } from "@utils/time";
+import type { MediaIntent, MediaState, MediaStatus, MediaSettings } from "@defs/contract";
 
 // DEFAULT STATE (The Reality)
 export const MEDIA_STATE_BUILD: MediaState = {

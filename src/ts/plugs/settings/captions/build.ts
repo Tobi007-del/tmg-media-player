@@ -5,7 +5,7 @@ export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.va
 export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight.value", "captions.font.variant.value", "captions.font.opacity.value", "captions.background.opacity.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
 
 export const CAPTIONS_BUILD: DeepPartial<Captions> = {
-  visible: false,
+  visible: true,
   allowMediaOverride: true,
   font: {
     family: {
@@ -155,4 +155,5 @@ export const CAPTIONS_BUILD: DeepPartial<Captions> = {
       { value: "right", display: "Right" },
     ],
   },
+  previewTimeout: 1500,
 };

@@ -1,3 +1,3 @@
-import { ErrorCode } from "../../../types/generics";
+import { ErrorCode } from "@defs/generics";
 
 export type ErrorMessages = Record<ErrorCode, string>;

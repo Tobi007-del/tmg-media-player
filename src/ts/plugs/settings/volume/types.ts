@@ -1,9 +1,7 @@
-import { OptRange } from "../../../types/generics";
+import { OptRange } from "@defs/generics";
 
-export interface Volume extends OptRange {
-  muted: boolean;
-}
+export interface Volume extends OptRange {}
 
 export interface VolumeState {
-  aptVolume: number;
+  aptValue: number;
 }

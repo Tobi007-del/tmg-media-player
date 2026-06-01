@@ -1,4 +1,4 @@
-import { MediaIntent } from "../../../types/contract";
+import { MediaIntent } from "@defs/contract";
 
 export interface GestureGeneral {
   click: keyof MediaIntent | false;
@@ -30,3 +30,7 @@ export type Gesture = GestureGeneral & {
   wheel: GestureWheel;
   touch: GestureTouch;
 };
+
+export interface GestureState {
+  skipPersist: boolean;
+}

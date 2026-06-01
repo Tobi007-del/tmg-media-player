@@ -33,9 +33,9 @@ export class AsyncQueue {
   }
 
   public drop(id: string): boolean {
-    const job = this.jobs.find((j) => j.id === id);
-    job?.resolve({ success: false, cancelled: true, dropped: true });
-    return job && this.jobs.splice(this.jobs.indexOf(job), 1), !!job; // stops immediately, cant't remove a running job
+    const idx = this.jobs.findIndex((j) => j.id === id);
+    this.jobs[idx]?.resolve({ success: false, cancelled: true, dropped: true });
+    return idx !== -1 && this.jobs.splice(idx, 1), !!~idx; // stops immediately, cant't remove a running job
   }
 
   public cancel(id: string): boolean {

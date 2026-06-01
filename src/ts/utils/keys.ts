@@ -1,1 +1,1 @@
-export { type keysSettings, type KeyStruct, parseKeyCombo, stringifyKeyEvent, cleanKeyCombo, matchKeys, getTermsForKey, keyEventAllowed, formatKeyForDisplay, formatKeyShortcutsForDisplay, parseForARIAKS } from "@t007/utils";
+export { type KeysSettings, type KeyStruct, parseKeyCombo, stringifyKeyEvent, cleanKeyCombo, matchKeys, getTermsForKey, keyEventAllowed, formatKeyForDisplay, formatKeyShortcutsForDisplay, parseForARIAKS } from "@t007/utils";

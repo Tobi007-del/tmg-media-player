@@ -5,15 +5,15 @@
  * Copyright (c) Brightcove, Inc. and contributors
  */
 
-import { win } from "../tools/runtime";
-
 // Types
+type Version = string | null;
 type BrandEntry = { brand?: string; version?: string };
 
 // Environment guards
-const nav = win?.navigator;
-const ua = nav?.userAgent || "";
-const uaData = (nav as Navigator & { userAgentData?: { platform?: string; brands?: BrandEntry[] } })?.userAgentData;
+const win = "undefined" !== typeof window ? window : undefined,
+  nav = win?.navigator,
+  ua = nav?.userAgent || "",
+  uaData = (nav as Navigator & { userAgentData?: { platform?: string; brands?: BrandEntry[] } })?.userAgentData;
 
 // Base flags: bools first, versions second for readability
 export let IS_ANDROID = false;
@@ -30,22 +30,25 @@ export let IS_IPOD = false;
 export let IS_IPAD = false;
 export let IS_IPHONE = false;
 // Versioned details
-type Version = string | null;
 export let IOS_VERSION: Version = null;
 export let ANDROID_VERSION: Version = null;
 export let CHROME_VERSION: Version = null;
 export let CHROMIUM_VERSION: Version = null;
 export let IE_VERSION: Version = null;
-
+// Composite Flags
+export let IS_IOS = false;
+export let IS_MOBILE = false;
+export let IS_SMART_TV = false;
 // Capabilities
 export const IS_CHROMECAST_RECEIVER = Boolean((win as any)?.cast?.framework?.CastReceiverContext);
 export const TOUCH_ENABLED = Boolean(win && ("ontouchstart" in win || (nav as Navigator & { maxTouchPoints?: number })?.maxTouchPoints || ((win as any).DocumentTouch && win.document instanceof (win as any).DocumentTouch)));
-
-// Helpers
-const pickVersion = (brands: BrandEntry[], needle: string): Version => brands.find((b) => b.brand === needle && b.version)?.version || null;
+// Media Queries
+export const queryMediaMobile = (query = `(max-width: 480px), (max-width: 940px) and (max-height: 480px) and (orientation: landscape)`) => Boolean(win && "matchMedia" in win && win.matchMedia(query).matches);
 
 // Modern detection first (userAgentData)
 if (uaData?.platform && uaData?.brands) {
+  // Helpers
+  const pickVersion = (brands: BrandEntry[], needle: string): Version => brands.find((b) => b.brand === needle && b.version)?.version || null;
   // Platform first
   IS_ANDROID = uaData.platform === "Android";
   IS_WINDOWS = uaData.platform === "Windows";
@@ -58,14 +61,14 @@ if (uaData?.platform && uaData?.brands) {
 }
 
 // Fallback / additional parsing via UA string
-if (!IS_CHROMIUM || !CHROMIUM_VERSION) {
+if (true || !IS_CHROMIUM || !CHROMIUM_VERSION) {
   // General Platforms
-  IS_ANDROID = /Android/i.test(ua);
+  IS_ANDROID ||= /Android/i.test(ua);
   IS_WINDOWS ||= /Windows/i.test(ua);
   // Desktop & general browsers (include iOS-branded variants)
   IS_FIREFOX = /Firefox|FxiOS/i.test(ua);
-  IS_EDGE = /Edg|EdgiOS/i.test(ua);
-  IS_CHROMIUM = /Chrome|CriOS/i.test(ua);
+  IS_EDGE ||= /Edg|EdgiOS/i.test(ua);
+  IS_CHROMIUM ||= /Chrome|CriOS/i.test(ua);
   IS_CHROME = IS_CHROMIUM && !IS_EDGE;
   IS_SAFARI = /Safari/i.test(ua) && !IS_CHROME && !IS_FIREFOX && !IS_EDGE;
   IS_IE = /MSIE|(Trident\/7.0)|(rv:11.0)/i.test(ua);
@@ -81,12 +84,9 @@ if (!IS_CHROMIUM || !CHROMIUM_VERSION) {
   ANDROID_VERSION = ua.match(/Android\s(\d+(?:\.\d+)+)/i)?.[1] ?? null;
   CHROMIUM_VERSION = CHROME_VERSION = ua.match(/(?:Chrome|CriOS)\/(\d+)/)?.[1] ?? CHROMIUM_VERSION;
   IE_VERSION = ua.match(/MSIE\s(\d+)\.\d/)?.[1] || (/Trident\/7.0/i.test(ua) && /rv:11.0/.test(ua) ? "11.0" : null);
-}
+} // `true` override for devtools predictability
 
 // Composite Flags
-export const IS_IOS = IS_IPHONE || IS_IPAD || IS_IPOD;
-export const IS_MOBILE = Boolean(IS_ANDROID || IS_IPHONE || IS_IPOD || IS_IPAD);
-export const IS_SMART_TV = IS_TIZEN || IS_WEBOS;
-
-// Media Queries
-export const queryMediaMobile = (query = `(max-width: 480px), (max-width: 940px) and (max-height: 480px) and (orientation: landscape)`) => Boolean(win && "matchMedia" in win && win.matchMedia(query).matches);
+IS_IOS = IS_IPHONE || IS_IPAD || IS_IPOD;
+IS_MOBILE = Boolean(IS_ANDROID || IS_IPHONE || IS_IPOD || IS_IPAD);
+IS_SMART_TV = IS_TIZEN || IS_WEBOS;
