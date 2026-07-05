@@ -2,8 +2,8 @@ import { DeepPartial } from "sia-reactor";
 import { OptRange } from "@defs/generics";
 import { UISettings, UIOption } from "@defs/UIOptions";
 
-export interface Captions {
-  visible: boolean;
+export interface CaptionsConfig {
+  multiple: boolean;
   font: {
     family: UISettings<string>;
     size: OptRange & { value: number; options: UIOption<number>[] };
@@ -22,7 +22,7 @@ export interface Captions {
   };
   characterEdgeStyle: UISettings<"none" | "raised" | "depressed" | "outline" | "drop-shadow">;
   textAlignment: UISettings<"left" | "center" | "right">;
-  allowMediaOverride: boolean;
+  allowOverride: boolean;
   previewTimeout: number;
 }
 export type CueLike = (TextTrackCue | { text: string }) &
@@ -39,3 +39,7 @@ export type CueLike = (TextTrackCue | { text: string }) &
     size: number;
     vertical: "" | "lr" | "rl";
   }>;
+
+export interface CaptionsState {
+  secondaryTracks: number[];
+}

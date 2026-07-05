@@ -1,12 +1,11 @@
-import { IS_MOBILE } from "@utils/browser";
-import { Toasts } from "./types";
+import { ToastsConfig } from "./types";
 
 export const TOASTS_BUILD = {
   disabled: false,
   limit: 7,
   position: "bottom-left",
   hideProgressBar: true,
-  closeButton: !IS_MOBILE,
+  closeButton: false,
   animation: "slide-up",
   dragToCloseDir: "x||y",
-} satisfies Toasts;
+} satisfies ToastsConfig;

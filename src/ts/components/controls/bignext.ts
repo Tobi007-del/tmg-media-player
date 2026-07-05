@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "@components/base";
+import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
@@ -20,9 +20,11 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
   public override wire(): void {
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
+    // Plug Listeners
+    this.plug?.state.on("currentIndex", () => this[this.plug!.atLast ? "disable" : "enable"](), { init: true, signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.shortcuts.next", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("playlist", this.syncUI, { signal: this.signal, init: true, depth: 1 });
+    this.ctlr.config.on("settings.keys.shortcuts.next", this.syncARIA, { init: true, signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -30,11 +32,11 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
   }
 
   public syncUI(): void {
-    this[this.ctlr.config.playlist && this.ctlr.config.playlist.length > 1 ? "enable" : "disable"](), this[this.plug?.atLast ?? true ? "disable" : "enable"]();
+    this[this.ctlr.config.playlist.content && this.ctlr.config.playlist.content.length > 1 ? "show" : "hide"]();
   }
   public syncARIA(): void {
     this.state.label = "Next";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.next);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.next);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

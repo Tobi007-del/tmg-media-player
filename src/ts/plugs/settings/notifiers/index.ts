@@ -1,5 +1,5 @@
-﻿import { BasePlug } from "../../base";
-import type { Notifiers, NotifiersState } from "./types";
+import { BasePlug } from "../../base";
+import type { NotifiersConfig, NotifiersState } from "./types";
 import { NOTIFIERS_BUILD } from "./build";
 import type { Controller } from "@core/controller";
 import type { REvent } from "sia-reactor";
@@ -9,16 +9,14 @@ import { ComponentRegistry } from "@core/registries";
 import type { CtlrConfig } from "@defs/config";
 import type { ComponentRegistryMap } from "@defs/registries";
 
-export class NotifiersPlug extends BasePlug<Notifiers, NotifiersState> {
+export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   public static readonly plugName = "notifiers";
   public static readonly BUILD = NOTIFIERS_BUILD;
   public components = new Map<string, BaseNotifier>();
   public container!: HTMLDivElement;
 
-  constructor(ctlr: Controller, config: Notifiers = ctlr.config.settings.notifiers) {
-    super(ctlr, config, {
-      events: ["mediaplay", "mediapause", "mediaprev", "medianext", "playbackrateup", "playbackratedown", "volumeup", "volumedown", "volumemuted", "brightnessup", "brightnessdown", "brightnessdark", "objectfitcontain", "objectfitcover", "objectfitfill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd"], // DEFAULT: config privilege
-    });
+  constructor(ctlr: Controller, config = ctlr.settings.notifiers) {
+    super(ctlr, config, { events: [] }); // ["mediaplay", "mediapause", "mediaprev", "medianext", "playbackrateup", "playbackratedown", "volumeup", "volumedown", "volumemuted", "brightnessup", "brightnessdown", "brightnessdark", "objectfitcontain", "objectfitcover", "objectfitfill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd"]
   }
 
   public override mount(): void {
@@ -36,6 +34,8 @@ export class NotifiersPlug extends BasePlug<Notifiers, NotifiersState> {
   public override wire(): void {
     // State Listeners
     this.state.on("events", this.handleEventsState, { init: true, signal: this.signal });
+    // Post Wiring
+    super.wire();
   }
 
   protected handleEventsState({ currentTarget: { value: events = [] } }: REvent<NotifiersState, "events">): void {
@@ -64,7 +64,7 @@ export class NotifiersPlug extends BasePlug<Notifiers, NotifiersState> {
   }
 
   public handleEvent({ type: eN }: Event): void {
-    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN));
+    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN), this.signal);
   }
 
   public reset(token = "", flush = false): void {
@@ -78,15 +78,10 @@ export class NotifiersPlug extends BasePlug<Notifiers, NotifiersState> {
 
   protected override onDestroy(): void {
     this.reset("", true);
-    this.components.forEach((comp) => comp.destroy()), this.components.clear();
+    for (const comp of this.components.values()) comp.destroy();
+    this.components.clear();
     this.ctlr.DOM.notifiersContainer = null;
     super.onDestroy();
-  }
-}
-
-declare module "@defs/registries" {
-  interface ControllerDOMMap {
-    notifiersContainer?: HTMLDivElement | null;
   }
 }
 
@@ -97,10 +92,13 @@ declare module "@defs/registries" {
   interface PlugRegistryMap {
     "settings.notifiers": typeof NotifiersPlug;
   }
+  interface ControllerDOMMap {
+    notifiersContainer?: HTMLDivElement | null;
+  }
 }
 
 declare module "@defs/config" {
   interface Settings {
-    notifiers: Notifiers;
+    notifiers: NotifiersConfig;
   }
 }

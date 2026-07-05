@@ -5,7 +5,7 @@ export default defineConfig({
   server: {
     hmr: true,
     port: 7777,
-    open: "/src/beta/index.html",
+    open: "/src/index.html",
   },
   preview: {
     port: 7777,
@@ -15,7 +15,7 @@ export default defineConfig({
     sassPlugin(),
     {
       name: "watch-and-reload",
-      handleHotUpdate({ server, _file }) {
+      handleHotUpdate({ server, file: _ }) {
         // Send a full page reload signal down the socket line
         server.ws.send({ type: "full-reload", path: "*" });
         return []; // Return empty array to stop HMR from propagating

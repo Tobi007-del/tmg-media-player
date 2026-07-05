@@ -1,4 +1,4 @@
-﻿import { BaseNotifier, ComponentState } from "./base";
+import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { REvent } from "sia-reactor";
@@ -20,8 +20,9 @@ export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentSt
     this.upSpan = createEl("span", { innerHTML: IconRegistry.get("brightnesshigh") });
     this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("brightnesslow") });
     this.darkSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessdark") });
+    const spanWrapper = createEl("span")
     this.element = createEl("div", { className: "tmg-media-touch-brightness-notifier tmg-media-touch-vb-notifier" });
-    this.el.append(this.content, this.slider, this.upSpan, this.lowSpan, this.darkSpan);
+    this.el.append(this.content, this.slider, (spanWrapper.append(this.upSpan, this.lowSpan, this.darkSpan), spanWrapper));
     return this.element;
   }
 

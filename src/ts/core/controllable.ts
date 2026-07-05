@@ -10,20 +10,21 @@ import { isFunc } from "@t007/utils";
 export abstract class Controllable<Config = any, State = any> {
   protected readonly ac = new AbortController();
   protected readonly signal = this.ac.signal;
-  protected readonly guard: Controller["guard"];
-  protected readonly media: Controller["media"];
   public readonly ctlr: Controller;
-  public config: Config; // may be a reactive obj node or the obj itself
+  public readonly media: Controller["media"];
   public readonly state!: State extends object ? Reactive<State> : State; // for reactivity needs of those who pass it up
+  public config: Config; // may be a reactive obj node or the obj itself
+  public get settings() {
+    return this.ctlr.settings; // can change ref
+  } // for easy reach, better devx
 
   constructor(ctlr: Controller, config: Config, state?: State) {
     guardAllMethods(this, ctlr.guard);
     this.signal = AbortSignal.any([this.signal, ctlr.signal]);
-    this.guard = ctlr.guard;
-    this.media = ctlr.media;
     this.ctlr = ctlr;
-    this.config = config;
+    this.media = ctlr.media; // can't change ref
     this.state = (isObj(state) ? reactive(state) : state) as Controllable["state"];
+    this.config = config;
   }
 
   public setup(): this {
@@ -33,7 +34,7 @@ export abstract class Controllable<Config = any, State = any> {
 
   public destroy(): void {
     !this.signal.aborted && this.ac.abort(`[TMG Controllable] Instance is being destroyed`); // incase controller already aborted, kills all listeners and timers before proper destruction below
-    this.onDestroy(), (this.state as any)?.destroy?.(), isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
+    this.onDestroy(), (this.state as any)?.destroy?.(), this.config !== this.media && isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
     nuke(this);
   }
   protected onDestroy(): void {}

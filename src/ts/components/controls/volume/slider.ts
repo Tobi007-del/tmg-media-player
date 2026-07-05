@@ -1,4 +1,5 @@
-﻿import { RangeInput, type RangeInputConfig, type RangeState } from "../../rangeinput";
+import { CtlrConfig } from "@defs/config";
+import { RangeInput, type RangeInputConfig, type RangeState } from "../../rangeinput";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
@@ -11,21 +12,30 @@ export class VolumeSlider extends RangeInput<RangeInputConfig, RangeState> {
   }
 
   constructor(ctlr: Controller, config?: VolumeSliderConfig) {
-    super(ctlr, { label: "Volume", ...config });
+    super(ctlr, { label: "Volume Slider", ...config });
   }
 
   public override wire(): void {
     super.wire();
+    // Config Listeners
+    this.config.set("value", (v) => Math.max(this.plug?.shouldToggle ? 0 : this.settings.volume.min, v), { signal: this.signal }); // #VALIDATOR: rules enforcement
+    this.config.set("previewValue", (v) => Math.max(this.plug?.shouldToggle ? 0 : this.settings.volume.min, v), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // Ctlr Media Listeners
     this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.volume.max", ({ value }) => (this.config.max = value!), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.volume.max", this.handleVolumeMax, { init: true, signal: this.signal });
   }
-  protected override seek(value: number): void {
-    super.seek(value), this.plug?.handleSliderInput(value);
+  protected override scrub(value: number, bypass?: boolean): boolean {
+    return super.scrub(value, bypass) ? (this.plug?.handleSliderInput(value), true) : false;
   }
 
   protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume">): void {
-    this.config.previewValue = this.config.value = value;
+    if (!this.state.scrubbing) this.config.previewValue = this.config.value = value;
+  }
+
+  protected handleVolumeMax({ value }: REvent<CtlrConfig, "settings.volume.max">): void {
+    this.config.max = value;
+    // prettier-ignore
+    this.config.divs = value > 100 ? [{ value: 0, label: "" }, { value: 100, label: `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` },] : [];
   }
 }

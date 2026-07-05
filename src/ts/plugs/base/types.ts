@@ -3,7 +3,7 @@ import { BasePlug, BasePin } from ".";
 import type { PlugRegistryMap, PinRegistryMap } from "@defs/registries";
 
 export interface PlugConstructor<T extends BasePlug = BasePlug> {
-  new (ctlr: Controller, config: any): T;
+  new (ctlr: Controller, config?: any): T;
   plugName: string;
   isCore: boolean;
   isMain: boolean;

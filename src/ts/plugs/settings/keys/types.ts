@@ -1,26 +1,24 @@
 import { KeysSettings } from "sia-reactor/utils";
-import { KeyShortcutAction, KeyShortcutModAction } from "@defs/generics";
+import { KEY_SHORTCUT_MOD_ACTIONS, KEYS_WHITELIST } from "./build";
 
-export type KeyPhase = "keydown" | "keyup";
+export type { KeyPhase } from "@defs/actions";
 export type KeyMod = "" | "ctrl" | "alt" | "shift";
-export type KeyHook = {
-  fn: KeyHandler;
-  zen?: boolean;
-};
-export type KeyHandler = (e: KeyboardEvent, mod: KeyMod) => void;
-export type KeyRegOptions = {
-  phase?: KeyPhase | readonly KeyPhase[];
-  shortcut?: string | string[];
-  overwrite?: boolean;
-  zen?: boolean; // an isolated mode where only flagged keys work, made for 3d flipped settings view
-};
 
-export interface KeyShortcuts extends Record<KeyShortcutAction, string | string[]> {}
+export type WhitelistedKey = (typeof KEYS_WHITELIST)[number];
+export type KeyShortcutModAction = (typeof KEY_SHORTCUT_MOD_ACTIONS)[number];
+
+export interface KeyShortcuts extends Record<string, string | string[]> {}
 export interface KeyShortcutMods extends Record<KeyShortcutModAction, Partial<Record<Exclude<KeyMod, "">, number>>> {}
 
-export interface Keys extends Required<KeysSettings> {
+export interface KeysConfig extends Required<KeysSettings> {
   shortcuts: KeyShortcuts;
   mods: {
     disabled: boolean;
   } & KeyShortcutMods;
+}
+
+declare module "@defs/actions" {
+  interface ActionOptions {
+    keyboard?: { phase?: KeyPhase | readonly KeyPhase[] };
+  }
 }

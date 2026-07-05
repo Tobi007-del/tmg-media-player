@@ -2,7 +2,7 @@ const videos = document.getElementsByTagName("video");
 
 const vp = new tmg.Player();
 vp.configure({
-  playlist: [
+  playlist: { content: [
     {
       settings: { time: { previews: true } },
       media: {
@@ -387,6 +387,6 @@ vp.configure({
       },
       src: "/TMG.com/SERIES/Monster/monster-videos/Dahmer - Monster_ The Jeffrey Dahmer Story Limited Series Trailer.mp4",
     },
-  ],
+  ] }
 });
 vp.attach(videos[1]);

@@ -1,21 +1,5 @@
-import {
-  ERROR_CODES,
-  MODES,
-  WHITELISTED_KEYS,
-  KEY_SHORTCUT_ACTIONS,
-  KEY_SHORTCUT_MOD_ACTIONS,
-  APT_AUTOPLAY_OPTIONS,
-  ORIENTATION_OPTIONS,
-} from "@consts/generics";
-
 export type MediaType = "video" | "audio";
-export type ErrorCode = (typeof ERROR_CODES)[number];
-export type Mode = (typeof MODES)[number];
-export type WhitelistedKey = (typeof WHITELISTED_KEYS)[number];
-export type KeyShortcutAction = (typeof KEY_SHORTCUT_ACTIONS)[number];
-export type KeyShortcutModAction = (typeof KEY_SHORTCUT_MOD_ACTIONS)[number];
-export type AptAutoplayOption = (typeof APT_AUTOPLAY_OPTIONS)[number];
-export type OrientationOption = (typeof ORIENTATION_OPTIONS)[number];
+
 export type Dimensions = Record<"width" | "height", number>;
 
 export interface Source {
@@ -24,7 +8,7 @@ export interface Source {
   media: string;
 }
 export type Sources = Source[];
-export type SrcObject = MediaSource | null;
+export type SrcObject = MediaProvider | null;
 
 export interface Track {
   kind: string;
@@ -35,6 +19,28 @@ export interface Track {
   id: string;
 }
 export type Tracks = Track[];
+
+export interface Metadata extends MediaMetadata {
+  id: string;
+  title: string;
+  artist: string;
+  profile: string;
+  album: string;
+  artwork: Array<Artwork>;
+  chapterInfo: Array<{
+    title?: string;
+    startTime: number;
+    artwork?: Array<Artwork>;
+  }>;
+  links: Partial<Record<"title" | "artist" | "profile", string>>;
+  allowOverride: boolean; // Lets YouTube/Vimeo/Parsers inject data
+}
+
+export interface Artwork {
+  src: string;
+  sizes?: string;
+  type?: string;
+}
 
 export interface PosterPreview {
   usePoster: boolean;

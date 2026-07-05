@@ -25,7 +25,7 @@ let flagMutationId: number | undefined;
 export let AUDIO_CONTEXT: AudioContext | null = null;
 export let AUDIO_LIMITER: DynamicsCompressorNode | null = null;
 export let IS_DOC_TRANSIENT = false;
-export const STATE_BUILD: CtlrState = { readyState: 0, audioContextReady: !!AUDIO_CONTEXT, mediaIntersecting: true, mediaParentIntersecting: true, dimensions: { container: { width: 0, height: 0, tier: "x" }, pseudoContainer: { width: 0, height: 0, tier: "x" }, window: { width: win?.innerWidth!, height: win?.innerHeight! } }, screenOrientation: { type: win?.screen.orientation.type!, angle: win?.screen.orientation.angle! }, docVisibilityState: win?.document.visibilityState!, docInFullscreen: queryFullscreen() };
+export const STATE_BUILD: CtlrState = { readyState: 0, audioContextReady: !!AUDIO_CONTEXT, mediaIntersecting: true, mediaParentIntersecting: true, dimensions: { container: { width: 0, height: 0, tier: "x" }, pseudoContainer: { width: 0, height: 0, tier: "x" }, window: { width: win?.innerWidth!, height: win?.innerHeight! } }, screenOrientation: { type: win?.screen?.orientation?.type ?? "", angle: win?.screen?.orientation?.angle ?? (win as any)?.orientation ?? 0 }, docVisibilityState: win?.document.visibilityState!, docInFullscreen: queryFullscreen() };
 export const Controllers: Controller[] = [];
 
 export function handleVidMutation(mutations: MutationRecord[]): void {
@@ -43,17 +43,15 @@ export function handleDOMMutation(mutations: MutationRecord[]): void {
     for (const node of Array.from(mutation.addedNodes)) {
       if (!(node instanceof HTMLElement)) continue;
       const els = node.matches(":is(video,audio):not(.tmg-host)") ? [node] : node.querySelectorAll(":is(video,audio):not(.tmg-host)");
-      els.forEach((el) => {
+      for (const el of els) {
         observeMutation(el, handleVidMutation, { attributes: true });
         (el as HTMLMediaElement).tmgcontrols = el.hasAttribute("tmgcontrols");
-      });
+      }
     }
     for (const node of Array.from(mutation.removedNodes)) {
       if (!(node instanceof HTMLElement)) continue;
       const els = node.matches(".tmg-host") ? [node] : node.querySelectorAll(".tmg-host");
-      els.forEach((el) => {
-        !(el as HTMLMediaElement).tmgPlayer?.Controller?.mutatingDOMM && (el as HTMLMediaElement).tmgPlayer?.detach(); // a div el without tmgcontrols eg. youtube tech
-      });
+      for (const el of els) !(el as HTMLMediaElement).tmgPlayer?.Controller?.mutatingDOMM && (el as HTMLMediaElement).tmgPlayer?.detach();
     }
   }
 }
@@ -101,7 +99,7 @@ export function startAudioManager(): void {
     AUDIO_CONTEXT = new (win!.AudioContext || (win as any).webkitAudioContext)() as AudioContext;
     const L = (AUDIO_LIMITER = AUDIO_CONTEXT!.createDynamicsCompressor());
     (L.threshold.value = -1.0), (L.knee.value = 0.0), (L.ratio.value = 20), (L.attack.value = 0.001), (L.release.value = 0.05);
-    Controllers.forEach((c) => c.state && (c.state.audioContextReady = true));
+    for (const c of Controllers) if (c.state) c.state.audioContextReady = true;
   } else if (AUDIO_CONTEXT?.state === "suspended") AUDIO_CONTEXT.resume();
 }
 
@@ -118,14 +116,28 @@ export function connectMediaToAudioManager(medium: HTMLMediaElement) {
 
 export function init(): void {
   mountMedia();
-  ["click", "pointerdown", "keydown"].forEach((e) => document.addEventListener(e, () => ((IS_DOC_TRANSIENT = true), startAudioManager()), true));
-  document.querySelectorAll("video,audio").forEach((medium: any) => {
+  for (const e of ["click", "pointerdown", "keydown"]) document.addEventListener(e, () => ((IS_DOC_TRANSIENT = true), startAudioManager()), true);
+  for (const medium of document.querySelectorAll<HTMLMediaElement>("video,audio")) {
     observeMutation(medium, handleVidMutation, { attributes: true });
     medium.tmgcontrols = medium.hasAttribute("tmgcontrols");
-  });
+  }
   observeMutation(document.documentElement, handleDOMMutation, { childList: true, subtree: true });
-  win!.addEventListener("resize", () => Controllers.forEach((c) => c.state && ((c.state.dimensions.window.width = win!.innerWidth), (c.state.dimensions.window.height = win!.innerHeight))));
-  screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => Controllers.forEach((c) => c.state && ((c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle))));
-  document.addEventListener("visibilitychange", () => Controllers.forEach((c) => c.state && (c.state.docVisibilityState = document.visibilityState)));
-  ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"].forEach((e) => document.addEventListener(e, () => Controllers.forEach((c) => (c.state.docInFullscreen = queryFullscreen()))));
+  win!.addEventListener("resize", () => {
+    for (const c of Controllers) if (c.state) (c.state.dimensions.window.width = win!.innerWidth), (c.state.dimensions.window.height = win!.innerHeight);
+  });
+  if (win?.screen?.orientation)
+    win.screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => {
+      for (const c of Controllers) if (c.state) (c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle);
+    });
+  else
+    win?.addEventListener("orientationchange", () => {
+      for (const c of Controllers) if (c.state) c.state.screenOrientation.angle = (win as any).orientation || 0;
+    });
+  document.addEventListener("visibilitychange", () => {
+    for (const c of Controllers) if (c.state) c.state.docVisibilityState = document.visibilityState;
+  });
+  for (const e of ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"])
+    document.addEventListener(e, (_, inFs = queryFullscreen()) => {
+      for (const c of Controllers) if (c.state) c.state.docInFullscreen = inFs;
+    });
 }

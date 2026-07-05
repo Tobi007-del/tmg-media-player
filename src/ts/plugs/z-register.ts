@@ -5,27 +5,32 @@ import { PlaylistPlug } from "./main/playlist";
 import { AutoPlug } from "./settings/auto";
 import { CSSPlug } from "./settings/css";
 import { SkeletonPlug } from "./main/skeleton";
+import { PosterPlug } from "./settings/poster";
 import { ControlPanelPlug } from "./settings/controlPanel";
 import { OverlayPlug } from "./settings/overlay";
 import { NotifiersPlug } from "./settings/notifiers";
-import { MediaPlug } from "./main/media";
+import { MetadataPlug } from "./settings/metadata";
 import { TimePlug } from "./settings/time";
 import { LightStatePlug } from "./main/lightState";
-import { GesturePlug } from "./settings/gesture";
-import { FastPlayPlug } from "./settings/fastPlay";
 import { VolumePlug } from "./settings/volume";
 import { BrightnessPlug } from "./settings/brightness";
 import { PlaybackRatePlug } from "./settings/playbackRate";
 import { ObjectFitPlug } from "./settings/objectFit";
 import { CaptionsPlug } from "./settings/captions";
+import { GesturePlug } from "./settings/gesture";
+import { FastPlayPlug } from "./settings/fastPlay";
 import { ModesPlug } from "./settings/modes";
 import { KeysPlug } from "./settings/keys";
 import { ToastsPlug } from "./settings/toasts";
 import { LockedPlug } from "./settings/locked";
 import { FramePlug } from "./settings/frame";
 import { DisabledPlug } from "./main/disabled";
-import { ErrorMessagesPlug } from "./settings/errorMessages";
+import { ErrorsPlug } from "./settings/errors";
 import { SettingsViewPlug } from "./settings/settingsView";
+import { AmbiencePlug } from "./settings/ambience";
+import { CastPlug } from "./settings/cast";
+import { AirPlayPlug } from "./settings/airplay";
+import { SleepTimerPlug } from "./settings/sleepTimer";
 import { ControlPanelDraggablePin } from "./settings/controlPanel/draggable";
 import { ModesFullscreenPin } from "./settings/modes/fullscreen";
 import { ModesTheaterPin } from "./settings/modes/theater";
@@ -33,14 +38,17 @@ import { ModesPictureInPicturePin } from "./settings/modes/pictureInPicture";
 import { ModesMiniplayerPin } from "./settings/modes/miniplayer";
 import { GestureWheelPin } from "./settings/gesture/wheel";
 import { GestureTouchPin } from "./settings/gesture/touch";
+import { VoicePlug } from "./settings/voice";
 
-[
+for (const Plug of [
   // Priority Order
   PersistPlug,
   TimeTravelPlug,
-  MediaPlug,
+  MetadataPlug,
   CSSPlug,
   SkeletonPlug,
+  ObjectFitPlug,
+  PosterPlug,
   ControlPanelPlug,
   OverlayPlug,
   NotifiersPlug,
@@ -48,24 +56,29 @@ import { GestureTouchPin } from "./settings/gesture/touch";
   AutoPlug,
   TimePlug,
   LightStatePlug,
-  GesturePlug,
-  FastPlayPlug,
   VolumePlug,
   BrightnessPlug,
+  CastPlug, // Before other Intent resolvers apart from envelopers (volume, brightness)
   PlaybackRatePlug,
-  ObjectFitPlug,
   CaptionsPlug,
+  GesturePlug,
+  FastPlayPlug,
   ModesPlug,
   KeysPlug,
   ToastsPlug,
   LockedPlug,
   FramePlug,
   DisabledPlug,
-  ErrorMessagesPlug,
+  ErrorsPlug,
+  AmbiencePlug,
+  AirPlayPlug,
+  SleepTimerPlug,
+  VoicePlug,
   SettingsViewPlug,
-].forEach((Plug) => PlugRegistry.register(Plug));
+])
+  PlugRegistry.register(Plug);
 
-[
+for (const Pin of [
   // Random Order
   ControlPanelDraggablePin,
   ModesFullscreenPin,
@@ -74,4 +87,5 @@ import { GestureTouchPin } from "./settings/gesture/touch";
   ModesMiniplayerPin,
   GestureWheelPin,
   GestureTouchPin,
-].forEach((Pin) => PinRegistry.register(Pin));
+])
+  PinRegistry.register(Pin);

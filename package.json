@@ -18,7 +18,10 @@
   "unpkg": "./dist/super.global.js",
   "jsdelivr": "./dist/super.global.js",
   "types": "./dist/index.d.ts",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css",
+    "**/*.scss"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -26,12 +29,67 @@
       "require": "./dist/index.cjs",
       "default": "./dist/index.js"
     },
+    "./init": {
+      "types": "./dist/init.d.ts",
+      "import": "./dist/init.js",
+      "require": "./dist/init.cjs",
+      "default": "./dist/init.js"
+    },
+    "./super": {
+      "types": "./dist/super.d.ts",
+      "import": "./dist/super.js",
+      "require": "./dist/super.cjs",
+      "default": "./dist/super.js"
+    },
     "./style.css": "./dist/index.css",
-    "./assets/*": "./dist/assets/*"
+    "./assets/*": "./dist/assets/*",
+    "./core/*": {
+      "types": "./dist/core/*.d.ts",
+      "import": "./dist/core/*.js",
+      "require": "./dist/core/*.cjs",
+      "default": "./dist/core/*.js"
+    },
+    "./tools/*": {
+      "types": "./dist/tools/*.d.ts",
+      "import": "./dist/tools/*.js",
+      "require": "./dist/tools/*.cjs",
+      "default": "./dist/tools/*.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "import": "./dist/utils/*.js",
+      "require": "./dist/utils/*.cjs",
+      "default": "./dist/utils/*.js"
+    },
+    "./consts/*": {
+      "types": "./dist/consts/*.d.ts",
+      "import": "./dist/consts/*.js",
+      "require": "./dist/consts/*.cjs",
+      "default": "./dist/consts/*.js"
+    },
+    "./techs/*": {
+      "types": "./dist/techs/*.d.ts",
+      "import": "./dist/techs/*.js",
+      "require": "./dist/techs/*.cjs",
+      "default": "./dist/techs/*.js"
+    },
+    "./plugs/*": {
+      "types": "./dist/plugs/*.d.ts",
+      "import": "./dist/plugs/*.js",
+      "require": "./dist/plugs/*.cjs",
+      "default": "./dist/plugs/*.js"
+    },
+    "./components/*": {
+      "types": "./dist/components/*.d.ts",
+      "import": "./dist/components/*.js",
+      "require": "./dist/components/*.cjs",
+      "default": "./dist/components/*.js"
+    }
   },
   "scripts": {
     "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "build": "tsup",
+    "build:super": "node scripts/build-super.js",
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -39,23 +97,25 @@
     "dist"
   ],
   "devDependencies": {
+    "@types/chrome": "^0.1.43",
+    "@types/chromecast-caf-sender": "^1.0.11",
     "@types/node": "^25.9.1",
     "@types/youtube": "^0.2.0",
     "@vimeo/player": "^2.30.4",
     "dashjs": "^5.1.1",
     "esbuild-sass-plugin": "^3.6.0",
     "hls.js": "^1.6.16",
-    "madge": "^8.0.0",
     "sass": "^1.98.0",
+    "shaka-player": "^5.1.7",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^8.0.16"
   },
   "dependencies": {
-    "@t007/dialog": "^0.0.30",
-    "@t007/input": "^0.0.31",
-    "@t007/toast": "^0.0.31",
-    "@t007/utils": "^0.0.33",
-    "sia-reactor": "^0.0.34",
-    "vite": "^8.0.14"
+    "@t007/dialog": "^0.0.31",
+    "@t007/input": "^0.0.32",
+    "@t007/toast": "^0.0.32",
+    "t007/utils": "^0.0.34",
+    "sia-reactor": "^0.0.35"
   }
 }

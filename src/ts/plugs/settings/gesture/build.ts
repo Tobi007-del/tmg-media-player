@@ -1,8 +1,8 @@
 import { DeepPartial } from "sia-reactor";
-import { Gesture, GestureTouch, GestureWheel } from ".";
-import { IS_MOBILE } from "@utils/browser";
+import { GestureConfig, GestureTouchConfig, GestureWheelConfig } from ".";
+import { IS_MOBILE } from "@utils/env";
 
-export const GESTURE_TOUCH_BUILD: Partial<GestureTouch> = {
+export const GESTURE_TOUCH_BUILD: Partial<GestureTouchConfig> = {
   volume: true,
   brightness: true,
   timeline: true,
@@ -14,7 +14,7 @@ export const GESTURE_TOUCH_BUILD: Partial<GestureTouch> = {
   yRatio: 1,
 };
 
-export const GESTURE_WHEEL_BUILD: Partial<GestureWheel> = {
+export const GESTURE_WHEEL_BUILD: Partial<GestureWheelConfig> = {
   volume: true,
   brightness: true,
   timeline: true,
@@ -23,7 +23,7 @@ export const GESTURE_WHEEL_BUILD: Partial<GestureWheel> = {
   yRatio: 6,
 };
 
-export const GESTURE_BUILD: DeepPartial<Gesture> = {
+export const GESTURE_BUILD: DeepPartial<GestureConfig> = {
   click: IS_MOBILE ? false : "paused",
   dblClick: IS_MOBILE ? "paused" : "fullscreen",
   // touch: GESTURE_TOUCH_BUILD,

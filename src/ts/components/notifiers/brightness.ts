@@ -1,4 +1,4 @@
-﻿import { BaseNotifier, ComponentState } from "./base";
+import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { REvent } from "sia-reactor";
@@ -14,7 +14,7 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
   public darkDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-brightness-notifier-content" });
+    this.content = createEl("div", { className: "tmg-media-brightness-notifier-content tmg-media-notifier-content" });
     this.upDiv = createEl("div", { className: "tmg-media-brightness-up-notifier", innerHTML: IconRegistry.get("brightnesshigh", true) });
     this.downDiv = createEl("div", { className: "tmg-media-brightness-down-notifier", innerHTML: IconRegistry.get("brightnesslow", true) });
     this.darkDiv = createEl("div", { className: "tmg-media-brightness-dark-notifier", innerHTML: IconRegistry.get("brightnessdark", true) });
@@ -30,7 +30,7 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
   }
 
   protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness"> | REvent<BrightnessState, "aptValue">): void {
-    this.content.textContent = `${value}%`;
+    this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
   }
 }
 

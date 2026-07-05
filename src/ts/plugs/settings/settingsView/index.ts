@@ -1,115 +1,131 @@
-﻿import { BasePlug } from "../../base";
+import { silence } from "sia-reactor/modules";
+import { BasePlug } from "../../base";
 import { SETTINGS_BUILD } from "./build";
-import type { SettingsView } from "./types";
+import type { SettingsViewConfig } from "./types";
+import { SettingsMenu } from "./menu";
 import { createEl } from "@utils/dom";
 import { mockAsync } from "@utils/fn";
 import { parseCSSTime } from "@utils/str";
 
-export class SettingsViewPlug extends BasePlug<SettingsView> {
+import type { Controller } from "@core/controller";
+
+export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
   public static readonly plugName = "settingsView";
   public static readonly BUILD = SETTINGS_BUILD;
   public closeBtn!: HTMLButtonElement | null;
+  public menu!: SettingsMenu;
   protected wasPaused = false;
+  private viewReady = false;
+
+  constructor(ctlr: Controller, config?: SettingsViewConfig, state?: any) {
+    super(ctlr, config, state);
+    this.menu = new SettingsMenu(this.ctlr, this.config.menu);
+  }
+
+  public override mount(): void {
+    this.closeBtn = this.ctlr.queryDOM(".tmg-media-settings-close-btn")!;
+    !this.config.menu.disabled && this.menu.mount(this.enterView);
+  }
+  public override unmount(): void {
+    this.media.container.classList.remove("tmg-media-settings-view");
+    this.ctlr.queryDOM(".tmg-media-settings-tips-btn")?.remove(), this.ctlr.queryDOM(".tmg-media-settings-brand-wrapper")?.remove(), this.ctlr.queryDOM(".tmg-media-settings-theme-wrapper")?.remove();
+  }
 
   public override wire(): void {
-    // Variables Assignment
-    this.closeBtn = this.ctlr.queryDOM(".tmg-media-settings-close-btn")!;
     // Event Listeners
-    this.closeBtn.addEventListener("click", this.leaveView, { signal: this.signal });
+    this.closeBtn?.addEventListener("click", this.leaveView, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
     // Post Wiring
-    this.ctlr.plug("settings.keys")?.register("settings", this.toggleView, { phase: "keyup", zen: true });
-    // #BETA: clean swap-in with beta for now
-    this.closeBtn.insertAdjacentHTML("afterend", `<button type="button" class="tmg-media-settings-tips-btn"><span>💡 Did You Know?</span></button>`);
-    this.ctlr.queryDOM(".tmg-media-settings-tips-btn")!.addEventListener("click", this.showTipsDialog, { signal: this.signal });
-    setTimeout(this.initSettingsUIManager);
+    this.ctlr.registerAction("settings", { fn: this.toggleView, keyboard: { phase: "keyup" }, zen: true });
+    !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 
   public async enterView(): Promise<void> {
     if (this.ctlr.isUIActive("settings")) return;
+    if (!this.viewReady) this.initView(), (this.viewReady = true);
+    this.menu.close();
     this.wasPaused = this.media.state.paused;
-    this.media.intent.paused = true;
+    if (this.config.autoPause) silence(() => (this.media.intent.paused = true));
     this.media.container.classList.add("tmg-media-settings-view");
-    await mockAsync(parseCSSTime(this.ctlr.settings.css.settingsViewTransitionTime));
+    await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
     this.closeBtn?.focus();
-    this.ctlr.plug("settings.keys")?.setEventListeners();
   } // #STANDALONE: needs scoped behavior
 
   public async leaveView(): Promise<void> {
     if (!this.ctlr.isUIActive("settings")) return;
     this.media.container.classList.remove("tmg-media-settings-view");
-    await mockAsync(parseCSSTime(this.ctlr.settings.css.settingsViewTransitionTime));
-    this.media.intent.paused = this.wasPaused;
+    await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
+    if (this.config.autoPause) silence(() => (this.media.intent.paused = this.wasPaused));
     this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");
-    this.ctlr.plug("settings.keys")?.setEventListeners();
   } // #STANDALONE: needs scoped behavior
 
   public async toggleView(): Promise<void> {
     this.ctlr.isUIActive("settings") ? await this.leaveView() : await this.enterView();
   }
 
-  // #BETA: clean swap-in with beta for now
-  private initSettingsUIManager() {
+  private initView() {
+    // Theming
     // prettier-ignore
-    const options = [{ option: "Light Blue", value: "#3198f5" },{ option: "Hot Pink", value: "#ff69b4" },{ option: "Fiery Red", value: "#ff0033" },{ option: "Dark Turquoise", value: "#00ced1" },{ option: "Custom Hue", value: "custom" },{ option: "Video Derived", value: "auto" }],
+    const options = [{ option: "Light Blue", value: "#3198f5" }, { option: "Hot Pink", value: "#ff69b4" }, { option: "Fiery Red", value: "#ff0033" }, { option: "Dark Turquoise", value: "#00ced1" }, { option: "Custom Hue", value: "custom" }, { option: "Video Derived", value: "auto" }],
       gcolors = options.slice(0, -2).map((opt) => opt.value),
-      defs = { brand: this.ctlr.settings.css.brandColor ?? "#e26e02", theme: this.ctlr.settings.css.themeColor ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
-      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.ctlr.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
+      defs = { brand: this.settings.css.brandColor as string ?? "#e26e02", theme: this.settings.css.themeColor as string ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
+      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
       cBField = t007.field({ type: "color" }),
-      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.ctlr.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
+      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
       cTField = t007.field({ type: "color" }),
-      bWrapper = createEl("div"),
-      tWrapper = createEl("div");
-    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.ctlr.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
-    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), cTField.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.ctlr.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+      bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
+      tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
+    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), cTField.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
     this.ctlr.DOM.settingsBottomPanel?.append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
     const id = { theme: "", brand: "" },
-      sync = (cb: any, req = true, type = "brand") => ((this.ctlr.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),
+      sync = (cb: any, req = true, type = "brand") => ((this.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),
       assert = (opts: any, type: "brand" | "theme" = "brand") => this.ctlr.plug("settings.toasts")?.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }),
-      onBColorChange = ({ target: { value: val } }: any) => {
+      onBColorChange = ({ target: { value: val } }: any) =>
         this.ctlr.throttle(
           "brandColorPicking",
           async () => {
-            id.brand && this.ctlr.plug("settings.toasts")?.toast?.dismiss(id.brand);
+            id.brand && t007.toast?.dismiss(id.brand);
             let col;
             if (val === "custom") return cBField.inputEl.click();
-            if (val !== "auto") col = this.ctlr.settings.css.brandColor = val;
-            else col = this.ctlr.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.brandColor!;
-            const cb = (s: any) => (bField.inputEl.value = defs.bcolors.includes(col) ? col : s ? "auto" : "custom"),
+            if (val !== "auto") col = this.settings.css.brandColor = val;
+            else col = this.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.brandColor!;
+            const cb = (s: any) => (bField.inputEl.value = defs.bcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false), assert({ actions: { Yes } })),
               Yes = () => (sync(cb, true), assert({ actions: { No } }));
             sync(cb, val === "auto");
-            val === "auto" && (id.brand = this.ctlr.plug("settings.toasts")?.toast?.("Should the brand color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = "") }) || "");
+            val === "auto" && (id.brand = this.ctlr.plug("settings.toasts")?.toast?.("Should the brand color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = ""), signal: this.signal }) || "");
           },
           150
-        );
-      },
-      onTColorChange = ({ target: { value: val } }: any) => {
+        ),
+      onTColorChange = ({ target: { value: val } }: any) =>
         this.ctlr.throttle(
           "themeColorPicking",
           async () => {
-            id.theme && this.ctlr.plug("settings.toasts")?.toast?.dismiss(id.theme);
+            id.theme && t007.toast?.dismiss(id.theme);
             let col;
             if (val === "custom") return cTField.inputEl.click();
-            if (val !== "auto") col = this.ctlr.settings.css.themeColor = val;
-            else col = this.ctlr.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.themeColor!;
-            const cb = (s: any) => (tField.inputEl.value = defs.tcolors.includes(col) ? col : s ? "auto" : "custom"),
+            if (val !== "auto") col = this.settings.css.themeColor = val;
+            else col = this.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.themeColor!;
+            const cb = (s: any) => (tField.inputEl.value = defs.tcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")),
               Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
             sync(cb, val === "auto", "theme");
-            val === "auto" && (id.theme = this.ctlr.plug("settings.toasts")?.toast?.("Should the theme color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = "") }) || "");
+            val === "auto" && (id.theme = this.ctlr.plug("settings.toasts")?.toast?.("Should the theme color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = ""), signal: this.signal }) || "");
           },
           150
         );
-      };
-    bField.inputEl.addEventListener("input", onBColorChange);
-    cBField.inputEl.addEventListener("input", onBColorChange);
-    tField.inputEl.addEventListener("input", onTColorChange);
-    cTField.inputEl.addEventListener("input", onTColorChange);
+    bField.inputEl.addEventListener("input", onBColorChange), cBField.inputEl.addEventListener("input", onBColorChange);
+    tField.inputEl.addEventListener("input", onTColorChange), cTField.inputEl.addEventListener("input", onTColorChange);
+    // Helpful Tips
+    const tipsBtn = createEl("button", { className: "tmg-media-settings-tips-btn", innerHTML: `<span>💡 Did You Know?</span>` });
+    this.closeBtn?.insertAdjacentElement("afterend", tipsBtn);
+    tipsBtn.addEventListener("click", this.showTipsDialog, { signal: this.signal });
   }
+
   private getTipsHTML() {
     return `
       <div style="text-align: left; font-family: inherit; color: inherit;">
@@ -143,7 +159,7 @@ export class SettingsViewPlug extends BasePlug<SettingsView> {
         </ul>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🔬 Advanced Window Tech</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 20px;">
-          <li><strong>The Snapshot Engine:</strong> Click the Camera icon or press <strong>s</strong> to screenshot a high-res image of the exact frame. <em>(Easter Egg: Double-Click or press <strong>Alt + s</strong> to capture in pure Black & White!)</em></li>
+          <li><strong>The Snapshot Engine:</strong> Click the Camera icon or press <strong>s</strong> to screenshot a high-res image of the exact frame. <em>(Easter Egg: Double-Click or press <strong>Alt + s</strong> to capture in pure Black &amp; White!)</em></li>
           <li><strong>Ultra-readable Time:</strong> Click the time display or press <strong>q</strong> to toggle between elapsed time and remaining time. <em>(Easter Egg: Double-Click or press <strong>z</strong> to display the time in different formats!)</em></li>
           <li><strong>Floating Miniplayer:</strong> Start playing a video and just scroll down the page. TVP will automatically detach into a draggable miniplayer so you never miss a second.</li>
           <li><strong>Custom Picture-in-Picture:</strong> We bypassed standard browser limits to give you a floating player that actually keeps all your custom UI controls intact.</li>
@@ -155,9 +171,14 @@ export class SettingsViewPlug extends BasePlug<SettingsView> {
         </div>
       `;
   }
+
   private async showTipsDialog() {
     await this.leaveView();
     t007.alert(this.getTipsHTML(), { id: `${this.ctlr.config.id}-tips-dialog`, rootElement: this.ctlr.DOM.containerContent, confirmText: "Got it!" });
+  }
+
+  protected override onDestroy(): void {
+    this.menu.destroy(), super.onDestroy();
   }
 }
 
@@ -169,7 +190,7 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface Settings {
-    settingsView: SettingsView;
+    settingsView: SettingsViewConfig;
   }
 }
 

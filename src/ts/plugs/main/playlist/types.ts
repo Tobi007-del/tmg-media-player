@@ -1,8 +1,15 @@
 import { CtlrConfig } from "@defs/config";
 
-export interface PlaylistItemConfig extends Pick<CtlrConfig, "media" | "startup" | "settings"> {}
+export interface PlaylistItemConfig extends Pick<Required<CtlrConfig>, "media" | "settings"> {}
 
-export type Playlist = PlaylistItemConfig[] | null;
+export type PlaylistConfig = {
+  content: PlaylistItemConfig[] | null;
+  allowOverride: {
+    add: boolean;
+    delete: boolean;
+    move: boolean;
+  };
+};
 
 export interface PlaylistState {
   currentIndex: number;

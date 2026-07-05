@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -29,18 +29,7 @@
       flex-direction: column;
       align-items: center;
       color: white;
-      font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Oxygen,
-        Ubuntu,
-        Cantarell,
-        "Open Sans",
-        "Helvetica Neue",
-        sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
       text-align: center;
     }
     .magic {
@@ -167,7 +156,7 @@
       <div>
         <a href="prototype-1/index.html" class="section-link">View 1st Prototype</a>
         <a href="prototype-2/index.html" class="section-link">View 2nd Prototype</a>
-        <a href="src/beta/index.html" class="section-link">View Beta Player</a>
+        <a href="beta/index.html" class="section-link">View Beta Player</a>
         <!-- <a href="dist/tmg-player.js" class="section-link">View Media Player</a> -->
         <a href="libs-test/index.html" class="section-link">View Other Players</a>
         <a href="tool-box/index.html" class="section-link">View Toolbox</a>
@@ -185,13 +174,10 @@
         star.style.animation = "";
       };
       for (const star of document.getElementsByClassName("magic-star")) {
-        setTimeout(
-          () => {
-            animate(star);
-            setInterval(animate, 1000, star);
-          },
-          index++ * (interval / 3)
-        );
+        setTimeout(() => {
+          animate(star);
+          setInterval(animate, 1000, star);
+        }, index++ * (interval / 3));
       }
     </script>
   </body>

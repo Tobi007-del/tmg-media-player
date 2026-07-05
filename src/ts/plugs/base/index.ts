@@ -1,8 +1,9 @@
-﻿import { Controllable } from "@core/controllable";
+import { Controllable } from "@core/controllable";
 import type { Controller } from "@core/controller";
 import { PlugConstructor as PC, PinConstructor as PIC } from "./types";
-import type { PlugRegistryMap, PinRegistryMap } from "@defs/registries";
+import type { PlugRegistryMap, PinRegistryMap, MenuRegistryMap } from "@defs/registries";
 import { getPath } from "sia-reactor/utils";
+import { MenuRegistry } from "@core/registries";
 
 export abstract class BasePlug<Config = any, State = any> extends Controllable<Config, State> {
   public static readonly plugName: string;
@@ -19,10 +20,11 @@ export abstract class BasePlug<Config = any, State = any> extends Controllable<C
     return (this.constructor as PC).plugName;
   }
 
-  constructor(ctlr: Controller, config: Config = getPath(ctlr.config as any, new.target.fullName), state?: State) {
+  constructor(ctlr: Controller, config: Config | undefined = getPath(ctlr.config as any, new.target.fullName), state?: State) {
     ctlr.plug(new.target.fullName)?.destroy();
     super(ctlr, config, state);
-    this.ctlr.config.watch(new.target.fullName as any, (v) => (this.config = v), { signal: this.signal }); // #COMPUTED: config can lose reference
+    const path = new.target.fullName as any;
+    this.ctlr.config.watch(path, () => (this.config = getPath(this.ctlr.config, path)), { signal: this.signal }); // #COMPUTED: config can lose reference
     ctlr.plugs.set(new.target.fullName, this);
   }
 
@@ -37,7 +39,13 @@ export abstract class BasePlug<Config = any, State = any> extends Controllable<C
 
   public mount?(): void {}
   public unmount?(): void {}
-  public wire?(): void {}
+  public wire(): void {
+    this.registerMenu();
+  }
+
+  protected registerMenu(): void {
+    this.ctlr.plug("settings.settingsView")?.menu.register(MenuRegistry.get((this.constructor as PC).fullName as keyof MenuRegistryMap)?.(this as any));
+  } // override to configure positioning
 }
 
 export abstract class BasePin<Plug extends BasePlug = BasePlug, Config = any, State = any> extends Controllable<Config, State> {
@@ -59,7 +67,8 @@ export abstract class BasePin<Plug extends BasePlug = BasePlug, Config = any, St
 
   constructor(ctlr: Controller, config: Config, state?: State) {
     super(ctlr, config, state);
-    this.ctlr.config.watch((new.target.Plug.fullName + "." + new.target.pinName) as any, (v) => (this.config = v), { signal: this.signal }); // #COMPUTED: config can lose reference
+    const path = (new.target.Plug.fullName + "." + new.target.pinName) as any;
+    this.ctlr.config.watch(path, () => (this.config = getPath(this.ctlr.config, path)), { signal: this.signal }); // #COMPUTED: config can lose reference
   }
 
   protected override onSetup(): void {} // plug handles mount and wire

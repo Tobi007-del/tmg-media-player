@@ -1,11 +1,11 @@
-﻿import { GESTURE_WHEEL_BUILD } from "./build";
+import { GESTURE_WHEEL_BUILD } from "./build";
 import { GesturePlug } from "./index";
 import { clamp } from "@utils/num";
 import { setTimeout } from "@utils/fn";
 import { GestureBasePin } from "./base";
-import { GestureWheel } from "./types";
+import { GestureWheelConfig } from "./types";
 
-export class GestureWheelPin extends GestureBasePin<GestureWheel> {
+export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   public static readonly pinName = "wheel";
   public static get Plug() {
     return GesturePlug;
@@ -26,7 +26,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return this.ctlr.settings.locked.disabled && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.speedCheck && (this.ctlr.isUIActive("fullscreen") || this.ctlr.isUIActive("floatingPlayer"));
+    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.speedCheck && (this.ctlr.isUIActive("fullscreen") || this.ctlr.isUIActive("floatingPlayer"));
   }
 
   protected handleWheel(e: WheelEvent): void {
@@ -75,7 +75,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
       this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
       const ySign = -deltaY >= 0 ? "+" : "-",
         yPercent = clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
-      this.zone?.x === "right" ? this.applyRange("volume", yPercent, ySign) : this.applyRange("brightness", yPercent, ySign);
+      this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", yPercent, ySign);
     }
   }
 
@@ -83,9 +83,8 @@ export class GestureWheelPin extends GestureBasePin<GestureWheel> {
     this.timeoutId = null;
     if (this.yCheck) {
       this.yCheck = false;
-      this.ctlr.plug("settings.overlay")?.remove();
-      this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive();
-      this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
+      this.ctlr.plug("settings.overlay")?.hide();
+      this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
     }
     if (this.xCheck) {
       this.xCheck = false;

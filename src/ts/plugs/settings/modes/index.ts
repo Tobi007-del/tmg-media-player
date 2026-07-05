@@ -1,14 +1,14 @@
-﻿import { Controller } from "@core/controller";
+import { Controller } from "@core/controller";
 import { BasePlug } from "../../base";
 import { ModesFullscreenPin } from "./fullscreen";
 import { ModesTheaterPin } from "./theater";
 import { ModesPictureInPicturePin } from "./pictureInPicture";
 import { ModesMiniplayerPin } from "./miniplayer";
-import type { Modes } from "./types";
+import type { ModesConfig } from "./types";
 import { MODES_BUILD } from "./build";
 import { PinRegistry } from "@core/registries";
 
-export class ModesPlug extends BasePlug<Modes> {
+export class ModesPlug extends BasePlug<ModesConfig> {
   public static readonly plugName = "modes";
   public static readonly BUILD = MODES_BUILD;
   public fullscreen?: ModesFullscreenPin;
@@ -16,7 +16,7 @@ export class ModesPlug extends BasePlug<Modes> {
   public pictureInPicture?: ModesPictureInPicturePin;
   public miniplayer?: ModesMiniplayerPin;
 
-  constructor(ctlr: Controller, config: Modes = ctlr.config.settings.modes) {
+  constructor(ctlr: Controller, config = ctlr.settings.modes) {
     super(ctlr, config);
     const FullscreenPin = PinRegistry.get("modes.fullscreen"),
       TheaterPin = PinRegistry.get("modes.theater"),
@@ -33,6 +33,8 @@ export class ModesPlug extends BasePlug<Modes> {
   public override wire(): void {
     // Utility Injection
     this.fullscreen?.wire(), this.theater?.wire(), this.pictureInPicture?.wire(), this.miniplayer?.wire();
+    // Post Wiring
+    super.wire();
   }
 
   protected override onDestroy(): void {
@@ -55,6 +57,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface Settings {
-    modes: Modes;
+    modes: ModesConfig;
   }
 }

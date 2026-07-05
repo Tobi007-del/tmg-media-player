@@ -6,7 +6,7 @@
   max-width: 100%;
 }
 .tmg-media-big-controls-wrapper-cover,
-.tmg-media-container:is(.tmg-media-previewing, .tmg-media-scrubbing, :has(.tmg-media-touch-timeline-notifier.tmg-media-control-active)) .tmg-media-big-controls-wrapper-cover {
+.tmg-media-container:is(.tmg-media-previewing, :has(.tmg-media-touch-timeline-notifier.tmg-media-control-active)) .tmg-media-big-controls-wrapper-cover {
   display: none;
 }
 .tmg-media-container:is(.tmg-media-replay, .tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) .tmg-media-big-controls-wrapper-cover,
@@ -47,4 +47,7 @@
   align-items: center;
   background-color: var(--tmg-media-brand-complement-color);
   border-radius: 50%;
+}
+.tmg-media-big-controls-wrapper > * {
+  background-color: var(--tmg-media-big-control-background-color);
 }

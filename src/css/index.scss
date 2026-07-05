@@ -1,7 +1,7 @@
 /* #o#o#o#o#o - 5-0-0 is used to raise specificity where required with the power of 5 id's to avoid the use of '!important' style declarations for now  */
 
-// @use "@t007/utils/styles/ripple.css" as *;
-// @use "@t007/utils/styles/scroll-assist.css" as *;
+@use "../../node_modules/@t007/utils/dist/styles/ripple.css" as *;
+@use "../../node_modules/@t007/utils/dist/styles/scroll-assist.css" as *;
 
 @use "./core/_variables.css" as *;
 @use "./core/_animations.css" as *;

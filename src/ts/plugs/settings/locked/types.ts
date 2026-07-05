@@ -1,6 +1,6 @@
-export type Locked = {
+export interface LockedConfig {
   disabled: boolean;
-};
+}
 
 export interface LockedState {
   visible: boolean;

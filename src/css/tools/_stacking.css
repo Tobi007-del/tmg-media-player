@@ -1,30 +1,36 @@
-.tmg-media-thumbnail {
-  z-index: 1;
+.tmg-media-poster {
+  z-index: 0;
 }
-.tmg-media-picture-in-picture-placeholder {
-  z-index: 2;
+.tmg-media-thumbnail {
+  z-index: 10;
+}
+.tmg-media-placeholder {
+  z-index: 20;
 }
 .tmg-media-notifiers-container {
-  z-index: 3;
+  z-index: 30;
 }
 .tmg-media-top-curtain,
 .tmg-media-bottom-curtain {
-  z-index: 4;
+  z-index: 40;
 }
 .tmg-media-captions-container {
-  z-index: 5;
+  z-index: 50;
 }
 .tmg-media-cover-curtain {
-  z-index: 6;
+  z-index: 60;
 }
 .tmg-media-big-controls-wrapper-cover,
 .tmg-media-buffer {
-  z-index: 7;
+  z-index: 70;
 }
 .tmg-media-top-controls-wrapper,
 .tmg-media-bottom-controls-wrapper {
-  z-index: 9;
+  z-index: 90;
 }
 .tmg-media-container.tmg-media-mobile .tmg-media-notifiers-container {
-  z-index: 8;
+  z-index: 80;
+}
+.tmg-media-menus-wrapper {
+  z-index: 100;
 }

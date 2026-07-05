@@ -1,4 +1,4 @@
-﻿import { BaseNotifier, ComponentState } from "./base";
+import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { REvent } from "sia-reactor";
@@ -10,10 +10,9 @@ export class FastPlayNotifier extends BaseNotifier<undefined, ComponentState, HT
   public text!: HTMLParagraphElement;
 
   public override create() {
-    this.element = createEl("div", { className: "tmg-media-fast-play-notifier", innerHTML: `${IconRegistry.get("doubletriangleleft")}${IconRegistry.get("doubletriangleright")}` });
+    this.element = createEl("div", { className: "tmg-media-fast-play-notifier tmg-media-text-notifier tmg-media-top-text-notifier", innerHTML: `${IconRegistry.get("doubletriangleleft")}${IconRegistry.get("doubletriangleright")}` });
     this.text = createEl("p", { className: "tmg-media-fast-play-notifier-text" });
-    this.el.insertBefore(this.text, this.el.lastChild);
-    return this.bindNodes([this.element]);
+    return this.el.insertBefore(this.text, this.el.lastChild), this.el;
   }
 
   public override wire(): void {

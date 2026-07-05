@@ -1,3 +1,6 @@
 import { OptRange } from "@defs/generics";
+import type { UIOption } from "@defs/UIOptions";
 
-export interface PlaybackRate extends OptRange {}
+export interface PlaybackRateConfig extends OptRange {
+  options: UIOption<number>[];
+}

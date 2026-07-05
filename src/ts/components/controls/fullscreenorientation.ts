@@ -1,7 +1,6 @@
-﻿import { BaseComponent, ComponentState } from "../base";
+import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { IS_MOBILE } from "@utils/browser";
 
 export type FullscreenOrientationConfig = undefined;
 
@@ -20,6 +19,7 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
   public override wire(): void {
     // Features Gating
     this.media.on("features.fullscreen", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.fullscreenOrientation", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
@@ -38,7 +38,7 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
   }
 
   protected override get canShow(): boolean {
-    return IS_MOBILE && this.media.state.fullscreen && this.media.features.fullscreen;
+    return this.media.state.fullscreen && !!this.media.features.fullscreen && !!this.media.features.fullscreenOrientation;
   }
 }
 

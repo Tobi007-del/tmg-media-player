@@ -1,6 +1,6 @@
-import { Notifiers } from "./types";
+import { NotifiersConfig } from "./types";
 
-export const NOTIFIERS_BUILD: Partial<Notifiers> = {
+export const NOTIFIERS_BUILD: Partial<NotifiersConfig> = {
   disabled: false,
-  list: ["playpausenotifier", "prevnextnotifier", "captionsnotifier", "capturenotifier", "playbackratenotifier", "fastplaynotifier", "volumenotifier", "brightnessnotifier", "objectfitnotifier", "fwdnotifier", "bwdnotifier", "scrubnotifier", "cancelscrubnotifier", "touchvolumenotifier", "touchbrightnessnotifier", "touchtimelinenotifier"],
+  list: ["playpausenotifier", "prevnextnotifier", "captionsnotifier", "capturenotifier", "playbackratenotifier", "fastplaynotifier", "volumenotifier", "brightnessnotifier", "objectfitnotifier", "fwdbwdnotifier", "scrubnotifier", "cancelscrubnotifier", "touchvolumenotifier", "touchbrightnessnotifier", "touchtimelinenotifier", "chapternotifier", "castnotifier", "airplaynotifier", "timernotifier"] as const,
 };

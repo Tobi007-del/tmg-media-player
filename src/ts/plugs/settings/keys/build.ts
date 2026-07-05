@@ -1,11 +1,15 @@
 import { DeepPartial } from "sia-reactor";
-import { KEYS_BLOCKS, KEYS_WHITELIST } from "@consts/generics";
-import { Keys } from "./types";
+import { KeysConfig } from "./types";
+import { KEYS_BLOCKS } from "@t007/utils";
 
-export const KEYS_BUILD: DeepPartial<Keys> = {
+export const KEYS_WHITELIST = ["Space", "Enter", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+export const KEY_SHORTCUT_MOD_ACTIONS = ["skip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
+
+export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   disabled: false,
   strictMatches: false,
-  overrides: [" ", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
+  overrides: ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
   shortcuts: {
     prev: "Shift+p",
     next: "Shift+n",
@@ -41,6 +45,8 @@ export const KEYS_BUILD: DeepPartial<Keys> = {
     captionsCharacterEdgeStyle: "e",
     captionsTextAlignment: "x",
     settings: "?",
+    cast: "Shift+r",
+    airplay: "Shift+r"
   },
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,

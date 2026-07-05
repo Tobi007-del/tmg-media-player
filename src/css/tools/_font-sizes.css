@@ -10,11 +10,12 @@
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-artist {
   font-size: calc(var(--tmg-media-current-unit) / 1.925);
 }
-.tmg-media-time-and-duration-btn,
-.tmg-media-preview-container::after {
+.tmg-media-control-text-btn,
+.tmg-media-preview-container::after,
+.tmg-media-smenu-overlay {
   font-size: calc(var(--tmg-media-current-unit) / 1.85);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-time-and-duration-btn {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-control-text-btn, .tmg-media-smenu-overlay) {
   font-size: calc(var(--tmg-media-current-unit) / 1.7);
 }
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-preview-container::after {
@@ -23,22 +24,17 @@
 .tmg-media-vb-slider-wrapper::after {
   font-size: calc(var(--tmg-media-current-unit) / 3);
 }
-.tmg-media-playback-rate-notifier-content,
-.tmg-media-volume-notifier-content,
-.tmg-media-brightness-notifier-content,
-.tmg-media-object-fit-notifier-content,
+.tmg-media-notifier-content,
 .tmg-media-touch-vb-content {
   font-size: calc(var(--tmg-media-current-unit) / 2);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-playback-rate-notifier-content, .tmg-media-volume-notifier-content, .tmg-media-brightness-notifier-content, .tmg-media-object-fit-notifier-content, .tmg-media-touch-vb-content) {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-notifier-content, .tmg-media-touch-vb-content) {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
-.tmg-media-fast-play-notifier,
-.tmg-media-scrub-notifier,
-.tmg-media-cancel-scrub-notifier {
+.tmg-media-top-text-notifier {
   font-size: calc(var(--tmg-media-current-unit) / 2.4);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-fast-play-notifier, .tmg-media-scrub-notifier, .tmg-media-cancel-scrub-notifier) {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-top-text-notifier {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
 .tmg-media-touch-timeline-notifier {

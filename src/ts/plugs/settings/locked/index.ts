@@ -1,23 +1,24 @@
-﻿import { BasePlug } from "../../base";
-import type { Locked, LockedState } from "./types";
+import { BasePlug } from "../../base";
+import type { LockedConfig, LockedState } from "./types";
 import { LOCKED_BUILD } from "./build";
 import type { Controller } from "@core/controller";
 import type { ScreenLockButton } from "@components/screenlock";
-import type { CtlrConfig } from "@defs/config";
 import type { REvent } from "sia-reactor";
 import { ComponentRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { setTimeout, mockAsync } from "@utils/fn";
 import { parseCSSTime } from "@utils/str";
+import { CtlrMedia } from "@defs/contract";
+import { CtlrConfig } from "@defs/config";
 
-export class LockedPlug extends BasePlug<Locked, LockedState> {
+export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   public static readonly plugName = "locked";
   public static readonly BUILD = LOCKED_BUILD;
   public lockOverlayDelayId = -1;
   public wrapper!: HTMLDivElement;
   public control: ScreenLockButton | null = null;
 
-  constructor(ctlr: Controller, config: Locked = ctlr.config.settings.locked) {
+  constructor(ctlr: Controller, config = ctlr.settings.locked) {
     super(ctlr, config, { visible: false });
   }
 
@@ -35,29 +36,45 @@ export class LockedPlug extends BasePlug<Locked, LockedState> {
   public override wire(): void {
     // Event Listeners
     this.media.container.addEventListener("click", this.handleScreenClick, { signal: this.signal });
-    // Ctlr Config Listeners
+    // Ctlr Media Watchers
+    this.media.watch("tech", () => (this.media.features.locked ||= !this.config.disabled), { init: true, signal: this.signal });
+    // ---------- Listeners
+    this.media.on("intent.locked", this.handleLockedIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    // ---- Config --------
     this.ctlr.config.on("settings.locked.disabled", this.handleDisabled, { init: true, signal: this.signal });
+    // Post Wiring
+    super.wire();
   }
+
+  protected handleDisabled({ value }: REvent<CtlrConfig, "settings.locked.disabled">): void {
+    this.media.features.locked = !value;
+    if (value && this.ctlr.isUIActive("locked")) this.media.intent.locked = false;
+  }
+
+  protected handleLockedIntent(e: REvent<CtlrMedia, "intent.locked">): void {
+    if (e.resolved) return;
+    const active = this.ctlr.isUIActive("locked");
+    e.value && !active ? this.enter() : active && this.exit();
+    e.resolve(this.name);
+  }
+
+  protected enter(): void {
+    this.ctlr.plug("settings.settingsView")?.leaveView();
+    setTimeout(this.showOverlay, 0, this.signal);
+    this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar");
+    // this.ctlr.plug("settings.overlay")?.hide("force"), this.ctlr.plug("settings.keys")?.setEventListeners("remove");
+  } // #STANDALONE: suitable partner courtesy
+
+  protected async exit(): Promise<void> {
+    this.removeOverlay();
+    await mockAsync(parseCSSTime(this.settings.css.switchTransitionTime));
+    this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
+    this.media.container.classList.remove("tmg-media-locked");
+    // this.ctlr.plug("settings.overlay")?.show(), this.ctlr.plug("settings.keys")?.setEventListeners();
+  } // #STANDALONE: needs scoped behavior
 
   protected handleScreenClick(): void {
     if (!this.config.disabled) this.state.visible ? this?.removeOverlay() : this?.showOverlay();
-  }
-
-  protected async handleDisabled({ value }: REvent<CtlrConfig, "settings.locked.disabled">): Promise<void> {
-    if (!value) {
-      this.ctlr.plug("settings.settingsView")?.leaveView();
-      setTimeout(this.showOverlay, 0, this.signal);
-      this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar");
-      this.ctlr.plug("settings.overlay")?.remove("force");
-      this.ctlr.plug("settings.keys")?.setEventListeners("remove");
-    } else {
-      this.removeOverlay();
-      await mockAsync(parseCSSTime(this.ctlr.settings.css.switchTransitionTime));
-      this.media.container.classList.toggle("tmg-media-progress-bar", this.ctlr.settings.controlPanel.progressBar);
-      this.media.container.classList.remove("tmg-media-locked");
-      this.ctlr.plug("settings.overlay")?.show();
-      this.ctlr.plug("settings.keys")?.setEventListeners();
-    }
   }
 
   public showOverlay(): void {
@@ -73,11 +90,11 @@ export class LockedPlug extends BasePlug<Locked, LockedState> {
 
   public delayOverlay(): void {
     clearTimeout(this.lockOverlayDelayId);
-    this.lockOverlayDelayId = setTimeout(this.removeOverlay, this.ctlr.settings.overlay.delay, this.signal);
+    this.lockOverlayDelayId = setTimeout(this.removeOverlay, this.settings.overlay.delay, this.signal);
   }
 
   protected override onDestroy(): void {
-    this.control?.destroy();
+    this.control?.destroy(), super.onDestroy();
   }
 }
 
@@ -92,6 +109,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface Settings {
-    locked: Locked;
+    locked: LockedConfig;
   }
 }

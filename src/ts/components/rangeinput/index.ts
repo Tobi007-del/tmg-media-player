@@ -1,20 +1,20 @@
 import { BaseComponent } from "../base";
-import { RangeInputConfig, RangeState } from "./types";
+import { RangeInputChunk, RangeInputConfig, RangeState } from "./types";
 import { RANGE_INPUT_BUILD } from "./build";
 import type { Controller } from "@core/controller";
-import { type REvent, reactive, type Reactive } from "sia-reactor";
+import { reactive, type Reactive } from "sia-reactor";
 import { mergeObjs } from "sia-reactor/utils";
-import { createEl } from "@utils/dom";
+import { createEl, getWindow, observeResize } from "@utils/dom";
 import { clamp, stepNum } from "@utils/num";
 import { setTimeout } from "@utils/fn";
+import { startTx, endTx, Transaction } from "sia-reactor/modules";
 
 export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, State extends RangeState = RangeState> extends BaseComponent<Reactive<Config>, State, HTMLDivElement> {
   public declare config: Reactive<Config> & Reactive<RangeInputConfig>;
-  public static readonly componentName: string = "range";
+  public static readonly componentName: string = "rangeinput";
   public barsWrapper!: HTMLElement;
-  public baseBar!: HTMLElement;
-  public valueBar!: HTMLElement;
-  public previewBar!: HTMLElement;
+  public marksWrapper!: HTMLElement;
+  public chunks: RangeInputChunk[] = [];
   public thumbEl!: HTMLElement;
   public tooltipEl!: HTMLElement;
   public isVertical = false;
@@ -25,23 +25,21 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   protected currentThumbPos = 0;
   protected stallCancelScrub = false;
   protected cancelScrubTimeoutId: number | null = null;
+  protected tx: Transaction | null = null;
 
   constructor(ctlr: Controller, config?: Partial<Config>, state?: Partial<State>) {
-    super(ctlr, reactive(mergeObjs(structuredClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, shouldCancelScrub: false, ...state } as State));
+    super(ctlr, reactive(mergeObjs(structuredClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, previewing: false, cancelScrub: false, ...state } as any));
   }
 
   public override create() {
     // Variables Assignments
     this.element = createEl("div", { className: "tmg-media-range-container", tabIndex: 0, role: "slider" });
     this.barsWrapper = createEl("div", { className: "tmg-media-range-bars-wrapper" });
-    this.baseBar = createEl("div", { className: "tmg-media-range-bar tmg-media-range-base-bar" });
-    this.valueBar = createEl("div", { className: "tmg-media-range-bar tmg-media-range-value-bar" });
-    this.previewBar = createEl("div", { className: "tmg-media-range-bar tmg-media-range-preview-bar" });
+    this.marksWrapper = createEl("div", { className: "tmg-media-range-marks-wrapper" });
     this.thumbEl = createEl("div", { className: "tmg-media-range-thumb" });
     this.tooltipEl = createEl("div", { className: "tmg-media-range-tooltip" });
     // DOM Injection
-    this.barsWrapper.append(this.baseBar, this.previewBar, this.valueBar);
-    return this.el.append(this.barsWrapper, this.thumbEl, this.tooltipEl), this.el;
+    return this.el.append(this.barsWrapper, this.marksWrapper, this.thumbEl, this.tooltipEl), this.el;
   }
 
   public override wire(): void {
@@ -49,120 +47,195 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.rect = this.el.getBoundingClientRect();
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handlePointerDown, { signal: this.signal });
-    this.el.addEventListener("mouseenter", () => (this.rect = this.el.getBoundingClientRect()), { signal: this.signal });
     this.el.addEventListener("keydown", this.handleKeyDown, { signal: this.signal });
     this.el.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal });
-    this.barsWrapper.addEventListener("mousemove", this.handleInput, { signal: this.signal });
-    ["mouseleave", "touchend", "touchcancel"].forEach((e) => this.barsWrapper.addEventListener(e, this.stopPreview, { signal: this.signal }));
-    // State Listeners
-    this.state.on("shouldCancelScrub", ({ value: v }) => this.el.toggleAttribute("data-cancel-scrub", !!v), { signal: this.signal });
+    this.el.addEventListener("mouseover", () => (this.rect = this.el.getBoundingClientRect()), { signal: this.signal });
+    this.el.addEventListener("mousemove", this.handleInput, { signal: this.signal });
+    for (const e of ["mouseleave", "touchend", "touchcancel"]) this.el.addEventListener(e, this.stopPreviewing, { signal: this.signal });
+    // State Watchers
+    this.state.watch("scrubbing", (value) => (value ? (this.tx = startTx(`${this.config.label} Scrub`)) : this.tx && this.config.stall(() => (endTx(this.tx!), (this.tx = null)))), { signal: this.signal });
+    // ----- Listeners
+    this.state.on("previewing", ({ value }) => this.el.classList.toggle("tmg-media-control-previewing", !!value), { signal: this.signal });
+    this.state.on("scrubbing", ({ value }) => this.el.classList.toggle("tmg-media-control-scrubbing", !!value), { signal: this.signal });
+    this.state.on("cancelScrub", ({ value }) => this.el.classList.toggle("tmg-media-control-cancel-scrub", !!value), { signal: this.signal });
     // Config Setters
     this.config.set("value", (value) => stepNum(value, this.config), { signal: this.signal });
     // ------ Listeners
     this.config.on("label", ({ value }) => (this.el.ariaLabel = value!), { init: true, signal: this.signal });
     this.config.on("min", ({ value }) => (this.el.ariaValueMin = String(value!)), { init: true, signal: this.signal });
     this.config.on("max", ({ value }) => (this.el.ariaValueMax = String(value!)), { init: true, signal: this.signal });
-    this.config.on("value", this.handleValue, { init: true, signal: this.signal });
-    this.config.watch("previewValue", this.handlePreviewValue, { init: true, signal: this.signal });
+    this.config.watch("value", this.onValue, { init: true, signal: this.signal }); // #SYNC: near native speed
+    this.config.watch("previewValue", this.onPreviewValue, { init: true, signal: this.signal }); // #SYNC: near native speed
     this.config.on("tooltip", ({ value }) => this.el.toggleAttribute("data-tooltip", !!value), { init: true, signal: this.signal });
+    this.config.on("readonly", ({ value }) => this.el.toggleAttribute("readonly", !!value), { init: true, signal: this.signal });
+    this.config.on("disabled", ({ value }) => this.el.toggleAttribute("disabled", !!value), { init: true, signal: this.signal });
+    this.config.on("divs", ({ currentTarget: { value } }) => this.syncDivs(value), { init: true, signal: this.signal });
+    this.config.on("marks", ({ currentTarget: { value } }) => this.syncMarks(value), { init: true, signal: this.signal });
+    // Post Wiring
+    observeResize(this.el, () => this.ctlr.throttle(`${this.config.label}Resizing`, this.handleResize, 30, false), this.signal);
   }
-  protected seek(value: number): void {
-    this.config.value = value;
+  protected scrub(value: number, bypass = false): boolean {
+    return this.canScrub ? (!bypass ? (this.config.value = value) : this.onValue(value), true) : false;
+  }
+  public get canScrub(): boolean {
+    return !this.config.readonly && !this.config.disabled;
   }
 
-  protected handleValue({ value }: REvent<RangeInputConfig, "value">): void {
-    const pos = this.getValueAsPos();
-    this.syncElPos(this.thumbEl, pos, false, "auto"), this.syncElPos(this.valueBar, pos, true);
+  protected onValue(value: number): void {
+    this.syncElPos(this.thumbEl, this.getValuePos(value), false, "auto"), this.syncChunks("value", value);
     if (!this.state.scrubbing) this.el.ariaValueNow = String(value);
   }
-  protected handlePreviewValue(value: number) {
-    const pos = this.getValueAsPos(value);
-    this.syncElPos(this.previewBar, this.config.preview ? pos : 0, true);
-    if (this.config.tooltip) this.syncElPos(this.tooltipEl, pos, false, "auto", this.thumbEl), (this.tooltipEl.textContent = `${Math.round(value)}`);
+  protected onPreviewValue(value: number): void {
+    this.syncChunks("preview", value), this.config.tooltip && (this.syncElPos(this.tooltipEl, this.getValuePos(value), false, !(this.state.previewing && !this.state.scrubbing) ? "auto" : false, this.thumbEl), (this.tooltipEl.innerHTML = (this.config.formatTooltip ? String(this.config.formatTooltip(value)) : `${Math.round(value)}`) + ` ${this.getValueChunk(value)?.label || ""}`.trim()));
   }
 
   protected handlePointerDown(e: PointerEvent): void {
-    if (this.state.scrubbing) return;
+    if (this.state.scrubbing || this.config.readonly || this.config.disabled) return;
     this.state.scrubbing = true;
     this.el.setPointerCapture(e.pointerId);
-    const s = window.getComputedStyle(this.el);
+    const s = getWindow(this.el).getComputedStyle(this.el);
     (this.isVertical = s.writingMode.includes("vertical")), (this.isRTL = s.direction === "rtl");
-    (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currentThumbPos = this.getValueAsPos());
-    this.handleInput(e);
-    window.addEventListener("pointermove", this.handleInput, { signal: this.signal });
-    window.addEventListener("pointerup", this.stopScrubbing, { signal: this.signal }), window.addEventListener("pointercancel", this.stopScrubbing, { signal: this.signal });
+    (this.rect = this.el.getBoundingClientRect()), (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currentThumbPos = this.getValuePos());
+    getWindow(this.el).addEventListener("pointermove", this.handleInput, { signal: this.signal }), this.handleInput(e);
+    getWindow(this.el).addEventListener("pointerup", this.stopScrubbing, { signal: this.signal }), getWindow(this.el).addEventListener("pointercancel", this.stopScrubbing, { signal: this.signal });
   }
 
   protected stopScrubbing(): void {
     if (!this.state.scrubbing) return;
-    this.state.scrubbing = false;
-    this.seek(this.getPosAsValue(this.state.shouldCancelScrub ? this.lastThumbPos : this.currentThumbPos));
-    this.allowScrubbing();
+    this.state.scrubbing = this.state.previewing = false;
+    this.ctlr.cancelRAFLoop(`${this.config.label}Inputing`);
+    this.scrub(this.getPosValue(this.state.cancelScrub ? this.lastThumbPos : this.currentThumbPos), this.state.cancelScrub);
+    this.allowScrubbing(), this.stopPreviewing();
     this.stallCancelScrub = true;
-    window.removeEventListener("pointermove", this.handleInput);
-    window.removeEventListener("pointerup", this.stopScrubbing), window.removeEventListener("pointercancel", this.stopScrubbing);
+    getWindow(this.el).removeEventListener("pointermove", this.handleInput);
+    getWindow(this.el).removeEventListener("pointerup", this.stopScrubbing), getWindow(this.el).removeEventListener("pointercancel", this.stopScrubbing);
   }
-  protected stopPreview(): void {} // Subclasses can override to add preview cleanup logic
+  protected stopPreviewing(): void {
+    if (!this.state.previewing) return;
+    this.state.previewing = false;
+    !this.state.scrubbing && this.ctlr.cancelRAFLoop(`${this.config.label}Inputing`);
+  }
 
   protected cancelScrubbing(): void {
-    if (this.stallCancelScrub || this.state.shouldCancelScrub || this.cancelScrubTimeoutId) return;
-    this.state.shouldCancelScrub = true;
+    if (this.stallCancelScrub || this.state.cancelScrub || this.cancelScrubTimeoutId) return;
+    this.state.cancelScrub = true;
     this.cancelScrubTimeoutId = setTimeout(() => this.allowScrubbing(false), this.config.scrub.cancel.timeout, this.signal);
   }
   protected allowScrubbing(reset = true): void {
-    this.stallCancelScrub = this.state.shouldCancelScrub = false;
+    this.stallCancelScrub = this.state.cancelScrub = false;
     clearTimeout(this.cancelScrubTimeoutId!);
     if (reset) this.cancelScrubTimeoutId = null;
   }
 
   protected handleInput(e: MouseEvent | PointerEvent): void {
-    const dimension = this.isVertical ? this.rect.height : this.rect.width,
-      progress = this.getPos(e),
-      pos = (this.currentThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1)),
-      value = this.getPosAsValue(pos);
-    this.config.previewValue = value;
-    if (this.state.scrubbing) {
-      !this.config.scrub.sync ? this.syncElPos(this.thumbEl, pos, false, "auto") : this.seek(value);
-      Math.abs(pos - this.lastThumbPos) < this.config.scrub.cancel.delta / dimension ? this.cancelScrubbing() : this.allowScrubbing();
-    }
-    this.onInput(e, pos);
+    if (this.config.readonly || this.config.disabled) return;
+    this.ctlr.RAFLoop(`${this.config.label}Inputing`, () => {
+      if (this.prevEX === e.clientX && this.prevEY === e.clientY) return; // #CONSERVATION: peak stays peak
+      (this.prevEX = e.clientX), (this.prevEY = e.clientY);
+      this.state.previewing ||= true;
+      const dimension = this.isVertical ? this.rect.height : this.rect.width,
+        progress = this.getPos(e),
+        pos = (this.currentThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1)),
+        value = this.getPosValue(pos);
+      this.config.previewValue = value;
+      if (this.state.scrubbing) {
+        !this.config.scrub.sync ? this.syncElPos(this.thumbEl, pos, false, "auto") : this.scrub(value);
+        Math.abs(pos - this.lastThumbPos) < this.config.scrub.cancel.delta / dimension ? this.cancelScrubbing() : this.allowScrubbing();
+      }
+      this.onInput(e, pos);
+    });
   }
-  protected onInput(_e: MouseEvent | PointerEvent, _pos: number): void {} // Subclasses override to add preview logic (timeline preview image, etc.)
+  private prevEX?: number;
+  private prevEY?: number;
+  protected onInput(_e: MouseEvent | PointerEvent, _pos: number): void {} // override to safely add preview logic (timeline preview image, etc.)
 
   protected handleWheel(e: WheelEvent): void {
     if (this.config.wheel.disabled) return;
     e.preventDefault(), e.stopImmediatePropagation();
-    const dimension = this.isVertical ? window.innerHeight : window.innerWidth,
+    const dimension = this.isVertical ? getWindow(this.el).innerHeight : getWindow(this.el).innerWidth,
       pos = clamp(0, Math.abs(-e.deltaY), dimension * this.config.wheel.axisRatio) / (dimension * this.config.wheel.axisRatio),
       value = this.config.value + (-e.deltaY >= 0 ? pos : -pos) * (this.config.max - this.config.min);
-    this.seek(Math.round(value));
+    this.scrub(value);
   }
-  protected handleKeyDown = (e: KeyboardEvent): void => {
+  protected handleKeyDown(e: KeyboardEvent): void {
     const key = e.key?.toLowerCase();
     if (["arrowleft", "arrowdown", "arrowright", "arrowup"].includes(key)) {
       e.preventDefault(), e.stopImmediatePropagation();
       const delta = e.shiftKey ? 2 : 1,
         direction = ["arrowleft", "arrowdown"].includes(key) ? -1 : 1;
-      this.seek(this.config.value + direction * delta * this.config.step);
+      this.scrub(this.config.value + direction * delta * this.config.step);
     }
-  };
-
-  protected getValueAsPos(value = this.config.value): number {
-    return (value - this.config.min) / (this.config.max - this.config.min);
   }
-  protected getPosAsValue(pos: number): number {
+
+  protected handleResize(): void {
+    this.rect = this.el.getBoundingClientRect();
+    const pos = this.getValuePos();
+    this.syncElPos(this.thumbEl, pos, false, "auto"), this.syncChunks("value", this.config.value), this.config.tooltip && this.syncElPos(this.tooltipEl, pos, false, "auto", this.thumbEl);
+  }
+
+  protected getValuePos(value = this.config.value, range = this.config.max - this.config.min): number {
+    return range ? (value - this.config.min) / range : 0;
+  }
+  protected getPosValue(pos: number): number {
     return pos * (this.config.max - this.config.min) + this.config.min;
+  }
+  protected getValueChunk(value = this.config.value): RangeInputChunk | undefined {
+    for (let i = 0, len = this.chunks.length; i < len; i++) {
+      const c = this.chunks[i];
+      if (value >= c.start && value <= c.end) return c;
+    }
   }
   protected getPos(e: MouseEvent | PointerEvent): number {
     const p = this.isVertical ? (e.clientY - this.rect.top) / this.rect.height : (e.clientX - this.rect.left) / this.rect.width;
     return clamp(0, this.isRTL ? 1 - p : p, 1);
   }
+
   public syncElPos(el: HTMLElement, pos: number, isSize = false, inBounds: boolean | "auto" = false, bounds = el): void {
-    if (this.rect.width === 0 || this.rect.height === 0) this.rect = this.el.getBoundingClientRect();
-    const min = inBounds ? bounds.offsetWidth / 2 / (isSize ? this.rect.height : this.rect.width) : 0;
+    const dim = this.isVertical ? this.rect?.height : this.rect?.width,
+      min = inBounds && dim ? (this.isVertical ? bounds.offsetHeight : bounds.offsetWidth) / 2 / dim : 0;
     pos = inBounds === "auto" ? min + pos * (1 - min * 2) : pos;
-    el.style.cssText = `${this.isVertical ? (isSize ? "block-size" : "inset-block-end") : isSize ? "inline-size" : "inset-inline-start"}: ${clamp(min, pos, 1 - min) * 100}%`;
+    const value = pos || (!isSize && pos === 0) ? `${clamp(min, pos, 1 - min) * 100}%` : ""; // onresize still for pixel accuracy, debounce won't stutter due to '%'
+    if (isSize) this.isVertical ? ((el.style.blockSize = value), (el.style.inlineSize = "")) : ((el.style.inlineSize = value), (el.style.blockSize = ""));
+    else this.isVertical ? ((el.style.insetBlockEnd = value), (el.style.insetInlineStart = "")) : ((el.style.insetInlineStart = value), (el.style.insetBlockEnd = ""));
     // el.style.transform = this.isVertical ? (isSize ? `scaleY(${pos})` : `translateY(-${pos * 100}%)`) : (isSize ? `scaleX(${pos})` : `translateX(${pos * 100}%)`);
+  }
+  protected syncChunks(key: keyof Omit<RangeInputChunk, "start" | "end" | "size" | "el" | "label">, value: number): void {
+    for (let i = 0, len = this.chunks.length; i < len; i++) {
+      const c = this.chunks[i];
+      this.syncElPos(c[key]!, clamp(0, (value - c.start) / c.size, 1) || 0, true), c[key]!.style.setProperty("--tmg-media-current-range-pos", String(this.getValuePos(value)));
+      c.el.classList.toggle(`tmg-media-chunk-${key}-active`, value >= c.start && value <= c.end);
+    }
+  }
+  protected syncDivs(divs = this.config.divs): void {
+    this.barsWrapper.innerHTML = "";
+    this.chunks = [];
+    const range = this.config.max - this.config.min,
+      stops = divs.toSorted((a, b) => a.value - b.value); // Sort divs chronologically
+    if (stops.length && stops[0].value > this.config.min && stops[0].value <= this.config.min + Math.min(0.02 * range, range * 0.25)) stops[0].value = this.config.min;
+    else if (!stops.length || stops[0].value > this.config.min) stops.unshift({ value: this.config.min, label: "" });
+    if (stops[stops.length - 1].value < this.config.max) stops.push({ value: this.config.max, label: "" });
+    const fragment = document.createDocumentFragment();
+    for (let i = 0, len = stops.length; i < len - 1; i++) {
+      // prettier-ignore
+      const start = stops[i], end = stops[i + 1], size = end.value - start.value;
+      if (size <= 0) continue;
+      const el = createEl("div", { className: "tmg-media-range-chunk" }, undefined, { cssText: `--tmg-media-current-chunk-st: ${(start.value - this.config.min) / range};` }),
+        chunk = { base: createEl("div", { className: "tmg-media-range-bar tmg-media-range-base-bar" }), preview: createEl("div", { className: "tmg-media-range-bar tmg-media-range-preview-bar" }), value: createEl("div", { className: "tmg-media-range-bar tmg-media-range-value-bar" }) };
+      this.syncElPos(el, size / range, true), fragment.append((el.append(chunk.base, chunk.preview, chunk.value), el)), this.chunks.push({ start: start.value, end: end.value, label: start.label, size, el, ...chunk });
+    }
+    this.barsWrapper.append(fragment), this.onValue(this.config.value), this.onPreviewValue(this.config.previewValue);
+  }
+  protected syncMarks(marks = this.config.marks): void {
+    this.marksWrapper.innerHTML = "";
+    const els: HTMLElement[] = [],
+      range = this.config.max - this.config.min;
+    if (range <= 0) return;
+    for (let i = 0, len = marks.length; i < len; i++) {
+      const m = marks[i],
+        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${marks[i].type || "base"}-mark`, title: marks[i].label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark` }, undefined);
+      this.syncElPos(el, (m.start - this.config.min) / range, false), this.syncElPos(el, m.end ? (m.end - m.start) / range : 0, true), els.push(el);
+    }
+    this.marksWrapper.append(...els);
   }
 }
 

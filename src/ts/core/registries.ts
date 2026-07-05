@@ -2,7 +2,7 @@ import type { BaseTech, TechConstructor } from "@techs/base";
 import type { BasePin, BasePlug, PinConstructor, PlugConstructor } from "@plugs/base";
 import type { BaseComponent, ComponentConstructor } from "@components/base";
 import { CONFIG_BUILD as CB } from "@consts/config";
-import type { ComponentRegistryMap, IconRegistryMap, PinRegistryMap, PlugRegistryMap, TechRegistryMap } from "@defs/registries";
+import type { ComponentRegistryMap, IconRegistryMap, PinRegistryMap, PlugRegistryMap, TechRegistryMap, MenuRegistryMap } from "@defs/registries";
 import { deletePath, setPath } from "sia-reactor/utils";
 import { Controller } from "./controller";
 
@@ -28,6 +28,9 @@ export class BaseRegistry<T> {
     if (!order) return this.items.map((i) => i.value);
     return this.items.sort((a, b, ai = order.indexOf(a.name), bi = order.indexOf(b.name)) => (ai === -1 && bi === -1 ? 0 : ai === -1 ? 1 : bi === -1 ? -1 : ai - bi)).map((i) => i.value);
   }
+  public clear() {
+    return (this.items = []), this;
+  }
 }
 
 export class OrderedRegistry<T> extends BaseRegistry<T> {
@@ -35,12 +38,14 @@ export class OrderedRegistry<T> extends BaseRegistry<T> {
     return this.unregister(name), this.items.unshift({ name, value, config }), this;
   }
   public registerBefore(key: string, name: string, value: T, config?: any) {
+    this.unregister(name);
     const idx = this.items.findIndex((i) => i.name === key);
-    return idx !== -1 && (this.unregister(name, idx), this.items.splice(idx, 0, { name, value, config })), this;
+    return idx !== -1 ? (this.items.splice(idx, 0, { name, value, config }), this) : this.register(name, value, config);
   }
   public registerAfter(key: string, name: string, value: T, config?: any) {
+    this.unregister(name);
     const idx = this.items.findIndex((i) => i.name === key);
-    return idx !== -1 && (this.unregister(name, idx), this.items.splice(idx + 1, 0, { name, value, config })), this;
+    return idx !== -1 ? (this.items.splice(idx + 1, 0, { name, value, config }), this) : this.register(name, value, config);
   }
 }
 
@@ -65,7 +70,7 @@ export class TechRegistry extends OrderedRegistry<TechConstructor> {
     this.instance.registerAfter(key, Tech.techName, Tech);
   }
   public static pick(src: string, techOrder?: string[]): TechConstructor | null {
-    return this.instance.getAll(techOrder).find((T) => T.canPlaySource(src)) || null;
+    return this.instance.getAll(techOrder).find((Tech) => Tech.canPlaySource(src)) || null;
   }
 }
 
@@ -77,13 +82,13 @@ export class PlugRegistry extends OrderedRegistry<PlugConstructor> {
   public static get(name: string): any {
     return this.instance.get(name);
   }
-  public static register(Plug: PlugConstructor): void {
+  public static register(Plug: PlugConstructor, editBuild = Plug.BUILD !== undefined): void {
     this.instance.register(Plug.fullName, Plug);
-    setPath(CB as any, Plug.fullName, Plug.BUILD);
+    editBuild && setPath(CB as any, Plug.fullName, Plug.BUILD);
   }
-  public static unregister(fullName: string): void {
+  public static unregister(fullName: string, editBuild = true): void {
     this.instance.unregister(fullName);
-    deletePath(CB as any, fullName);
+    editBuild && deletePath(CB as any, fullName);
   }
   public static registerBefore(key: string, Plug: PlugConstructor): void {
     this.instance.registerBefore(key, Plug.fullName, Plug);
@@ -104,13 +109,29 @@ export class PinRegistry extends BaseRegistry<PinConstructor> {
   public static get(name: string): any {
     return this.instance.get(name);
   }
-  public static register(Pin: PinConstructor): void {
+  public static register(Pin: PinConstructor, editBuild = Pin.BUILD !== undefined): void {
     this.instance.register(Pin.fullName, Pin);
-    setPath(CB as any, Pin.Plug.fullName + "." + Pin.pinName, Pin.BUILD);
+    editBuild && setPath(CB as any, Pin.Plug.fullName + "." + Pin.pinName, Pin.BUILD);
   }
-  public static unregister(fullName: string): void {
+  public static unregister(fullName: string, editBuild = true): void {
     this.instance.unregister(fullName);
-    deletePath((fullName.slice(0, fullName.indexOf(".")) in CB ? CB : CB.settings) as any, fullName);
+    editBuild && deletePath((fullName.slice(0, fullName.indexOf(".")) in CB ? CB : CB.settings) as any, fullName);
+  }
+}
+
+export class MenuRegistry extends BaseRegistry<any> {
+  private static instance = new MenuRegistry();
+
+  public static get<K extends keyof MenuRegistryMap>(name: K): MenuRegistryMap[K] | undefined;
+  public static get(name: string): any {
+    return this.instance.get(name);
+  }
+  public static register<K extends keyof MenuRegistryMap>(name: K, factory: MenuRegistryMap[K]): void;
+  public static register(name: string, factory: any): void {
+    this.instance.register(name, factory);
+  }
+  public static unregister(name: keyof MenuRegistryMap): void {
+    this.instance.unregister(name);
   }
 }
 
@@ -124,6 +145,9 @@ export class ComponentRegistry extends BaseRegistry<ComponentConstructor> {
   }
   public static register(Comp: ComponentConstructor): void {
     this.instance.register(Comp.componentName, Comp);
+  }
+  public static unregister(name: keyof ComponentRegistryMap): void {
+    this.instance.unregister(name);
   }
   public static init<K extends keyof ComponentRegistryMap>(name: K, ctlr: Controller, config?: any): InstanceType<ComponentRegistryMap[K]> | null;
   public static init<T extends BaseComponent = BaseComponent>(name: string, ctlr: any, config?: any): T | null;
@@ -145,11 +169,15 @@ export class IconRegistry extends BaseRegistry<string> {
   public static get(name: string, raw = false, token = /\btmg-media-[^\s"']+\s*/g) {
     return (raw ? this.instance.get(name)?.replace(token, "") : this.instance.get(name)) || `<svg></svg>`;
   }
+  public static register<K extends keyof IconRegistryMap>(name: K, svg: IconRegistryMap[K]): void;
   public static register(name: string, svg: string): void {
     this.instance.register(name, svg);
   }
+  public static unregister(name: keyof IconRegistryMap): void {
+    this.instance.unregister(name);
+  }
   // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
-  public static registerAll(icons: Record<string, string>): void {
-    Object.keys(icons).forEach((k) => this.instance.register(k, icons[k]));
+  public static registerAll(icons: Record<keyof IconRegistryMap, IconRegistryMap[keyof IconRegistryMap]>): void {
+    for (const k of Object.keys(icons)) this.instance.register(k as keyof IconRegistryMap, icons[k as keyof IconRegistryMap]);
   }
 }

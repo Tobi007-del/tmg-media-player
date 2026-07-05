@@ -8,6 +8,8 @@ import { BigPrevButton } from "./controls/bigprev";
 import { PrevButton } from "./controls/prev";
 import { PlayPauseButton } from "./controls/playpause";
 import { NextButton } from "./controls/next";
+import { Forward10Button } from "./controls/forward10";
+import { Backward10Button } from "./controls/backward10";
 import { TimeButton } from "./controls/time";
 import { DurationButton } from "./controls/duration";
 import { TimeAndDurationButton } from "./controls/timeandduration";
@@ -26,12 +28,15 @@ import { VolumeControl } from "./controls/volume";
 import { BrightnessControl } from "./controls/brightness";
 import { CaptionsView } from "./captionsview";
 import { CaptionsButton } from "./controls/captions";
-import { PiPPlaceholder } from "./pipplaceholder";
 import { ScreenLockButton } from "./screenlock";
-import "./notifiers/z-register";
-import "./icons/z-register";
+import { ChapterButton } from "./controls/chapter";
+import { CastButton } from "./controls/cast";
+import { AirPlayButton } from "./controls/airplay";
+import { PiPPlaceholder } from "./holders/pipplaceholder";
+import { CastPlaceholder } from "./holders/castplaceholder";
+import { AirPlayPlaceholder } from "./holders/airplayplaceholder";
 
-[
+for (const Comp of [
   // Random Order
   RangeInput,
   Buffer,
@@ -42,6 +47,8 @@ import "./icons/z-register";
   PrevButton,
   PlayPauseButton,
   NextButton,
+  Forward10Button,
+  Backward10Button,
   TimeButton,
   DurationButton,
   TimeAndDurationButton,
@@ -60,6 +67,12 @@ import "./icons/z-register";
   BrightnessControl,
   CaptionsView,
   CaptionsButton,
-  PiPPlaceholder,
   ScreenLockButton,
-].forEach((Comp) => ComponentRegistry.register(Comp));
+  ChapterButton,
+  CastButton,
+  AirPlayButton,
+  PiPPlaceholder,
+  CastPlaceholder,
+  AirPlayPlaceholder,
+])
+  ComponentRegistry.register(Comp);

@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "../base";
+import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
@@ -24,12 +24,13 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   }
 
   protected handleClick(): void {
-    this.plug?.toggleView();
+    const menu = this.plug?.menu;
+    menu ? menu.toggle(this.el) : this.plug?.toggleView();
   }
 
   public syncARIA(): void {
     this.state.label = "Settings";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.settings);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.settings);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

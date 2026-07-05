@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "@components/base";
+import { BaseComponent, ComponentState } from "@components/base";
 import { addSafeClicks, createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
 
@@ -12,16 +12,18 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-current-time" }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-time-btn tmg-media-control-text-btn", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
+    // Feature Gating
+    this.media.on("features.live", (e) => this[e.value ? "hide" : "show"](), { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     addSafeClicks(this.element, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.currentTime", this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.currentTime", this.syncUI, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.time.mode", this.syncUI, { signal: this.signal });
+    this.ctlr.config.on("settings.time.mode", this.syncUI, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.format", this.syncUI, { signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeMode", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
@@ -36,11 +38,12 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
 
   public syncUI(): void {
     this.el.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "-:--";
+    this.syncARIA();
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode} time`;
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.timeMode);
-    this.el.title = `Switch (mode${this.state.cmd} / DblClick→format${formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.timeFormat)})`;
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.timeMode);
+    this.el.title = `Switch (mode${this.state.cmd} / DblClick?format${formatKeyForDisplay(this.settings.keys.shortcuts.timeFormat)})`;
     this.setBtnARIA("Switch time format");
   }
 }

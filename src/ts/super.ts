@@ -10,15 +10,10 @@ export * as comps from "./super/components";
 export * as consts from "./super/consts";
 export * as utils from "./super/utils";
 
-import "./init";
-import * as _s from "./super";
+import "../css/index.scss";
 
-// vite dev
-import "@t007/toast/style.css";
-import "@t007/dialog/style.css";
-import "@t007/input/style.css";
-import "sia-reactor/styles/time-travel-console.css";
-import "@t007/toast";
-import "@t007/dialog";
-import "@t007/input";
-(tmg.Player = _s.Player), (tmg.Controllers = _s.Controllers);
+import "./init";
+
+// dev
+import * as _s from "./super";
+Object.assign(window.tmg, _s);

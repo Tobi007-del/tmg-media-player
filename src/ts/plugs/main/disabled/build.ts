@@ -1,3 +1,3 @@
-import { Disabled } from "./types";
+import { DisabledConfig } from "./types";
 
-export const DISABLED_BUILD: Disabled = false;
+export const DISABLED_BUILD: DisabledConfig = false;

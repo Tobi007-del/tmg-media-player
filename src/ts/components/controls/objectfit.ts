@@ -1,11 +1,11 @@
-﻿import { BaseComponent, ComponentState } from "@components/base";
+import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
 
-export type ObjectFitConfig = undefined;
+export type ObjectFit = undefined;
 
-export class ObjectFitButton extends BaseComponent<ObjectFitConfig, ComponentState, HTMLButtonElement> {
+export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HTMLButtonElement> {
   public static readonly componentName: string = "objectfit";
   public static readonly isControl: boolean = true;
 
@@ -34,7 +34,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFitConfig, ComponentSta
 
   public syncARIA(): void {
     this.state.label = this.plug?.toLabel(this.plug?.nextFit) || "";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.objectFit);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.objectFit);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

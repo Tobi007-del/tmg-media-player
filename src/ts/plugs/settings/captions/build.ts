@@ -1,17 +1,17 @@
 import { DeepPartial } from "sia-reactor";
-import { Captions } from "./types";
+import { CaptionsConfig } from "./types";
 
 export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.value", "captions.font.color.value", "captions.font.opacity.value", "captions.font.weight.value", "captions.font.variant.value", "captions.background.color.value", "captions.background.opacity.value", "captions.window.color.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
 export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight.value", "captions.font.variant.value", "captions.font.opacity.value", "captions.background.opacity.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
 
-export const CAPTIONS_BUILD: DeepPartial<Captions> = {
-  visible: true,
-  allowMediaOverride: true,
+export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
+  multiple: false,
+  allowOverride: true,
   font: {
     family: {
-      value: "inherit",
+      value: "",
       options: [
-        { value: "inherit", display: "Default" },
+        { value: "", display: "Default" },
         { value: "monospace", display: "Monospace" },
         { value: "sans-serif", display: "Sans Serif" },
         { value: "serif", display: "Serif" },
@@ -35,6 +35,7 @@ export const CAPTIONS_BUILD: DeepPartial<Captions> = {
       options: [
         { value: 25, display: "25%" },
         { value: 50, display: "50%" },
+        { value: 75, display: "75%" },
         { value: 100, display: "100%" },
         { value: 150, display: "150%" },
         { value: 200, display: "200%" },
@@ -43,25 +44,25 @@ export const CAPTIONS_BUILD: DeepPartial<Captions> = {
       ],
     },
     color: {
-      value: "white",
+      value: "#ffffff",
       options: [
-        { value: "white", display: "White" },
-        { value: "yellow", display: "Yellow" },
-        { value: "green", display: "Green" },
-        { value: "cyan", display: "Cyan" },
-        { value: "blue", display: "Blue" },
-        { value: "magenta", display: "Magenta" },
-        { value: "red", display: "Red" },
-        { value: "black", display: "Black" },
+        { value: "#ffffff", display: "White" },
+        { value: "#ffff00", display: "Yellow" },
+        { value: "#00ff00", display: "Green" },
+        { value: "#00ffff", display: "Cyan" },
+        { value: "#0000ff", display: "Blue" },
+        { value: "#ff00ff", display: "Magenta" },
+        { value: "#ff0000", display: "Red" },
+        { value: "#000000", display: "Black" },
       ],
     },
     opacity: {
-      value: 1,
+      value: 100,
       options: [
-        { value: 0.25, display: "25%" },
-        { value: 0.5, display: "50%" },
-        { value: 0.75, display: "75%" },
-        { value: 1, display: "100%" },
+        { value: 25, display: "25%" },
+        { value: 50, display: "50%" },
+        { value: 75, display: "75%" },
+        { value: 100, display: "100%" },
       ],
     },
     weight: {
@@ -89,51 +90,51 @@ export const CAPTIONS_BUILD: DeepPartial<Captions> = {
   },
   background: {
     color: {
-      value: "black",
+      value: "#000000",
       options: [
-        { value: "white", display: "White" },
-        { value: "yellow", display: "Yellow" },
-        { value: "green", display: "Green" },
-        { value: "cyan", display: "Cyan" },
-        { value: "blue", display: "Blue" },
-        { value: "magenta", display: "Magenta" },
-        { value: "red", display: "Red" },
-        { value: "black", display: "Black" },
+        { value: "#ffffff", display: "White" },
+        { value: "#ffff00", display: "Yellow" },
+        { value: "#00ff00", display: "Green" },
+        { value: "#00ffff", display: "Cyan" },
+        { value: "#0000ff", display: "Blue" },
+        { value: "#ff00ff", display: "Magenta" },
+        { value: "#ff0000", display: "Red" },
+        { value: "#000000", display: "Black" },
       ],
     },
     opacity: {
-      value: 0.75,
+      value: 75,
       options: [
         { value: 0, display: "0%" },
-        { value: 0.25, display: "25%" },
-        { value: 0.5, display: "50%" },
-        { value: 0.75, display: "75%" },
-        { value: 1, display: "100%" },
+        { value: 25, display: "25%" },
+        { value: 50, display: "50%" },
+        { value: 75, display: "75%" },
+        { value: 100, display: "100%" },
       ],
     },
   },
   window: {
     color: {
-      value: "black",
+      value: "#000000",
       options: [
-        { value: "white", display: "White" },
-        { value: "yellow", display: "Yellow" },
-        { value: "green", display: "Green" },
-        { value: "cyan", display: "Cyan" },
-        { value: "blue", display: "Blue" },
-        { value: "magenta", display: "Magenta" },
-        { value: "red", display: "Red" },
-        { value: "black", display: "Black" },
+        { value: "#ffffff", display: "White" },
+        { value: "#ffff00", display: "Yellow" },
+        { value: "#00ff00", display: "Green" },
+        { value: "#00ffff", display: "Cyan" },
+        { value: "#0000ff", display: "Blue" },
+        { value: "#ff00ff", display: "Magenta" },
+        { value: "#ff0000", display: "Red" },
+        { value: "#000000", display: "Black" },
       ],
     },
     opacity: {
       value: 0,
       options: [
         { value: 0, display: "0%" },
-        { value: 0.25, display: "25%" },
-        { value: 0.5, display: "50%" },
-        { value: 0.75, display: "75%" },
-        { value: 1, display: "100%" },
+        { value: 25, display: "25%" },
+        { value: 50, display: "50%" },
+        { value: 75, display: "75%" },
+        { value: 100, display: "100%" },
       ],
     },
   },

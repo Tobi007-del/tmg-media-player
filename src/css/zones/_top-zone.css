@@ -11,9 +11,6 @@
 :is(#o#o#o#o#o, .tmg-media-top-controls-wrapper, .tmg-media-top-controls-wrapper > :last-child) {
   border-top-right-radius: inherit;
 }
-.tmg-host-container:has(:is(.tmg-media-scrub-notifier, .tmg-media-cancel-scrub-notifier).tmg-media-control-active) :is(.tmg-media-top-controls-wrapper, .tmg-media-top-curtain) {
-  display: none;
-}
 .tmg-media-meta-wrapper,
 .tmg-media-timeline-container {
   flex: 1 100 auto;

@@ -1,4 +1,4 @@
-﻿import { BaseComponent, type ComponentState } from "@components/base";
+import { BaseComponent, type ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { setTimeout } from "@utils/fn";
@@ -52,7 +52,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
   }
 
   protected handleClick(): void {
-    this.plug?.toggleDark("auto");
+    this.plug?.toggle("auto");
   }
 
   protected startActive(): void {
@@ -61,7 +61,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
   protected delayActive(): void {
     this.ctlr.plug("settings.overlay")?.delay();
     clearTimeout(this.delayActiveId);
-    this.delayActiveId = setTimeout(() => this.stopActive(), this.ctlr.settings.overlay.delay, this.signal);
+    this.delayActiveId = setTimeout(() => this.stopActive(), this.settings.overlay.delay, this.signal);
   }
   protected stopActive = (): void => {
     if (this.slider.el.matches(":active")) return this.delayActive();
@@ -71,12 +71,18 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
 
   public syncARIA(): void {
     this.state.label = this.media.state.dark || this.media.state.brightness === 0 ? "Brighten" : "Darken";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.dark);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.dark);
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }
 
   protected override onDestroy(): void {
     this.slider.destroy(), super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface ComponentRegistryMap {
+    brightness: typeof BrightnessControl;
   }
 }

@@ -1,11 +1,9 @@
 @keyframes tmg-beat {
   from,
   to {
-    opacity: 0.85;
     transform: scale(calc(1 / var(--tmg-media-large-scale)));
   }
   50% {
-    opacity: 1;
     transform: scale(1);
   }
 }
@@ -14,13 +12,19 @@
     rotate: 1turn;
   }
 }
-@keyframes tmg-slide-in {
+@keyframes tmg-slide-from-right {
   from {
-    opacity: 0;
     transform: translateX(100%);
   }
   to {
-    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes tmg-slide-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
     transform: translateX(0);
   }
 }
@@ -107,6 +111,17 @@
     opacity: 0;
   }
 }
+@keyframes tmg-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(from var(--pulse-color) r g b / 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 0.6ch transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
 @keyframes tmg-spinner-easespin {
   12.5% {
     transform: rotate(135deg);
@@ -149,5 +164,15 @@
   }
   50% {
     transform: rotate(5deg);
+  }
+}
+@keyframes tmg-voice-pulse {
+  from {
+    box-shadow: 
+      /* Layer 1: Subtle edge anchor */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.02) 0 rgb(from var(--tmg-media-control-voice-color) r g b / 0.2), /* Layer 2: Soft inner bleed */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.08) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.05);
+  }
+  to {
+    box-shadow: 
+      /* Layer 1: Core edge glow intensifies */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.05) 0 rgb(from var(--tmg-media-control-voice-color) r g b / 0.6), /* Layer 2: Deep ambient mist pushes further into the video */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.15) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.3), /* Layer 3: The "Siri" massive soft fade reaching the center */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.3) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.1);
   }
 }

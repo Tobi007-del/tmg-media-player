@@ -1,0 +1,71 @@
+.tmg-media-placeholder {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: calc(var(--tmg-media-current-unit) / 2);
+  background: var(--tmg-media-background);
+  border-radius: inherit;
+}
+.tmg-media-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  filter: var(--tmg-media-idle-filter);
+  background: var(--tmg-media-current-poster-url) center / var(--tmg-media-bg-object-fit) no-repeat, var(--tmg-media-background);
+}
+.tmg-media-placeholder p {
+  text-align: center;
+  font-size: calc(var(--tmg-media-current-unit) / 1.5);
+  font-weight: 500;
+}
+.tmg-media-container.tmg-media-picture-in-picture .tmg-media-picture-in-picture-placeholder,
+.tmg-pseudo-media-container.tmg-media-in-floating-player .tmg-media-picture-in-picture-placeholder,
+.tmg-media-container.tmg-media-cast .tmg-media-cast-placeholder,
+.tmg-media-container.tmg-media-airplay .tmg-media-airplay-placeholder {
+  display: flex;
+}
+.tmg-media-placeholder-icon-btn {
+  width: fit-content;
+  max-width: 25%;
+  display: flex;
+  cursor: pointer;
+}
+.tmg-media-placeholder-icon-btn > svg {
+  width: calc(var(--tmg-media-current-unit) * 3);
+  height: calc(var(--tmg-media-current-unit) * 3);
+}
+.tmg-media-pip-icon-background,
+.tmg-media-cast-icon-background,
+.tmg-media-airplay-icon-background {
+  color: var(--tmg-media-theme-color);
+  stroke: var(--tmg-media-theme-inverse-accent-color);
+}
+.tmg-media-pip-icon-content-background,
+.tmg-media-cast-icon-content-background,
+.tmg-media-airplay-icon-content-background,
+.tmg-media-cast-icon-tv-base,
+.tmg-media-airplay-icon-arrow {
+  color: var(--tmg-media-theme-inverse-color);
+}
+.tmg-media-pip-icon-content-backdrop,
+.tmg-media-cast-icon-content-backdrop,
+.tmg-media-airplay-icon-content-backdrop {
+  color: var(--tmg-media-theme-accent-color);
+}
+.tmg-media-pip-icon-timeline-base {
+  color: var(--tmg-media-theme-inverse-accent-color);
+}
+.tmg-media-pip-icon-content,
+.tmg-media-pip-icon-timeline-progress,
+.tmg-media-pip-icon-timeline-thumb,
+.tmg-media-cast-icon-content,
+.tmg-media-cast-icon-waves-fill,
+.tmg-media-cast-icon-waves-stroke,
+.tmg-media-airplay-icon-content {
+  color: var(--tmg-media-brand-color);
+}

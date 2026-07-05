@@ -15,9 +15,7 @@ const config: Options = {
 export default defineConfig([
   // 1. The NPM Build (ESM)
   {
-    entry: {
-      index: "src/ts/index.ts",
-    },
+    entry: ["src/ts/**/*.ts"],
     format: ["esm", "cjs"],
     clean: true,
     ...config,

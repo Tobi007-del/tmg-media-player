@@ -1,4 +1,4 @@
-﻿import { BaseComponent, type ComponentState } from "@components/base";
+import { BaseComponent, type ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
@@ -28,8 +28,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     // DOM Injection
     sliderEl.classList.add("tmg-media-vb-slider", "tmg-media-volume-slider");
     this.sliderWrapper.append(sliderEl);
-    this.el.append(this.button, this.sliderWrapper);
-    return this.el;
+    return this.el.append(this.button, this.sliderWrapper), this.el;
   }
 
   public override mount(): void {
@@ -53,7 +52,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
   }
 
   protected handleClick(): void {
-    this.plug?.toggleMute("auto");
+    this.plug?.toggle("auto");
   }
 
   protected startActive(): void {
@@ -62,22 +61,28 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
   protected delayActive(): void {
     this.ctlr.plug("settings.overlay")?.delay();
     clearTimeout(this.delayActiveId);
-    this.delayActiveId = setTimeout(() => this.stopActive(), this.ctlr.settings.overlay.delay, this.signal);
+    this.delayActiveId = setTimeout(() => this.stopActive(), this.settings.overlay.delay, this.signal);
   }
-  protected stopActive = (): void => {
+  protected stopActive(): void {
     if (this.slider.el.matches(":active")) return this.delayActive();
     clearTimeout(this.delayActiveId), this.slider.inactive();
     this.slider.config.previewValue = this.slider.config.value;
-  };
+  }
 
   public syncARIA(): void {
     this.state.label = this.media.state.muted || this.media.state.volume === 0 ? "Unmute" : "Mute";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.mute);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.mute);
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }
 
   protected override onDestroy(): void {
     this.slider.destroy(), super.onDestroy();
+  }
+}
+
+declare module "@defs/registries" {
+  interface ComponentRegistryMap {
+    volume: typeof VolumeControl;
   }
 }

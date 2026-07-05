@@ -1,7 +1,6 @@
 import { OptRange } from "@defs/generics";
+import { SliderState } from "@plugs/base/slider";
 
-export interface Volume extends OptRange {}
+export interface VolumeConfig extends OptRange {}
 
-export interface VolumeState {
-  aptValue: number;
-}
+export interface VolumeState extends SliderState {}

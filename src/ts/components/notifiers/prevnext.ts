@@ -6,9 +6,13 @@ import { IconRegistry } from "@core/registries";
 export class PrevNextNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
   public static readonly componentName = "prevnextnotifier";
   public static readonly triggers = ["mediaprev", "medianext"];
+  public prevDiv!: HTMLDivElement;
+  public nextDiv!: HTMLDivElement;
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-prevnext-notifier", innerHTML: IconRegistry.get("prev") + IconRegistry.get("next") }));
+    this.prevDiv = createEl("div", { className: "tmg-media-prev-notifier", innerHTML: IconRegistry.get("prev", true) });
+    this.nextDiv = createEl("div", { className: "tmg-media-next-notifier", innerHTML: IconRegistry.get("next", true) });
+    return this.bindNodes([this.prevDiv, this.nextDiv]);
   }
 }
 

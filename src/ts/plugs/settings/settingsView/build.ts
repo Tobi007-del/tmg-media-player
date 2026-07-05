@@ -1,4 +1,12 @@
 import { DeepPartial } from "sia-reactor";
-import { SettingsView } from "./types";
+import { SettingsViewConfig } from "./types";
 
-export const SETTINGS_BUILD: DeepPartial<SettingsView> = {};
+export const SETTINGS_BUILD: DeepPartial<SettingsViewConfig> = {
+  autoPause: true,
+  menu: {
+    disabled: false,
+    showView: true,
+    viewLabel: "Advanced",
+    preserveStack: false,
+  },
+};

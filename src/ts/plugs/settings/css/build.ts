@@ -1,5 +1,5 @@
-import { Css } from "./types";
+import { CssConfig } from "./types";
 
-export const CSS_BUILD: Css = {
-  syncWithMedia: {} as Record<string, boolean>,
-};
+export const CSS_BUILD = {
+  syncWithMedia: {},
+} as CssConfig;

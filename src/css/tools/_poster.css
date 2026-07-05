@@ -1,0 +1,15 @@
+.tmg-media-poster {
+  object-fit: fill; /* "media-object" got u covered */
+  pointer-events: none;
+  transition-property: opacity, filter;
+  transition-timing-function: ease-in;
+}
+
+:is(.tmg-media-container:not(.tmg-media-poster-shown) .tmg-media-poster, .tmg-media-poster[data-loaded="false"]) {
+  opacity: 0;
+  filter: var(--tmg-media-idle-filter);
+}
+
+.tmg-media-container[data-ready-tier^="xx"] .tmg-media-poster {
+  transition-duration: var(--tmg-media-fade-transition-time);
+}

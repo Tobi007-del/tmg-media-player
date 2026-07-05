@@ -1,4 +1,4 @@
-﻿import { IconRegistry } from "@core/registries";
+import { IconRegistry } from "@core/registries";
 import { BaseComponent, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 
@@ -31,7 +31,7 @@ export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentS
   protected handleClick(e: MouseEvent): void {
     e.stopPropagation();
     this.plug?.delayOverlay();
-    if (this.el.classList.contains("tmg-media-control-unlock")) this.ctlr.settings.locked.disabled = true;
+    if (this.el.classList.contains("tmg-media-control-unlock")) this.media.intent.locked = false;
     else this.el.classList.add("tmg-media-control-unlock");
   }
 

@@ -5,7 +5,7 @@ export class CancelScrubNotifier extends BaseNotifier<undefined, ComponentState,
   public static readonly componentName = "cancelscrubnotifier";
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-cancel-scrub-notifier", innerHTML: "Release to cancel" }));
+    return (this.element = createEl("div", { className: "tmg-media-cancel-scrub-notifier tmg-media-text-notifier tmg-media-top-text-notifier", innerHTML: "Release to cancel" }));
   }
 }
 

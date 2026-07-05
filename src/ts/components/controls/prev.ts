@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "@components/base";
+import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
@@ -32,7 +32,7 @@ export class PrevButton extends BaseComponent<PrevConfig, ComponentState, HTMLBu
 
   public syncARIA(): void {
     this.state.label = "Previous";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.prev);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.prev);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

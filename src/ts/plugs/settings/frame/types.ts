@@ -1,5 +1,7 @@
-export interface Frame {
+import { ToastOptions } from "@t007/toast";
+
+export interface FrameConfig {
   disabled: boolean;
   fps: number;
-  captureAutoClose: number;
+  captureAutoClose: ToastOptions["autoClose"];
 }

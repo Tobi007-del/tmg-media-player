@@ -24,27 +24,34 @@
   color: currentColor;
   background-color: var(--tmg-media-brand-color);
 }
-:where(.tmg-media-container:not(.tmg-media-disabled)) :is(.tmg-media-title, .tmg-media-artist) {
+:where(.tmg-host-container:not(.tmg-media-disabled)) :not([inert]) :is(a, p, h1, h2, h3, h4, h5, h6, li) {
   -webkit-user-select: text;
   user-select: text;
 }
 .tmg-host-container :is([draggable="true"], #o#o#o#o#o) {
   -webkit-user-drag: element;
 }
-.tmg-host-container :is(*:focus-visible, #o#o#o#o#o) {
+.tmg-host-container :is(*:focus-visible, #o#o#o#o#o),
+.tmg-media-range-container:focus-visible .tmg-media-range-thumb {
   outline: var(--tmg-media-focus-visible-outline);
   outline-offset: calc(var(--tmg-media-current-unit) / 13);
   transition: none;
 }
-.tmg-media-controls-container :is(*:focus-visible, #o#o#o#o#o) {
+.tmg-media-controls-container :is(*:focus-visible, #o#o#o#o#o),
+.tmg-host-container .tmg-media-smenu-overlay :is(*:focus-visible, #o#o#o#o#o),
+.tmg-media-range-container:focus-visible .tmg-media-range-thumb {
   outline-offset: calc(var(--tmg-media-current-unit) / 7.5);
   transition: outline-offset var(--tmg-media-fade-transition-time) ease !important;
 }
-.tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-title, .tmg-media-artist, .tmg-media-big-controls-wrapper > *, .tmg-media-next-preview-wrapper > button):focus-visible, #o#o#o#o#o) {
+.tmg-host-container .tmg-media-smenu-overlay :is(*:focus-visible, #o#o#o#o#o),
+:is(.tmg-media-voice-path-input, .tmg-media-voice-exact-input):is(:focus-visible, #o#o#o#o#o) {
+  outline-offset: calc(var(--tmg-media-current-unit) / -13);
+}
+.tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, .tmg-media-big-controls-wrapper > *, .tmg-media-next-preview-wrapper > button):focus-visible, #o#o#o#o#o) {
   outline-offset: 0px;
 }
 .tmg-host-container :is(.tmg-media-range-container:focus-visible, #o#o#o#o#o) {
-  outline-offset: 1px;
+  outline: none;
 }
 .tmg-media-side-controls-wrapper-cover,
 .tmg-media-big-controls-wrapper-cover,
@@ -55,26 +62,29 @@
 }
 .tmg-media-side-controls-wrapper,
 .tmg-media-big-controls-wrapper,
-.tmg-media-title,
-.tmg-media-artist {
+.tmg-media-meta-text {
   overflow: auto hidden;
   scrollbar-width: none;
 }
-:is(.tmg-media-side-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-title, .tmg-media-artist)::-webkit-scrollbar {
+:is(.tmg-media-side-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-meta-text)::-webkit-scrollbar {
   display: none;
 }
-.tmg-media-screen-locked-wrapper,
+:is(.tmg-media-settings-content, .tmg-media-smenu-overlay) *,
 .tmg-media-top-controls-wrapper,
 .tmg-media-bottom-controls-wrapper,
+.tmg-media-screen-locked-wrapper,
 .tmg-media-touch-vb-notifier,
-.tmg-media-picture-in-picture-placeholder p,
-.tmg-media-settings-content * {
-  text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.5);
+.tmg-media-placeholder p {
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
-:is(.tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-touch-vb-notifier) svg,
-.tmg-media-pip-icon-content,
-.tmg-media-touch-vb-slider {
+:is(.tmg-media-settings-content, .tmg-media-smenu-overlay, .tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-touch-vb-notifier) svg,
+.tmg-media-placeholder [class$="icon-content"] {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+.tmg-media-range-thumb,
+.tmg-media-smenu-toggle-thumb,
+.tmg-media-touch-vb-slider {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 .tmg-host-container svg {
   width: var(--tmg-media-current-unit);
@@ -91,7 +101,7 @@
   height: var(--size);
 }
 .tmg-host-container svg:where(:not(.no-css-fill)) {
-  color: var(--tmg-media-icons-color);
+  color: currentColor;
 }
 .tmg-host-container svg * {
   transition: all var(--tmg-media-fade-transition-time) ease;
@@ -102,7 +112,7 @@
 button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   scale: 1.25;
 }
-.tmg-host-container:has(img) img {
+:where(.tmg-host-container) img {
   color: transparent;
   text-shadow: none;
   -webkit-text-stroke: 0px transparent;
@@ -130,15 +140,13 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
 }
 .tmg-media-big-controls-wrapper-cover,
 .tmg-media-buffer,
-.tmg-media-thumbnail,
-.tmg-media-captions-btn::after,
-.tmg-media-seek-thumb::before {
+.tmg-media-captions-btn::after {
   position: absolute;
   top: 50%;
   left: 50%;
   translate: -50% -50%;
 }
-.tmg-media-picture-in-picture-placeholder,
+.tmg-media-placeholder,
 .tmg-media-next-preview-wrapper > button {
   position: absolute;
   inset: 0;
@@ -149,123 +157,10 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   cursor: auto;
 }
 .tmg-media-container.tmg-media-miniplayer :is(.tmg-media-container-content, .tmg-media-settings),
-.tmg-media-seek-thumb,
-.tmg-media-vb-slider,
 .tmg-media-captions-container {
   cursor: grab;
 }
 .tmg-media-container.tmg-media-miniplayer:active :is(.tmg-media-container-content, .tmg-media-settings),
-:is(.tmg-media-timeline-container, .tmg-media-vb-slider, .tmg-media-captions-container):active {
+.tmg-media-captions-container:active {
   cursor: grabbing;
-}
-/* overrides for the native select */
-@supports (appearance: base-select) {
-  .tmg-host-container {
-    select,
-    select::picker(select) {
-      appearance: base-select;
-    }
-  }
-}
-.tmg-host-container :is(#o, select) {
-  white-space: nowrap;
-  @supports (appearance: base-select) {
-    position: relative;
-    align-items: center;
-    &::picker-icon {
-      content: "";
-      position: relative;
-      width: 1rem;
-      height: 1rem;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%23000' %3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E%0A");
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%23FFF' %3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E%0A");
-      background-position: center;
-      background-repeat: no-repeat;
-      transition: all 200ms ease-out;
-      transition-timing-function: var(--bounce-timing);
-    }
-    &:open::picker-icon {
-      rotate: 180deg;
-    }
-    &:active::picker-icon {
-      translate: 0 0.1rem;
-    }
-    &::picker(select) {
-      background: transparent;
-      margin: 0.75rem 2px 0.75rem 1px;
-      border: none;
-      transition-property: display, overlay;
-      transition-duration: 500ms;
-      transition-behavior: allow-discrete;
-    }
-    option {
-      position: relative;
-      backdrop-filter: blur(5px);
-      border-radius: 4px;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 0.25rem;
-      padding: 0.33rem 0.25rem;
-      background-color: rgb(from var(--tmg-media-theme-color) r g b/ 0.777);
-      color: var(--tmg-media-theme-inverse-accent-color);
-      border: 1px solid var(--tmg-media-settings-border-color);
-      transition-property: opacity, scale;
-      transition-duration: 200ms;
-      transition-delay: calc((sibling-count() - sibling-index()) * 20ms);
-      scale: 0.25;
-      opacity: 0;
-      &:is(:checked, :focus) {
-        color: var(--tmg-media-theme-inverse-color);
-      }
-      &:checked {
-        background-color: rgb(from var(--tmg-media-brand-color) r g b/ 0.666);
-        border: 1px solid rgb(from var(--tmg-media-theme-inverse-color) r g b/ 0.15);
-      }
-      &:focus {
-        border: 1px solid var(--tmg-media-theme-inverse-color);
-      }
-      &:hover {
-        background-color: rgb(from var(--tmg-media-theme-color) r g b/ 0.999);
-      }
-      &:checked:hover {
-        background-color: rgb(from var(--tmg-media-brand-color) r g b/ 0.888);
-      }
-      &:focus-visible {
-        outline: none !important;
-      }
-      &::checkmark {
-        display: none;
-      }
-    }
-    &:open {
-      option {
-        scale: 1;
-        opacity: 1;
-        transition-delay: calc(sibling-index() * 20ms);
-        @starting-style {
-          scale: 0.25;
-          opacity: 0;
-        }
-      }
-    }
-  }
-}
-/* overrides for the native color input */
-.tmg-host-container input[type="color"] {
-  width: var(--t007-input-height);
-  height: var(--t007-input-height);
-  padding: 0;
-  /* Chrome/Edge/Safari: The 'Well' that holds the color */
-  &::-webkit-color-swatch-wrapper {
-    padding: 0;
-  }
-  /* The actual color circle/square */
-  &::-webkit-color-swatch {
-    border: none;
-    border-radius: 50%;
-  }
-  &::-moz-color-swatch {
-    border: none;
-    border-radius: 50%;
-  }
 }

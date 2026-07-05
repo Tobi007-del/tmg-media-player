@@ -2,6 +2,7 @@ import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
+import { capitalize } from "@utils/str";
 
 export type CaptionsConfig = undefined;
 
@@ -18,7 +19,7 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.textTracks", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.textVisible", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
@@ -33,12 +34,12 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   }
 
   public syncUI(): void {
-    this[!this.media.status.textTracks[this.media.state.currentTextTrack] ? "disable" : "enable"]();
+    this[!this.plug?.canVisible ? "disable" : "enable"]();
     this.syncARIA();
   }
   public syncARIA(): void {
-    this.state.label = this.plug?.getTrackKind() || "Captions";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.captions);
+    this.state.label = capitalize(this.plug?.getTrackKind()) || "Captions";
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.captions);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -39,9 +39,9 @@ class Boombox {
     // tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
     tmg.loadResource("/sia-reactor/src/css/time-travel-console.css");
     this.store = window.bbStore = tmg.reactive(structuredClone(bbStore));
-    window.TTM = new tmg.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] }).untrack();
-    window.PMP = new tmg.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new tmg.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150 }).attach(TTM.state, "timeTravel.state");
-    this.store.use(PMP, "app").use(TTM), PMP.state.once("hydrated", TTM.track);
+    window.TTM = new tmg.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
+    window.PMP = new tmg.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new tmg.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150, blacklist: ["audio.intent", "audio.state.paused"] }).attach(TTM.state, "timeTravel.state");
+    this.store.use(PMP, "app"), PMP.state.once("hydrated", () => this.store.use(TTM));
     window.TTC = new tmg.TimeTravelConsole(window.TTM, { title: `NINO's Boombox Tape` });
     this.media = new Audio("/tmg-media-player/assets/media/Subway-Surfers-Theme-Sound-Effect.mp3");
     this.media.loop = true;
@@ -125,9 +125,7 @@ class Boombox {
     this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
     this.wireAudioGraph();
     this.mediaSetup = true; // Applying initials now
-    this.settings.pan = this.settings.pan;
-    this.settings.volume.value = this.settings.volume.value;
-    this.store.transform = this.store.transform;
+    this.handlePan({ value: this.settings.pan }), this.handleVolume({ value: this.settings.volume.value }), this.handleTransform();
   }
   wireAudioGraph() {
     // Lock the listener at the center of the universe
@@ -172,7 +170,7 @@ class Boombox {
   }
   onVolume(value) {
     this.gainer?.gain.setTargetAtTime((value / 100) * 2, this.ctime, 0.02); // dummy: doubling for dat anroid feel btw, real one does it too
-    this.settings.volume.muted = value === 0;
+    tmg.silence(() => (this.settings.volume.muted = value === 0));
     // this.ctlr.media.intent.volume = value; // real
   }
   handleVolume({ value }) {
@@ -189,8 +187,8 @@ class Boombox {
   onMuted(muted) {
     if (muted) {
       this.lastVolume = this.settings.volume.value;
-      this.settings.volume.value = 0;
-    } else if (tmg.isValidNum(this.lastVolume)) this.settings.volume.value = this.lastVolume; // dummy
+      tmg.silence(() => (this.settings.volume.value = 0));
+    } else if (tmg.isValidNum(this.lastVolume)) tmg.silence(() => (this.settings.volume.value = this.lastVolume)); // dummy
     // this.ctlr.media.intent.muted = muted; // real
   }
   handleMuted({ value: muted }) {
@@ -203,8 +201,8 @@ class Boombox {
   handleBoost({ value: boost }) {
     if (!boost) {
       this.lastMax = this.settings.volume.max;
-      this.settings.volume.max = tmg.clamp(this.settings.volume.min, this.settings.volume.max, boost ? Infinity : 100);
-    } else if (tmg.isValidNum(this.lastMax)) this.settings.volume.max = this.lastMax; // dummy
+      tmg.silence(() => (this.settings.volume.max = tmg.clamp(this.settings.volume.min, this.settings.volume.max, boost ? Infinity : 100)));
+    } else if (tmg.isValidNum(this.lastMax)) tmg.silence(() => (this.settings.volume.max = this.lastMax)); // dummy
     // no real yet but likely same
     this.boostBtn.classList.toggle("activated", boost);
   }

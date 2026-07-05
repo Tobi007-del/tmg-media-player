@@ -1,22 +1,25 @@
-﻿import { BasePlug } from "../../base";
+import { BasePlug } from "../../base";
 import { DISABLED_BUILD } from "./build";
-import type { Disabled, DisabledState } from "./types";
+import type { DisabledConfig, DisabledState } from "./types";
 import type { Controller } from "@core/controller";
 import type { REvent } from "sia-reactor";
 import type { CtlrConfig } from "@defs/config";
+import { silence } from "sia-reactor/modules";
 
-export class DisabledPlug extends BasePlug<Disabled, DisabledState> {
+export class DisabledPlug extends BasePlug<DisabledConfig, DisabledState> {
   public static readonly plugName = "disabled";
   public static readonly isMain: boolean = true;
   public static readonly BUILD = DISABLED_BUILD;
 
-  constructor(ctlr: Controller, config: Disabled = ctlr.config.disabled) {
+  constructor(ctlr: Controller, config = ctlr.config.disabled) {
     super(ctlr, config, { message: "" });
   }
 
   public override wire(): void {
     // Ctlr Config Listeners
     this.ctlr.config.on("disabled", this.handle, { init: true, signal: this.signal });
+    // Post Wiring
+    super.wire();
   }
 
   protected handle({ value }: REvent<CtlrConfig, "disabled">): void {
@@ -24,12 +27,11 @@ export class DisabledPlug extends BasePlug<Disabled, DisabledState> {
       this.ctlr.plug("settings.settingsView")?.leaveView();
       this.ctlr.cancelAllLoops();
       this.media.container.classList.add("tmg-media-disabled");
-      this.media.intent.paused = true;
+      silence(() => (this.media.intent.paused = true));
       this.ctlr.plug("settings.overlay")?.show();
       this.ctlr.DOM.containerContent?.setAttribute("inert", "");
       this.ctlr.plug("settings.keys")?.setEventListeners("remove");
-      this.ctlr.plug("settings.toasts")?.toast?.warn("You cannot access the custom controls when disabled");
-      this.ctlr.log("You cannot access the custom controls when disabled", "warn");
+      this.ctlr.notice("You cannot access the custom controls when disabled", "warn", null);
     } else {
       this.media.container.classList.remove("tmg-media-disabled");
       this.ctlr.DOM.containerContent?.removeAttribute("inert");
@@ -40,9 +42,8 @@ export class DisabledPlug extends BasePlug<Disabled, DisabledState> {
   public deactivate(message: string): void {
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.containerContent?.setAttribute("data-message", (this.state.message = message));
-    const timeline = this.ctlr.plug("settings.controlPanel")?.ctrl("timeline");
-    timeline && this.ctlr.setCanvasFallback(timeline["previewCanvas"], timeline["previewContext"]!);
-    timeline && this.ctlr.setCanvasFallback(timeline["thumbnailCanvas"], timeline["thumbnailContext"]!);
+    const timeline = this.ctlr.plug("settings.controlPanel")?.comp("timeline");
+    if (timeline) this.ctlr.setCanvasFallback(timeline["previewCanvas"], timeline["previewContext"]!), this.ctlr.setCanvasFallback(timeline["thumbnailCanvas"], timeline["thumbnailContext"]!);
     this.media.container.classList.add("tmg-media-inactive");
   }
 
@@ -66,6 +67,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface CtlrConfig {
-    disabled: Disabled;
+    disabled: DisabledConfig;
   }
 }

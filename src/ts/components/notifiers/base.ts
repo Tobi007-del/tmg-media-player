@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "../base";
+import { BaseComponent, ComponentState } from "../base";
 
 export abstract class BaseNotifier<Config = any, State extends ComponentState = any, El extends HTMLElement = HTMLElement> extends BaseComponent<Config, State, El> {
   public static readonly componentName: string = "base";

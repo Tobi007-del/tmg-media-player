@@ -5,9 +5,13 @@ import { IconRegistry } from "@core/registries";
 export class PlayPauseNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
   public static readonly componentName = "playpausenotifier";
   public static readonly triggers = ["mediaplay", "mediapause"];
+  public playDiv!: HTMLDivElement;
+  public pauseDiv!: HTMLDivElement;
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-play-notifier", innerHTML: IconRegistry.get("play") + IconRegistry.get("pause") }));
+    this.playDiv = createEl("div", { className: "tmg-media-play-notifier", innerHTML: IconRegistry.get("play", true) });
+    this.pauseDiv = createEl("div", { className: "tmg-media-pause-notifier", innerHTML: IconRegistry.get("pause", true) });
+    return this.bindNodes([this.playDiv, this.pauseDiv]);
   }
 }
 

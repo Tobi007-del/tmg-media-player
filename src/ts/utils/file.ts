@@ -1,6 +1,6 @@
 import { NOOP } from "sia-reactor";
 import { parseRomanNum } from "./num";
-import { mimeTypes, VIDEO_EXTENSIONS } from "./matcher";
+import { mimeTypes, VIDEO_EXTENSIONS } from "./match";
 
 // File Size Formatting
 export { formatSize } from "@t007/utils";
@@ -20,7 +20,7 @@ export function getMimeTypeFromExtension(name: string) {
 }
 
 // Sorters
-export function smartFlatSort<F extends { name: string }>(files: F[], debug = true, stripExt = noExtension, log = debug ? (title: string, ...body: any[]) => console.log(`[Sorter][${title}]`, ...body) : NOOP, bCache = new Map(), kCache = new Map(), groups = new Map()) {
+export function smartFlatSort<F extends { name: string }>(files: F[], debug = false, stripExt = noExtension, log = debug ? (title: string, ...body: any[]) => console.log(`[Sorter][${title}]`, ...body) : NOOP, bCache = new Map(), kCache = new Map(), groups = new Map()) {
   debug && console.time("[Sorter]"), log("Init", `Sorting ${files.length} items...`);
   // Extracts the main series title + optional season
   function getNamePrefix(name: string, base = stripExt(name), match = base.match(/(.*?)(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)?/i)) {
@@ -32,7 +32,7 @@ export function smartFlatSort<F extends { name: string }>(files: F[], debug = tr
     // Match lazy formats like "S02 - Episode 3", "S3 ep4", "S5E 7" (not strict SxxEyy)
     const combo = base.match(/(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)/);
     if (combo) return [parseInt(combo[1]), parseInt(combo[2])];
-    // Match "1x01", "5x12" — alternate style used by some encoders or fansubs
+    // Match "1x01", "5x12", alternate style used by some encoders or fansubs
     const alt = base.match(/(\d+)x(\d+)/);
     if (alt) return [parseInt(alt[1]), parseInt(alt[2])];
     // Match Roman numerals like "Season IV Episode IX"
@@ -42,7 +42,7 @@ export function smartFlatSort<F extends { name: string }>(files: F[], debug = tr
     const loose = base.match(/(?:(?:e|ep|episode|part)[\s\-]?)(\d+)/);
     if (loose) return [999, parseInt(loose[1])]; // Put these at the end with fake season 999
     // Totally unmatchable junk (e.g. "Behind the Scenes", "Bonus Feature")
-    return [Infinity, Infinity]; // Hard fallback — gets sorted dead last
+    return [Infinity, Infinity]; // Hard fallback, gets sorted dead last
   }
   for (const file of files) {
     const key = getNamePrefix(file.name);

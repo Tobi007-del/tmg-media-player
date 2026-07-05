@@ -8,15 +8,18 @@ import { FastPlayNotifier } from "./fastplay";
 import { VolumeNotifier } from "./volume";
 import { BrightnessNotifier } from "./brightness";
 import { ObjectFitNotifier } from "./objectfit";
-import { FwdNotifier } from "./fwd";
-import { BwdNotifier } from "./bwd";
+import { FwdBwdNotifier } from "./fwdbwd";
 import { ScrubNotifier } from "./scrub";
 import { CancelScrubNotifier } from "./cancelscrub";
 import { TouchVolumeNotifier } from "./touchvolume";
 import { TouchBrightnessNotifier } from "./touchbrightness";
 import { TouchTimelineNotifier } from "./touchtimeline";
+import { ChapterNotifier } from "./chapter";
+import { CastNotifier } from "./cast";
+import { AirPlayNotifier } from "./airplay";
+import { TimerNotifier } from "./timer";
 
-[
+for (const Comp of [
   // Random Order
   PlayPauseNotifier,
   PrevNextNotifier,
@@ -27,11 +30,15 @@ import { TouchTimelineNotifier } from "./touchtimeline";
   VolumeNotifier,
   BrightnessNotifier,
   ObjectFitNotifier,
-  FwdNotifier,
-  BwdNotifier,
+  FwdBwdNotifier,
   ScrubNotifier,
   CancelScrubNotifier,
   TouchVolumeNotifier,
   TouchBrightnessNotifier,
   TouchTimelineNotifier,
-].forEach((Comp) => ComponentRegistry.register(Comp));
+  ChapterNotifier,
+  CastNotifier,
+  AirPlayNotifier,
+  TimerNotifier,
+])
+  ComponentRegistry.register(Comp);

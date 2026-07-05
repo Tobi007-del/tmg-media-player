@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "../base";
+import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 

@@ -1,4 +1,4 @@
-export const pipplaceholder = `<svg class="tmg-media-picture-in-picture-icon" viewBox="0 0 73 73">
+export const pipplaceholder = `<svg class="tmg-media-pip-placeholder-icon" viewBox="0 0 73 73">
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
     <g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-media-pip-icon-background">
       <rect x="-1" y="-1" width="71" height="71" rx="14" />
@@ -11,7 +11,7 @@ export const pipplaceholder = `<svg class="tmg-media-picture-in-picture-icon" vi
           <rect x="0" y="0" width="3.1640625" height="2.109375" class="tmg-media-pip-icon-timeline-progress" />
           <rect x="7.3828125" y="0" width="20.0390625" height="2.109375" class="tmg-media-pip-icon-timeline-base" />
         </g>
-        <circle class="tmg-media-pip-icon-thumb-indicator" cx="9.5625" cy="28.546875" r="3.1640625" />
+        <circle class="tmg-media-pip-icon-timeline-thumb" cx="9.5625" cy="28.546875" r="3.1640625" />
         <polygon class="tmg-media-pip-icon-content" points="31.7109375 17.5569609 31.7109375 23.2734375 4.2890625 23.2734375 4.2890625 17.5569609 13.78125 8.06477344 20.109375 14.3928984 24.328125 10.1741484" />
       </g>
       <g transform="translate(21, 26)">

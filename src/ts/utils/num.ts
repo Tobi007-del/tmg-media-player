@@ -32,7 +32,7 @@ export function parseRomanNum(roman: string, valid = /^[IVXLCDM]+$/i.test(roman)
 
 // Helpers
 export function stepNum<T extends AptRange>(v = 0, { min, max, step }: T): number {
-  const s = Math.round((safeNum(v) - min) / step) * step + min;
+  const s = step ? Math.round((safeNum(v) - (min || 0)) / step) * step + (min || 0) : safeNum(v);
   return clamp(min, +s.toFixed(10), max); // no gymnastics, for sliders only; to reach near native speed
 }
 

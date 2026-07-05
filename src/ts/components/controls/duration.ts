@@ -1,6 +1,7 @@
-﻿import { BaseComponent, ComponentState } from "@components/base";
+import { BaseComponent, ComponentState } from "@components/base";
 import { createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
+import { silence } from "sia-reactor/modules";
 
 export type DurationConfig = undefined;
 
@@ -12,29 +13,32 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-total-time" }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-duration-btn tmg-media-control-text-btn", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("status.duration", this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.duration", this.syncUI, { signal: this.signal });
+    this.media.on("state.live", (e) => (this.el.classList.toggle("tmg-media-control-live", e.value), this.el.classList.toggle("tmg-media-live-badge", e.value), this.syncARIA()), { signal: this.signal });
+    this.media.on("status.isLive", (e) => (this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.time.format", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { init: true, signal: this.signal });
   }
 
   protected handleClick(): void {
-    this.plug?.rotateFormat();
+    !this.media.status.isLive || this.media.state.live ? this.plug?.rotateFormat() : silence(() => (this.media.intent.live = true));
   }
 
   public syncUI(): void {
-    this.el.textContent = this.plug?.toTimeText(this.media.status.duration) ?? "--:--";
+    this.el.textContent = !this.media.status.isLive ? this.plug?.toTimeText(this.media.status.duration) || "-:--" : "Live";
   }
   public syncARIA(): void {
     this.state.label = "Switch time format";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.time.format);
-    this.el.title = this.state.label + this.state.cmd;
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.timeFormat);
+    this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd : "Skip ahead to live broadcast";
     this.setBtnARIA();
   }
 }

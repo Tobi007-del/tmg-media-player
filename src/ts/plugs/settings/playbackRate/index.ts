@@ -1,13 +1,12 @@
-﻿import { BasePlug } from "../../base";
-import type { KeyMod } from "../keys";
-import type { PlaybackRate } from "./types";
+import { BasePlug } from "../../base";
+import type { PlaybackRateConfig } from "./types";
 import { PLAYBACK_RATE_BUILD } from "./build";
 import type { REvent } from "sia-reactor";
 import { CtlrConfig } from "@defs/config";
 import type { CtlrMedia } from "@defs/contract";
 import { clamp, rotateAny } from "@utils/num";
 
-export class PlaybackRatePlug extends BasePlug<PlaybackRate> {
+export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
   public static readonly plugName = "playbackRate";
   public static readonly BUILD = PLAYBACK_RATE_BUILD;
 
@@ -20,9 +19,9 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRate> {
     this.ctlr.config.on("settings.playbackRate.min", this.handleMin, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.playbackRate.max", this.handleMax, { init: true, signal: this.signal });
     // Post Wiring
-    const keys = this.ctlr.plug("settings.keys");
-    keys?.register("playbackRateUp", this.handleKeyRateUp, { phase: "keydown" });
-    keys?.register("playbackRateDown", this.handleKeyRateDown, { phase: "keydown" });
+    this.ctlr.registerAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } });
+    this.ctlr.registerAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } });
+    super.wire();
   }
 
   protected handleMin({ value: min }: REvent<CtlrConfig, "settings.playbackRate.min">): void {
@@ -37,11 +36,11 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRate> {
     this.media.settings.defaultPlaybackRate = value; // UX boost
   }
 
-  protected handleKeyRateUp(_: KeyboardEvent, mod: KeyMod): void {
-    this.changeValue(this.ctlr.plug("settings.keys")!.getModded("playbackRate", mod, this.config.skip));
+  protected handleKeyRateUp = (): void => {
+    this.changeValue(this.ctlr.plug("settings.keys")?.getModded("playbackRate", "", this.config.skip) ?? this.config.skip);
   }
-  protected handleKeyRateDown(_: KeyboardEvent, mod: KeyMod): void {
-    this.changeValue(-this.ctlr.plug("settings.keys")!.getModded("playbackRate", mod, this.config.skip));
+  protected handleKeyRateDown = (): void => {
+    this.changeValue(-(this.ctlr.plug("settings.keys")?.getModded("playbackRate", "", this.config.skip) ?? this.config.skip));
   }
 
   public rotateRate(dir: "forwards" | "backwards" = "forwards"): void {
@@ -49,15 +48,15 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRate> {
   }
 
   public changeValue(value: number): void {
-    const sign = value >= 0 ? "+" : "-";
+    const sign = value >= 0 ? "+" : "-",
+      rate = this.media.state.playbackRate;
     value = Math.abs(value);
-    const rate = this.media.state.playbackRate;
     if (sign === "-") {
       if (rate > this.config.min) this.media.intent.playbackRate = rate - (rate % value || value);
-      this.ctlr.plug("settings.notifiers")?.notify("playbackratedown");
+      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackratedown");
     } else {
       if (rate < this.config.max) this.media.intent.playbackRate = rate + (rate % value ? value - (rate % value) : value);
-      this.ctlr.plug("settings.notifiers")?.notify("playbackrateup");
+      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackrateup");
     }
   }
 }
@@ -73,6 +72,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface Settings {
-    playbackRate: PlaybackRate;
+    playbackRate: PlaybackRateConfig;
   }
 }

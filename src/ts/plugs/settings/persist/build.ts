@@ -1,12 +1,16 @@
-import { Persist } from "./types";
+import { CTX } from "sia-reactor";
+import { PersistConfig } from "./types";
 
-export const PERSIST_BUILD: Partial<Persist> = {
+export const PERSIST_BUILD: Partial<PersistConfig> = {
+  strict: !CTX.isDevEnv,
   whitelist: {
-    config: ["lightState", "settings"],
+    config: ["lightState", "settings", "actions"],
     media: ["state", "settings"],
   },
   blacklist: {
-    media: ["state.src", "state.sources", "state.tracks", "state.srcObject", "state.poster", "state.fullscreen", "state.pictureInPicture"], // "state.paused"
+    media: ["state.sources", "state.tracks", "state.poster", "state.fullscreen", "state.pictureInPicture", "settings.srcObject"], // "state.src", "state.paused"
   },
-  mirrorWriteTo: true,
+  mirrorReads: true,
+  mirrorWrites: true,
+  cachePayload: true,
 };

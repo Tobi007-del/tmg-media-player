@@ -1,7 +1,5 @@
-.tmg-media-vb-container .tmg-media-range-bar {
-  background: none;
-} /* container uses background gradients */
 .tmg-media-vb-container {
+  --tmg-media-range-divs-gap: calc(var(--tmg-media-current-unit) / 13);
   display: flex;
   align-items: center;
 }
@@ -10,18 +8,18 @@
 }
 .tmg-media-vb-slider-wrapper {
   position: relative;
-  width: 0;
-  height: calc(var(--tmg-media-current-unit));
+  inline-size: 0;
+  block-size: var(--tmg-media-current-unit);
   display: flex;
   align-items: center;
   clip-path: inset(0);
-  transition: width var(--tmg-media-fade-transition-time) ease-out, clip-path var(--tmg-media-fade-transition-time) ease-out;
+  transition: inline-size var(--tmg-media-fade-transition-time) ease-out, clip-path var(--tmg-media-fade-transition-time) ease-out;
 }
 .tmg-media-left-side-controls-wrapper .tmg-media-vb-slider-wrapper {
-  left: calc(var(--tmg-media-current-unit) / 3);
+  inset-inline-start: calc(var(--tmg-media-current-unit) / 3);
 }
 .tmg-media-right-side-controls-wrapper .tmg-media-vb-slider-wrapper {
-  right: calc(var(--tmg-media-current-unit) / 3);
+  inset-inline-end: calc(var(--tmg-media-current-unit) / 3);
 }
 .tmg-media-container.tmg-media-mobile .tmg-media-vb-slider-wrapper {
   display: none;
@@ -31,30 +29,36 @@
 }
 .tmg-media-vb-slider-wrapper:has(.tmg-media-control-active, :focus-visible),
 .tmg-media-vb-slider {
-  width: calc(var(--tmg-media-current-unit) * 2);
+  inline-size: calc(var(--tmg-media-current-unit) * 2);
 }
-.tmg-media-vb-slider,
 .tmg-media-touch-vb-slider {
   background: linear-gradient(var(--tmg-media-current-slider-gradient-dir), var(--tmg-media-range-track-color) calc(var(--tmg-media-current-slider-position) * 100%), var(--tmg-media-range-track-base-color) 0%);
 }
-.tmg-media-vb-slider {
-  --tmg-media-current-slider-gradient-dir: to right;
-}
-.tmg-media-container.tmg-media-volume-boost :is(.tmg-media-volume-slider, .tmg-media-touch-volume-slider),
-.tmg-media-container.tmg-media-brightness-boost :is(.tmg-media-brightness-slider, .tmg-media-touch-brightness-slider) {
+.tmg-media-container.tmg-media-volume-boost .tmg-media-touch-volume-slider,
+.tmg-media-container.tmg-media-brightness-boost .tmg-media-touch-brightness-slider {
   background: linear-gradient(var(--tmg-media-current-slider-gradient-dir), var(--tmg-media-range-track-color) calc(var(--tmg-media-current-slider-position) * (var(--tmg-media-range-track-percent) * 1%)), var(--tmg-media-range-track-boost-color) calc(var(--tmg-media-range-track-boost-percent) * 1%), var(--tmg-media-range-track-boost-color) calc((var(--tmg-media-range-track-boost-percent) * 1%) + (var(--tmg-media-current-slider-boost-position) * (100% - (var(--tmg-media-range-track-boost-percent) * 1%)))), transparent 0%), linear-gradient(var(--tmg-media-current-slider-gradient-dir), var(--tmg-media-range-track-base-color) calc(var(--tmg-media-range-track-percent) * 1%), var(--tmg-media-range-track-base-boost-color) 0%);
 }
-.tmg-media-volume-slider,
 .tmg-media-touch-volume-slider {
   --tmg-media-range-track-percent: var(--tmg-media-volume-slider-percent);
   --tmg-media-current-slider-position: var(--tmg-media-current-volume-slider-position);
   --tmg-media-range-track-boost-percent: var(--tmg-media-volume-slider-boost-percent);
   --tmg-media-current-slider-boost-position: var(--tmg-media-current-volume-slider-boost-position);
 }
-.tmg-media-brightness-slider,
 .tmg-media-touch-brightness-slider {
   --tmg-media-range-track-percent: var(--tmg-media-brightness-slider-percent);
   --tmg-media-current-slider-position: var(--tmg-media-current-brightness-slider-position);
   --tmg-media-range-track-boost-percent: var(--tmg-media-brightness-slider-boost-percent);
   --tmg-media-current-slider-boost-position: var(--tmg-media-current-brightness-slider-boost-position);
+}
+.tmg-media-container.tmg-media-volume-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-value-bar,
+.tmg-media-container.tmg-media-brightness-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-value-bar {
+  background-color: var(--tmg-media-range-track-boost-color);
+}
+.tmg-media-container.tmg-media-volume-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-base-bar,
+.tmg-media-container.tmg-media-brightness-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-base-bar {
+  background-color: var(--tmg-media-range-track-base-boost-color);
+}
+.tmg-media-container.tmg-media-volume-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-preview-bar,
+.tmg-media-container.tmg-media-brightness-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-preview-bar {
+  background-color: var(--tmg-media-range-track-preview-boost-color);
 }

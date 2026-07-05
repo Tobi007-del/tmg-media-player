@@ -1,7 +1,7 @@
 import type { RangeInputConfig } from "./types";
 
 export const RANGE_INPUT_BUILD: RangeInputConfig = {
-  label: "Range",
+  label: "Range Slider",
   min: 0,
   max: 100,
   value: 0,
@@ -12,7 +12,7 @@ export const RANGE_INPUT_BUILD: RangeInputConfig = {
     relative: true,
     cancel: {
       delta: 5,
-      timeout: 1000,
+      timeout: 1500,
     },
   },
   wheel: {
@@ -21,4 +21,8 @@ export const RANGE_INPUT_BUILD: RangeInputConfig = {
   },
   preview: true,
   tooltip: true,
+  readonly: false,
+  disabled: false,
+  divs: [],
+  marks: [],
 };

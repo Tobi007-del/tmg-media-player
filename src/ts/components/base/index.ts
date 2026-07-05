@@ -13,11 +13,11 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   }
   public element!: El;
   public get el() {
-    return this.element as El;
+    return this.element;
   }
 
   constructor(ctlr: Controller, config: Config, state?: State) {
-    super(ctlr, config, { label: "", cmd: "", disabled: false, hidden: false, ...state } as State);
+    super(ctlr, config, { label: "", cmd: "", active: false, disabled: false, hidden: false, ...state } as State);
   }
   protected override onSetup(): void {
     this.mount?.();
@@ -35,10 +35,10 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   public wire?(): void {} // auto unwiring
 
   public active() {
-    this.el.classList.add("tmg-media-control-active");
+    this.el.classList.toggle("tmg-media-control-active", (this.state.active = true));
   }
   public inactive() {
-    this.el.classList.remove("tmg-media-control-active");
+    this.el.classList.toggle("tmg-media-control-active", (this.state.active = false));
   }
   public disable(): void {
     this.el.classList.toggle("tmg-media-control-disabled", (this.state.disabled = true));
@@ -60,8 +60,8 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   } // override to make gating smarter
 
   protected setBtnARIA(dblAction?: string, target: HTMLElement = this.el): void {
-    target.setAttribute("aria-label", this.state.label);
-    target.setAttribute("aria-keyshortcuts", parseForARIAKS(this.state.cmd));
+    this.state.label && target.setAttribute("aria-label", this.state.label);
+    this.state.cmd && target.setAttribute("aria-keyshortcuts", parseForARIAKS(this.state.cmd));
     if (dblAction) target.setAttribute("aria-description", `Double-press to ${dblAction}`);
     else if (target.hasAttribute("aria-description")) target.removeAttribute("aria-description");
   }

@@ -1,5 +1,17 @@
 import { ToastOptions } from "@t007/toast";
 
-export interface Toasts extends ToastOptions {
+export interface ToastsConfig extends ToastOptions {
   disabled: boolean;
+}
+
+export interface ToastReminder extends ToastOptions {
+  id: string;
+  message: string;
+  delay: number;
+  actionId?: string; // action id to run via ctlr.runAction when reminder fires
+  timeoutId?: number;
+}
+
+export interface ToastsState {
+  reminders: ToastReminder[];
 }

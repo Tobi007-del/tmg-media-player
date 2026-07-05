@@ -10,6 +10,7 @@ export interface ComponentConstructor<T extends BaseComponent = BaseComponent> {
 export interface ComponentState {
   label: string;
   cmd: string;
+  active: boolean;
   hidden: boolean;
   disabled: boolean;
 }

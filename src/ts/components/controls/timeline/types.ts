@@ -1,5 +1,11 @@
 import { RangeInputConfig } from "../../rangeinput";
 
+declare module "../../rangeinput/types" {
+  interface RangeInputChunk {
+    buffer?: HTMLElement;
+  }
+}
+
 export interface TimelineConfig extends RangeInputConfig {
   previews:
     | boolean
@@ -9,4 +15,8 @@ export interface TimelineConfig extends RangeInputConfig {
         rows?: number;
         spf?: number;
       };
+  compact: boolean;
+  autopause: boolean;
+  bufferMarks: boolean;
+  playedMarks: boolean;
 }

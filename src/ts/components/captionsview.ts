@@ -12,11 +12,11 @@ type KaraokeNode = { el: HTMLElement; time: number };
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
   public static readonly componentName: string = "captionsview";
-  protected isMain = false;
+  public isMain = false;
   protected prevCue: CueLike | null = null;
   protected karaokeNodes: KaraokeNode[] | null = null;
   protected lastPreview = "";
-  protected previewTimeoutId = -1;
+  protected timeoutId = -1;
   protected charW = 0;
   protected lineHPx = 0;
   protected lastPosX = 0;
@@ -52,30 +52,35 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     measurer.remove(), this.el.style.removeProperty("display");
   }
 
-  public preview(cue: CueLike | string = `${capitalize(this.media.container.dataset.trackKind || "captions")} look like this`, flush = this.el.textContent.replace(/\s/g, "") === this.lastPreview?.replace(/\s/g, "")): void {
+  public preview(cue: CueLike | string = `${capitalize(this.media.container.dataset.trackKind || "captions")} look like this`, flush = this.isPreviewing()): void {
     const text = isStr(cue) ? cue : cue.text || "",
       should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
     should && this.media.container.classList.add("tmg-media-captions-preview");
     this.render(should ? (isObj(cue) ? cue : { text: cue }) : this.prevCue);
-    clearTimeout(this.previewTimeoutId);
-    this.previewTimeoutId = setTimeout((flush = this.el.textContent.replace(/\s/g, "") === text.replace(/\s/g, "")) => (this.media.container.classList.remove("tmg-media-captions-preview"), flush && (this.el.innerHTML = "")), this.ctlr.settings.captions.previewTimeout, this.signal);
+    clearTimeout(this.timeoutId);
+    this.timeoutId = setTimeout((flush = this.isPreviewing(text)) => (this.media.container.classList.remove("tmg-media-captions-preview"), flush && (this.el.innerHTML = "")), this.settings.captions.previewTimeout, this.signal);
     this.lastPreview = text;
+  }
+  public isPreviewing(text = this.lastPreview): boolean {
+    return !!this.el.innerHTML && this.el.textContent.replace(/\s/g, "") === text?.replace(/\s/g, "");
   }
 
   public render(cue: CueLike | null): void {
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!cue) return existing?.remove();
-    const wrapper = existing ?? createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "off", ariaAtomic: "true" }, { part: "cue-display" }),
+    const wrapper = existing ?? createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }),
       { offsetWidth: vCWidth, offsetHeight: vCHeight } = this.media.container,
-      allowOverride = this.ctlr.settings.captions.allowMediaOverride || !this.isMain;
-    ["style", "data-active", "data-scroll"].forEach((attr) => this.el.removeAttribute(attr));
+      allowOverride = this.settings.captions.allowOverride || !this.isMain;
+    const preservedY = !this.isMain ? this.el.style.getPropertyValue("--tmg-media-current-captions-y") : null;
+    for (const attr of ["style", "data-active", "data-scroll"]) this.el.removeAttribute(attr);
+    if (preservedY) this.el.style.setProperty("--tmg-media-current-captions-y", preservedY, "important");
     (wrapper.innerHTML = ""), (cue.text ||= ""), (this.prevCue = cue);
     const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
-    for (const p of lines) formatVttLine(p, Math.floor(vCWidth / this.charW)).forEach((l) => wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, allowOverride && cue.align ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!));
+    for (const p of lines) for (const l of formatVttLine(p, Math.floor(vCWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, allowOverride && cue.align ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
     !existing && this.el.append(wrapper);
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.element;
-    this.isMain ? (this.ctlr.settings.css.currentCaptionsContainerHeight = `${cHeight}px`) : this.el.style.setProperty("--tmg-media-current-captions-container-height", `${cHeight}px`);
-    this.isMain ? (this.ctlr.settings.css.currentCaptionsContainerWidth = `${cWidth}px`) : this.el.style.setProperty("--tmg-media-current-captions-container-width", `${cWidth}px`);
+    this.isMain ? (this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`) : this.el.style.setProperty("--tmg-media-current-captions-container-height", `${cHeight}px`);
+    this.isMain ? (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`) : this.el.style.setProperty("--tmg-media-current-captions-container-width", `${cWidth}px`);
     if (allowOverride) {
       if (cue.region) {
         this.el.setAttribute("data-active", "");
@@ -135,14 +140,18 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   protected handleDragging(e: PointerEvent): void {
     this.media.container.classList.add("tmg-media-captions-dragging");
     this.ctlr.RAFLoop("captionsDragging", () => {
+      if (e.clientX === this.prevEX && e.clientY === this.prevEY) return; // #CONSERVATION: peak stays peak
+      (this.prevEX = e.clientX), (this.prevEY = e.clientY);
       const { offsetWidth: ww, offsetHeight: hh } = this.media.container,
         { offsetWidth: w, offsetHeight: h } = this.element,
         posX = clamp(w / 2, this.lastPosX + (e.clientX - this.lastPtrX), ww - w / 2),
         posY = clamp(h / 2, this.lastPosY - (e.clientY - this.lastPtrY), hh - h / 2);
-      this.isMain ? (this.ctlr.settings.css.currentCaptionsX = `${(posX / ww) * 100}%`) : this.el.style.setProperty("--tmg-media-current-captions-x", `${(posX / ww) * 100}%`);
-      this.isMain ? (this.ctlr.settings.css.currentCaptionsY = `${(posY / hh) * 100}%`) : this.el.style.setProperty("--tmg-media-current-captions-y", `${(posY / hh) * 100}%`);
+      this.isMain ? (this.settings.css.currentCaptionsX = `${(posX / ww) * 100}%`) : this.el.style.setProperty("--tmg-media-current-captions-x", `${(posX / ww) * 100}%`);
+      this.isMain ? (this.settings.css.currentCaptionsY = `${(posY / hh) * 100}%`) : this.el.style.setProperty("--tmg-media-current-captions-y", `${(posY / hh) * 100}%`);
     });
   }
+  private prevEX?: number;
+  private prevEY?: number;
 
   protected handleDragEnd(): void {
     this.ctlr.cancelRAFLoop("captionsDragging");

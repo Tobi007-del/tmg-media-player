@@ -1,20 +1,16 @@
 import type { TimelineConfig } from "@components/controls/timeline/types";
-import { CONTROLS, BIG_CONTROLS } from "@consts/generics";
-import { ROWS_ARR } from "./build";
+import { CONTROLS, BIG_CONTROLS, ROWS_ARR } from "./build";
+import { UISettings } from "@defs/UIOptions";
 
-export interface ControlPanel {
+export interface ControlPanelConfig {
   profile: string | boolean;
   title: string | boolean;
   artist: string | boolean;
   top: AnyControl[] | boolean;
   center: AnyControl[] | boolean;
   bottom: boolean | AnyControl[] | AnyControl[][] | Partial<ControlPanelBottomTuple>;
-  buffer: "eclipse" | "accent" | boolean;
-  timeline: {
-    thumbIndicator: boolean;
-    seek: TimelineConfig["scrub"];
-    previews: TimelineConfig["previews"];
-  };
+  buffer: UISettings<"eclipse" | "accent" | boolean>;
+  timeline: TimelineConfig & { thumb: UISettings<boolean | "auto"> };
   progressBar: boolean;
   draggable: ControlPanelDraggable;
 }
@@ -26,11 +22,13 @@ export type ControlPanelBottomTuple = Record<Row, AnyControl[]>;
 export type ControlPanelDraggable = ("" | "big" | "wrapper")[] | boolean;
 
 export type Row = (typeof ROWS_ARR)[number];
+
 export interface PanelShell {
   cover: HTMLElement;
   zone: HTMLElement;
 }
 export type PanelSlot = PanelShell | HTMLElement;
+
 export interface ControlPanelShells {
   top: Record<"left" | "center" | "right", PanelShell>;
   center: PanelShell;

@@ -1,19 +1,8 @@
 import { uid as _uid } from "@t007/utils";
 import { LUID_KEY } from "@consts/generics";
-import type { TitleCase, CamelCase, NoCamelCase } from "@defs/str";
 
 // Case Conversion
-export function capitalize<T extends string>(word: T = "" as T): TitleCase<T> {
-  return word.replace(/^(\s*)([a-z])/i, (_, s, l) => s + l.toUpperCase()) as TitleCase<T>;
-}
-
-export function camelize<T extends string>(str: T = "" as T, { source } = /[\s_-]+/, { preserveInnerCase: pIC = true, upperFirst: uF = false } = {}): CamelCase<T> {
-  return (pIC ? str : str.toLowerCase()).replace(new RegExp(source + "(\\w)", "g"), (_, c) => c.toUpperCase()).replace(/^\w/, (c) => c[uF ? "toUpperCase" : "toLowerCase"]()) as CamelCase<T>;
-}
-
-export function uncamelize<T extends string, S extends string = " ">(str: T, separator: S = " " as S): NoCamelCase<T, S> {
-  return str.replace(/([a-z])([A-Z])/g, `$1${separator}$2`).toLowerCase() as NoCamelCase<T, S>;
-}
+export { capitalize, camelize, uncamelize } from "@t007/utils";
 
 // Generation
 export const uid = (prefix = "tmg_") => _uid(prefix);
@@ -28,3 +17,34 @@ export { remToPx, pxToRem, parseCSSTime, parseCSSSize } from "@t007/utils";
 
 // Checkers
 export { cleanURL, isSameURL } from "@t007/utils";
+
+// Fuzzy String Matching
+export function getSimilarity(target: string, spoken: string): number {
+  if (target === spoken) return 1;
+  if (target.length < 2 || spoken.length < 2) return 0;
+  let matches = 0;
+  for (let i = 0; i < target.length - 1; i++) {
+    const bigram = target.substring(i, i + 2);
+    if (spoken.includes(bigram)) matches++;
+  }
+  // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${matches} / ${target.length - 1} = ${matches / (target.length - 1)}`);
+  return matches / (target.length - 1); // Returns a score from 0.0 to 1.0 (e.g., 0.85 = 85% match)
+}
+
+export function fuzzyMatch(targets: string[], transcript: string, threshold: number): string | null {
+  const tokens = transcript.split(/\s+/);
+  for (const target of targets) {
+    const targetBlob = target.replace(/[-\s]/g, "");
+    for (let i = 0; i < tokens.length; i++) {
+      let rawChunk = "",
+        chunkBlob = "";
+      // Group words together to check multi-word phrases
+      for (let j = i; j < tokens.length; j++) {
+        rawChunk += (j === i ? "" : " ") + tokens[j]; // The exact string with spaces
+        chunkBlob += tokens[j]; // The squashed string for math
+        if (chunkBlob === targetBlob || getSimilarity(targetBlob, chunkBlob) >= threshold) return rawChunk; // Returns exactly what was spoken (e.g., "six seven")
+      }
+    }
+  }
+  return null;
+}

@@ -1,4 +1,4 @@
-﻿import { BaseNotifier, ComponentState } from "./base";
+import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { REvent } from "sia-reactor";
@@ -14,7 +14,7 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
   public mutedDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-volume-notifier-content" });
+    this.content = createEl("div", { className: "tmg-media-volume-notifier-content tmg-media-notifier-content" });
     this.upDiv = createEl("div", { className: "tmg-media-volume-up-notifier", innerHTML: IconRegistry.get("volumehigh", true) });
     this.downDiv = createEl("div", { className: "tmg-media-volume-down-notifier", innerHTML: IconRegistry.get("volumelow", true) });
     this.mutedDiv = createEl("div", { className: "tmg-media-volume-muted-notifier", innerHTML: IconRegistry.get("volumemuted", true) });
@@ -30,7 +30,7 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
   }
 
   protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume"> | REvent<VolumeState, "aptValue">): void {
-    this.content.textContent = `${value}%`;
+    this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
   }
 }
 

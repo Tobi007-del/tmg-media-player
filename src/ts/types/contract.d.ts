@@ -1,6 +1,6 @@
 import type { Controller } from "./controller";
 import type { Inert, Intent, State, Volatile } from "sia-reactor";
-import { MediaType, Sources, Src, SrcObject, Tracks } from "./generics";
+import { MediaType, Sources, Src, SrcObject, Tracks, Metadata } from "./generics";
 import type { ObjectFit } from "@plugs/settings/objectFit/types";
 import type { CueLike } from "@plugs/settings/captions/types";
 import type { BaseTech } from "@techs/base";
@@ -30,9 +30,10 @@ export interface MediaState {
   fullscreen: boolean;
   theater: boolean;
   miniplayer: boolean;
+  locked: boolean;
   // --- Casting (Connection Handshakes) ---
   airplay: boolean; // Apple AirPlay
-  chromecast: boolean; // Google Cast
+  cast: boolean; // Google Cast
   // --- VR / XR (Spatial Realities) ---
   xrSession: boolean; // Request "Immersive Mode" (Handshake)
   xrMode: "inline" | "immersive-vr" | "immersive-ar"; // Hardware target
@@ -49,11 +50,13 @@ export interface MediaState {
   panningZ: number; // Roll (Tilt/Barrel)
   // --- Interaction (XR Controllers) ---
   xrInputSource: ArrayLike<any>; // Reference to active controllers/hand-tracking
-  // --- Track Switching (Async Buffering/Streaming) --- NOTE: "Disabled" value is "-1" where applicable
+  // --- Track Switching (Async Buffering/Streaming) --- NOTE: "-1" is "Disabled" or a no-op
+  currentChapter: number;
   currentTextTrack: number; // Subtitle
   currentAudioTrack: number; // Language (English -> Spanish)
   currentVideoTrack: number; // Angle
   currentLevel: number; // Quality (280p -> 4K)
+  textVisible: boolean; // Captions on/off (UI-only)
   autoLevel: boolean; // ABR Algorithm enabled?
   // --- HTML Attributes ---
   poster: string;
@@ -68,6 +71,8 @@ export interface MediaState {
   // ---  HTML Lists ---
   sources: Sources; // HTML courtesy
   tracks: Tracks; // HTML courtesy
+  // --- Live Content ---
+  live: boolean;
   // --- Misc ---
   objectFit: ObjectFit;
   // [key: string]: any; // Allow for plugins to add custom contract properties
@@ -75,19 +80,20 @@ export interface MediaState {
 
 export type MediaIntent = Omit<
   MediaState,
-  "currentLevel" | "currentAudioTrack" | "currentVideoTrack" | "currentTextTrack"
+  "currentChapter" | "currentTextTrack" | "currentAudioTrack" | "currentVideoTrack" | "currentLevel"
 > & {
-  currentLevel: unknown;
+  currentChapter: unknown;
+  currentTextTrack: unknown;
   currentAudioTrack: unknown;
   currentVideoTrack: unknown;
-  currentTextTrack: unknown;
+  currentLevel: unknown;
 }; // Tech will accept `unknown` intent and return a `number` that can index their status lists
 
 export interface MediaStatus {
   // --- Network & Health ---
   readyState: number;
   networkState: number;
-  error: Inert<MediaError> | null;
+  error: Inert<{ code?: number; message?: string; [key: string]: any }> | null;
   bandwidth: number | null; // Estimated Mbps
   // --- Buffering & Time ---
   waiting: boolean; // Spinner Active?
@@ -115,46 +121,57 @@ export interface MediaStatus {
   activeCue: Inert<CueLike> | null; // The current subtitle/caption line
   // --- VR / XR Info ---
   xrCapabilities: Record<"hasPosition" | "hasOrientation" | "isEmulated", boolean> | null; // 6DoF- Room-scale, 3DoF- Head rotation, Emulated- Magic Window
+  // --- Live Content ---
+  isLive: boolean;
+  canSeekLive: boolean;
 }
 
 export interface MediaSettings {
   // --- Defaults (Startup values) ---
   defaultMuted: boolean;
   defaultPlaybackRate: number;
-  protection: Record<string, { serverURL: string }> | null; // { "com.widevine.alpha": { serverURL: "https://..." } }
   // --- Stream Sources ---
   srcObject: SrcObject; // HTML courtesy
+  // --- Metadata ---
+  metadata: Metadata;
+  protection: Record<string, { serverURL: string }> | null; // { "com.widevine.alpha": { serverURL: "https://..." } }
+  // --- Live Content ---
+  liveTolerance: number; // seconds
+  minDVRWindow: number; // seconds
 }
 
+export interface MediaExtraFeatures {
+  multipleCaptions?: boolean;
+} // for external but custom usecases
 export type MediaFeatures = {
   [K in Exclude<keyof MediaState, keyof MediaContract>]?: boolean;
 } & {
   [K in Exclude<keyof MediaStatus, keyof MediaContract>]?: boolean;
 } & {
   [K in Exclude<keyof MediaSettings, keyof MediaContract>]?: boolean;
-};
+} & Partial<MediaExtraFeatures>;
 
 export interface MediaReport {
   state: State<MediaState>;
   intent: Volatile<Intent<MediaIntent>>;
   status: State<MediaStatus>;
-  settings: State<MediaSettings>;
+  settings: Volatile<Intent<MediaSettings>>;
 }
 
 export type CtlrMedia = MediaReport & {
   tech: Inert<BaseTech>;
-  features: Reactive<MediaFeatures>;
-  container: Inert<HTMLElement>;
-  pseudoContainer: Inert<HTMLElement>; // a replacement when container needs to eject, e.t.c
+  features: State<MediaFeatures>;
+  container: HTMLElement;
+  pseudoContainer: HTMLElement; // a replacement when container needs to eject, e.t.c
 } & (
     | {
         type: "video";
-        element: Inert<HTMLVideoElement>;
-        pseudoElement: Inert<HTMLVideoElement>; // a replacement when element needs to eject, frame processing, e.t.c
+        element: HTMLVideoElement;
+        pseudoElement: HTMLVideoElement; // a replacement when element needs to eject, frame processing, e.t.c
       }
     | {
         type: "audio";
-        element: Inert<HTMLAudioElement>;
-        pseudoElement: Inert<HTMLAudioElement>; // a replacement when element needs to eject, frame processing, e.t.c
+        element: HTMLAudioElement;
+        pseudoElement: HTMLAudioElement; // a replacement when element needs to eject, frame processing, e.t.c
       }
   ); // Controller Media

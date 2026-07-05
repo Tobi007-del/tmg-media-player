@@ -1,24 +1,31 @@
-﻿import { BasePlug } from "../../base";
-import type { LightState } from "./types";
+import { BasePlug } from "../../base";
+import type { LightStateConfig } from "./types";
 import { LIGHT_STATE_BUILD } from "./build";
+import type { CtlrMedia } from "@defs/contract";
 import type { CtlrConfig } from "@defs/config";
-import { type REvent } from "sia-reactor";
+import { TERMINATOR, type REvent } from "sia-reactor";
 import { inBoolArrOpt } from "@utils/obj";
+import { silence } from "sia-reactor/modules";
 
-export class LightStatePlug extends BasePlug<LightState> {
+export class LightStatePlug extends BasePlug<LightStateConfig> {
   public static readonly plugName = "lightState";
   public static readonly isMain: boolean = true;
   public static readonly BUILD = LIGHT_STATE_BUILD;
+  protected hasStalled = false;
   protected shadowTime?: number;
 
   public override wire(): void {
-    // Ctlr Media Listeners
+    // Ctlr State Setters
+    this.ctlr.state.set("readyState", (v) => (v === 2 && !this.config.disabled ? ((this.hasStalled = true), TERMINATOR) : v), { signal: this.signal }); // #DICTATOR: reliable authority
+    // ---- Media Listeners
     this.media.on("intent.currentTime", this.handleCurrentTimeIntent, { capture: true, signal: this.signal }); // #ISOLATION: peak compromise
-    // Ctlr Config Listeners
+    // ---- Config Listeners
     this.ctlr.config.on("lightState.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("lightState.controls", this.handleControls, { init: true, signal: this.signal });
     this.ctlr.config.on("lightState.preview.usePoster", this.handleUsePoster, { signal: this.signal });
     this.ctlr.config.on("lightState.preview.time", this.handleTime, { signal: this.signal });
+    // Post Wiring
+    super.wire();
   }
 
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -28,34 +35,34 @@ export class LightStatePlug extends BasePlug<LightState> {
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "lightState.disabled">): void {
     if (value) {
-      if (this.ctlr.settings.time.start != null) this.media.intent.currentTime = this.ctlr.settings.time.start;
+      if (this.settings.time.start != null) this.media.intent.currentTime = this.settings.time.start;
       this.media.container.classList.remove("tmg-media-light");
       this.media.nowatch("state.paused", this.remove);
-      this.ctlr.DOM.controlsContainer?.removeEventListener("click", this.handleLightStateClick);
-      if (!this.ctlr.payload.wired) this.ctlr.setReadyState(); // if (!this.ctlr.payload.wired) this.ctlr.state.wonce("readyState", () => this.ctlr.setReadyState(), { signal: this.signal }); // you can wire now! Compadres
+      this.ctlr.DOM.controlsContainer?.removeEventListener("click", this.handleClick);
+      !this.ctlr.payload.wired && this.hasStalled && this.ctlr.setReadyState(2); // restoring order
     } else {
       this.config.preview.usePoster = this.config.preview.usePoster;
       this.media.container.classList.add("tmg-media-light");
       this.media.watch("state.paused", this.remove, { signal: this.signal });
-      this.ctlr.DOM.controlsContainer?.addEventListener("click", this.handleLightStateClick, { signal: this.signal });
+      this.ctlr.DOM.controlsContainer?.addEventListener("click", this.handleClick, { signal: this.signal });
     }
   }
 
   protected handleControls(): void {
-    this.ctlr.queryDOM("[data-control-id]", true).forEach((c) => (c.dataset.lightControl = this.isLight(c.dataset.controlId!) ? "true" : "false"));
+    for (const c of this.ctlr.queryDOM("[data-control-id]", true)) c.dataset.lightControl = this.isLight(c.dataset.controlId!) ? "true" : "false";
   }
 
   protected handleUsePoster({ target: { value, object } }: REvent<CtlrConfig, "lightState.preview.usePoster">): void {
     if (this.config.disabled || (value && this.media.state.poster)) return;
-    this.media.intent.currentTime = this.shadowTime = object.time;
+    silence(() => (this.media.intent.currentTime = this.shadowTime = object.time));
     if (!this.media.status.loadedMetadata) this.media.once("status.loadedMetadata", () => (this.config.preview.usePoster = value), { signal: this.signal }); // retrigger when metadata is ready in case time is a percentage
   }
 
   protected handleTime({ target: { object } }: REvent<CtlrConfig, "lightState.preview.time">): void {
-    !this.config.disabled && (!object.usePoster || !this.media.state.poster) && (this.media.intent.currentTime = this.shadowTime = object.time!);
+    !this.config.disabled && (!object.usePoster || !this.media.state.poster) && silence(() => (this.media.intent.currentTime = this.shadowTime = object.time!));
   }
 
-  protected handleLightStateClick({ target }: MouseEvent): void {
+  protected handleClick({ target }: MouseEvent): void {
     target === this.ctlr.DOM.controlsContainer && this.remove();
   }
 
@@ -70,7 +77,7 @@ export class LightStatePlug extends BasePlug<LightState> {
 
   protected stall(): void {
     this.ctlr.plug("settings.overlay")?.show();
-    const bigPlayBtn = this.ctlr.plug("settings.controlPanel")?.ctrlEl("bigplaypause");
+    const bigPlayBtn = this.ctlr.plug("settings.controlPanel")?.compEl("bigplaypause");
     bigPlayBtn && this.media.container.classList.add("tmg-media-stall");
     bigPlayBtn?.addEventListener("animationend", () => this.media.container.classList.remove("tmg-media-stall"), { once: true, signal: this.signal });
   }
@@ -80,6 +87,9 @@ export class LightStatePlug extends BasePlug<LightState> {
   }
 }
 
+export type * from "./types";
+export * from "./build";
+
 declare module "@defs/registries" {
   interface PlugRegistryMap {
     lightState: typeof LightStatePlug;
@@ -88,9 +98,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface CtlrConfig {
-    lightState: LightState;
+    lightState: LightStateConfig;
   }
 }
-
-export type * from "./types";
-export * from "./build";

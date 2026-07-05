@@ -13,9 +13,9 @@
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "preserveSymlinks": true,
-    "types": ["node", "youtube"],
+    "types": ["node", "youtube", "chrome", "chromecast-caf-sender"],
     "paths": {
-      "@src": ["./src/*"],
+      // "@src": ["./src/*"],
       "@core/*": ["./src/ts/core/*"],
       "@defs/*": ["./src/ts/types/*"],
       "@tools/*": ["./src/ts/tools/*"],

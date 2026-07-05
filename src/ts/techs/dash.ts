@@ -1,8 +1,9 @@
 import { HTML5Tech } from "./html5";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures } from "@defs/contract";
-import type { REvent } from "sia-reactor";
-import { DASH_EXTENSIONS } from "@utils/matcher";
+import { inert, type REvent } from "sia-reactor";
+import { DASH_EXTENSIONS } from "@utils/match";
+import { MSE_ENABLED } from "@utils/env";
 import { capitalize, isSameURL } from "@utils/str";
 import { isNum } from "@utils/obj";
 import { loadResource } from "@utils/dom";
@@ -15,104 +16,129 @@ interface DashMediaPlayer extends dashjs.MediaPlayerClass {
 } // dashjs is notorious for stale types; not us
 
 export class DashTech extends HTML5Tech {
-  public static readonly techName = "dash";
-  protected dash: DashMediaPlayer | null = null;
+  public static readonly techName: string = "dash";
+  public host: DashMediaPlayer | null = null;
   public static override canPlaySource(src: string): boolean {
-    return DASH_EXTENSIONS.test(src);
+    return MSE_ENABLED && DASH_EXTENSIONS.test(src);
   }
+  protected strictTracks: boolean = true;
+  protected hostSrc: string | null = null;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     const isVid = ctlr.media.type === "video";
     // prettier-ignore
     super(ctlr, {
+      // States & Lists
+      sources: false, tracks: false, textTracks: true, audioTracks: true, videoTracks: isVid, levels: true, 
       // States & Currents (DASH.js specific)
-      autoLevel: true, currentLevel: true, currentAudioTrack: true, currentVideoTrack: isVid,
-      // Status & Lists & Settings
-      bandwidth: true, levels: true, audioTracks: true, textTracks: true, videoTracks: isVid, protection: true, ...features
+      currentAudioTrack: true, currentVideoTrack: isVid, currentLevel: true, autoLevel: true, 
+      // Status & Settings
+      bandwidth: true, protection: true, srcObject: false, ...features
     });
+    ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initDash(src: string = "") {
-    // Setup & Compatibility
-    this.destroyDash();
-    const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
-    if (this.signal.aborted) return; // src may have changed during the `await`
-    if (!DASHJS?.supportsMediaSource()) return this.ctlr.log("DASH.js is not supported in this browser", "error");
-    this.dash = DASHJS.MediaPlayer().create() as DashMediaPlayer;
-    if (this.config.type === "audio") this.dash.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace" } } }); // DASH.js to replace the audio to avoid buffer finish delays
-    // Status & State (Bulk Wiring)
-    this.dash.on(DASHJS.MediaPlayer.events.PLAYBACK_METADATA_LOADED, () => {
-      const autoSwitch = (this.dash!.getSettings() as any).streaming?.abr?.autoSwitchBitrate;
-      this.config.state.autoLevel = typeof autoSwitch === "boolean" ? autoSwitch : autoSwitch?.video ?? true; // Fallback logic for v3 vs v4+ API shapes
-      this.config.status.levels = this.dash!.getBitrateInfoListFor("video");
-      (["text", "audio", "video"] as const).forEach((t) => (this.config.status[`${t}Tracks`] = this.dash!.getTracksFor(t)));
-    });
-    this.dash.on(DASHJS.MediaPlayer.events.TRACK_CHANGE_RENDERED, (ev: any) => {
-      const i = this.dash?.getTracksFor(ev.mediaType)?.findIndex((t) => t.id === ev.newMediaInfo?.id || t.index === ev.newMediaInfo?.index);
-      if (isNum(i) && i !== -1) this.config.state[`current${capitalize<TrackType>(ev.mediaType)}Track`] = i;
-    });
-    this.dash.on(DASHJS.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (ev: any) => ev.mediaType === "video" && (this.config.state.currentLevel = ev.newQuality ?? ev.index)); // v4+ uses newQuality, v3 uses index
-    this.dash.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidth", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round((this.dash!.getAverageThroughput("video") / 1000) * 10) / 10), 2000)); // Converted to Mbps, 1 decimal
-    this.dash.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
-      if (ev.error === "download") return this.ctlr.log(`DASH Download Error: ${ev.event?.url}`, "warn");
-      if (ev.error !== "mediasource") return;
-      this.config.status.error = { code: 3, message: ev.error ?? "Fatal DASH error" } as MediaError;
+  protected async initHost(src = "") {
+    try {
+      // Setup & Compatibility
       this.destroyDash();
-    });
-    this.dash.initialize(this.el, src, false);
+      const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
+      if (this.signal.aborted) return; // src may have changed during the `await`
+      if (!DASHJS?.supportsMediaSource()) return this.ctlr.notice("DASH is not supported in this browser", "error", null);
+      const base = this.config[this.ctlr.techTruth];
+      this.hostSrc = src;
+      this.host = DASHJS.MediaPlayer().create() as DashMediaPlayer;
+      if (this.config.type === "audio") this.host.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace", video: "alwaysReplace" }, buffer: { fastSwitchEnabled: true } } }); // DASH.js to replace the audio to avoid buffer finish delays
+      if (this.config.settings.metadata.allowOverride) this.config.settings.metadata.chapterInfo = [];
+      // Status & State (Bulk Wiring)
+      this.host.on(DASHJS.MediaPlayer.events.STREAM_INITIALIZED, () => {
+        this.config.status.isLive = this.host!.isDynamic();
+        const autoSwitch = (this.host!.getSettings() as any).streaming?.abr?.autoSwitchBitrate;
+        this.config.state.autoLevel = typeof autoSwitch === "boolean" ? autoSwitch : autoSwitch?.video ?? true; // Fallback logic for v3 vs v4+ API shapes
+        for (const t of ["text", "audio", "video"] as const) this.config.status[`${t}Tracks`] = inert(this.host!.getTracksFor(t));
+        this.config.status.levels = inert(this.host!.getBitrateInfoListFor("video"));
+        this.media.status.hostReady = true;
+      });
+      this.host.on(DASHJS.MediaPlayer.events.TRACK_CHANGE_RENDERED, (ev: any) => {
+        const i = this.host?.getTracksFor(ev.mediaType)?.findIndex((t) => t.id === ev.newMediaInfo?.id || t.index === ev.newMediaInfo?.index);
+        this.config.state[`current${capitalize<TrackType>(ev.mediaType)}Track`] = i ?? -1;
+      });
+      this.host.on(DASHJS.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (ev: any) => ev.mediaType === "video" && (this.config.state.currentLevel = ev.newQuality ?? ev.index)); // v4+ uses newQuality, v3 uses index
+      this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidth", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round((this.host!.getAverageThroughput("video") / 1000) * 10) / 10), 2000)); // Converted to Mbps, 1 decimal
+      this.host.on(DASHJS.MediaPlayer.events.EVENT_MODE_ON_RECEIVE, (ev: any) => {
+        if (!this.config.settings.metadata.allowOverride) return;
+        if (!ev.schemeIdUri?.includes("chapter") && !ev.schemeIdUri?.includes("title")) return;
+        const chapters = this.config.settings.metadata.chapterInfo;
+        if (chapters.find((c) => c.startTime === ev.presentationTime)) return;
+        chapters.push({ title: new TextDecoder("utf-8").decode(ev.messageData).replace(/\0/g, "").trim(), startTime: ev.presentationTime });
+        this.config.settings.metadata.chapterInfo = chapters.sort((a, b) => a.startTime - b.startTime);
+      });
+      this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
+        if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`);
+        if (ev.error !== "mediasource") return;
+        this.handleHostError(ev);
+      });
+      this.config.settings.protection && this.host.setProtectionData(this.config.settings.protection);
+      this.host.initialize(this.el, src, base.autoplay || !base.paused, base.currentTime);
+    } catch (err) {
+      this.handleHostError(err);
+    }
   }
   // ===========================================================================
   // WIRING OVERRIDES
   // ===========================================================================
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
-    this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : this.dash?.getTracksFor(_type)?.findIndex((t) => t.id === term || t.lang === term) ?? -1), { signal: this.signal });
-    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentDashTrackIntent(e, _type), this.evtOpts.CONFIG);
+    this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as dashjs.MediaInfo[]).findIndex((t) => t.id === term || t.lang === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHostTrackIntent(e, _type), this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {
-    this.config.set("intent.currentLevel", (v) => (isNum(v) ? v : Number(v)), { signal: this.signal }); // #VALIDATOR: rules enforcement
+    this.config.set("intent.currentLevel", (term) => (isNum(term) ? term : Number(term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentLevel", this.handleCurrentLevelIntent, this.evtOpts.CONFIG);
   }
   protected wireAutoLevel(): void {
     this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
-  protected override wireActiveCue(): void {
-    super.wireActiveCue(false); // DASHJS dynamically injects tracks into the DOM, so the Dash index and DOM index don't match.
-  }
-  protected wireProtection(): void {
-    this.config.on("settings.protection", this.handleProtectionSetting, this.evtOpts.CONFIG);
-  }
   // ===========================================================================
   // HANDLERS
   // ===========================================================================
   protected override handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.el.src, e.value)) return;
-    this.initDash(e.value);
-    e.resolve(DashTech.techName);
+    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
+    this.initHost(e.value);
+    e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
-    if (e.resolved || !this.dash) return void (!this.dash && e.reject("DASH unavailable"));
-    this.dash.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } });
-    this.dash.setQualityFor("video", e.value as number);
-    this.config.state.autoLevel = false;
-    e.resolve(DashTech.techName);
+    if (e.resolved) return;
+    this.when("hostReady", e, () => {
+      this.host!.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } });
+      if ((e.value as number) > -1 && (e.value as number) < this.config.status.levels.length) {
+        this.host!.setQualityFor("video", e.value as number); // #VALIDATED: mediated for cast conformity; no-opy
+        this.config.state.autoLevel = false;
+      }
+    });
+    e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
-    if (e.resolved || !this.dash) return void (!this.dash && e.reject("DASH unavailable"));
-    this.dash.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: e.value } } } });
-    this.config.state.autoLevel = e.value as boolean;
-    e.resolve(DashTech.techName);
+    if (e.resolved) return;
+    this.when("hostReady", e, () => {
+      this.host!.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: e.value } } } });
+      this.config.state.autoLevel = e.value as boolean;
+    });
+    e.resolve(this.name);
   }
-  protected handleCurrentDashTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: Lowercase<TrackType>): void {
-    if (e.resolved || !this.dash) return void (!this.dash && e.reject("DASH unavailable"));
-    const track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined;
-    if (track) this.dash.setCurrentTrack(track);
-    e.resolve(DashTech.techName);
+  protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: Lowercase<TrackType>): void {
+    if (e.resolved) return;
+    this.when("hostReady", e, () => {
+      const track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined; // #VALIDATED: mediated for cast conformity; no-opy
+      if (track) this.host!.setCurrentTrack(track);
+    });
+    e.resolve(this.name);
   }
-  protected handleProtectionSetting(e: REvent<CtlrMedia, "settings.protection">): void {
-    e.value && this.dash?.setProtectionData(e.value);
+  protected handleHostError(err: any): void {
+    this.config.status.error = { ...err, code: err?.code ?? 5, message: err.error ?? err.message ?? "Fatal DASH error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
+    this.config.status.waiting = false;
   }
   // --- Lifecycle ---
   protected destroyDash(): void {
-    this.dash?.reset(), (this.dash = null);
+    this.host?.reset(), (this.host = null), (this.media.status.hostReady = false);
   }
   protected override onDestroy(): void {
     this.destroyDash(), super.onDestroy();

@@ -1,4 +1,4 @@
-﻿import { BaseComponent, ComponentState } from "../base";
+import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { addSafeClicks, createEl } from "@utils/dom";
 import { formatKeyForDisplay } from "@utils/keys";
@@ -17,6 +17,8 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
   }
 
   public override wire(): void {
+    // Features Gating
+    this.media.on("features.frameCapture", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
@@ -32,8 +34,8 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = "Capture frame";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.capture);
-    this.el.title = `Capture${this.state.cmd} ↔ DblClick→B&W (+alt)`;
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.capture);
+    this.el.title = `Capture${this.state.cmd} ? DblClick?B&W (+alt)`;
     this.setBtnARIA("Capture monochrome frame");
   }
 }

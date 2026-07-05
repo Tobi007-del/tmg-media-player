@@ -1,9 +1,11 @@
 import { MEDIA_INTENT_BUILD, MEDIA_SETTINGS_BUILD, MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
-import { MediaState, MediaStatus, MediaSettings, MediaReport } from "@defs/contract";
+import { MediaState, MediaStatus, MediaSettings, MediaReport, CtlrMedia } from "@defs/contract";
 import { isStr, isNum, isIter, isSameURL, cleanURL } from "@t007/utils";
 import { createEl } from "@utils/dom";
 import { queryFullscreenEl, queryPictureInPictureEl } from "@utils/dom";
 import { Dimensions, MediaType, Source, Sources, Track, Tracks } from "@defs/generics";
+import { mergeObjs as merge } from "sia-reactor/utils";
+import { DeepPartial } from "sia-reactor";
 
 // ============ Video Utilities ============
 // Types
@@ -11,57 +13,71 @@ type SourceLike = Source | (HTMLSourceElement & Record<string, any>);
 type TrackLike = Track | (HTMLTrackElement & Record<string, any>);
 
 // Report Generation
-export function getMediaReport(m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement): MediaReport {
-  const _txtTrackIdx = getTrackIdx(m, "Text"),
-    report = { state: getMediaState(m, isVid, _txtTrackIdx), status: getMediaStatus(m, isVid, _txtTrackIdx), settings: getMediaSettings(m) };
-  return { state: { ...MEDIA_STATE_BUILD, ...report.state }, intent: { ...MEDIA_INTENT_BUILD, ...report.state }, status: { ...MEDIA_STATUS_BUILD, ...report.status }, settings: { ...MEDIA_SETTINGS_BUILD, ...report.settings } };
+export function getMediaReport(m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, opts = { skipUndefined: true }): MediaReport {
+  const txtTrackIdx = getTrackIdx(m, "Text"),
+    report = { state: getMediaState(m, isVid, txtTrackIdx), status: getMediaStatus(m, isVid, txtTrackIdx), settings: getMediaSettings(m) };
+  return { state: merge(MEDIA_STATE_BUILD, report.state, opts), intent: merge(MEDIA_INTENT_BUILD, report.state, opts), status: merge(MEDIA_STATUS_BUILD, report.status, opts), settings: merge(MEDIA_SETTINGS_BUILD, report.settings, opts) } as MediaReport;
 }
-export const getMediaState = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): MediaState => ({ src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume * 100, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: _txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? m.poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) });
-export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): MediaStatus => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? m.videoWidth : 0, videoHeight: isVid ? m.videoHeight : 0, textTracks: m.textTracks, audioTracks: (m as any).audioTracks, videoTracks: (m as any).videoTracks, activeCue: m.textTracks[_txtTrackIdx]?.activeCues?.[0] || null });
-export const getMediaSettings = (m: HTMLMediaElement): MediaSettings => ({ defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate });
+export const getMediaState = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): Partial<MediaState> => ({ src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume * 100, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: _txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? (m as HTMLVideoElement).poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) });
+export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text"), _flagsOnly = false): Partial<MediaStatus> => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? (m as HTMLVideoElement).videoWidth : 0, videoHeight: isVid ? (m as HTMLVideoElement).videoHeight : 0, textTracks: _flagsOnly ? undefined : m.textTracks, audioTracks: _flagsOnly ? undefined : (m as any).audioTracks, videoTracks: _flagsOnly ? undefined : (m as any).videoTracks, activeCue: _flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues?.[0] || null });
+export const getMediaSettings = (m: HTMLMediaElement): DeepPartial<MediaSettings> => ({ defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate, srcObject: m.srcObject });
+
+export function getMediaProgress({ state: s, status: st }: CtlrMedia, time = s.currentTime): number {
+  if (st.isLive) {
+    if (!st.seekable.length || s.live) return 1;
+    const min = st.seekable.start(0),
+      dvr = st.seekable.end(st.seekable.length - 1) - min;
+    return dvr > 0 ? (time - min) / dvr : 1;
+  } else return time / st.duration;
+}
+export const getMediaTime = (media: CtlrMedia, percent: number, _min = getMediaMin(media)): number => (media.status.isLive ? _min! + percent * (getMediaMax(media) - _min!) : percent * media.status.duration);
+export const getMediaMin = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? (st.canSeekLive ? st.seekable.start(0) : st.seekable.end(st.seekable.length - 1)) : s.currentTime) : 0); // live?, can't seek?, jump to edge
+export const getMediaMax = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? st.seekable.end(st.seekable.length - 1) : s.currentTime) : st.duration);
+
+export function getBooleanMediaProps(media: CtlrMedia, prop: "intent" | "state" = "intent"): string[] {
+  return Object.keys(media[prop]).filter((k) => typeof media[prop][k as keyof MediaState] === "boolean");
+}
 
 // Geometry
-export function getRenderedBox(elem: HTMLElement & { videoWidth?: number; videoHeight?: number }): Partial<Dimensions & { left: number; top: number }> {
-  const getResourceDimensions = (source: HTMLElement & { videoWidth?: number; videoHeight?: number }): Dimensions | null => (source.videoWidth && source.videoHeight ? { width: source.videoWidth, height: source.videoHeight } : null);
-  const parsePositionAsPx = (str: string, bboxSize: number, objectSize: number): number => {
-    const num = parseFloat(str);
-    return !str.endsWith("%") ? num : bboxSize * (num / 100) - objectSize * (num / 100);
-  };
-  const parseObjectPosition = (position: string, bbox: DOMRect, object: Dimensions): { left: number; top: number } => {
-    const [left, top] = position.split(" ");
-    return { left: parsePositionAsPx(left, bbox.width, object.width), top: parsePositionAsPx(top, bbox.height, object.height) };
-  };
-  let { objectFit, objectPosition } = getComputedStyle(elem);
-  const bbox = elem.getBoundingClientRect(),
-    object = getResourceDimensions(elem);
-  if (!object || !objectFit || !objectPosition) return {};
-  if (objectFit === "scale-down") objectFit = bbox.width < object.width || bbox.height < object.height ? "contain" : "none";
-  if (objectFit === "none") return { ...parseObjectPosition(objectPosition, bbox, object), ...object };
+export function getRenderedBox({ videoHeight, videoWidth }: { videoHeight?: number; videoWidth?: number }, { width: clientWidth = 0, height: clientHeight = 0 }: { width?: number; height?: number }, { objectFit = "cover", objectPosition = "50% 50%" }: { objectFit?: string; objectPosition?: string }): Partial<Dimensions & { left: number; top: number }> {
+  const bbox = { width: clientWidth, height: clientHeight } as DOMRect,
+    obj = (((videoHeight ||= 1080), (videoWidth ||= videoHeight * (16 / 9))), videoWidth && videoHeight ? { width: videoWidth, height: videoHeight } : null);
+  if (!obj || !objectFit || !objectPosition) return {};
+  if (objectFit === "scale-down") objectFit = bbox.width < obj.width || bbox.height < obj.height ? "contain" : "none";
+  if (objectFit === "none") return { ...parseObjectPos(objectPosition, bbox, obj), ...obj };
   else if (objectFit === "contain") {
-    const objectRatio = object.height / object.width,
+    const objRatio = obj.height / obj.width,
       bboxRatio = bbox.height / bbox.width,
-      width = bboxRatio > objectRatio ? bbox.width : bbox.height / objectRatio,
-      height = bboxRatio > objectRatio ? bbox.width * objectRatio : bbox.height;
-    return { ...parseObjectPosition(objectPosition, bbox, { width, height }), width, height };
+      width = bboxRatio > objRatio ? bbox.width : bbox.height / objRatio,
+      height = bboxRatio > objRatio ? bbox.width * objRatio : bbox.height;
+    return { ...parseObjectPos(objectPosition, bbox, { width, height }), width, height };
   } else if (objectFit === "fill") {
-    const { left, top } = parseObjectPosition(objectPosition, bbox, object),
-      objPosArr = objectPosition.split(" ");
-    return { left: objPosArr[0].endsWith("%") ? 0 : left, top: objPosArr[1].endsWith("%") ? 0 : top, width: bbox.width, height: bbox.height };
+    const { left, top, rawLeft, rawTop } = parseObjectPos(objectPosition, bbox, obj);
+    return { left: rawLeft.endsWith("%") ? 0 : left, top: rawTop.endsWith("%") ? 0 : top, width: bbox.width, height: bbox.height }; // Relative positioning is discarded with `obj-fit: fill`, so we need to check here if it's relative or not
   } else if (objectFit === "cover") {
-    const minRatio = Math.min(bbox.width / object.width, bbox.height / object.height);
-    let width = object.width * minRatio,
-      height = object.height * minRatio,
+    const minRatio = Math.min(bbox.width / obj.width, bbox.height / obj.height);
+    let width = obj.width * minRatio,
+      height = obj.height * minRatio,
       outRatio = 1;
     if (width < bbox.width) outRatio = bbox.width / width;
     if (Math.abs(outRatio - 1) < 1e-14 && height < bbox.height) outRatio = bbox.height / height;
     (width *= outRatio), (height *= outRatio);
-    return { ...parseObjectPosition(objectPosition, bbox, { width, height }), width, height };
+    return { ...parseObjectPos(objectPosition, bbox, { width, height }), width, height };
   }
   return {};
 }
+const parsePosAsPx = (str: string, bboxSize: number, objectSize: number): number => {
+  str === "center" ? (str = "50%") : str === "left" || str === "top" ? (str = "0%") : (str === "right" || str === "bottom") && (str = "100%");
+  const num = parseFloat(str);
+  return !str.endsWith("%") ? num : (bboxSize - objectSize) * (num / 100);
+};
+const parseObjectPos = (position: string, bbox: DOMRect, object: Dimensions): { left: number; top: number; rawLeft: string; rawTop: string } => {
+  if (position === "center") position = "50% 50%";
+  const [left, top = "50%"] = position.split(" ");
+  return { left: parsePosAsPx(left, bbox.width, object.width), top: parsePosAsPx(top, bbox.height, object.height), rawLeft: left, rawTop: top };
+};
 
-export function getSizeTier(container: HTMLElement) {
-  const { offsetWidth: w, offsetHeight: h } = container;
+export function getSizeTier(container: HTMLElement, { offsetWidth: w, offsetHeight: h } = container) {
   return { width: w, height: h, tier: h <= 130 ? "xxxxx" : w <= 280 ? "xxxx" : w <= 380 ? "xxx" : w <= 480 ? "xx" : w <= 630 ? "x" : "" };
 }
 
@@ -105,14 +121,16 @@ export function addSources(sources: SourceLike | Iterable<SourceLike> = [], medi
 export function getSources(medium: HTMLElement): MediaState["sources"] {
   const sources = medium.querySelectorAll<HTMLSourceElement>("source"),
     _sources: SourceLike[] = [];
-  sources.forEach((source) => {
+  for (const source of sources) {
     const obj: Record<string, any> = {};
     putSourceDetails(source, obj);
     _sources.push(obj as SourceLike);
-  });
+  }
   return _sources as MediaState["sources"];
 }
-export const removeSources = (medium: HTMLElement): void => medium?.querySelectorAll("source")?.forEach((source) => source.remove());
+export const removeSources = (medium: HTMLElement, sources = medium?.querySelectorAll("source")): void => {
+  if (sources) for (const source of sources) source.remove();
+};
 export function isSameSources(a?: Sources, b?: Sources): boolean {
   if (!a || !b || a.length !== b.length) return false;
   const set = new Set(b.map((s) => `${cleanURL(s.src)}|${s.type}|${s.media}`));
@@ -139,20 +157,22 @@ export function addTracks(tracks: TrackLike | Iterable<TrackLike> = [], medium: 
 export function getTracks(medium: HTMLElement, cues = false): TrackLike[] {
   const tracks = medium.querySelectorAll<HTMLTrackElement>(!cues ? "track" : "track:is([kind='captions'], [kind='subtitles'])"),
     _tracks: TrackLike[] = [];
-  tracks.forEach((track) => {
+  for (const track of tracks) {
     const obj: Record<string, any> = {};
     putTrackDetails(track, obj), _tracks.push(obj as TrackLike);
-  });
+  }
   return _tracks;
 }
-export const removeTracks = (medium: HTMLElement): void => medium.querySelectorAll("track")?.forEach((track) => (track.kind === "subtitles" || track.kind === "captions") && track.remove());
+export const removeTracks = (medium: HTMLElement, tracks = medium?.querySelectorAll("track")): void => {
+  if (tracks) for (const track of tracks) if (track.kind === "subtitles" || track.kind === "captions") track.remove();
+};
 export function isSameTracks(a?: Tracks, b?: Tracks): boolean {
   if (!a || !b || a.length !== b.length) return false;
   const set = new Set(b.map((t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}|${t.default}`));
   return a.every((t) => set.has(`${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}|${t.default}`));
 }
 const isTrack = (type: TrackType, term: any) => `${type}Track` in window && term instanceof (window as any)[`${type}Track`];
-export function getTrackIdx(medium: HTMLMediaElement, type: TrackType, term: any = "active", list = (medium as any)[`${type.toLowerCase()}Tracks`]): number {
+export function getTrackIdx(medium: HTMLMediaElement, type: TrackType = "Text", term: any = "active", list = (medium as any)[`${type.toLowerCase()}Tracks`]): number {
   if (isNum(term)) return term;
   if (list && term === "active") {
     if (type === "Text") for (let i = 0; i < +list.length; i++) if (list[i].mode === "showing") return i;
@@ -166,7 +186,7 @@ export function getTrackIdx(medium: HTMLMediaElement, type: TrackType, term: any
   }
   return -1;
 }
-export function setCurrentTrack(medium: HTMLMediaElement, type: TrackType, term: any, flush = false, list = (medium as any)[`${type.toLowerCase()}Tracks`]): void {
+export function setCurrentTrack(medium: HTMLMediaElement, type: TrackType = "Text", term: any, flush = false, list = (medium as any)[`${type.toLowerCase()}Tracks`]): void {
   const idx = getTrackIdx(medium, type, term, list);
   if (list && type !== "Video") for (let i = 0; i < list.length; i++) type === "Text" ? (list[i].mode = i === idx ? "showing" : flush ? "disabled" : "hidden") : (list[i].enabled = i === idx);
   else list?.[idx] && (list[idx].selected = true);
@@ -175,7 +195,7 @@ export function setCurrentTrack(medium: HTMLMediaElement, type: TrackType, term:
 // Capbailities
 export const DUMMY_VID = createEl("video");
 export const DUMMY_AUD = createEl("audio");
-export function canCtrlVolume(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
+export function canUseVolume(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
   try {
     const prev = dummy.volume;
     dummy.volume = 0.5;
@@ -185,10 +205,8 @@ export function canCtrlVolume(type: MediaType = "video", dummy = type === "video
     return false;
   }
 }
-export function canMuteVolume(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
-  return !!dummy && "muted" in dummy;
-}
-export function canCtrlRate(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
+export const canMuteVolume = (type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean => !!dummy && "muted" in dummy;
+export function canUseRate(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
   try {
     const prev = dummy.playbackRate;
     dummy.playbackRate = 0.5;
@@ -198,20 +216,13 @@ export function canCtrlRate(type: MediaType = "video", dummy = type === "video" 
     return false;
   }
 }
-export function canTextTracks(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
-  return !!dummy && "textTracks" in dummy;
-}
-export function canVideoTracks(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
-  return !!dummy && "videoTracks" in dummy;
-}
-export function canAudioTracks(type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean {
-  return !!dummy && "audioTracks" in dummy;
-}
+export const canTextTracks = (type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean => !!dummy && "textTracks" in dummy;
+export const canVideoTracks = (type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean => !!dummy && "videoTracks" in dummy;
+export const canAudioTracks = (type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean => !!dummy && "audioTracks" in dummy;
 
 // ============ Caption/Subtitle Utilities ============
 export const stripTags = (text: string): string => text.replace(/<(\/)?([a-z0-9.:]+)([^>]*)>/gi, "");
 
-// SRT/VTT Conversion
 export function srtToVtt(srt: string, vttLines: string[] = ["WEBVTT", ""]): string {
   const input = srt.replace(/\r\n?/g, "\n").trim();
   for (const block of input.split(/\n{2,}/)) {
@@ -242,13 +253,11 @@ export function parseVttText(text: string): string {
       state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}</span>` : state.c;
       state.p = tag_n;
       state.c = "";
-    } else {
-      if (cls) state.c += ["c", "v", "lang"].includes(low) ? "</span>" : `</${low}>`;
-      else if (["b", "i", "u", "ruby", "rt"].includes(low)) state.c += `<${low}>`;
-      else if (low === "c") state.c += `<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`;
-      else if (low === "v") state.c += `<span data-part="voice"${rest.trim() ? ` title="${esc(rest.trim())}"` : ""}>`;
-      else if (low === "lang") state.c += `<span lang="${esc(rest.trim())}">`;
-    }
+    } else if (cls) state.c += ["c", "v", "lang"].includes(low) ? "</span>" : `</${low}>`;
+    else if (["b", "i", "u", "ruby", "rt"].includes(low)) state.c += `<${low}>`;
+    else if (low === "c") state.c += `<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`;
+    else if (low === "v") state.c += `<span data-part="voice"${rest.trim() ? ` title="${esc(rest.trim())}"` : ""}>`;
+    else if (low === "lang") state.c += `<span lang="${esc(rest.trim())}">`;
     state.l = state.tag.lastIndex;
   }
   const lChunk = text.slice(state.l);
@@ -260,7 +269,7 @@ export function formatVttLine(p: string, maxChars: number): string[] {
   const state = { tokens: p.match(/<[^>]+>|\S+/g) || [], stack: [] as string[], parts: [] as string[], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false },
     updateTags = () => ((state.openStr = state.stack.map((n) => `<${n}>`).join("")), (state.closeStr = state.stack.reduceRight((a, n) => a + `</${n}>`, ""))),
     flush = () => state.line && (state.parts.push(state.line + state.closeStr), (state.line = (state.timeTag || "") + state.openStr), (state.len = 0), (state.lastWasTag = true));
-  state.tokens.forEach((tok) => {
+  for (const tok of state.tokens) {
     const tag = tok[0] === "<",
       closeTag = tag && tok[1] === "/";
     if (tag) {
@@ -268,16 +277,20 @@ export function formatVttLine(p: string, maxChars: number): string[] {
       const m = tok.match(/^<\/?\s*([a-z0-9._:-]+)/i),
         n = m?.[1] || "",
         timing = /^\d/.test(n);
-      if (timing) return (state.timeTag = tok), (state.line += tok), (state.lastWasTag = true);
+      if (timing) {
+        (state.timeTag = tok), (state.line += tok), (state.lastWasTag = true);
+        continue;
+      }
       if (!closeTag && !tok.endsWith("/>") && n) state.stack.push(n), updateTags();
       if (closeTag && state.stack.length) state.stack.pop(), updateTags();
-      return (state.lastWasTag = true), (state.line += tok);
+      (state.lastWasTag = true), (state.line += tok);
+      continue;
     }
     const len = stripTags(tok).length,
       needSpace = state.line && !state.lastWasTag;
     if (state.len + (needSpace ? 1 : 0) + len > maxChars) flush();
     if (needSpace) (state.line += " "), (state.len += 1);
     (state.line += tok), (state.len += len), (state.lastWasTag = false);
-  });
+  }
   return flush(), state.parts;
 }

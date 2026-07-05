@@ -1,3 +1,10 @@
+.tmg-host-container :is([disabled], .tmg-media-control-disabled, #o#o#o#o#o) {
+  --tmg-media-current-control-color: var(--tmg-media-disabled-color);
+  cursor: not-allowed;
+}
+.tmg-host-container :is([disabled], #o#o#o#o#o) {
+  filter: grayscale(100%);
+}
 .tmg-host-container :is(.tmg-media-control-hidden, #o#o#o#o#o) {
   display: none;
   pointer-events: none;
@@ -6,15 +13,12 @@
   opacity: 0.75;
   cursor: default;
 }
-.tmg-host-container :is(.tmg-media-control-disabled, #o#o#o#o#o) {
-  --tmg-media-current-controls-color: var(--tmg-media-disabled-color);
-}
 .tmg-media-container:is(.tmg-media-inactive, .tmg-media-disabled, #o#o#o#o#o) {
-  --tmg-media-icons-color: var(--tmg-media-disabled-color);
-  --tmg-media-controls-color: var(--tmg-media-disabled-color);
-  --tmg-media-text-color: var(--tmg-media-disabled-color);
+  /* --tmg-media-icons-color: var(--tmg-media-disabled-color); */
+  --tmg-media-control-color: var(--tmg-media-disabled-color);
+  /* --tmg-media-text-color: var(--tmg-media-disabled-color); */
 }
-.tmg-media-container:is(.tmg-media-disabled, .tmg-media-locked, :has([class$="toast-container"]), #o#o#o#o#o) {
+.tmg-media-container:is(.tmg-media-disabled, .tmg-media-locked, #o#o#o#o#o) {
   overflow: hidden;
 }
 .tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) {
@@ -30,7 +34,7 @@
 .tmg-media-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
   display: none;
 }
-.tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) .tmg-media {
+.tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-filter) grayscale(100%);
 }
 .tmg-media-container:is(.tmg-media-inactive, #o#o#o#o#o) .tmg-media-container-content::after {
@@ -45,6 +49,7 @@
   font-size: calc(var(--tmg-media-current-unit) / 1.15);
   font-weight: 500;
   text-align: center;
+  opacity: 0.95;
   padding: calc(var(--tmg-media-current-unit) / 2);
   background: var(--tmg-media-disabled-background);
   pointer-events: none;

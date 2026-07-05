@@ -1,12 +1,14 @@
-export interface FastPlay {
+import { UISettings } from "@defs/UIOptions";
+
+export interface FastPlayConfig {
   playbackRate: number;
   key: boolean;
   pointer: {
-    type: string;
+    type: UISettings<string>;
     threshold: number;
     inset: number;
   };
-  reset: boolean;
+  resetPaused: boolean;
   rewind: boolean;
 }
 

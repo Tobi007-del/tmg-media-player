@@ -1,6 +1,6 @@
-import { Frame } from "./types";
+import { FrameConfig } from "./types";
 
-export const FRAME_BUILD: Partial<Frame> = {
+export const FRAME_BUILD: Partial<FrameConfig> = {
   disabled: false,
   fps: 30,
   captureAutoClose: 15000,

@@ -29,7 +29,7 @@ export class BigPlayPauseButton extends BaseComponent<BigPlayPauseConfig, Compon
 
   public syncARIA(): void {
     this.state.label = this.media.status.ended ? "Replay" : this.media.state.paused ? "Play" : "Pause";
-    this.state.cmd = formatKeyForDisplay(this.ctlr.settings.keys.shortcuts.playPause);
+    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.playPause);
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

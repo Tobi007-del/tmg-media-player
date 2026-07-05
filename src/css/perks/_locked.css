@@ -17,7 +17,7 @@
 .tmg-media-container.tmg-media-locked:is(.tmg-media-locked-overlay, :has(:focus-visible)) .tmg-media-screen-locked-wrapper {
   transform: translateY(0);
   opacity: 1;
-  pointer-events: all;
+  pointer-events: auto;
 }
 .tmg-media-screen-locked-btn {
   height: calc(var(--tmg-media-current-unit) * 1.75);

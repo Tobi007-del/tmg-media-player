@@ -42,4 +42,13 @@ export class AsyncQueue {
     const job = this.jobs.find((j) => j.id === id);
     return job && (job.cancelled = true), !!job?.cancelled; // stops when it should have for metrics, can't cancel a running job
   }
+
+  public dropAll(): void {
+    for (const job of this.jobs) job.resolve({ success: false, cancelled: true, dropped: true });
+    this.jobs = [];
+  }
+
+  public cancelAll(): void {
+    for (const job of this.jobs) job.cancelled = true;
+  }
 }

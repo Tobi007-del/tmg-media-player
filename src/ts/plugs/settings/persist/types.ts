@@ -1,3 +1,3 @@
-import { PersistConfig } from "sia-reactor/modules";
+import { PersistConfig as ReactorPersistConfig } from "sia-reactor/modules";
 
-export type Persist = PersistConfig<any>;
+export interface PersistConfig extends ReactorPersistConfig<any> {}

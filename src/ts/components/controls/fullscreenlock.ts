@@ -1,7 +1,6 @@
-﻿import { IconRegistry } from "@core/registries";
+import { IconRegistry } from "@core/registries";
 import { BaseComponent, ComponentState } from "../base";
 import { createEl } from "@utils/dom";
-import { IS_MOBILE } from "@utils/browser";
 
 export type FullscreenLockConfig = undefined;
 
@@ -17,6 +16,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   public override wire(): void {
     // Features Gating
     this.media.on("features.fullscreen", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.locked", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
@@ -26,7 +26,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   }
 
   protected handleClick(): void {
-    this.ctlr.settings.locked.disabled = false;
+    this.media.intent.locked = true;
   }
 
   public syncARIA(): void {
@@ -35,7 +35,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   }
 
   protected override get canShow(): boolean {
-    return !IS_MOBILE && this.media.state.fullscreen && this.media.features.fullscreen;
+    return this.media.state.fullscreen && !!this.media.features.fullscreen && !!this.media.features.locked;
   }
 }
 

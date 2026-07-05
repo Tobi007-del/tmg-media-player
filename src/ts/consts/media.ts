@@ -1,14 +1,15 @@
 import { createTimeRanges } from "@utils/time";
 import type { MediaIntent, MediaState, MediaStatus, MediaSettings } from "@defs/contract";
+import { DeepPartial } from "sia-reactor";
 
 // DEFAULT STATE (The Reality)
-export const MEDIA_STATE_BUILD: MediaState = {
+export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   // Core
-  src: "",
+  src: "", // 1st for correct fanout sequence
   currentTime: 0,
   paused: true,
   // Engine
-  volume: 1,
+  volume: 100,
   muted: false,
   brightness: 100,
   dark: false,
@@ -18,9 +19,10 @@ export const MEDIA_STATE_BUILD: MediaState = {
   fullscreen: false,
   theater: false,
   miniplayer: false,
+  locked: false,
   // Casting
   airplay: false,
-  chromecast: false,
+  cast: false,
   // VR / XR
   xrSession: false,
   xrMode: "inline",
@@ -34,11 +36,13 @@ export const MEDIA_STATE_BUILD: MediaState = {
   panningZ: 0,
   xrInputSource: [],
   // Tracks & Streaming
+  currentChapter: -1,
   currentTextTrack: -1,
   currentAudioTrack: -1,
   currentVideoTrack: -1,
-  autoLevel: true, // Adaptive Streaming on by default
   currentLevel: -1,
+  textVisible: true,
+  autoLevel: true, // Adaptive Streaming on by default
   // HTML Attributes
   poster: "",
   autoplay: false,
@@ -52,15 +56,17 @@ export const MEDIA_STATE_BUILD: MediaState = {
   // HTML Lists
   sources: [],
   tracks: [],
+  // Live Content
+  live: true,
   // Misc
   objectFit: "contain",
 };
 
 // DEFAULT INTENT (The Wishes)
-export const MEDIA_INTENT_BUILD: MediaIntent = MEDIA_STATE_BUILD as MediaIntent; // Intent starts as State but can diverge
+export const MEDIA_INTENT_BUILD: Partial<MediaIntent> = MEDIA_STATE_BUILD as MediaIntent; // Intent starts as State but can diverge
 
 // DEFAULT INFO (The Facts)
-export const MEDIA_STATUS_BUILD: MediaStatus = {
+export const MEDIA_STATUS_BUILD: Partial<MediaStatus> = {
   // Network
   readyState: 0, // HAVE_NOTHING
   networkState: 0, // EMPTY
@@ -88,16 +94,39 @@ export const MEDIA_STATUS_BUILD: MediaStatus = {
   audioTracks: [],
   videoTracks: [],
   levels: [],
-  // VR
-  xrCapabilities: null,
   // Active
   activeCue: null,
+  // VR
+  xrCapabilities: null,
+  // Live Content
+  isLive: false,
+  canSeekLive: false,
 };
 
 // DEFAULT SETTINGS (The Config)
-export const MEDIA_SETTINGS_BUILD: MediaSettings = {
+export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
+  // Defaults
   defaultMuted: false,
   defaultPlaybackRate: 1,
-  protection: null,
+  // Streams
   srcObject: null,
+  // Metadata
+  metadata: {
+    title: "",
+    artist: "",
+    profile: "",
+    album: "",
+    artwork: [],
+    chapterInfo: [],
+    links: {
+      title: "",
+      artist: "",
+      profile: "",
+    },
+    allowOverride: true,
+  },
+  protection: null,
+  // Live Content
+  liveTolerance: 6,
+  minDVRWindow: 60,
 };

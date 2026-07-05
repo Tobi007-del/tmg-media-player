@@ -1,39 +1,50 @@
-.tmg-media-timeline-container,
-.tmg-media-timeline,
-.tmg-media-range-container,
-.tmg-media-container input[type="range"] {
-  height: var(--tmg-media-range-track-height);
-}
-.tmg-media-timeline-container,
-.tmg-media-range-bars-wrapper,
-.tmg-media-range-container,
-.tmg-media-container input[type="range"] {
-  border-radius: calc(var(--tmg-media-range-track-height) / 2);
-}
-/* .tmg-media-range-container, .tmg-media-range-bars-wrapper > *, .tmg-media-range-thumb {
-  inset-inline-start: 0;
-  inset-block-end: 0;
-  transform-origin: inset-inline-start inset-block-end;
-} */
 .tmg-media-range-container {
   position: relative;
-  width: 100%;
+  inline-size: 100%;
+  block-size: calc(var(--tmg-media-range-track-block-size) * 2); /* pointer allowance */
   display: flex;
   align-items: center;
   touch-action: none;
   cursor: pointer;
   container-type: size;
 }
-.tmg-media-range-bars-wrapper {
-  overflow: hidden;
-  transition: transform var(--tmg-media-fade-transition-time) ease-in-out;
+:where(.tmg-media-range-container, .tmg-media-container input[type="range"]):not([readonly]):active {
+  cursor: grabbing;
 }
 .tmg-media-range-bars-wrapper,
+.tmg-media-range-marks-wrapper,
 .tmg-media-range-bar {
   position: absolute;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+.tmg-media-range-bars-wrapper,
+.tmg-media-range-marks-wrapper,
+.tmg-media-container input[type="range"] {
+  block-size: var(--tmg-media-range-track-block-size);
+  border-radius: inherit;
+}
+.tmg-media-range-bars-wrapper {
+  block-size: var(--tmg-media-range-track-block-size);
+  display: flex;
+}
+.tmg-media-range-bars-wrapper,
+.tmg-media-range-chunk {
+  transition: transform var(--tmg-media-switch-transition-time) var(--tmg-media-bounce-timing);
+}
+.tmg-media-container:not(.tmg-media-mobile) .tmg-media-range-container.tmg-media-control-previewing .tmg-media-range-bars-wrapper {
+  transform: scaleY(1.5);
+}
+.tmg-media-range-bar {
+  background-size: calc(var(--tmg-media-current-range-pos) * 100cqw) 100% !important;
+  background-position-x: calc(var(--tmg-media-current-chunk-st) * -100cqw) !important;
+  background-repeat: no-repeat !important;
+  transition: opacity var(--tmg-media-fade-transition-time) ease-in-out;
+}
+.tmg-media-range-bar:not(.tmg-media-range-base-bar) {
+  inline-size: 0; /* initial UI state */
 }
 .tmg-media-range-base-bar {
   background: var(--tmg-media-range-track-base-color);
@@ -42,29 +53,36 @@
   background: var(--tmg-media-range-track-color);
 }
 .tmg-media-range-preview-bar {
+  opacity: 0;
   background: var(--tmg-media-range-track-preview-color);
+}
+.tmg-media-range-container.tmg-media-control-previewing:not(.tmg-media-control-scrubbing) .tmg-media-range-preview-bar {
+  opacity: 1;
 }
 .tmg-media-range-thumb {
   position: absolute;
-  top: 50%;
+  inset-block-start: 50%;
+  cursor: grab;
+  border-radius: 50%;
   translate: -50% -50%;
   transition: transform var(--tmg-media-switch-transition-time) var(--tmg-media-bounce-timing);
 }
-:where(.tmg-media-range-container[data-cancel-scrub]) .tmg-media-range-thumb {
+:where(.tmg-media-range-container.tmg-media-control-previewing) .tmg-media-range-thumb {
+  transform: scale(1.15);
+}
+:where(.tmg-media-range-container.tmg-media-control-cancel-scrub) .tmg-media-range-thumb {
   transform: scale(0.7);
 }
 .tmg-media-range-thumb,
 .tmg-media-container input::-webkit-slider-thumb {
-  width: calc(var(--tmg-media-range-thumb-size) * 0.9);
-  height: calc(var(--tmg-media-range-thumb-size) * 0.9);
+  inline-size: var(--tmg-media-range-thumb-size);
+  block-size: var(--tmg-media-range-thumb-size);
   background: var(--tmg-media-range-thumb-background);
-  border-radius: 50%;
 }
 .tmg-media-container input::-moz-range-thumb {
-  width: calc(var(--tmg-media-range-thumb-size) * 0.9);
-  height: calc(var(--tmg-media-range-thumb-size) * 0.9);
+  inline-size: var(--tmg-media-range-thumb-size);
+  block-size: var(--tmg-media-range-thumb-size);
   background: var(--tmg-media-range-thumb-background);
-  border-radius: 50%;
 }
 .tmg-media-container input[type="range"] {
   -webkit-appearance: none;
@@ -81,36 +99,86 @@
   appearance: none;
   border: none;
 }
-.tmg-media-range-container:active .tmg-media-range-thumb,
-.tmg-media-container input:active::-webkit-slider-thumb {
-  box-shadow: 0 0 0 calc(var(--tmg-media-current-unit) / 10) var(--t007-ripple-color);
+.tmg-media-range-container:is(:active, :focus-visible, .tmg-media-control-scrubbing) .tmg-media-range-thumb,
+.tmg-media-container input:is(:active, :focus-visible)::-webkit-slider-thumb {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 calc(var(--tmg-media-current-unit) / 10) var(--t007-ripple-color);
 }
-.tmg-media-container input:active::-moz-slider-thumb {
-  box-shadow: 0 0 0 calc(var(--tmg-media-current-unit) / 10) var(--t007-ripple-color);
+.tmg-media-container input:is(:active, :focus-visible, .tmg-media-control-scrubbing)::-moz-slider-thumb {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 calc(var(--tmg-media-current-unit) / 10) var(--t007-ripple-color);
 }
-/* enhancements */
+.tmg-media-range-container[readonly] .tmg-media-range-thumb,
+.tmg-media-container input[readonly]::-webkit-slider-thumb {
+  display: none;
+}
+.tmg-media-range-container,
+.tmg-media-container input[type="range"] {
+  border-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+}
+.tmg-media-range-chunk:first-child {
+  border-start-start-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+  border-end-start-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+}
+.tmg-media-range-chunk:last-child {
+  border-start-end-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+  border-end-end-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+}
+.tmg-media-range-chunk {
+  position: relative;
+  block-size: 100%;
+  overflow: hidden;
+  pointer-events: auto;
+  background-clip: padding-box;
+}
+.tmg-media-range-chunk:not(:last-child) {
+  border-inline-end: var(--tmg-media-range-divs-gap) solid transparent;
+}
+.tmg-media-range-container.tmg-media-control-previewing .tmg-media-range-bars-wrapper:has(> * + *) :where(.tmg-media-range-chunk.tmg-media-chunk-preview-active) {
+  transform: scaleY(1.667);
+}
+/* ENHANCEMENTS */
+.tmg-media-range-marks-wrapper {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.tmg-media-range-mark {
+  position: absolute;
+  inline-size: 1px; /** default */
+  block-size: 100%;
+  opacity: 0.95;
+  transform: scaleY(0.5);
+  border: 0.01px solid rgb(from var(--tmg-media-brand-inverse-color) r g b / 0.75);
+  background: var(--tmg-media-range-mark-background);
+  pointer-events: auto;
+}
+.tmg-media-range-step-mark {
+  transform: translateX(-50%) scaleY(0.5);
+  border: none;
+}
 .tmg-media-range-tooltip,
 .tmg-media-range-tooltip::after {
   position: absolute;
-  left: 50%;
+  inset-inline-start: 50%;
   transform: translateX(-50%);
-  font-size: calc(var(--tmg-media-range-thumb-size) / 1.5);
+  font-size: calc(var(--tmg-media-range-thumb-size) / 1.2);
 }
 .tmg-media-range-tooltip {
-  bottom: calc(100% + (var(--tmg-media-current-unit) / 5));
-  min-width: calc(var(--tmg-media-current-unit) / 1.5);
+  inset-block-end: calc(100% + (var(--tmg-media-current-unit) / 5));
+  min-inline-size: calc(var(--tmg-media-current-unit) / 1.5);
+  padding-inline: calc(var(--tmg-media-current-unit) / 13);
   color: var(--tmg-media-theme-inverse-color);
   font-weight: 700;
   text-align: center;
   border-radius: var(--tmg-media-current-unit);
-  background: var(--tmg-media-current-controls-color);
+  background: var(--tmg-media-current-control-color);
+  white-space: pre;
 }
 .tmg-media-range-tooltip::after {
   content: "";
-  top: 90%;
+  inset-block-start: 90%;
   border-width: calc(var(--tmg-media-current-unit) / 5);
   border-style: solid;
-  border-color: var(--tmg-media-current-controls-color) transparent transparent transparent;
+  border-color: var(--tmg-media-current-control-color) transparent transparent transparent;
 }
 .tmg-media-range-container:not([data-tooltip]) .tmg-media-range-tooltip,
 .tmg-media-range-container:not(.tmg-media-control-active, :hover, :focus-visible) .tmg-media-range-tooltip {

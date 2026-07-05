@@ -1,32 +1,33 @@
-.tmg-media-container-content svg,
-.tmg-media-time-and-duration-btn,
-.tmg-media-playback-rate-btn {
-  color: var(--tmg-media-current-controls-color);
+.tmg-media-container .tmg-media-container-content {
+  color: var(--tmg-media-current-control-color);
+}
+.tmg-media-container-content svg {
+  color: currentColor;
 }
 .tmg-media-container-content button:is(:hover, :focus-visible) {
-  --tmg-media-current-controls-color: var(--tmg-media-controls-active-color);
+  --tmg-media-current-control-color: var(--tmg-media-control-active-color);
 }
-.tmg-media-side-controls-wrapper button {
-  background: var(--tmg-media-controls-background);
-  border-radius: var(--tmg-media-controls-border-radius);
-  padding: var(--tmg-media-controls-padding);
+:is(.tmg-media-side-controls-wrapper button, .tmg-media-control-btn) {
+  background: var(--tmg-media-control-background);
+  border-radius: var(--tmg-media-control-border-radius);
+  padding: var(--tmg-media-control-padding);
   transition-property: background-color, scale;
   transition-duration: var(--tmg-media-fade-transition-time);
   transition-timing-function: ease;
 }
-.tmg-media-side-controls-wrapper button:is(:hover, :focus-visible) {
-  background: var(--tmg-media-controls-active-background);
+:is(.tmg-media-side-controls-wrapper button, .tmg-media-control-btn):is(:hover, :focus-visible) {
+  background: var(--tmg-media-control-active-background);
 }
-.tmg-media-side-controls-wrapper button:has(svg):active {
-  scale: var(--tmg-media-controls-active-scale);
+:is(.tmg-media-side-controls-wrapper button, .tmg-media-control-btn):has(svg):active {
+  scale: var(--tmg-media-control-active-scale);
 }
 .tmg-media-vb-container.tmg-media-control-dragging > *:not(.tmg-media-vb-btn),
 .tmg-media-container:not(.tmg-media-miniplayer) :is(.tmg-media-miniplayer-remove-btn, .tmg-media-miniplayer-expand-btn),
 .tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-fullscreen) .tmg-media-theater-btn,
 .tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player) .tmg-media-apt-controls-wrapper :is(.tmg-media-prev-btn, .tmg-media-play-pause-btn, .tmg-media-next-btn),
 .tmg-media-container.tmg-media-picture-in-picture :is(.tmg-media-cover-curtain, button:has(.tmg-media-play-icon, .tmg-media-pause-icon, .tmg-media-prev-icon, .tmg-media-next-icon), .tmg-media-brightness-container, .tmg-media-buffer, .tmg-media-object-fit-btn),
-.tmg-host-container[data-size-tier^="xxxxx"] :is(.tmg-media-profile-link, .tmg-media-artist-wrapper, .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-seek-thumb, .tmg-media-side-controls-wrapper > *:not(.tmg-media-play-pause-btn, .tmg-media-next-btn, .tmg-media-prev-btn, .tmg-media-captions-btn:not(.tmg-media-control-disabled), .tmg-media-fullscreen-btn, .tmg-media-volume-container, .tmg-media-time-and-duration-btn)),
-.tmg-media-container:has([data-notify^="playbackrate"], [data-notify^="volume"], [data-notify^="brightness"], [data-notify^="objectfit"], [data-notify="capture"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
+.tmg-host-container[data-size-tier^="xxxxx"] :is(.tmg-media-profile-link, .tmg-media-artist-wrapper, .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-thumb, .tmg-media-side-controls-wrapper > *:not(.tmg-media-play-pause-btn, .tmg-media-next-btn, .tmg-media-prev-btn, .tmg-media-captions-btn:not(.tmg-media-control-disabled), .tmg-media-fullscreen-btn, .tmg-media-volume-container, .tmg-media-time-btn, .tmg-media-duration-btn, .tmg-media-time-and-duration-btn)),
+.tmg-media-container:has([data-notify^="playbackrate"], [data-notify^="volume"], [data-notify^="brightness"], [data-notify^="objectfit"], [data-notify="capture"], [data-notify="cast"], [data-notify="airplay"], [data-notify="timer"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
   display: none;
 }
 .tmg-media-container.tmg-media-paused .tmg-media-pause-icon,
@@ -41,15 +42,9 @@
 .tmg-media-container:not([data-track-kind="subtitles"]) .tmg-media-subtitles-icon,
 .tmg-media-container:is(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-enter-picture-in-picture-icon,
 .tmg-media-container:not(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-leave-picture-in-picture-icon,
-.tmg-media-object-fit-contain-icon,
-.tmg-media-object-fit-cover-icon,
-.tmg-media-object-fit-fill-icon,
-.tmg-media-volume-high-icon,
-.tmg-media-volume-low-icon,
-.tmg-media-volume-muted-icon,
-.tmg-media-brightness-high-icon,
-.tmg-media-brightness-low-icon,
-.tmg-media-brightness-dark-icon {
+.tmg-media-container:not(.tmg-media-is-live) :is(.tmg-media-time-btn, .tmg-media-time-and-duration-btn) .tmg-media-live-badge,
+.tmg-media-container.tmg-media-is-live :is(.tmg-media-time-btn, .tmg-media-time-and-duration-btn) > *:not(.tmg-media-live-badge),
+:is(.tmg-media-object-fit-contain-icon, .tmg-media-object-fit-cover-icon, .tmg-media-object-fit-fill-icon, .tmg-media-volume-high-icon, .tmg-media-volume-low-icon, .tmg-media-volume-muted-icon, .tmg-media-brightness-high-icon, .tmg-media-brightness-low-icon, .tmg-media-brightness-dark-icon) {
   display: none;
 }
 .tmg-media-container[data-object-fit="contain"] .tmg-media-object-fit-cover-icon,
@@ -63,15 +58,12 @@
 .tmg-media-container[data-brightness-level="dark"] .tmg-media-brightness-dark-icon {
   display: block;
 }
-.tmg-media-time-and-duration-btn,
+.tmg-media-control-text-btn,
 .tmg-media-playback-rate-btn {
-  min-height: var(--tmg-media-current-unit);
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-.tmg-media-time-and-duration-btn {
   gap: 0.5ch;
+  min-height: var(--tmg-media-current-unit);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .tmg-media-playback-rate-btn {
   max-width: calc(var(--tmg-media-current-unit) * 2);
@@ -79,6 +71,23 @@
 .tmg-media-container.tmg-media-scrubbing .tmg-media-current-time,
 .tmg-media-playback-rate-btn {
   font-weight: 500;
+}
+.tmg-media-live-badge::before {
+  --pulse-color: #757575;
+  content: "";
+  display: inline-block;
+  width: 0.8ch;
+  height: 0.8ch;
+  border-radius: 50%;
+  background-color: var(--pulse-color);
+  margin-right: 0.7ch;
+  vertical-align: 4%;
+}
+.tmg-media-live-badge.tmg-media-control-live::before {
+  --pulse-color: red;
+}
+.tmg-media-container:not(.tmg-media-paused) .tmg-media-live-badge::before {
+  animation: tmg-live-pulse 2s infinite ease-in-out;
 }
 .tmg-media-captions-btn {
   position: relative;

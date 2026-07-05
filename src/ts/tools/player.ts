@@ -32,7 +32,7 @@ export class Player {
   }
 
   private queryBuild(): boolean {
-    return !this.active ? true : (this.notice({ error: "Already deployed the custom controls of your build configuration", tip: "Consider setting your build configuration before attaching your media element" }), false);
+    return !this.active || (this.notice({ error: "Already deployed the custom controls of your build configuration", tip: "Consider setting your build configuration before attaching your media element" }), false);
   }
   public configure(build: BuildParam): void {
     if (this.queryBuild() && isObj(build)) this._build = mergeObjs(this._build, parsePathObj(build));
@@ -42,25 +42,27 @@ export class Player {
     if (isIter(medium)) return this.notice({ error: "An iterable argument cannot be attached to the TMG media player", tip: "Consider looping the iterable argument to instantiate a new 'tmg.Player' for each" });
     if (this.active) return medium;
     medium.tmgPlayer?.detach();
-    Controllers.push(this._build.id as any); // dummy for liveness
+    Controllers.push(this.build.id as any); // dummy for liveness
+    this.build.debug && console.time(`TMG Controller ${Controllers.length} Attach`);
     medium.tmgPlayer = this;
     this.medium = medium;
     await this.fetchOptions(), await this.deployController();
-    return this.controller?.fire("tmgattached", this.controller.payload), medium;
+    this.build.debug && console.timeEnd(`TMG Controller ${Controllers.indexOf(this.controller!) + 1} Attach`);
+    return this.controller?.fire("tmgattach", this.controller.payload), medium;
   }
   public detach() {
     if (!this.active) return;
     const medium = this.controller?.destroy() ?? ({} as any);
     this.controller && Controllers.splice(Controllers.indexOf(this.controller), 1);
-    medium.classList?.remove(`tmg-${this._build.mediaType}`, "tmg-media", "tmg-host");
+    medium.classList?.remove(`tmg-${this.build.mediaType}`, "tmg-media", "tmg-host");
     medium.tmgcontrols = this.active = false;
-    // this.controller?.fire("tmgdetached", this.controller.payload);
+    // this.controller?.fire("tmgdetach", this.controller.payload);
     return (medium.tmgPlayer = this.controller = this.medium = null), medium;
   }
 
   public async fetchOptions() {
     if (!this.medium) return;
-    if (this.medium.getAttribute("tmg")?.includes(".json")) {
+    if (this.medium.getAttribute("tmg")?.includes(".json"))
       await fetch(this.medium.getAttribute("tmg")!)
         .then((res) => {
           if (!res.ok) throw new Error(`JSON file not found at provided URL!. Status: ${res.status}`);
@@ -68,34 +70,30 @@ export class Player {
         })
         .then((json) => this.configure(json))
         .catch(({ message }) => this.notice({ error: message, tip: "A valid JSON file is required for parsing your build configuration" }));
-    }
     const build = {} as BuildParam,
       attributes = this.medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
-    attributes?.forEach((attr) => setHTMLConfig<BuildParam>(build, attr as `tmg--${Paths<CtlrConfig, "--">}`, this.medium!.getAttribute(attr)!));
-    if (this.medium instanceof HTMLVideoElement && this.medium.poster) this.configure({ "media.artwork[0].src": this.medium.poster } as any);
+    for (const attr of attributes) setHTMLConfig<BuildParam>(build, attr as any, this.medium!.getAttribute(attr)!);
     this.configure(build);
   }
 
   private async deployController() {
     if (this.active || !this.medium?.isConnected) return;
-    if (this._build.playlist?.[0]) this.configure(mergeObjs(structuredClone(PLAYLIST_ITEM_BUILD), parsePathObj(this._build.playlist[0])) as BuildParam);
+    if (this.build.playlist?.content?.[0]) this.configure(mergeObjs(structuredClone(PLAYLIST_ITEM_BUILD), parsePathObj(this.build.playlist.content[0])) as BuildParam);
     if (!(this.medium instanceof HTMLMediaElement)) return this.notice({ error: `Could not deploy custom controls on the '${(this.medium as HTMLElement).tagName}' element as it is not supported`, warning: "Only the 'VIDEO' and 'AUDIO' elements are currently supported", tip: "" });
-    this._build.mediaType = this.medium.tagName.toLowerCase() as MediaType;
+    this.build.mediaType = this.medium.tagName.toLowerCase() as MediaType;
     this.medium.controls = false;
     this.medium.tmgcontrols = this.active = true;
-    this.medium.classList.add(`tmg-${this._build.mediaType}`, "tmg-media", "tmg-host");
+    this.medium.classList.add(`tmg-${this.build.mediaType}`, "tmg-media", "tmg-host");
     await Promise.all([loadResource(window.TMG_MEDIA_CSS_SRC!), loadResource(window.T007_TOAST_JS_SRC!, "script", { module: true }), loadResource(window.T007_INPUT_JS_SRC!, "script")]); // await
-    console.time(`TMG Controller ${Controllers.indexOf(this._build.id as any) + 1} INIT`);
-    Controllers[Controllers.indexOf(this._build.id as any)] = this.controller = new Controller(this.medium, this._build);
-    console.timeEnd(`TMG Controller ${Controllers.indexOf(this.controller) + 1} INIT`);
+    Controllers[Controllers.indexOf(this.build.id as any)] = this.controller = new Controller(this.medium, this._build);
   }
 
   private notice({ error, warning, tip }: Partial<Record<"error" | "warning" | "tip", string>>): void {
-    error && console.error(`[TMG Player] ${error}`), warning && console.warn(`[TMG Player] ${warning}`), tip && console.info(`[TMG Player] ${tip}`);
+    if (this.build.debug) error && console.error(`[TMG Player] ${error}`), warning && console.warn(`[TMG Player] ${warning}`), tip && console.info(`[TMG Player] ${tip}`);
   }
 }
 
-export function getCtlrIndex(ctlr: Controller): number {
+export function getCtlrIdx(ctlr: Controller): number {
   const i = Controllers.indexOf(ctlr.config.id as any);
   return i === -1 ? Controllers.indexOf(ctlr) : i; // a magician never reveals his tricks :)
 }

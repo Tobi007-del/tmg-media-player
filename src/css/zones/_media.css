@@ -13,13 +13,13 @@
 }
 .tmg-host {
   object-fit: var(--tmg-media-object-fit);
+  object-position: var(--tmg-media-object-position);
   will-change: filter;
 }
 .tmg-pseudo-media {
   visibility: hidden;
 }
-.tmg-media,
-.tmg-media-thumbnail {
+:is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-filter);
 }
 :is(*:not(body):has(.tmg-host-container:is(.tmg-media-fullscreen, .tmg-media-theater)), #o#o#o#o#o) {
@@ -57,6 +57,31 @@
   min-height: unset;
   min-width: unset;
 }
-.tmg-media-container:not(:has(.tmg-media-vb-slider:active, .tmg-media-touch-vb-notifier.tmg-media-control-active)) .tmg-media {
-  transition: filter var(--tmg-media-settings-view-transition-time) ease; /* does not interfere with brightness slider */
+.tmg-media-container:not(:has(.tmg-media-vb-slider:active, .tmg-media-touch-vb-notifier.tmg-media-control-active)) :is(.tmg-media, .tmg-media-filtered) {
+  transition: filter var(--tmg-media-settings-view-transition-time) ease;
+}
+
+/* FOREIGN HOST STYLES */
+.tmg-host-div,
+.tmg-host-content {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.tmg-host-content {
+  background: black;
+}
+:is(.tmg-host-content, .tmg-media-object) {
+  position: absolute;
+  top: var(--tmg-media-current-object-top);
+  left: var(--tmg-media-current-object-left);
+  width: var(--tmg-media-current-object-width);
+  height: var(--tmg-media-current-object-height);
+}
+.tmg-foreign-host {
+  width: 100%;
+  height: 100%;
+}
+.tmg-foreign-host[data-hide-ui] {
+  height: 1000%;
 }

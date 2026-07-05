@@ -1,7 +1,6 @@
 import { OptRange } from "@defs/generics";
+import { SliderState } from "@plugs/base/slider";
 
-export interface Brightness extends OptRange {}
+export interface BrightnessConfig extends OptRange {}
 
-export interface BrightnessState {
-  aptValue: number;
-}
+export interface BrightnessState extends SliderState {}

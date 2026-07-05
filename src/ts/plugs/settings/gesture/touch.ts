@@ -1,11 +1,11 @@
-﻿import { GESTURE_TOUCH_BUILD } from "./build";
+import { GESTURE_TOUCH_BUILD } from "./build";
 import { GesturePlug } from "./index";
 import { clamp } from "@utils/num";
 import { setTimeout } from "@utils/fn";
 import { GestureBasePin } from "./base";
-import { GestureTouch } from "./types";
+import { GestureTouchConfig } from "./types";
 
-export class GestureTouchPin extends GestureBasePin<GestureTouch> {
+export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   public static readonly pinName = "touch";
   public static get Plug() {
     return GesturePlug;
@@ -36,7 +36,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
     this.lastY = e.touches[0].clientY;
     this.media.container.addEventListener("touchmove", this.handleInit, { once: true, signal: this.signal });
     this.cancelTimeoutId = setTimeout(() => (this.canCancel = false), this.config.threshold, this.signal);
-    ["touchend", "touchcancel"].forEach((evt) => this.media.container.addEventListener(evt, this.handleEnd, { signal: this.signal }));
+    for (const evt of ["touchend", "touchcancel"]) this.media.container.addEventListener(evt, this.handleEnd, { signal: this.signal });
   }
 
   protected handleInit(e: Event): void {
@@ -92,7 +92,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
 
   protected handleYMove(e: Event): void {
     const te = e as TouchEvent;
-    if (this.canCancel || !this.ctlr.isUIActive("fullscreen")) return this.handleEnd();
+    if (this.canCancel && !this.ctlr.isUIActive("fullscreen")) return this.handleEnd();
     te.preventDefault();
     // prettier-ignore
     this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
@@ -124,20 +124,13 @@ export class GestureTouchPin extends GestureBasePin<GestureTouch> {
       this.yCheck = false;
       this.media.container.removeEventListener("touchmove", this.handleYMove);
       clearTimeout(this.sliderTimeoutId);
-      this.sliderTimeoutId = setTimeout(
-        () => {
-          this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive();
-          this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
-        },
-        this.config.sliderTimeout,
-        this.signal
-      );
-      if (!this.canCancel) this.ctlr.plug("settings.overlay")?.remove();
+      this.sliderTimeoutId = setTimeout(() => (this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive()), this.config.sliderTimeout, this.signal);
+      if (!this.canCancel) this.ctlr.plug("settings.overlay")?.hide();
     }
     clearTimeout(this.cancelTimeoutId);
     this.canCancel = true;
     this.media.container.removeEventListener("touchmove", this.handleInit);
-    ["touchend", "touchcancel"].forEach((evt) => this.media.container.removeEventListener(evt, this.handleEnd));
+    for (const evt of ["touchend", "touchcancel"]) this.media.container.removeEventListener(evt, this.handleEnd);
   }
 }
 

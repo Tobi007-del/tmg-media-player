@@ -5,7 +5,7 @@ export class TouchTimelineNotifier extends BaseNotifier<undefined, ComponentStat
   public static readonly componentName = "touchtimelinenotifier";
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-touch-timeline-notifier" }));
+    return (this.element = createEl("div", { className: "tmg-media-touch-timeline-notifier tmg-media-text-notifier", innerHTML: "Current Time" }));
   }
 }
 

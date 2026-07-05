@@ -37,6 +37,28 @@ import { tripletriangleleft } from "./tripletriangleleft";
 import { tripletriangleright } from "./tripletriangleright";
 import { fwd } from "./fwd";
 import { bwd } from "./bwd";
+import { forward10 } from "./forward10";
+import { backward10 } from "./backward10";
+import { castplaceholder } from "./castplaceholder";
+import { airplayplaceholder } from "./airplayplaceholder";
+import { dragindicator } from "./dragindicator";
+import { deleteicon } from "./deleteicon";
+import { playlist } from "./playlist";
+import { autoplay } from "./autoplay";
+import { loop } from "./loop";
+import { quality } from "./quality";
+import { audiotrack } from "./audiotrack";
+import { videotrack } from "./videotrack";
+import { chapters } from "./chapters";
+import { ambience } from "./ambience";
+import { playbackrate } from "./playbackrate";
+import { timer } from "./timer";
+import { shuffle } from "./shuffle";
+import { add } from "./add";
+import { configure } from "./configure";
+import { cast } from "./cast";
+import { airplay } from "./airplay";
+import { edit } from "./edit";
 
 IconRegistry.registerAll({
   // Random Order
@@ -52,10 +74,11 @@ IconRegistry.registerAll({
   leavefullscreen,
   enterpip,
   leavepip,
-  pipplaceholder,
   expandminiplayer,
   removeminiplayer,
   capture,
+  cast,
+  airplay,
   objectfitcontain,
   objectfitcover,
   objectfitfill,
@@ -78,4 +101,25 @@ IconRegistry.registerAll({
   tripletriangleright,
   fwd,
   bwd,
+  forward10,
+  backward10,
+  pipplaceholder,
+  castplaceholder,
+  airplayplaceholder,
+  dragindicator,
+  delete: deleteicon,
+  playlist,
+  autoplay,
+  loop,
+  quality,
+  audiotrack,
+  videotrack,
+  chapters,
+  ambience,
+  playbackrate,
+  timer,
+  shuffle,
+  add,
+  configure,
+  edit,
 });

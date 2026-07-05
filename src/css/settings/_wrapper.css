@@ -1,7 +1,7 @@
 .tmg-media-container.tmg-media-settings-view .tmg-media-container-content-wrapper {
   transform: rotateY(180deg);
 }
-.tmg-media-container.tmg-media-settings-view .tmg-media-container-content .tmg-media {
+.tmg-media-container.tmg-media-settings-view .tmg-media-container-content :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-filter) blur(10px);
 }
 .tmg-media-container.tmg-media-settings-view .tmg-media-settings-btn svg {
@@ -70,7 +70,7 @@
   overflow-y: auto;
 }
 .tmg-media-settings-top-panel > * {
-  gap: calc(var(--tmg-media-current-unit) / 7.5);
+  gap: calc(var(--tmg-media-current-unit) / 4);
   height: calc(var(--tmg-media-current-unit) / 1.25);
   font-size: calc(var(--tmg-media-current-unit) / 1.5);
 }

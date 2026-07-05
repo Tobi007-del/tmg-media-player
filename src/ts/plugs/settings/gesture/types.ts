@@ -1,11 +1,11 @@
 import { MediaIntent } from "@defs/contract";
 
-export interface GestureGeneral {
+export interface GestureGeneralConfig {
   click: keyof MediaIntent | false;
   dblClick: keyof MediaIntent | false;
 }
 
-export interface GestureTouch {
+export interface GestureTouchConfig {
   volume: boolean;
   brightness: boolean;
   timeline: boolean;
@@ -17,7 +17,7 @@ export interface GestureTouch {
   inset: number;
 }
 
-export interface GestureWheel {
+export interface GestureWheelConfig {
   volume: boolean;
   brightness: boolean;
   timeline: boolean;
@@ -26,9 +26,9 @@ export interface GestureWheel {
   yRatio: number;
 }
 
-export type Gesture = GestureGeneral & {
-  wheel: GestureWheel;
-  touch: GestureTouch;
+export type GestureConfig = GestureGeneralConfig & {
+  wheel: GestureWheelConfig;
+  touch: GestureTouchConfig;
 };
 
 export interface GestureState {

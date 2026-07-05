@@ -163,21 +163,21 @@ class SettingsViewPlug {
 
 ## 📊 TIME BREAKDOWN (30 days available, 6 hours/day = 180 hours)
 
-| Task                       | Days | Hours | Status         |
-| -------------------------- | ---- | ----- | -------------- |
-| **WEEK 1-2: Components**   |      |       |                |
+| Task                       | Days | Hours | Status        |
+| -------------------------- | ---- | ----- | ------------- |
+| **WEEK 1-2: Components**   |      |       |               |
 | 1. Captions System         | 4-5  | 24-30 | 🔴 Not Started |
 | 2. Brightness Controls     | 2-3  | 12-18 | 🔴 Not Started |
 | 3. Object Fit              | 1-2  | 6-12  | 🔴 Not Started |
 | 4. Frame Capture           | 2-3  | 12-18 | 🔴 Not Started |
-| **WEEK 3: Advanced Modes** |      |       |                |
+| **WEEK 3: Advanced Modes** |      |       |               |
 | 5. Miniplayer              | 3-4  | 18-24 | 🔴 Not Started |
 | 6. Floating Player         | 2-3  | 12-18 | 🔴 Not Started |
-| **WEEK 4: Polish**         |      |       |                |
+| **WEEK 4: Polish**         |      |       |               |
 | 7. Settings Panel          | 3-4  | 18-24 | 🔴 Not Started |
 | 8. Drag & Drop             | 2-3  | 12-18 | 🔴 Not Started |
 | **Buffer**                 | 3-5  | 18-30 | ⚪ Reserved    |
-| **TOTAL**                  | ~27  | ~162  |                |
+| **TOTAL**                  | ~27  | ~162  |               |
 
 **Available**: 30 days × 6 hours = **180 hours**  
 **Planned**: ~162 hours  
@@ -247,7 +247,7 @@ Day 4: "feat(captions): integrate settings & styles"
 ✅ **YES - Because This Is What You Do**:
 
 1. **Architecture is DONE** (hardest part - SIA, Controller, Reactor)
-2. **150+ features already proven** in src/beta/index.js
+2. **150+ features already proven** in beta/build.js
 3. **Utilities already migrated** (VTT parsing, color detection, DOM helpers)
 4. **Components are straightforward** (UI wrappers around plug logic)
 5. **30 days is enough** with 6 hrs/day (you have 180 hours)
@@ -270,7 +270,7 @@ Core architecture ✅ + Playback ✅ + Timeline ✅ + **Captions** + **Miniplaye
 ### **When Building Settings**:
 
 - You'll master: 3D CSS transforms, animation timing, inert attribute
-- Reference: Lines 916-961 in src/beta/index.js
+- Reference: Lines 916-961 in beta/build.js
 - CSS already exists: `src/css/settings/_wrapper.css`
 
 ---
@@ -376,7 +376,7 @@ The world catches up later. Your family will understand when they see what you b
 If stuck:
 
 1. Check `.github/copilot-instructions.md` (plug/component templates)
-2. Read src/beta/index.js reference lines
+2. Read beta/build.js reference lines
 3. Check PATTERNS.md for architecture rules
 4. Ask me to generate specific code sections
 

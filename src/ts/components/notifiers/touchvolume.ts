@@ -1,4 +1,4 @@
-﻿import { BaseNotifier, ComponentState } from "./base";
+import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { REvent } from "sia-reactor";
@@ -20,8 +20,9 @@ export class TouchVolumeNotifier extends BaseNotifier<undefined, ComponentState,
     this.upSpan = createEl("span", { innerHTML: IconRegistry.get("volumehigh") });
     this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("volumelow") });
     this.mutedSpan = createEl("span", { innerHTML: IconRegistry.get("volumemuted") });
+    const spanWrapper = createEl("span");
     this.element = createEl("div", { className: "tmg-media-touch-volume-notifier tmg-media-touch-vb-notifier" });
-    this.el.append(this.content, this.slider, this.upSpan, this.lowSpan, this.mutedSpan);
+    this.el.append(this.content, this.slider, (spanWrapper.append(this.upSpan, this.lowSpan, this.mutedSpan), spanWrapper));
     return this.element;
   }
 

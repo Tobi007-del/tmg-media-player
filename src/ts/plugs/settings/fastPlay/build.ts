@@ -1,14 +1,23 @@
 import { DeepPartial } from "sia-reactor";
-import { FastPlay } from "./types";
+import { FastPlayConfig } from "./types";
 
-export const FAST_PLAY_BUILD: DeepPartial<FastPlay> = {
+export const FAST_PLAY_BUILD: DeepPartial<FastPlayConfig> = {
   playbackRate: 2,
   key: true,
   pointer: {
-    type: "all",
+    type: {
+      value: "all",
+      options: [
+        { value: "all", display: "All" },
+        { value: "mouse", display: "Mouse" },
+        { value: "touch", display: "Touch" },
+        { value: "pen", display: "Pen" },
+        { value: "none", display: "None" },
+      ]
+    },
     threshold: 800,
     inset: 20,
   },
-  reset: true,
+  resetPaused: true,
   rewind: true,
 };

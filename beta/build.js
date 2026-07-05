@@ -1,0 +1,5380 @@
+"use strict";
+(() => {
+  // ../sia-reactor/dist/chunk-JGEI2Q4M.js
+  function clamp(min = 0, val, max = Infinity) {
+    return Math.min(Math.max(val, min), max);
+  }
+  function setTimeout2(handler, timeout, ...args) {
+    const sig = args[0] instanceof AbortSignal ? args.shift() : void 0;
+    if (sig?.aborted) return -1;
+    const win = args[0] instanceof Window ? args.shift() : window;
+    if (!sig) return win.setTimeout(handler, timeout, ...args);
+    const id = win.setTimeout(() => (sig.removeEventListener("abort", kill), "string" === typeof handler ? new Function(handler) : handler(...args)), timeout), kill = () => win.clearTimeout(id);
+    return sig.addEventListener("abort", kill, { once: true }), id;
+  }
+
+  // ../sia-reactor/dist/chunk-243U74PP.js
+  function onAllMethods(owner, callback, skipOwn = true, nested = false) {
+    let proto = owner;
+    while (proto && proto !== Object.prototype) {
+      for (const method of Object.getOwnPropertyNames(proto)) {
+        if (method === "constructor") continue;
+        if (nested && skipOwn && Object.prototype.hasOwnProperty.call(owner, method)) continue;
+        if ("function" === typeof Object.getOwnPropertyDescriptor(proto, method)?.value) callback(method, owner);
+      }
+      proto = Object.getPrototypeOf(proto), nested = true;
+    }
+  }
+  function bindAllMethods(owner) {
+    onAllMethods(owner, (method, owner2) => {
+      owner2[method] = owner2[method].bind(owner2);
+    });
+  }
+  function guardAllMethods(owner, guardFn = guardMethod, bound = true) {
+    onAllMethods(owner, (method, owner2) => {
+      owner2[method] = guardFn(bound ? owner2[method].bind(owner2) : owner2[method]);
+    });
+  }
+  function guardMethod(fn, onError = (e) => console.error(e)) {
+    return ((...args) => {
+      try {
+        const result = fn(...args);
+        return result instanceof Promise ? result.catch((e) => onError(e)) : result;
+      } catch (e) {
+        onError(e);
+      }
+    });
+  }
+  function createEl(tag, props, dataset, styles, el = tag ? document?.createElement(tag) : null) {
+    return assignEl(el, props, dataset, styles);
+  }
+  function assignEl(el, props, dataset, styles) {
+    if (!el) return null;
+    if (props) {
+      for (const k of Object.keys(props)) if (props[k] !== void 0) el[k] = props[k];
+    }
+    if (dataset) {
+      for (const k of Object.keys(dataset)) if (dataset[k] !== void 0) el.dataset[k] = String(dataset[k]);
+    }
+    if (styles) {
+      for (const k of Object.keys(styles)) if (styles[k] !== void 0) el.style[k] = styles[k];
+    }
+    return el;
+  }
+  function getActiveEl(root) {
+    const activeEl = (root ?? document).activeElement;
+    return !activeEl ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
+  }
+  var KEYS_BLOCKS = ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"];
+  function parseKeyCombo(combo) {
+    const parts = cleanKeyCombo(combo).toLowerCase().split("+");
+    return { ctrlKey: parts.includes("ctrl"), shiftKey: parts.includes("shift"), altKey: parts.includes("alt"), metaKey: parts.includes("meta") || parts.includes("cmd"), key: parts.find((p) => !["ctrl", "shift", "alt", "meta", "cmd"].includes(p)) || "" };
+  }
+  function stringifyKeyEvent(e) {
+    const parts = [];
+    if (e.ctrlKey) parts.push("ctrl");
+    if (e.altKey) parts.push("alt");
+    if (e.shiftKey) parts.push("shift");
+    if (e.metaKey) parts.push("meta");
+    parts.push(e.key?.toLowerCase() ?? "");
+    return parts.join("+");
+  }
+  function cleanKeyCombo(combo) {
+    const clean = (combo2) => {
+      const m = ["ctrl", "alt", "shift", "meta"], alias = { cmd: "meta", space: " " };
+      if (combo2 === " " || combo2 === "+") return combo2;
+      combo2 = combo2.replace(/\+\s*\+$/, "+plus");
+      const p = combo2.toLowerCase().split("+").filter((k) => k !== "").map((k) => alias[k] || (k === "plus" ? "+" : k.trim() || " "));
+      return [...p.filter((k) => m.includes(k)).sort((a, b) => m.indexOf(a) - m.indexOf(b)), ...p.filter((k) => !m.includes(k)) || ""].join("+");
+    };
+    return Array.isArray(combo) ? combo.map(clean) : clean(combo);
+  }
+  function matchKeys(required, actual, strict = false) {
+    actual = cleanKeyCombo(actual);
+    const match = (required2, actual2) => {
+      required2 = cleanKeyCombo(required2);
+      if (strict) return required2 === actual2;
+      const reqKeys = required2.split("+"), actKeys = actual2.split("+");
+      return reqKeys.every((k) => actKeys.includes(k));
+    };
+    return Array.isArray(required) ? required.some((req) => match(req, actual)) : match(required, actual);
+  }
+  function getTermsForKey(combo, settings) {
+    const terms = { override: false, block: false, whitelisted: false, action: null }, { overrides = [], shortcuts = {}, blocks = [], strictMatches: s = false, whitelist = [] } = settings || {};
+    combo = cleanKeyCombo(combo);
+    if (matchKeys(overrides, combo, s)) terms.override = true;
+    if (matchKeys(blocks, combo, s)) terms.block = true;
+    if (matchKeys(whitelist, combo)) terms.whitelisted = true;
+    terms.action = Object.keys(shortcuts).find((key) => matchKeys(shortcuts[key], combo, s)) || null;
+    return terms;
+  }
+  function keyEventAllowed(e, settings) {
+    if (settings.disabled) return false;
+    const activeEl = getActiveEl(e.target?.ownerDocument);
+    if ((e.key === " " || e.key === "Enter") && activeEl?.matches("button,input[type='button'],input[type='submit']")) return false;
+    if (e.currentTarget !== activeEl && activeEl?.matches("input,textarea,[contenteditable]") && !(e.key === "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey)) return false;
+    const combo = stringifyKeyEvent(e), { override, block, action, whitelisted } = getTermsForKey(combo, settings);
+    if (block) return false;
+    if (override) e.preventDefault();
+    if (action) return action;
+    if (whitelisted) return e.key.toLowerCase();
+    return false;
+  }
+  var formatKeyForDisplay = (combo = "") => ` ${(Array.isArray(combo) ? combo : [combo]).map((c) => `(${cleanKeyCombo(c).replace(" ", "space")})`).join(" or ")}`;
+  function parseForARIAKS(s = "", formatted = true) {
+    const m = { ctrl: "Control", cmd: "Meta", space: "Space", plus: "+" };
+    return (formatted && !Array.isArray(s) ? s : formatKeyForDisplay(s)).toLowerCase().replace(/[()]/g, "").replace(/\bor\b/g, " ").replace(/\w+/g, (k) => m[k] || k).replace(/\s+/g, " ").trim();
+  }
+
+  // ../sia-reactor/dist/chunk-2ZYYYSZ4.js
+  var RAW = /* @__PURE__ */ Symbol.for("S.I.A_RAW");
+  var INERTIA = /* @__PURE__ */ Symbol.for("S.I.A_INERTIA");
+  var REJECTABLE = /* @__PURE__ */ Symbol.for("S.I.A_REJECTABLE");
+  var INDIFFABLE = /* @__PURE__ */ Symbol.for("S.I.A_INDIFFABLE");
+  var TERMINATOR = /* @__PURE__ */ Symbol.for("S.I.A_TERMINATOR");
+  var VERSION = /* @__PURE__ */ Symbol.for("S.I.A_VERSION");
+  var SSVERSION = /* @__PURE__ */ Symbol.for("S.I.A_SNAPSHOT_VERSION");
+  var RTR_BATCH = "undefined" !== typeof window ? ("undefined" !== typeof queueMicrotask ? queueMicrotask : setTimeout).bind(window) : "undefined" !== typeof process && process.nextTick ? process.nextTick : setTimeout;
+  var RTR_LOG = console.log.bind(console, "[S.I.A Reactor]");
+  var EVT_OPTS = { LISTENER: ["capture", "depth", "once", "signal", "init"], MEDIATOR: ["lazy", "signal", "init"] };
+  var NIL = Object.freeze({});
+  var NOOP = () => {
+  };
+  var CTX = {
+    /** Flag indicating whether the application is running in development mode. */
+    isDevEnv: "undefined" !== typeof process ? true : true,
+    /** Flag indicating whether an operation is bypassing checks so reactors can allow all writes. */
+    usingForce: false,
+    /** Active `Autotracker` instance, override for automatic dependency collection on `Reactor` traps. */
+    autotracker: null,
+    /** Extensible meta context for payloads and cross-cutting concerns. */
+    meta: null,
+    /** Default configuration for new `Reactor` instances and also fallback for utils that need and are called without these options. */
+    defaults: {
+      crossRealms: false,
+      smartCloning: false,
+      eventBubbling: true,
+      eventCapturing: "auto",
+      lineageTracing: false,
+      preserveContext: false,
+      equalityFunction: Object.is,
+      batchingFunction: RTR_BATCH
+    }
+  };
+  var arrRegex = /^([^\[\]]+)\[(\d+)\]$/;
+  function isObj(obj, arraycheck = true) {
+    return "object" === typeof obj && obj !== null && (arraycheck ? !Array.isArray(obj) : true);
+  }
+  function isPOJO(obj, config = CTX.defaults, typecheck = true) {
+    return (typecheck ? isObj(obj, false) : true) && (config.crossRealms ? Object.prototype.toString.call(obj) === "[object Object]" : obj.constructor === Object);
+  }
+  function canHandle(obj, config = CTX.defaults, typecheck = true) {
+    if (typecheck && !isObj(obj, false) || obj[INERTIA]) return false;
+    if (Array.isArray(obj) || !config.preserveContext && isPOJO(obj, config, false)) return true;
+    if (config.preserveContext) return !(obj instanceof String) && !(obj instanceof Number) && !(obj instanceof Function) && !(obj instanceof Date) && !(obj instanceof Error) && !(obj instanceof RegExp) && !(obj instanceof Promise) && !(obj instanceof Map) && !(obj instanceof WeakMap) && !(obj instanceof Set) && !(obj instanceof WeakSet) && !(obj instanceof EventTarget);
+    return false;
+  }
+  function getPath(source, key, separator = ".", keyFunc) {
+    if (key === "*") return source;
+    const keys2 = key.split(separator);
+    let currObj = source;
+    for (let i = 0, len = keys2.length; i < len; i++) {
+      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      if (match) {
+        const [, key3, iStr] = match;
+        if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return void 0;
+        currObj = currObj[key3][Number(iStr)];
+      } else {
+        if (!isObj(currObj) || !(key2 in currObj)) return void 0;
+        currObj = currObj[key2];
+      }
+    }
+    return currObj;
+  }
+  function setPath(target, key, value, separator = ".", keyFunc) {
+    if (key === "*") return Object.assign(target, value);
+    const keys2 = key.split(separator);
+    for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
+      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      if (match) {
+        const [, key3, iStr] = match;
+        if (!Array.isArray(currObj[key3])) currObj[key3] = [];
+        if (i === len - 1) currObj[key3][Number(iStr)] = value;
+        else currObj[key3][Number(iStr)] ||= {}, currObj = currObj[key3][Number(iStr)];
+      } else {
+        if (i === len - 1) currObj[key2] = value;
+        else currObj[key2] ||= {}, currObj = currObj[key2];
+      }
+    }
+  }
+  function deletePath(target, key, separator = ".", keyFunc) {
+    if (key === "*") {
+      const keys22 = Object.keys(target);
+      for (let i = 0, len = keys22.length; i < len; i++) delete target[keys22[i]];
+      return;
+    }
+    const keys2 = key.split(separator);
+    for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
+      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      if (match) {
+        const [, key3, iStr] = match;
+        if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return;
+        if (i === len - 1) delete currObj[key3][Number(iStr)];
+        else currObj = currObj[key3][Number(iStr)];
+      } else {
+        if (!isObj(currObj) || !(key2 in currObj)) return;
+        if (i === len - 1) delete currObj[key2];
+        else currObj = currObj[key2];
+      }
+    }
+  }
+  function hasPath(source, key, separator = ".", keyFunc) {
+    if (key === "*") return true;
+    const keys2 = key.split(separator);
+    for (let currObj = source, i = 0, len = keys2.length; i < len; i++) {
+      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      if (match) {
+        const [, key3, iStr] = match;
+        if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return false;
+        if (i === len - 1) return true;
+        currObj = currObj[key3][Number(iStr)];
+      } else {
+        if (!isObj(currObj) || !(key2 in currObj)) return false;
+        if (i === len - 1) return true;
+        currObj = currObj[key2];
+      }
+    }
+    return true;
+  }
+  function parsePathObj(obj, separator = ".", keyFunc = (p) => p, seen = /* @__PURE__ */ new WeakSet()) {
+    if (!isPOJO(obj) || seen.has(obj)) return obj;
+    seen.add(obj);
+    const result = {}, keys2 = Object.keys(obj);
+    for (let i = 0, len = keys2.length; i < len; i++) {
+      const key = keys2[i], val = obj[key];
+      key === "*" || key.includes(separator) ? setPath(result, key, parsePathObj(val, separator, keyFunc, seen), separator, keyFunc) : result[key] = isPOJO(val) ? parsePathObj(val, separator, keyFunc, seen) : val;
+    }
+    return result;
+  }
+  function matchPaths(paths, target) {
+    for (let i = 0, len = paths.length; i < len; i++) {
+      const p = paths[i];
+      if (target === p || target.startsWith(p + ".")) return true;
+    }
+    return false;
+  }
+  function getDepth(path, depth = !path ? 0 : 1) {
+    for (let i = 0, len = path.length; i < len; i++) if (path.charCodeAt(i) === 46) depth++;
+    return depth;
+  }
+  function parseEvtOpts(options, opts, boolOpt = opts[0], result = {}) {
+    return Object.assign(result, "boolean" === typeof options ? { [boolOpt]: options } : options), result;
+  }
+  function fanout(a, b, c, d) {
+    const isEvPd = !!a?.target, isPath = !isEvPd && "string" === typeof b, [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b, c || NIL, void 0], target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
+    if (isEvPd && type !== "set" && type !== "delete" || !target || !canHandle(news, opts)) return;
+    const func = () => {
+      const walk = (target2, obj, depth = isEvPd ? 1 : Infinity, keys2 = Object.keys(obj)) => {
+        for (let i = 0, len = keys2.length; i < len; i++) {
+          const key = keys2[i], val = obj[key];
+          try {
+            if ((opts.atomic ?? true) && Array.isArray(val)) target2[key] = val, target2[key].length = target2[key].length;
+            else depth > 1 && canHandle(val, opts) ? walk(target2[key] ||= {}, val, depth - 1) : (!opts.skipUndefined || val !== void 0) && (target2[key] = val);
+          } catch (e) {
+            if (e instanceof RangeError) throw e;
+          }
+        }
+      };
+      if ((opts.atomic ?? true) && Array.isArray(news) && isPath) setPath(state2, path, news), getPath(state2, path).length = news.length;
+      else walk(target, opts.merge ? mergeObjs(olds, news, opts) : news, opts.depth === true ? Infinity : opts.depth);
+    };
+    force(() => transaction(func, opts.txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), isEvPd);
+  }
+  var fanoutOptsArr = ["merge", "depth", "atomic", "skipUndefined"];
+  function force(task, bool = true) {
+    const prev = CTX.usingForce;
+    CTX.usingForce = bool;
+    try {
+      return task();
+    } finally {
+      CTX.usingForce = prev;
+    }
+  }
+  function mergeObjs(o1, o2, config = NIL, pojocheck = true) {
+    if (pojocheck && (!isPOJO(o1 || NIL, config) || !isPOJO(o2 || NIL, config))) return o2;
+    o1 ||= {}, o2 ||= {};
+    const merged = config.skipUndefined ? { ...o1 } : { ...o1, ...o2 };
+    if (config.skipUndefined) {
+      const keys22 = Object.keys(o1);
+      for (let i = 0, len = keys22.length; i < len; i++) {
+        const key = keys22[i], val = o2[key];
+        if (val !== void 0) merged[key] = val;
+      }
+    }
+    const keys2 = Object.keys(merged);
+    for (let i = 0, len = keys2.length; i < len; i++) {
+      const key = keys2[i], o1V = o1[key], o2V = o2[key];
+      if (isPOJO(o1V, config) && isPOJO(o2V, config)) merged[key] = mergeObjs(o1V, o2V, config, false);
+    }
+    return merged;
+  }
+  function getTrailRecords(obj, path, reverse = false) {
+    const parts = path.split("."), chain = [["*", obj, obj]];
+    for (let acc = "", currObj = obj, i = 0, len = parts.length; i < len; i++) {
+      const part = parts[i];
+      chain.push([acc += (i ? "." : "") + part, currObj, currObj = currObj?.[part]]);
+    }
+    return reverse ? chain.reverse() : chain;
+  }
+  function deepClone(obj, config = CTX.defaults, seen = /* @__PURE__ */ new WeakMap()) {
+    if (!obj || "object" !== typeof obj) return obj;
+    const cloned = seen.get(obj);
+    if (cloned) return cloned;
+    if (!canHandle(obj, config, false)) return obj;
+    const clone = config.preserveContext ? Object.create(Object.getPrototypeOf(obj)) : Array.isArray(obj) ? [] : {};
+    seen.set(obj, clone);
+    const keys2 = config.preserveContext ? Reflect.ownKeys(obj) : Object.keys(obj);
+    for (let i = 0, len = keys2.length; i < len; i++) {
+      const key = keys2[i];
+      try {
+        clone[key] = deepClone(obj[key], config, seen);
+      } catch (e) {
+        if (e instanceof RangeError) throw e;
+      }
+    }
+    return clone;
+  }
+  function nuke(target) {
+    const keys2 = Object.keys(target);
+    for (let i = 0, len = keys2.length; i < len; i++) {
+      const key = keys2[i];
+      if ("function" !== typeof target[key]) target[key] = null;
+    }
+  }
+  function withMeta(props, fn) {
+    CTX.meta ??= {};
+    const cache = {};
+    for (const key in props) {
+      cache[key] = CTX.meta[key];
+      CTX.meta[key] = props[key];
+    }
+    try {
+      return fn();
+    } finally {
+      for (const key in cache) {
+        if (cache[key] === void 0) resetMeta(key);
+        else CTX.meta[key] = cache[key];
+      }
+    }
+  }
+  function resetMeta(key) {
+    if (!CTX.meta) return;
+    delete CTX.meta[key];
+    for (const _ in CTX.meta) return;
+    CTX.meta = null;
+  }
+  var txId = 0;
+  function startTx(label = `Tx ${txId + 1}`) {
+    const parent = CTX.meta?.tx ?? null, tx = { id: ++txId, label, parent };
+    CTX.meta ??= {};
+    return CTX.meta.tx = tx;
+  }
+  function endTx(tx) {
+    if (CTX.meta?.tx === tx) {
+      if (tx.parent) CTX.meta.tx = tx.parent;
+      else resetMeta("tx");
+    }
+    ;
+  }
+  function transaction(fn, label) {
+    const tx = startTx(label);
+    try {
+      return fn();
+    } finally {
+      endTx(tx);
+    }
+  }
+
+  // ../sia-reactor/dist/chunk-OTBKVZ4L.js
+  var ReactorEvent = class _ReactorEvent {
+    /** No active propagation phase. */
+    static NONE = 0;
+    /** Capture phase: root to target parent. */
+    static CAPTURING_PHASE = 1;
+    /** Target phase: target listeners run. */
+    static AT_TARGET = 2;
+    /** Bubble phase: target parent to root. */
+    static BUBBLING_PHASE = 3;
+    /** Current propagation phase for this event instance. */
+    eventPhase = _ReactorEvent.NONE;
+    /** Current event type for the active propagation path, use immediately if async */
+    type;
+    /** Current target context for the active propagation path, use immediately if async. Also use to survive future object shape changes from nesting for a path callback. */
+    currentTarget;
+    /** Original event target context. */
+    target;
+    /** Root reactive object for this event instance wave. */
+    root;
+    /** The `Reactor` instance that dispatched this event instance. */
+    reactor;
+    /** Whether resolve/reject intent semantics are allowed for this event instance. */
+    rejectable;
+    /** Original event type before propagation remapping. */
+    staticType;
+    /** Original target path for this event instance wave. */
+    path;
+    /** Current value at the event target path. */
+    value;
+    /** Previous value at the event target path. */
+    oldValue;
+    /** Whether this event instance wave can bubble back up to ancestors or just capture down. */
+    bubbles = false;
+    /** Whether this event instance wave can capture down to descendants or just bubble up. */
+    captures = false;
+    /** `DOMHighResTimeStamp` for this event payload for native event parity, Enable `eventTimeStamps` config, then use this over custom timestamps for accuracy. */
+    timestamp;
+    _resolved = "";
+    _rejected = "";
+    _propagationStopped = false;
+    _immediatePropagationStopped = false;
+    /**
+     * @param payload Source payload for this event instance.
+     * @param reactor The `Reactor` instance creating this event instance.
+     */
+    constructor(payload) {
+      Object.assign(this, payload);
+      this.staticType = payload.type;
+      this.path = payload.target.path;
+      this.value = payload.target.value;
+      this.oldValue = payload.target.oldValue;
+      if (this.reactor.config.eventBubbling) this.bubbles = true;
+      if (this.reactor.config.eventCapturing === "auto" ? this.rejectable : this.reactor.config.eventCapturing) this.captures = true;
+      if (this.reactor.config.eventTimeStamps) this.timestamp = performance.now();
+    }
+    /** Whether propagation has been stopped. */
+    get propagationStopped() {
+      return this._propagationStopped;
+    }
+    /** Stops propagation to remaining listeners in later nodes/phases. */
+    stopPropagation() {
+      this._propagationStopped = true;
+    }
+    /** Whether immediate propagation has been stopped. */
+    get immediatePropagationStopped() {
+      return this._immediatePropagationStopped;
+    }
+    /** Stops propagation immediately, including remaining listeners on current path. */
+    stopImmediatePropagation() {
+      this._propagationStopped = true;
+      this._immediatePropagationStopped = true;
+    }
+    /** Resolution message for rejectable events. */
+    get resolved() {
+      return this._resolved;
+    }
+    /**
+     * Marks a rejectable event as resolved.
+     * @param message Optional resolution message or identity.
+     * @example e.resolve("html5Tech"); // identity
+     * @example e.resolve("API Load successful"); // message
+     */
+    resolve(message) {
+      if (!this.rejectable) return this.reactor.log(`[ReactorEvent] Ignored \`resolve()\` call on a non-rejectable ${this.staticType} at "${this.path}"`);
+      if (this.eventPhase !== _ReactorEvent.CAPTURING_PHASE) this.reactor.log(`[ReactorEvent] Resolving an intent on ${this.staticType} at "${this.path}" outside of the capture phase is unadvised.`);
+      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${this._resolved = message || `${this.staticType} intent resolved at "${this.path}"`}`);
+    }
+    /** Rejection reason for rejectable events. */
+    get rejected() {
+      return this._rejected;
+    }
+    /**
+     * Marks a rejectable event as rejected.
+     * @param reason Optional rejection reason or identity.
+     * @example e.reject("html5Tech"); // identity
+     * @example e.reject("User is not logged in"); // reason
+     */
+    reject(reason) {
+      if (!this.rejectable) return this.reactor.log(`[ReactorEvent] Ignored \`reject()\` call on a non-rejectable ${this.staticType} at "${this.path}"`);
+      if (this.eventPhase !== _ReactorEvent.CAPTURING_PHASE) this.reactor.log(`[ReactorEvent] Rejecting an intent on ${this.staticType} at "${this.path}" outside of the capture phase is unadvised.`);
+      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${this._rejected = reason || `${this.staticType} intent rejected at "${this.path}"`}`);
+    }
+    /** Returns event path values from target to root in bubbling order. */
+    composedPath() {
+      return getTrailRecords(this.root, this.path, true).map((r) => r[2]);
+    }
+  };
+  var Reactor = class {
+    /** Logger function for this reactor instance, override if desired, `this.canLog = false` resets. */
+    log = NOOP;
+    /** The core state object for this reactor instance. */
+    core;
+    // `?:`s | pay the ~800 byte price upfront for what u might never use
+    /** The modules being used by this reactor. */
+    modules;
+    /** Configuration options for this reactor instance. */
+    config;
+    /** Whether this reactor instance is currently batching updates, a window view into the engine timing */
+    isBatching = false;
+    // Async Batching
+    queue;
+    // Tasks to run after flush
+    batch;
+    // Batched payloads to flush async
+    lineage;
+    // { parent, key }: uses maths to avoid extra allocations for pairs
+    snapCache;
+    proxyCache = /* @__PURE__ */ new WeakMap();
+    getters;
+    setters;
+    deleters;
+    watchers;
+    listeners;
+    /**
+     * Creates a new Reactor instance.
+     * @param target Initial state target.
+     * @param build Reactor bootstrap/build configuration.
+     * @example
+     * const rtr = new Reactor({ count: 0 });
+     */
+    constructor(target = {}, build) {
+      this[INERTIA] = true;
+      this.config = { ...CTX.defaults, ...build };
+      this.core = this.proxied(target);
+      if (build) this.canLog = !!build.debug;
+    }
+    proxied(target, rejectable = false, indiffable = false, parent, key, path) {
+      if (!target || "object" !== typeof target) return target;
+      target = target[RAW] || target;
+      if (this.config.referenceTracking && parent && key && !this.link(target, parent, key, false)) return target;
+      const cached = this.proxyCache.get(target);
+      if (cached) return cached;
+      if (!canHandle(target, this.config, false)) return target;
+      rejectable ||= target[REJECTABLE];
+      indiffable ||= target[INDIFFABLE];
+      const proxy = new Proxy(target, {
+        // Robust Proxy handler
+        get: (object, key2, receiver) => {
+          if (key2 === RAW) return this.log(`\u{1F440} [Reactor \`get\` Trap] Peeked at ${object}`), object;
+          let value = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver);
+          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath;
+          this.log(`\u{1F50D} [Reactor \`get\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this);
+          if (this.config.get) value = this.config.get(object, key2, value, receiver, paths);
+          if (this.getters) {
+            const wildcords = this.getters.get("*");
+            for (let i = 0, len = this.config.lineageTracing ? paths.length : 1; i < len; i++) {
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.getters.get(currPath);
+              if (!cords && !wildcords) continue;
+              const target2 = { path: currPath, value, key: keyStr, hadKey: true, object: receiver }, payload = { type: "get", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
+              if (cords) value = this.mediate(currPath, payload, "get", cords);
+              if (!wildcords) continue;
+              target2.value = value;
+              value = this.mediate("*", payload, "get", wildcords);
+            }
+          }
+          return this.proxied(value, rejectable, indiffable, object, keyStr, fullPath);
+        },
+        set: (object, key2, value, receiver) => {
+          let unchanged, safeValue, safeOldValue, terminated = false;
+          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
+          this.log(`\u270F\uFE0F [Reactor \`set\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this, true);
+          if (this.config.referenceTracking || !indiffable) {
+            safeOldValue = oldValue?.[RAW] || oldValue;
+            safeValue = value?.[RAW] || value;
+            unchanged = this.config.equalityFunction(safeValue, safeOldValue);
+          }
+          if (!indiffable && unchanged && !CTX.usingForce && keyStr !== "length") return this.log(`\u{1F504} [Reactor \`set\` Trap] Unchanged for "${keyStr}" on "${paths}"`), true;
+          if (this.config.set) terminated = (value = this.config.set(object, key2, value, oldValue, receiver, paths)) === TERMINATOR;
+          if (this.setters) {
+            const wildcords = this.setters.get("*");
+            for (let i = 0; i < loopLen; i++) {
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.setters.get(currPath);
+              if (!cords && !wildcords) continue;
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, ...CTX.meta };
+              if (cords) {
+                const result2 = this.mediate(currPath, payload, "set", cords);
+                if (!(terminated ||= payload.terminated)) value = result2;
+              }
+              if (!wildcords) continue;
+              target2.value = value;
+              const result = this.mediate("*", payload, "set", wildcords);
+              if (!(terminated ||= payload.terminated)) value = result;
+            }
+          }
+          if (terminated) return this.log(`\u{1F6E1}\uFE0F [Reactor \`set\` Trap] Terminated for "${keyStr}" on "${paths}"`), true;
+          const success = !this.config.preserveContext ? (object[key2] = value, true) : Reflect.set(object, key2, value, receiver);
+          if (!success) return this.log(`\u274C [Reactor \`set\` Trap] Failed for "${keyStr}" on "${paths}"`), false;
+          if (this.config.referenceTracking && !unchanged) this.config.smartCloning && this.stamp(object), this.unlink(safeOldValue, object, keyStr), this.link(safeValue, object, keyStr);
+          if (this.watchers || this.listeners)
+            for (let i = 0; i < loopLen; i++) {
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
+              this.notify(currPath, { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, ...CTX.meta });
+            }
+          return true;
+        },
+        deleteProperty: (object, key2) => {
+          let value, receiver = this.proxyCache.get(object), terminated = false;
+          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
+          this.log(`\u{1F5D1}\uFE0F [Reactor \`deleteProperty\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this, true);
+          if (this.config.deleteProperty) terminated = (value = this.config.deleteProperty(object, key2, oldValue, receiver, paths)) === TERMINATOR;
+          if (this.deleters) {
+            const wildcords = this.deleters.get("*");
+            for (let i = 0; i < loopLen; i++) {
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.deleters.get(currPath);
+              if (!cords && !wildcords) continue;
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
+              if (cords) {
+                const result2 = this.mediate(currPath, payload, "delete", cords);
+                if (!(terminated ||= payload.terminated)) value = result2;
+              }
+              if (!wildcords) continue;
+              const result = this.mediate("*", payload, "delete", wildcords);
+              if (!(terminated ||= payload.terminated)) value = result;
+            }
+          }
+          if (terminated) return this.log(`\u{1F6E1}\uFE0F [Reactor \`deleteProperty\` Trap] Terminated for "${keyStr}" on "${paths}"`), true;
+          const success = !this.config.preserveContext ? delete object[key2] : Reflect.deleteProperty(object, key2);
+          if (!success) return this.log(`\u274C [Reactor \`deleteProperty\` Trap] Failed for "${keyStr}" on "${paths}"`), false;
+          if (this.config.referenceTracking) this.config.smartCloning && this.stamp(object), this.unlink(oldValue?.[RAW] || oldValue, object, keyStr);
+          if (this.watchers || this.listeners)
+            for (let i = 0; i < loopLen; i++) {
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
+              this.notify(currPath, { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta });
+            }
+          return true;
+        },
+        has: (object, key2) => {
+          let has = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
+          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
+          this.log(`\u2753 [Reactor \`has\` Trap] Initiated for "${keyStr}" on "${fullPath}"`), CTX.autotracker?.track(fullPath, this);
+          if (this.config.has) has = this.config.has(object, key2, has, this.proxyCache.get(object), fullPath);
+          return has;
+        },
+        getOwnPropertyDescriptor: (object, key2) => {
+          let descriptor = !this.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key2) : Reflect.getOwnPropertyDescriptor(object, key2);
+          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
+          this.log(`\u{1F4CB} [Reactor \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on "${fullPath}"`), CTX.autotracker?.track(fullPath, this);
+          if (this.config.getOwnPropertyDescriptor) descriptor = this.config.getOwnPropertyDescriptor(object, key2, descriptor, this.proxyCache.get(object), this.config.lineageTracing ? this.trace(object, keyStr) : fullPath);
+          return descriptor;
+        },
+        ownKeys: (object) => {
+          let ownKeys = Reflect.ownKeys(object);
+          const safePath = path || "*";
+          this.log(`\u{1F511} [Reactor \`ownKeys\` Trap] Initiated on "${safePath}"`), CTX.autotracker?.track(safePath, this);
+          if (this.config.ownKeys) ownKeys = this.config.ownKeys(object, ownKeys, this.proxyCache.get(object), safePath);
+          return ownKeys;
+        }
+      });
+      return this.proxyCache.set(target, proxy), proxy;
+    }
+    trace(target, path, paths = [], seen = /* @__PURE__ */ new WeakSet()) {
+      if (Object.is(target, this.core[RAW] || this.core)) return paths.push(path), paths;
+      if (seen.has(target)) return paths;
+      seen.add(target);
+      const es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target);
+      if (!es) return paths;
+      for (let i = 0, len = es.length; i < len; i += 2) {
+        const prev = es[i + 1];
+        this.trace(es[i], prev ? prev + "." + path : path, paths, seen);
+      }
+      return paths;
+    }
+    // won't be called without `.config.referenceTracking` so internal guard avoided
+    link(target, parent, key, typecheck = true, es) {
+      if (!canHandle(target, this.config, typecheck)) return false;
+      es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target) ?? (this.lineage.set(target, es = []), es);
+      for (let i = 0, len = es.length; i < len; i += 2) if (Object.is(es[i], parent) && es[i + 1] === key) return true;
+      return es.push(parent, key), true;
+    }
+    unlink(target, parent, key) {
+      if (!canHandle(target, this.config)) return;
+      const es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target);
+      if (es) {
+        for (let i = 0, len = es.length; i < len; i += 2) if (Object.is(es[i], parent) && es[i + 1] === key) return void es.splice(i, 2);
+      }
+    }
+    stamp(target, typecheck = true, seen = /* @__PURE__ */ new WeakSet()) {
+      if (typecheck && "object" !== typeof target) return;
+      target = target[RAW] || target;
+      if (seen.has(target)) return;
+      seen.add(target);
+      target[VERSION] = (target[VERSION] || 0) + 1;
+      const es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target);
+      if (es) for (let i = 0, len = es.length; i < len; i += 2) this.stamp(es[i], false, seen);
+    }
+    mediate(path, payload, type, cords) {
+      let terminated = false, value = payload.target.value, killed = false;
+      const isGet = type === "get", isSet = type === "set", mediators = isGet ? this.getters : isSet ? this.setters : this.deleters, scords = cords.slice();
+      for (let slen = scords.length, i = !isGet ? 0 : slen - 1, len = !isGet ? slen : -1; i !== len; i += !isGet ? 1 : -1) {
+        const cord = scords[i];
+        if (cord._dead) continue;
+        const response = isGet ? cord.cb(value, payload) : isSet ? cord.cb(value, terminated, payload) : cord.cb(terminated, payload);
+        if (isGet || !(terminated ||= payload.terminated = response === TERMINATOR)) value = response;
+        if (cord.once) cord._dead = true, killed = true;
+      }
+      if (killed) {
+        for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && mediators.delete(path);
+      }
+      return value;
+    }
+    notify(path, payload) {
+      if (this.watchers) {
+        const wildcords = this.watchers.get("*"), wildscords = wildcords?.slice(), cords = this.watchers.get(path), scords = cords?.slice();
+        if (cords) {
+          let killed = false;
+          for (let i = 0, len = scords.length; i < len; i++) {
+            const cord = scords[i];
+            if (cord._dead) continue;
+            cord.cb(payload.target.value, payload);
+            if (cord.once) cord._dead = true, killed = true;
+          }
+          if (killed) {
+            for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && this.watchers.delete(path);
+          }
+        }
+        if (wildcords) {
+          let killed = false;
+          for (let i = 0, len = wildscords.length; i < len; i++) {
+            const wildcord = wildscords[i];
+            if (wildcord._dead) continue;
+            wildcord.cb(payload.target.value, payload);
+            if (wildcord.once) wildcord._dead = true, killed = true;
+          }
+          if (killed) {
+            for (let i = wildcords.length - 1; i >= 0; i--) if (wildcords[i]._dead) wildcords.splice(i, 1), !wildcords.length && this.watchers.delete("*");
+          }
+        }
+      }
+      this.listeners && this.schedule(path, payload);
+    }
+    schedule(path, payload) {
+      this.batch ??= /* @__PURE__ */ new Map();
+      this.batch.set(path, payload), !this.isBatching && this.initBatching();
+    }
+    initBatching() {
+      this.isBatching = true, this.config.batchingFunction(() => this.flush());
+    }
+    flush() {
+      this.isBatching = false, this.batch && this.tick(this.batch.keys());
+      if (this.queue?.size) for (const task of this.queue) task(), this.queue.delete(task);
+    }
+    wave(path, payload) {
+      const e = new ReactorEvent(payload), chain = getTrailRecords(this.core, path);
+      if (e.captures) {
+        e.eventPhase = ReactorEvent.CAPTURING_PHASE;
+        for (let i = 0; i <= chain.length - 2; i++) {
+          if (e.propagationStopped) break;
+          this.fire(chain[i], e, true);
+        }
+        if (e.propagationStopped) return;
+      }
+      e.eventPhase = ReactorEvent.AT_TARGET;
+      this.fire(chain[chain.length - 1], e, true);
+      !e.immediatePropagationStopped && this.fire(chain[chain.length - 1], e, false);
+      if (e.bubbles) {
+        e.eventPhase = ReactorEvent.BUBBLING_PHASE;
+        for (let i = chain.length - 2; i >= 0; i--) {
+          if (e.propagationStopped) break;
+          this.fire(chain[i], e, false);
+        }
+      }
+    }
+    fire([path, object, value], e, isCapture, cords = this.listeners.get(path)) {
+      if (!cords) return;
+      e.type = path !== e.target.path ? "update" : e.staticType;
+      e.currentTarget = { path, value, oldValue: e.type !== "update" ? e.target.oldValue : void 0, key: e.type !== "update" ? path : path.slice(path.lastIndexOf(".") + 1) || "", hadKey: e.type !== "update" ? e.target.hadKey : true, object };
+      let killed = false;
+      const scords = cords.slice();
+      for (let i = 0, len = scords.length, tDepth; i < len; i++) {
+        const cord = scords[i];
+        if (e.immediatePropagationStopped) break;
+        if (cord.capture !== isCapture || cord._dead) continue;
+        if (cord.depth !== void 0) {
+          tDepth ??= getDepth(e.target.path);
+          if (tDepth > cord.lDepth + cord.depth) continue;
+        }
+        cord.cb(e);
+        if (cord.once) cord._dead = true, killed = true;
+      }
+      if (killed) {
+        for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && this.listeners.delete(path);
+      }
+    }
+    /**
+     * Flushes queued listener payloads.
+     * @param paths Optional path (or paths) to flush.
+     * @example
+     * rtr.tick(); // to flush all paths in batch or pass "*" wildcard
+     * @example
+     * rtr.tick("user.profile.name");
+     */
+    tick(paths) {
+      if (!paths || paths === "*") return this.flush();
+      if ("string" === typeof paths) {
+        const payload = this.batch?.get(paths);
+        payload && (this.batch.delete(paths), this.wave(paths, payload));
+      } else
+        for (const path of paths) {
+          const payload = this.batch.get(path);
+          payload && (this.batch.delete(path), this.wave(path, payload));
+        }
+    }
+    /**
+     * Queues a task to run after the current flush cycle.
+     * @param task Task callback.
+     * @example
+     * const task = () => console.log("after flush");
+     * rtr.stall(task);
+     */
+    stall(task) {
+      (this.queue ??= /* @__PURE__ */ new Set()).add(task), !this.isBatching && this.initBatching();
+    }
+    /**
+     * Removes a queued post-flush task.
+     * @param task Task callback.
+     * @returns `undefined` when no queue, `false` when queue exist but callback is not found, `true` when removed.
+     */
+    nostall(task) {
+      return this.queue?.delete(task);
+    }
+    context(path) {
+      const last = path.lastIndexOf("."), key = path.slice(last + 1) || "", object = last === -1 ? this.core : getPath(this.core, path.slice(0, last));
+      return { path, value: getPath(this.core, path), key, hadKey: !object || key in object, object };
+    }
+    binded(cord, sig) {
+      if (sig) sig.aborted ? cord.clup() : sig.addEventListener("abort", cord.clup, { once: true });
+      return cord.sclup = !sig || sig.aborted ? NOOP : () => sig.removeEventListener("abort", cord.clup), cord.clup;
+    }
+    cloned(target, raw, seen = /* @__PURE__ */ new WeakMap()) {
+      if (!target || "object" !== typeof target) return target;
+      const obj = target[RAW] || target, cloned = seen.get(obj);
+      if (cloned) return cloned;
+      if (!canHandle(obj, this.config, false)) return obj;
+      const version = obj[VERSION] || 0, cached = !raw && this.config.smartCloning && (this.snapCache ??= /* @__PURE__ */ new WeakMap()).get(obj);
+      if (cached && obj[SSVERSION] === version) return cached;
+      const clone = !raw ? this.config.preserveContext ? Object.create(Object.getPrototypeOf(obj)) : Array.isArray(obj) ? [] : {} : obj;
+      seen.set(obj, clone);
+      const keys2 = this.config.preserveContext ? Reflect.ownKeys(obj) : Object.keys(obj);
+      for (let i = 0, len = keys2.length; i < len; i++) {
+        const key = keys2[i];
+        try {
+          clone[key] = this.cloned(obj[key], raw, seen);
+        } catch (e) {
+          if (e instanceof RangeError) throw e;
+        }
+      }
+      if (!raw && this.config.smartCloning) this.snapCache.set(obj, clone), obj[SSVERSION] = version;
+      return clone;
+    }
+    onSync(key, path, cb, opts, onInit = NOOP) {
+      const { once = false, signal, lazy = false, init = false, initType } = parseEvtOpts(opts, EVT_OPTS.MEDIATOR), store = this[`${key}${key.endsWith("t") ? "t" : ""}ers`] ??= /* @__PURE__ */ new Map();
+      let cords = store.get(path), cord;
+      if (cords)
+        for (let i = 0, len = cords.length; i < len; i++) {
+          const excord = cords[i];
+          if (Object.is(excord.cb, cb)) {
+            cord = excord;
+            break;
+          }
+        }
+      if (cord) return cord.clup;
+      let task;
+      cord = { cb, once, clup: () => (lazy && this.nostall(task), this[`no${key}`](path, cb)) };
+      task = () => (cords ?? (store.set(path, cords = []), cords)).push(cord);
+      lazy ? this.stall(task) : task(), init && (init !== "auto" || hasPath(this.core, path)) && onInit(initType);
+      return this.binded(cord, signal);
+    }
+    // add synchronous
+    offSync(store, path, cb) {
+      const cords = store?.get(path);
+      if (!cords) return void 0;
+      for (let i = 0, len = cords.length; i < len; i++) {
+        const cord = cords[i];
+        if (Object.is(cord.cb, cb)) return cord.sclup(), cords.splice(i, 1), !cords.length && store.delete(path), cord._dead = true;
+      }
+      return false;
+    }
+    // remove synchronous
+    /**
+     * Registers a get mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback.
+     * @param options Sync options.
+     * @returns Cleanup function.
+     * @example
+     * const cleanup = rtr.get("user.name", (value) => String(value).trim());
+     */
+    get(path, callback, options) {
+      return this.onSync("get", path, callback, options, () => getPath(this.core, path));
+    }
+    /** Registers a get mediator for a path that only triggers once. */
+    gonce(path, callback, options) {
+      return this.get(path, callback, { ...parseEvtOpts(options, EVT_OPTS.MEDIATOR), once: true });
+    }
+    /**
+     * Removes a get mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback to remove.
+     * @returns `undefined` when the path has no records, `false` when records exist but callback is not found, `true` when removed.
+     */
+    noget(path, callback) {
+      return this.offSync(this.getters, path, callback);
+    }
+    /**
+     * Registers a set mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback.
+     * @param options Sync options.
+     * @returns Cleanup function.
+     * @example
+     * rtr.set("user.name", (value) => String(value).trim());
+     */
+    set(path, callback, options) {
+      return this.onSync("set", path, callback, options, () => (force(() => setPath(this.core, path, getPath(this.core, path))), this.tick(path)));
+    }
+    /** Registers a set mediator for a path that only triggers once. */
+    sonce(path, callback, options) {
+      return this.set(path, callback, Object.assign(parseEvtOpts(options, EVT_OPTS.MEDIATOR), { once: true }));
+    }
+    /**
+     * Removes a set mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback to remove.
+     * @returns `undefined` when the path has no records, `false` when records exist but callback is not found, `true` when removed.
+     */
+    noset(path, callback) {
+      return this.offSync(this.setters, path, callback);
+    }
+    /**
+     * Registers a delete mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback.
+     * @param options Sync options.
+     * @returns Cleanup function.
+     * @example
+     * rtr.delete("cache.temp", () => TERMINATOR);
+     */
+    delete(path, callback, options) {
+      return this.onSync("delete", path, callback, options, () => deletePath(this.core, path));
+    }
+    /** Registers a delete mediator for a path that only triggers once. */
+    donce(path, callback, options) {
+      return this.delete(path, callback, Object.assign(parseEvtOpts(options, EVT_OPTS.MEDIATOR), { once: true }));
+    }
+    /**
+     * Removes a delete mediator for a path.
+     * @param path Path or wildcard path.
+     * @param callback Mediator callback to remove.
+     * @returns `undefined` when the path has no records, `false` when records exist but callback is not found, `true` when removed.
+     */
+    nodelete(path, callback) {
+      return this.offSync(this.deleters, path, callback);
+    }
+    /**
+     * Registers a watcher for a path.
+     * Watch callbacks run synchronously with the operation, use leaf paths for reliability as it sees exact sets; no bubbling here.
+     * @param path Path or wildcard path.
+     * @param callback Watch callback.
+     * @param options Sync options.
+     * @returns Cleanup function.
+     * @example
+     * const cleanup = rtr.watch("user.name", (value) => console.log(value));
+     */
+    watch(path, callback, options) {
+      return this.onSync("watch", path, callback, options, (type) => !type ? ((target) => callback(target.value, { type: "init", target, currentTarget: target, root: this.core, rejectable: false }))(this.context(path)) : (force(() => type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path)), this.tick(path)));
+    }
+    /** Registers a watcher for a path that only triggers once. */
+    wonce(path, callback, options) {
+      return this.watch(path, callback, Object.assign(parseEvtOpts(options, EVT_OPTS.MEDIATOR), { once: true }));
+    }
+    /**
+     * Removes a watcher for a path.
+     * @param path Path or wildcard path.
+     * @param callback Watch callback to remove.
+     * @returns `undefined` when the path has no records, `false` when records exist but callback is not found, `true` when removed.
+     */
+    nowatch(path, callback) {
+      return this.offSync(this.watchers, path, callback);
+    }
+    /**
+     * Registers an event listener for a path.
+     * `on` listeners are batched and notified asynchronously by default e.g. `queueMicrotask()`.
+     * @param path Path or wildcard path.
+     * @param callback Listener callback.
+     * @param options Listener options.
+     * @returns Cleanup function.
+     * @example
+     * const cleanup = rtr.on("user.name", (e) => console.log(e.type, e.path));
+     */
+    on(path, callback, options) {
+      this.listeners ??= /* @__PURE__ */ new Map();
+      const { capture = false, once = false, signal, init = false, initType: type, depth } = parseEvtOpts(options, EVT_OPTS.LISTENER);
+      let cords = this.listeners.get(path), cord;
+      if (cords)
+        for (let i = 0, len = cords.length; i < len; i++) {
+          const excord = cords[i];
+          if (Object.is(excord.cb, callback) && capture === excord.capture) {
+            cord = excord;
+            break;
+          }
+        }
+      if (cord) return cord.clup;
+      cord = { cb: callback, capture, depth, once, clup: () => this.off(path, callback, options), lDepth: depth !== void 0 ? getDepth(path) : depth };
+      (cords ?? (this.listeners.set(path, cords = []), cords)).push(cord);
+      init && (init !== "auto" || hasPath(this.core, path)) && (!type ? ((target) => callback(new ReactorEvent({ type: "init", target, currentTarget: target, root: this.core, reactor: this, rejectable: false })))(this.context(path)) : (force(() => type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path)), this.tick(path)));
+      return this.binded(cord, signal);
+    }
+    /** Registers an event listener for a path that only triggers once. */
+    once(path, callback, options) {
+      return this.on(path, callback, Object.assign(parseEvtOpts(options, EVT_OPTS.LISTENER), { once: true }));
+    }
+    /**
+     * Removes an event listener for a path.
+     * @param path Path or wildcard path.
+     * @param callback Listener callback to remove.
+     * @param options Listener options used during registration.
+     * @returns `undefined` when the path has no records, `false` when records exist but callback is not found, `true` when removed.
+     * @example
+     * const cb = (e: REvent<T>) => console.log(e.path);
+     * rtr.on("user.name", cb);
+     * rtr.off("user.name", cb);
+     */
+    off(path, callback, options) {
+      const cords = this.listeners?.get(path);
+      if (!cords) return void 0;
+      const { capture = false } = parseEvtOpts(options, EVT_OPTS.LISTENER);
+      for (let i = 0, len = cords.length; i < len; i++) {
+        const cord = cords[i];
+        if (Object.is(cord.cb, callback) && cord.capture === capture) return cord.sclup(), cords.splice(i, 1), !cords.length && this.listeners.delete(path), cord._dead = true;
+      }
+      return false;
+    }
+    snapshot(raw = !this.config.smartCloning, branch) {
+      return this.cloned(arguments.length < 2 ? this.core : branch, raw);
+    }
+    /**
+     * Installs a module instance.
+     * @param target Module instance.
+     * @param id Optional identification tag for this instance in the module.
+     * @returns Current `Reactor` instance for fluent chaining.
+     */
+    use(target, id) {
+      return (this.modules ??= /* @__PURE__ */ new Set()).add(target.setup(this, id)), this;
+    }
+    /** Resets this reactor instance to its initial state. */
+    reset() {
+      this.getters?.clear(), this.setters?.clear(), this.deleters?.clear(), this.watchers?.clear(), this.listeners?.clear();
+      this.batch?.clear(), this.queue?.clear(), this.isBatching = false;
+    }
+    destroy() {
+      if (this.modules) for (const mdle of this.modules) mdle.destroy();
+      this.reset(), nuke(this);
+    }
+    get canLog() {
+      return this.log !== NOOP;
+    }
+    set canLog(value) {
+      this.log = value ? RTR_LOG : NOOP;
+    }
+    get canLineageTrace() {
+      return this.config.lineageTracing && this.config.referenceTracking;
+    }
+    get canSmartClone() {
+      return this.config.smartCloning && this.config.referenceTracking;
+    }
+  };
+  var methods = ["tick", "stall", "nostall", "get", "gonce", "noget", "set", "sonce", "noset", "delete", "donce", "nodelete", "watch", "wonce", "nowatch", "on", "once", "off", "snapshot", "use", "reset", "destroy"];
+  function reactive(target, build, preferences = NIL) {
+    if ("__Reactor__" in target) return target;
+    const descriptors = {}, rtr = getReactor(target, true, build), locks = { enumerable: false, configurable: true, writable: false }, hasAffix = !!(preferences.prefix || preferences.suffix);
+    for (let i = 0, len = methods.length; i < len; i++) {
+      let key = methods[i];
+      if (hasAffix) (preferences.whitelist?.includes(key) ?? true) && (key = `${preferences.prefix || ""}${key}${preferences.suffix || ""}`);
+      else if (preferences.whitelist?.includes(key)) continue;
+      descriptors[key] = { value: rtr[methods[i]].bind(rtr), ...locks };
+    }
+    descriptors["__Reactor__"] = { value: rtr, ...locks };
+    return Object.defineProperties(rtr.core, descriptors), rtr.core;
+  }
+  function volatile(target) {
+    return getRaw(target)[INDIFFABLE] = true, target;
+  }
+  function getReactor(target, create = false, build) {
+    return (target instanceof Reactor ? target : target.__Reactor__) || (create ? new Reactor(target, build) : void 0);
+  }
+  function getRaw(target = NIL) {
+    return target[RAW] || target;
+  }
+
+  // ../t007-tools/packages/utils/dist/chunk-HGUYOV3P.js
+  var INTERACTIVE_SELECTOR = ":is(button,[href],input:not([type='hidden']),select,textarea,details>summary,[contenteditable],iframe,audio[controls],video[controls],[tabindex]):not([disabled],[tabindex='-1'],[data-focus-guard],[inert],[inert] *)";
+  var isInteractive = (target) => target instanceof HTMLElement && target.matches(INTERACTIVE_SELECTOR);
+  var VIRTUAL_RESOURCE = /* @__PURE__ */ Symbol.for("T007_VIRTUAL_RESOURCE");
+  function loadResource(req, type = "style", { module, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, attempts = 3, retryKey = false } = {}, win = window) {
+    win.t007 ??= {}, win.t007._resourceCache ??= {};
+    if (req === VIRTUAL_RESOURCE || isSym(req)) return Promise.resolve();
+    const src = req;
+    if (win.t007._resourceCache[src]) return win.t007._resourceCache[src];
+    const existing = type === "script" ? Array.prototype.find.call(win.document.scripts, (s) => isSameURL(s.src, src)) : type === "style" ? Array.prototype.find.call(win.document.styleSheets, (s) => isSameURL(s.href, src)) : null;
+    if (existing) return win.t007._resourceCache[src] = Promise.resolve(existing);
+    win.t007._resourceCache[src] = new Promise((resolve, reject) => {
+      (function tryLoad(remaining, el) {
+        const onerror = () => {
+          el?.remove?.();
+          if (remaining > 1) {
+            setTimeout(tryLoad, 1e3, remaining - 1);
+            console.warn(`Retrying ${type} load for "${src}" (${attempts - remaining + 1})...`);
+          } else {
+            delete win.t007._resourceCache[src];
+            reject(new Error(`${capitalize(type)} load failed for "${src}" after ${attempts - 1} attempts`));
+          }
+        };
+        const url = retryKey && remaining < attempts ? `${src}${src.includes("?") ? "&" : "?"}_${retryKey}=${Date.now()}` : src;
+        if (type === "script") win.document.body.append(el = createEl("script", { src: url, type: module ? "module" : "text/javascript", crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || "");
+        else if (type === "style") win.document.head.append(el = createEl("link", { rel: "stylesheet", href: url, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || "");
+        else reject(new Error(`Unsupported resource type: ${type}`));
+      })(attempts);
+    });
+    return win.t007._resourceCache[src];
+  }
+  function isDef(val) {
+    return "undefined" !== typeof val;
+  }
+  function isSym(val) {
+    return "symbol" === typeof val;
+  }
+  function isStr(val) {
+    return "string" === typeof val;
+  }
+  function isArr(obj) {
+    return Array.isArray(obj);
+  }
+  function isIter(obj) {
+    return obj != null && "function" === typeof obj[Symbol.iterator];
+  }
+  function uid(prefix = "") {
+    return prefix + Date.now().toString(36) + "_" + performance.now().toString(36).replace(".", "") + "_" + Math.random().toString(36).slice(2);
+  }
+  function capitalize(word = "") {
+    return word.replace(/^(\s*)([a-z])/i, (_, s, l) => s + l.toUpperCase());
+  }
+  function remToPx(rem, el = document.documentElement) {
+    return rem * parseFloat(getComputedStyle(el).fontSize);
+  }
+  function parseCSSTime(time) {
+    return time?.endsWith?.("ms") ? parseFloat(time) : parseFloat(time) * 1e3;
+  }
+  function parseCSSSize(size, el) {
+    return size?.endsWith?.("px") ? parseFloat(size) : remToPx(parseFloat(size), el);
+  }
+  function cleanURL(url) {
+    try {
+      const u = new URL(url, window.location.href);
+      return decodeURIComponent(u.origin + u.pathname);
+    } catch {
+      return url.replace(/\\/g, "/").split("?")[0].trim();
+    }
+  }
+  function isSameURL(url1, url2) {
+    if (url1 === url2) return true;
+    if (!isStr(url1) || !isStr(url2) || !url1 || !url2) return false;
+    return cleanURL(url1) === cleanURL(url2);
+  }
+  var mockAsync = (timeout = 250) => new Promise((resolve) => setTimeout2(resolve, timeout));
+  function formatSize(bytes, decimals = 3, base = 1e3) {
+    if (bytes < base) return `${bytes} byte${bytes == 1 ? "" : "s"}`;
+    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"], exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(base)), units.length - 1);
+    return `${(bytes / Math.pow(base, exponent)).toFixed(decimals).replace(/\.0+$/, "")} ${units[exponent]}`;
+  }
+  if ("undefined" !== typeof window) {
+    (window.t007 ??= {}).VIRTUAL_RESOURCE = VIRTUAL_RESOURCE;
+    window.T007_TOAST_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/toast@latest`;
+    window.T007_INPUT_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/input@latest`;
+    window.T007_DIALOG_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest`;
+    window.T007_TOAST_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/toast@latest/dist/index.min.css`;
+    window.T007_INPUT_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/input@latest/dist/index.min.css`;
+    window.T007_DIALOG_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest/dist/index.min.css`;
+  }
+
+  // ../t007-tools/packages/utils/dist/chunk-ZRCBB5P4.js
+  function rippleHandler(e, { target, forceCenter = false, wrapperClassName = "t007-ripple-wrapper", className = "t007-ripple", holdClassName = "t007-ripple-hold", fadeClassName = "t007-ripple-fade", maxDuration = 1e3 } = NIL) {
+    const el = target || e.currentTarget;
+    if (!el || e.target !== e.currentTarget && isInteractive(e.target) || el.hasAttribute("disabled") || e.pointerType === "mouse" && e.button !== 0) return;
+    e.stopPropagation?.();
+    const { offsetWidth: rW, offsetHeight: rH } = el, { width: w, height: h, left: l, top: t } = el.getBoundingClientRect(), size = Math.max(rW, rH), x = forceCenter ? rW / 2 - size / 2 : (e.clientX - l) * rW / w - size / 2, y = forceCenter ? rH / 2 - size / 2 : (e.clientY - t) * rH / h - size / 2, wrapper = createEl("span", { className: wrapperClassName }), ripple = createEl("span", { className: className + " " + holdClassName }, {}, { cssText: `width:${size}px;height:${size}px;left:${x}px;top:${y}px;` });
+    let canRelease = false;
+    ripple.addEventListener("animationend", () => canRelease = true, { once: true });
+    el.append(wrapper.appendChild(ripple).parentElement);
+    let released = false;
+    const release = (force2) => {
+      if (released) return;
+      if (!canRelease && force2 !== true) return ripple.addEventListener("animationend", release, { once: true }), void setTimeout(release, maxDuration, true);
+      released = true;
+      ripple.classList.replace(holdClassName, fadeClassName);
+      ripple.addEventListener("animationend", () => setTimeout(() => wrapper.remove())), setTimeout(() => wrapper.remove(), maxDuration);
+      for (const evt of ["pointerup", "pointercancel"]) (el.ownerDocument?.defaultView || window).removeEventListener(evt, release);
+    };
+    for (const evt of ["pointerup", "pointercancel"]) (el.ownerDocument?.defaultView || window).addEventListener(evt, release);
+  }
+  var H_NAV_KEYS = ["ArrowRight", "ArrowLeft", "Home", "End"];
+  var V_NAV_KEYS = ["ArrowUp", "ArrowDown", "PageDown", "PageUp"];
+  var NAV_KEYS = [...H_NAV_KEYS, ...V_NAV_KEYS];
+
+  // ../t007-tools/packages/utils/dist/hooks/vanilla.js
+  function initScrollAssist(el, { pxPerSecond = 80, assistClassName = "t007-scroll-assist", vertical = true, horizontal = true } = NIL) {
+    const parent = el?.parentElement, existing = (t007._scrollers ??= /* @__PURE__ */ new WeakMap()).get(el);
+    if (!parent || existing) return existing ? existing : void 0;
+    t007._scrollers_r_observer ??= new ResizeObserver((entries) => {
+      for (const { target } of entries) t007._scrollers.get(target)?.update();
+    });
+    t007._scrollers_m_observer ??= new MutationObserver((entries) => {
+      const els = /* @__PURE__ */ new Set();
+      for (const entry of entries) {
+        let node = entry.target instanceof Element ? entry.target : null;
+        while (node && !t007._scrollers.has(node)) node = node.parentElement;
+        if (node) els.add(node);
+      }
+      for (const el2 of els) t007._scrollers.get(el2)?.update();
+    });
+    const assist = {};
+    let scrollId = null, last = performance.now(), assistWidth = 20, assistHeight = 20;
+    const update = () => {
+      const hasInteractive = !!parent.querySelector(INTERACTIVE_SELECTOR);
+      if (horizontal) {
+        const w = assist.left?.offsetWidth || assistWidth, check = hasInteractive ? el.clientWidth < w * 2 : false;
+        assist.left.style.display = check ? "none" : el.scrollLeft > 0 ? "block" : "none";
+        assist.right.style.display = check ? "none" : el.scrollLeft + el.clientWidth < el.scrollWidth - 1 ? "block" : "none";
+        assistWidth = w;
+      }
+      if (vertical) {
+        const h = assist.up?.offsetHeight || assistHeight, check = hasInteractive ? el.clientHeight < h * 2 : false;
+        assist.up.style.display = check ? "none" : el.scrollTop > 0 ? "block" : "none";
+        assist.down.style.display = check ? "none" : el.scrollTop + el.clientHeight < el.scrollHeight - 1 ? "block" : "none";
+        assistHeight = h;
+      }
+    };
+    const scroll = (dir) => {
+      const frame = () => {
+        const now = performance.now(), dt = now - last;
+        last = now;
+        const d = pxPerSecond * dt / 1e3;
+        if (dir === "left") el.scrollLeft = Math.max(0, el.scrollLeft - d);
+        if (dir === "right") el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + d);
+        if (dir === "up") el.scrollTop = Math.max(0, el.scrollTop - d);
+        if (dir === "down") el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + d);
+        scrollId = requestAnimationFrame(frame);
+      };
+      last = performance.now();
+      frame();
+    };
+    const stop = () => (cancelAnimationFrame(scrollId ?? 0), scrollId = null);
+    const addAssist = (dir) => {
+      const div = createEl("div", { className: assistClassName }, { scrollDirection: dir }, { display: "none" });
+      if (!div) return;
+      for (const evt of ["pointerenter", "dragenter"]) div.addEventListener(evt, () => scroll(dir));
+      for (const evt of ["pointerleave", "pointerup", "pointercancel", "dragleave", "dragend"]) div.addEventListener(evt, stop);
+      dir === "left" || dir === "up" ? parent.insertBefore(div, el) : parent.append(div);
+      assist[dir] = div;
+    };
+    if (horizontal) for (const dir of ["left", "right"]) addAssist(dir);
+    if (vertical) for (const dir of ["up", "down"]) addAssist(dir);
+    const handle = {
+      update,
+      destroy() {
+        stop(), el.removeEventListener("scroll", update);
+        t007._scrollers_r_observer.unobserve(el), t007._scrollers.delete(el);
+        for (const a of Object.values(assist)) a.remove();
+      }
+    };
+    update(), el.addEventListener("scroll", update);
+    t007._scrollers_r_observer.observe(el), t007._scrollers_m_observer.observe(el, { childList: true, subtree: true, characterData: true });
+    return t007._scrollers.set(el, handle), handle;
+  }
+  var removeScrollAssist = (el) => t007._scrollers.get(el)?.destroy();
+
+  // ../sia-reactor/dist/chunk-A3ZCYWWM.js
+  var BaseReactorModule = class {
+    static moduleName;
+    get name() {
+      return this.constructor.moduleName;
+    }
+    ac = new AbortController();
+    signal = this.ac.signal;
+    deps = /* @__PURE__ */ new Map();
+    rids = /* @__PURE__ */ new WeakMap();
+    // for quick 0(1) lookups over iteration
+    evtOpts = { signal: this.signal };
+    /** The reactive state object for the module, watch to see exposed lifecycle changes. */
+    state;
+    /** The reactive configuration object for the module, manipulate to change behaviour. */
+    config;
+    wired = false;
+    constructor(config, rtr, state2) {
+      guardAllMethods(this, this.guard);
+      this.config = isObj(config) ? reactive(config) : config;
+      this.state = isObj(state2) ? reactive(state2) : state2;
+      rtr && this.attach(rtr);
+    }
+    /**
+     * Connect to a `Reactor` instance, allows managing multiple reactors if needed.
+     * @param target `Reactor` instance or `reactive()` object to connect to.
+     * @param id Optional custom id for the reactor, prefer over default implicit index id when managing multiple reactors, supports paths to merge into a single tree.
+     * @returns Current `ReactorModule` instance for fluent chaining.
+     * @example
+     * const mod = new MyModule().attach(state1).attach(state2); // implicit index-based ids by default, add a .setup() or `Reactor.use()` when ready for init.
+     * @example
+     * const persist = new PersistModule(config).attach(sessState, "session").attach(adminState, "session.admin"); // don't use "*", causes de-serialization issues.
+     */
+    attach(target, id = this.deps.size) {
+      const rtr = getReactor(target);
+      if (!rtr || this.deps.has(id)) return this;
+      return this.rids.set((this.deps.set(id, rtr), rtr), id), this.onAttach(rtr, id), this;
+    }
+    onAttach(_rtr, _rid) {
+    }
+    attachPaths(rtr, rid, forEach = NOOP, paths = this.getPaths(rid)) {
+      for (let i = 0, len = paths.length; i < len; i++) {
+        const path = paths[i];
+        forEach(rtr, path), !this.config.disabled ? this.config.synchronous ? rtr.watch(path, this.handlePathSync, { signal: this.signal }) : rtr.on(path, this.handlePath, this.evtOpts) : this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath, this.evtOpts);
+      }
+    }
+    /**
+     * Entry point called to initialize module wiring, calls `.attach(target, id)` first, `Reactor.use()` calls this internally.
+     * Should run as last in `.attach()` chain or after all desired reactors if using multiple; so wiring is done safely after.
+     * @param target `Reactor` instance or `reactive()` object to connect to.
+     * @param id Optional id for the reactor, prefer over default implicit index id when managing multiple reactors.
+     * @returns Current `ReactorModule` instance for fluent chaining.
+     * @example
+     * const mod = new MyModule().attach(state1).setup(state2); // if using multiple, this should run last; with same params as `.attach()` for a shorter chain
+     */
+    setup(target, id) {
+      return this.attach(target, id), !this.wired && (this.wire(), this.wired = true), this;
+    }
+    destroy() {
+      if (this.ac) this.ac.abort(), this.onDestroy?.(), nuke(this);
+    }
+    /**
+     * Wraps a function with module-scoped error logging, every instance methods is already auto-wrapped with this.
+     * Use this when creating functions dynamically (for example, before attaching an anonymous listener on the fly).
+     * @example
+     * window.addEventListener("resize", this.guard(() => this.syncLayout(true)), { signal: this.signal });
+     */
+    guard = (fn) => {
+      return guardMethod(fn, (e) => this.deps.values().next().value?.log(`[Reactor "${this.name}" Module] Error: ${e}`));
+    };
+    // `()=>{}`: needs to be bounded even before initialization
+    handleWhitelist({ currentTarget: { value: paths } }) {
+      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid, NOOP, this.getPaths(rid, paths));
+    }
+    // child wires when ready
+    handlePath(e, rid = this.rids.get(e.reactor)) {
+      (!this.config.blacklist || !matchPaths(this.getPaths(rid, this.config.blacklist, true), e.path)) && this.onPath(e, rid);
+    }
+    handlePathSync = (_, p) => this.handlePath(p);
+    onPath(_e, _rid) {
+    }
+    handleSynchronous({ oldValue }) {
+      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid, (rtr2, path) => oldValue ? rtr2.nowatch(path, this.handlePathSync) : rtr2.off(path, this.handlePath));
+    }
+    // child wires when ready
+    /**
+     * Path resolution utility for modules, provides automatic reactor id resolution for multi-reactor setups.
+     * @param target Reactor or reactor id to resolve paths for when using per-reactor path lists`.
+     * @param paths Paths to filter by, supports same formats as `ModulePaths`, will be resolved with the module's reactor id if applicable.
+     * @returns Resolved paths array, defaults to `["*"]` if no paths are found using search criteria.
+     */
+    getPaths(target, paths = this.config.whitelist, allowEmpty = paths !== this.config.whitelist) {
+      const rid = target?.core ? this.rids.get(target) : target;
+      return (paths && (Array.isArray(paths) ? paths : paths[String(rid)])) ?? (!allowEmpty ? wpArr : []);
+    }
+    /**
+     * Compute the serialized payload for all attached reactors.
+     * If multiple reactors are attached, returns a merged object keyed by reactor id. Honors `whitelist`, `snapshot` and `mirrorWrites` configuration on each reactor.
+     * @param target Optional target reactor or id to compute payload for, useful when using per-reactor path lists.
+     * @returns The payload to persist (or `undefined` for empty single-reactor payload).
+     */
+    getPayload(target, _rid, _nest = target ? false : this.deps.size > 1) {
+      const _rtr = target?.core ? target : this.deps.get(target);
+      let res = _nest ? {} : void 0;
+      for (const [rid, rtr] of !target ? this.deps : [[_rid || target, _rtr]]) {
+        const snap = this.config.snapshot ? (this.config.snapshot === true && (rtr.config.referenceTracking = rtr.config.smartCloning = true), rtr.snapshot()) : rtr.core, val = this.config.whitelist ? {} : snap;
+        if (this.config.whitelist) {
+          const paths = this.getPaths(rid);
+          for (let i = 0, len = paths.length; i < len; i++) {
+            const _path = paths[i], path = !this.config.mirrorReads || !_path.includes("intent") ? _path : _path.replace("intent", "state");
+            setPath(val, _path, getPath(snap, path));
+          }
+        }
+        _nest ? setPath(res, rid, val) : res = val;
+      }
+      return res;
+    }
+  };
+  var wpArr = ["*"];
+
+  // ../sia-reactor/dist/modules.js
+  var BaseStorageAdapter = class {
+    name = "BaseStorageAdapter";
+    config;
+    warn = (act = "", mssg = "Support issue or Private Mode", key = "", store = "") => this.config.debug && console.warn(`[${this.constructor.name} \`${act}\`] Failed${key ? ` for ${key}` : ""}${store ? ` on "${store}"` : ""}${this.config.dbName ? ` at ${this.config.dbName}` : ""} (${mssg})`);
+    constructor(config) {
+      this.config = { debug: false, ...config };
+    }
+  };
+  var StorageAdapter = class extends BaseStorageAdapter {
+    name = "StorageAdapter";
+  };
+  var AsyncStorageAdapter = class extends BaseStorageAdapter {
+    name = "AsyncStorageAdapter";
+  };
+  var LocalStorageAdapter = class extends StorageAdapter {
+    name = "LocalStorage";
+    /**
+     * Reads and parses a value from localStorage.
+     * @param key Storage key.
+     * @returns Parsed value, or `undefined` when missing/unreadable.
+     */
+    get(key = this.config.key, reviver = this.config.reviver) {
+      try {
+        const v = localStorage.getItem(key);
+        return v ? JSON.parse(v, reviver) : void 0;
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return void 0;
+      }
+    }
+    /**
+     * Serializes and writes a value to localStorage.
+     * @param key Storage key.
+     * @param value Value to serialize.
+     * @returns `true` when write succeeds, else `false`.
+     */
+    set(key = this.config.key, value, replacer = this.config.replacer) {
+      try {
+        return localStorage.setItem(key, JSON.stringify(value, replacer)), true;
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("setItem", void 0, key), false;
+      }
+    }
+    /**
+     * Removes a single key from localStorage.
+     * @param key Storage key.
+     * @returns `true` when removal succeeds, else `false`.
+     */
+    remove(key = this.config.key) {
+      try {
+        return localStorage.removeItem(key), true;
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("removeItem", void 0, key), false;
+      }
+    }
+    /**
+     * Clears all localStorage entries for the current origin.
+     * @returns `true` when clear succeeds, else `false`.
+     */
+    clear() {
+      try {
+        return localStorage.clear(), true;
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("clear", void 0), false;
+      }
+    }
+  };
+  var INDEXED_DB_ADAPTER_BUILD = {
+    dbName: "REACTOR_IDB",
+    stores: ["VAULT"],
+    version: 1,
+    onidb: NOOP,
+    onupgradeneeded: NOOP,
+    onversionchange: NOOP,
+    onsuccess: NOOP,
+    onerror: NOOP,
+    onblocked: NOOP
+  };
+  var IndexedDBAdapter = class extends AsyncStorageAdapter {
+    name = "IndexedDB";
+    db;
+    constructor(build) {
+      super({ ...INDEXED_DB_ADAPTER_BUILD, ...build });
+    }
+    /**
+     * Returns a connected IndexedDB instance, opening it when needed.
+     * @returns Connected database handle.
+     */
+    async idb() {
+      const idb = this.config.onidb();
+      if (idb || this.db) return Promise.resolve(idb || this.db);
+      return new Promise((res, rej) => {
+        const req = indexedDB.open(this.config.dbName, this.config.version);
+        req.onupgradeneeded = (e) => (this.config.onupgradeneeded(req.result, e), this.config.stores.forEach((s) => !req.result.objectStoreNames.contains(s) && req.result.createObjectStore(s)));
+        req.onsuccess = (e) => (this.config.onsuccess(req.result, e), req.result.onversionchange = (e2) => (this.config.onversionchange(req.result, e2), this.warn("update", "Updated in another tab"), req.result.close()), res(this.db = req.result));
+        req.onerror = (e) => (this.config.onerror(req.error, e), this.warn("open", "Something went wrong"), rej(req.error));
+        req.onblocked = (e) => (this.config.onblocked(e), this.warn("open", "Close other tabs for updates"));
+      });
+    }
+    /**
+     * Reads a value by key from an object store.
+     * @param key Record key.
+     * @param store Optional object-store override.
+     * @returns Stored value, or `undefined` when missing/unreadable.
+     */
+    async get(key = this.config.key, store = this.config.stores[0], options = this.config) {
+      try {
+        const req = (await this.idb()).transaction(store, "readonly", options).objectStore(store).get(key);
+        return new Promise((res) => req.onsuccess = () => res(req.result));
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("get", void 0, store), void 0;
+      }
+    }
+    /**
+     * Writes a value by key into an object store.
+     * @param key Record key.
+     * @param value Value to store.
+     * @param store Optional object-store override.
+     * @returns `true` when write succeeds, else `false`.
+     */
+    async set(key = this.config.key, value, store = this.config.stores[0], options = this.config) {
+      try {
+        const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).put(value, key);
+        return new Promise((res) => req.onsuccess = () => res(true));
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("put", void 0, store), false;
+      }
+    }
+    /**
+     * Deletes a value by key from an object store.
+     * @param key Record key.
+     * @param store Optional object-store override.
+     * @returns `true` when delete succeeds, else `false`.
+     */
+    async remove(key = this.config.key, store = this.config.stores[0], options = this.config) {
+      try {
+        const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).delete(key);
+        return new Promise((res) => req.onsuccess = () => res(true));
+      } catch (e) {
+        if (this.config.throwErrors) throw e;
+        return this.warn("delete", void 0, store), false;
+      }
+    }
+    /**
+     * Clears one or more object stores.
+     * @param stores Store name or list of store names to clear.
+     * @returns `true` when all clears succeed, else `false`.
+     */
+    async clear(stores = this.config.stores, options = this.config) {
+      let success = true;
+      for (const store of Array.isArray(stores) ? stores : [stores])
+        try {
+          const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).clear();
+          await new Promise((res) => req.onsuccess = () => res(true));
+        } catch (e) {
+          if (this.config.throwErrors) throw e;
+          this.warn("clear", void 0, store), success = false;
+        }
+      return success;
+    }
+  };
+  var PERSIST_MODULE_BUILD = {
+    disabled: false,
+    key: "REACTOR_STORE",
+    throttle: 2500,
+    snapshot: false,
+    mirrorReads: true,
+    mirrorWrites: true,
+    onSave: NOOP,
+    strict: true
+  };
+  var PersistModule = class extends BaseReactorModule {
+    static moduleName = "persist";
+    adapter;
+    tickMap = /* @__PURE__ */ new Map();
+    cache = null;
+    hydrateSeq = 0;
+    persistSeq = 0;
+    saveTimeoutId = 0;
+    constructor(config, rtr) {
+      super(mergeObjs(PERSIST_MODULE_BUILD, config, rtr?.config), rtr, { hydrated: false });
+    }
+    wire() {
+      "undefined" !== typeof window && window.addEventListener("pagehide", this.onDestroy, { signal: this.signal });
+      "undefined" !== typeof document && document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && this.onDestroy(), { signal: this.signal });
+      this.config.on("adapter", this.handleAdapter, { signal: this.signal, init: true });
+      this.config.on("disabled", this.handleDisabled, { signal: this.signal, init: true });
+      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, init: true });
+      this.config.on("synchronous", this.handleSynchronous, { signal: this.signal });
+    }
+    onAttach(rtr, rid) {
+      rtr.config.eventBubbling = true;
+      this.attachPaths(rtr, rid);
+      this.state.hydrated && this.cache && this.hydrate(this.deps.size > 1 ? getPath(this.cache, rid) : this.cache, rtr, rid);
+    }
+    onPath() {
+      if (this.state.hydrated) this.saveTimeoutId ||= setTimeout2(this.persist, this.config.throttle, this.signal);
+    }
+    async persist() {
+      const seq = ++this.persistSeq;
+      let payload = this.getPayload();
+      if (this.config.beforeSave) {
+        const res = this.config.beforeSave(payload);
+        if (res === false) return;
+        if (res && res !== true) payload = res;
+      }
+      this.saveTimeoutId = 0;
+      if (this.config.onSave === NOOP) return void await this.adapter.set(this.config.key, payload);
+      try {
+        const bool = await this.adapter.set(this.config.key, payload);
+        if (seq !== this.persistSeq) return;
+        this.config.onSave(payload, bool ?? true);
+      } catch (e) {
+        this.config.onSave(payload, false, e);
+      }
+    }
+    async handleAdapter({ value = LocalStorageAdapter }) {
+      const seq = ++this.hydrateSeq;
+      if (this.adapter && value === this.adapter.constructor) return;
+      this.state.hydrated = false;
+      this.adapter?.remove(this.config.key);
+      this.adapter = "function" === typeof value ? new value({ debug: !!this.deps.values().next().value?.canLog }) : (value.config.debug = !!this.deps.values().next().value?.canLog, value);
+      try {
+        let saved = this.adapter.get(this.config.key);
+        const isAsync = saved instanceof Promise, opts = parseEvtOpts(this.config.fanout ?? isAsync, fanoutOptsArr, "depth");
+        saved = !isAsync ? saved : await saved;
+        if (this.config.beforeHydrate && saved) {
+          const res = this.config.beforeHydrate(saved);
+          if (res === false) return;
+          if (res && res !== true) saved = res;
+        }
+        if (seq !== this.hydrateSeq || !saved) return;
+        this.cache = this.config.cachePayload ? saved : null;
+        for (const [rid, rtr] of this.deps) this.hydrate(this.deps.size > 1 ? getPath(saved, rid) : saved, rtr, rid, opts, false);
+        for (const [rid, rtr] of this.deps) rtr.tick(opts.depth || !this.config.whitelist ? "*" : this.tickMap.get(rid) || []);
+        this.tickMap.clear();
+      } finally {
+        if (seq === this.hydrateSeq) this.state.hydrated = true;
+      }
+    }
+    handleDisabled({ value }) {
+      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid);
+      value && this.adapter?.remove(this.config.key);
+    }
+    hydrate(entry, rtr, rid = this.rids.get(rtr), { depth, merge = true, atomic, skipUndefined } = parseEvtOpts(this.config.fanout, fanoutOptsArr, "depth"), tick = true) {
+      if (!entry) return;
+      const whites = this.getPaths(rid), blacks = this.getPaths(rid, this.config.blacklist, true), set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev, rtr.config) : prev, depth ? { depth, atomic, skipUndefined, crossRealms: rtr.config.crossRealms } : void 0);
+      let ticks = this.tickMap.get(rid);
+      for (let i = 0, len = blacks.length; i < len; i++) deletePath(entry, blacks[i]);
+      for (let i = 0, len = whites.length; i < len; i++) {
+        let mirror;
+        const _path = whites[i], path = !this.config.mirrorWrites || !_path.includes("state") || !hasPath(rtr.core, mirror = _path.replace("state", "intent")) ? _path : mirror, value = getPath(entry, _path);
+        value !== void 0 && (set(path, getPath(rtr.core, path), value), (ticks || (this.tickMap.set(rid, ticks = []), ticks)).push(path));
+      }
+      tick && (rtr.tick(depth || !this.config.whitelist ? "*" : ticks || []), this.tickMap.delete(rid));
+    }
+    /** Clears persisted payload for this module instance by removing the stored key from the adapter and drops any pending save. */
+    clear() {
+      clearTimeout(this.saveTimeoutId);
+      this.saveTimeoutId = -1;
+      queueMicrotask(() => this.saveTimeoutId = 0);
+      this.adapter?.remove(this.config.key);
+    }
+    /** Clears stored `cache` for this module instance, call after all attachments that use the cached hydration payload. */
+    clearCache() {
+      this.cache = null;
+    }
+    onDestroy() {
+      this.config.strict && this.state.hydrated && !this.config.disabled && this.adapter?.set(this.config.key, this.getPayload());
+    }
+  };
+  var TIME_TRAVEL_MODULE_BUILD = {
+    limit: 1e9,
+    playbackRate: 1,
+    maxPlaybackDelay: 2e3,
+    mirrorReads: true,
+    mirrorWrites: true,
+    onApply: NOOP
+  };
+  var TimeTravelModule = class extends BaseReactorModule {
+    static moduleName = "timeTravel";
+    txMap = /* @__PURE__ */ new WeakMap();
+    evtOpts = { capture: true, signal: this.signal };
+    // capture for change immediacy devoid of UI lag
+    lastTimestamp = 0;
+    playbackSeq = 0;
+    _tracking;
+    // `untrack()` must `track()` in the same session to prevent hydration bugs
+    constructor(config, rtr) {
+      super({ ...TIME_TRAVEL_MODULE_BUILD, ...config }, rtr, { initialState: {}, history: [], tracking: true, currentFrame: 0, paused: true, forward: true });
+    }
+    // ===========================================================================
+    // THE FOUNDATION & WIRETAP (Passive Recording)
+    // ===========================================================================
+    wire() {
+      this.lastTimestamp = performance.now();
+      this.config.on("whitelist", this.handleWhitelist, { signal: this.signal, init: true });
+      this.config.on("synchronous", this.handleSynchronous, { signal: this.signal });
+      !this.state.paused && this.automove(this.state.forward);
+    }
+    onAttach(rtr, rid) {
+      rtr.config.eventCapturing = rtr.config.referenceTracking = rtr.config.smartCloning = rtr.config.eventTimeStamps = true;
+      if (!this.state.history.length || !this.state.initialState[rid]) this.state.initialState[rid] = this.getPayload(rtr, rid);
+      this.attachPaths(rtr, rid);
+    }
+    onPath = this.record;
+    /** Chronicling the lifecycle of the system, Captures the essence of every mutation wave that bubbles up. */
+    record(e, rid = this.rids.get(e.reactor)) {
+      if (!this.state.paused || !(this._tracking ?? this.state.tracking) || e.silent) return;
+      if (this.state.currentFrame < this.state.history.length) this.state.history.length = this.state.currentFrame;
+      const timestamp = e.timestamp ?? performance.now();
+      let en = { path: e.target.path, to: e.reactor.snapshot(false, e.target.value), from: !this.config.mirrorReads || !e.target.path.includes("intent") ? e.reactor.snapshot(false, e.target.oldValue) : getPath(e.reactor.core, e.target.path.replace("intent", "state")), type: e.staticType ?? e.type, rid, deltat: timestamp - this.lastTimestamp };
+      !e.target.hadKey && (en.hadKey = false);
+      if (this.config.beforeEntry) {
+        const res = this.config.beforeEntry(en, this.state.history);
+        if (res === false) return;
+        if (res && res !== true) en = res;
+      }
+      if (e.tx) {
+        let histTx = this.txMap.get(e.tx);
+        if (!histTx) {
+          this.txMap.set(e.tx, histTx = { id: e.tx.id, label: e.tx.label, nodes: [en], deltat: en.deltat, start: timestamp, end: timestamp });
+          const parentTx = e.tx.parent ? this.txMap.get(e.tx.parent) : null;
+          (parentTx ? parentTx.nodes : this.state.history).push(histTx);
+        } else histTx.nodes.push(en), histTx.end = timestamp;
+      } else this.state.history.push(en);
+      force(() => this.state.currentFrame = this.state.history.length, !!e.tx);
+      while (this.state.history.length > this.config.limit) this.state.history.shift(), this.state.currentFrame--;
+      this.lastTimestamp = timestamp;
+    }
+    /** Resumes the passive recording of state changes. */
+    track() {
+      this.state.tracking = this._tracking = true, !this.state.paused && this.automove(this.state.forward);
+    }
+    /**
+     * Pauses the passive recording of state changes and returns `this`. Useful to call at creation time to avoid recording hydration waves.
+     * @returns `this`
+     */
+    untrack() {
+      this.lastTimestamp = performance.now();
+      return this.state.tracking = this._tracking = false, this;
+    }
+    /** Clears timeline history and resets the playhead and initial snapshots to current reactor state. */
+    clear() {
+      this.pause();
+      this.state.history.length = this.state.currentFrame = 0;
+      for (const [rid, rtr] of this.deps) this.state.initialState[rid] = this.getPayload(rtr, rid);
+      this.lastTimestamp = performance.now();
+    }
+    // ===========================================================================
+    // THE TIME MACHINE (Manual Controls)
+    // ===========================================================================
+    /**
+     * Instant state reconstruction (teleport) to a given history frame index.
+     * Applies recorded nodes forward or backward until the playhead reaches `index`.
+     * @param index Target history frame index to jump to (clamped to bounds).
+     * @param keepShield If true, keep the paused shield active after applying.
+     */
+    jumpTo(index = 0, keepShield = false) {
+      this.state.paused = false;
+      const target = clamp(0, index, this.state.history.length), forward = target > this.state.currentFrame;
+      while (this.state.currentFrame !== target) {
+        const frame = this.state.history[forward ? this.state.currentFrame : this.state.currentFrame - 1];
+        this.applyNode(frame, forward);
+        forward ? this.state.currentFrame++ : this.state.currentFrame--;
+        this.config.onApply(frame, forward);
+      }
+      for (const rtr of this.deps.values()) rtr.tick();
+      if (!keepShield) this.state.paused = true;
+    }
+    /** Re-enacting a node that represents a point in time be it a transaction of transactions or a solitary mutation. */
+    applyNode(node, forward = true) {
+      if ("nodes" in node) for (let len = node.nodes.length, i = forward ? 0 : len - 1; forward ? i < len : i >= 0; forward ? i++ : i--) this.applyNode(node.nodes[i], forward);
+      else {
+        let mirror;
+        const rtr = this.deps.get(node.rid) || this.deps.values().next().value, path = !this.config.mirrorWrites || !node.path.includes("state") || !hasPath(rtr.core, mirror = node.path.replace("state", "intent")) ? node.path : mirror;
+        if (forward) node.type === "delete" ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.to, rtr.config));
+        else node.hadKey === false ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.from, rtr.config));
+      }
+    }
+    /**
+     * Step through time by a number of frames.
+     * @param stride Number of frames to move the playhead by.
+     * @param forward Direction: `true` for forward, `false` for backward.
+     */
+    step(stride = 1, forward = true) {
+      if (forward ? this.state.currentFrame >= this.state.history.length : this.state.currentFrame <= 0) return;
+      this.pause(), forward ? this.jumpTo(this.state.currentFrame + stride) : this.jumpTo(this.state.currentFrame - stride);
+    }
+    /** Returns `true` if there is history to step back into. */
+    get canUndo() {
+      return this.state.currentFrame > 0;
+    }
+    /**
+     * Step back in time (undo).
+     * @param stride Optional `number` of frames to undo.
+     */
+    undo(stride) {
+      this.step(arguments.length && "number" === typeof stride ? stride : 1, false);
+    }
+    /** Returns `true` if there is a future to step forward into. */
+    get canRedo() {
+      return this.state.currentFrame < this.state.history.length;
+    }
+    /**
+     * Step forward in time (redo).
+     * @param stride Optional `number` of frames to redo.
+     */
+    redo(stride) {
+      this.step(arguments.length && "number" === typeof stride ? stride : 1, true);
+    }
+    // ===========================================================================
+    // THE VCR (Automated Playback)
+    // ===========================================================================
+    /**
+     * Core automove engine. Replays or rewinds the recorded history honoring recorded time gaps.
+     * @param forward Direction of playback: `true` to play forward, `false` to rewind.
+     * @returns Promise<void> Resolves when playback completes or is paused/stopped.
+     */
+    async automove(forward = true) {
+      const seq = ++this.playbackSeq;
+      this.state.paused = false;
+      this.state.forward = forward;
+      while (seq === this.playbackSeq && !this.state.paused && (forward ? this.state.currentFrame < this.state.history.length : this.state.currentFrame > 0)) {
+        const dFrame = this.state.history[this.state.currentFrame + (forward ? 0 : -1)], delay = Math.min(("nodes" in dFrame ? dFrame.end - dFrame.start + dFrame.deltat : dFrame.deltat) / this.config.playbackRate, this.config.maxPlaybackDelay);
+        if (delay > 0) await new Promise((res) => setTimeout2(res, delay, this.signal));
+        if (!this.state.paused) this.jumpTo(this.state.currentFrame + (forward ? 1 : -1), true);
+      }
+      if (seq === this.playbackSeq) this.state.paused = true;
+    }
+    /**
+     * Start chronological re-enactment of the session (play forward).
+     * @returns Promise<void> Resolves when playback completes.
+     */
+    play() {
+      return this.automove(true);
+    }
+    /**
+     * Start reverse chronological re-enactment of the session (rewind).
+     * @returns Promise<void> Resolves when rewind completes.
+     */
+    rewind() {
+      return this.automove(false);
+    }
+    /** Pause any ongoing playback or rewinding. */
+    pause() {
+      this.playbackSeq++, this.state.paused = true;
+    }
+    // ===========================================================================
+    // TELEMETRY & I/O (Session Import/Export)
+    // ===========================================================================
+    /**
+     * Export the current time-travel session state as a JSON string.
+     * @param replacer Optional replacer function used by `JSON.stringify`.
+     * @param space Optional spacing parameter for pretty-printing.
+     * @returns The serialized session JSON.
+     */
+    export(replacer, space) {
+      return JSON.stringify(this.state, replacer, space);
+    }
+    /**
+     * Import a serialized session JSON and reconstruct internal state and snapshots.
+     * @param json The serialized session JSON produced by `export()`.
+     * @param reviver Optional reviver function used by `JSON.parse`.
+     */
+    import(json, reviver, start = this.state.currentFrame, resume = !this.state.paused, forward = this.state.forward) {
+      setPath(this.state, "*", JSON.parse(json, reviver));
+      this.lastTimestamp = performance.now();
+      this.state.paused = false;
+      for (const [rid, rtr] of this.deps) {
+        const paths = this.getPaths(rid);
+        for (let i = 0, len = paths.length; i < len; i++) {
+          const path = paths[i];
+          fanout(rtr.core, path, getPath(this.state.initialState[rid], path));
+        }
+      }
+      for (const [rid, rtr] of this.deps) rtr.tick(this.config.whitelist ? this.getPaths(rid) : "*");
+      this.state.currentFrame = 0, this.jumpTo(start), resume && this.automove(forward);
+    }
+  };
+  function silence(fn) {
+    return withMeta({ silent: true }, fn);
+  }
+
+  // ../sia-reactor/dist/chunk-4S44OX5N.js
+  var Autotracker = class {
+    proxy;
+    deps = /* @__PURE__ */ new Map();
+    isTracking = true;
+    rtr;
+    /** only allows one reactor to autotrack when available */
+    autortr;
+    clups = [];
+    lastPath;
+    proxyCache = /* @__PURE__ */ new WeakMap();
+    /** @param rtr Reactor instance used for path subscriptions. */
+    constructor(rtr) {
+      this.autortr = this.rtr = rtr;
+    }
+    /**
+     * Starts a new tracking pass and returns a readonly tracking proxy for `target` if `this` was instantiated with a `Reactor`.
+     * @param target Snapshot (or state branch) to track reads from.
+     * @returns Read-tracking readonly proxy.
+     * @example
+     * const atrkr = new Autotracker(rtr);
+     * const state = atrkr.tracked(rtr.snapshot());
+     * const name = state.user.profile.name;
+     */
+    tracked(target) {
+      return this.unblock(), this.proxy = this.proxied(target, "");
+    }
+    proxied(obj, path) {
+      if (!this.rtr || !obj || "object" !== typeof obj) return obj;
+      const cached = this.proxyCache.get(obj);
+      if (cached) return cached;
+      if (!canHandle(obj, this.rtr.config, false)) return obj;
+      const proxy = new Proxy(obj, {
+        // Minimal Proxy Handler
+        get: (object, key, receiver) => {
+          if (key === RAW) return this.rtr.log(`\u{1F440} [AutoTracker \`get\` Trap] Peeked at ${object}`), object;
+          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          return this.rtr.log(`\u{1F50D} [AutoTracker \`get\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), this.proxied(!this.rtr.config.preserveContext ? object[key] : Reflect.get(object, key, receiver), fullPath);
+        },
+        has: (object, key) => {
+          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          return this.rtr.log(`\u2753 [AutoTracker \`has\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), !this.rtr.config.preserveContext ? key in object : Reflect.has(object, key);
+        },
+        getOwnPropertyDescriptor: (object, key) => {
+          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          return this.rtr.log(`\u{1F4CB} [AutoTracker \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), !this.rtr.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key) : Reflect.getOwnPropertyDescriptor(object, key);
+        },
+        ownKeys: (object) => {
+          const safePath = path || "*";
+          return this.rtr.log(`\u{1F511} [AutoTracker \`ownKeys\` Trap] Initiated on "${safePath}"`), this.track(safePath), Reflect.ownKeys(object);
+        },
+        set: (_, key) => {
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`set\` Trap] Blocked for "${String(key)}" on "${path}"`);
+        },
+        deleteProperty: (_, key) => {
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`deleteProperty\` Trap] Blocked for "${String(key)}" on "${path}"`);
+        },
+        defineProperty: (_, key) => {
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`defineProperty\` Trap] Blocked for "${String(key)}" on "${path}"`);
+        },
+        setPrototypeOf: (_, key) => {
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`setPrototypeOf\` Trap] Blocked for "${String(key)}" on "${path}"`);
+        }
+      });
+      return this.proxyCache.set(obj, proxy), proxy;
+    }
+    /** Adds a path to the tracking set. */
+    track(path, rtr = this.rtr, prune = false) {
+      if (!this.isTracking || !path || this.autortr && this.autortr !== rtr) return path;
+      let paths = this.deps.get(rtr);
+      if (!prune && !paths) paths = (this.deps.set(rtr, paths = /* @__PURE__ */ new Set()), paths);
+      if (path.startsWith(this.lastPath + ".")) paths.delete(this.lastPath);
+      return !prune && paths.add(this.lastPath = path), path;
+    }
+    /** Removes a path from the tracking set. */
+    untrack(path, rtr = this.rtr) {
+      this.deps.get(rtr)?.delete(path);
+    }
+    /** Enables path tracking. */
+    unblock(rtr = this.rtr) {
+      this.deps.clear();
+      this.autortr = rtr;
+      this.isTracking = true;
+      this.lastPath = void 0;
+    }
+    /** Temporarily disables path tracking. */
+    block() {
+      this.autortr = void 0;
+      this.isTracking = false;
+    }
+    /**
+     * Subscribes an effect to tracked paths.
+     * Uses `watch` when `options.sync === true` (synchronous updates), otherwise
+     * uses `on` (batched/asynchronous listener wave).
+     * @param cb Effect callback.
+     * @param options Effect options.
+     * @returns Cleanup function for active subscriptions.
+     * @example
+     * const atrkr = new Autotracker(rtr);
+     * const view = atrkr.tracked(rtr.snapshot()); // tracked works if `rtr` was passed at instantiation
+     * view.user.name;
+     * const stop = atrkr.callback(() => console.log("changed")); // re-run after when ".user.name" changes
+     * @example Packaged Customization
+     * const atrkr = new Autotracker(); // no reactor passed
+     * withTracker(atrkr, () => state.user.name); // import `withTracker` too
+     * const stop = atrkr.callback(() => console.log("sync"), { sync: true }); // re-run immediately when ".user.name" changes, works on any path used from any reactor state
+     * @example Extensive Customization
+     * atrkr.unblock();
+     * const prev = CTX.autotracker;
+     * CTX.autotracker = atrkr; // import CTX first
+     * state.user.name;
+     * CTX.autotracker = prev;
+     */
+    callback(cb, options = NIL) {
+      this.cleanup();
+      const method = options.sync ? "watch" : "on";
+      for (const [rtr, paths] of this.deps) {
+        if (!paths.size || paths.has("*")) rtr && this.clups.push(rtr[method]("*", cb, options));
+        else for (const path of paths) this.clups.push(rtr[method](path, cb, options));
+      }
+      return () => this.cleanup();
+    }
+    /** Clears active subscriptions and blocks tracking. */
+    cleanup() {
+      this.block();
+      for (let i = 0, len = this.clups.length; i < len; i++) this.clups[i]();
+      this.clups.length = 0;
+    }
+    destroy() {
+      this.deps.clear(), this.cleanup(), nuke(this);
+    }
+  };
+  function withTracker(tracker, callback, rtr) {
+    const prev = CTX.autotracker;
+    CTX.autotracker = tracker;
+    try {
+      return tracker.unblock(rtr), callback();
+    } finally {
+      CTX.autotracker = prev;
+    }
+  }
+  function effect(callback, options = NIL) {
+    const atrkr = new Autotracker();
+    let destroyed = false;
+    const cleanup = () => (destroyed = true, atrkr.destroy());
+    (function execute() {
+      if (destroyed) return;
+      withTracker(atrkr, callback);
+      options.once ? cleanup() : atrkr.callback(execute, options);
+    })();
+    return cleanup;
+  }
+  var keys = {
+    blocks: KEYS_BLOCKS,
+    overrides: ["Ctrl+z", "Cmd+z", "Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z", "Home", "End", "ArrowLeft", "ArrowRight", "Space", "Alt+Space", "Escape", "Delete"],
+    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", prevFrame: ",", nextFrame: ".", skipBwd: "ArrowLeft", skipFwd: "ArrowRight", playPause: "Space", rewind: "Alt+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
+  };
+  var TimeTravelConsole = class _TimeTravelConsole {
+    static count = 0;
+    index = _TimeTravelConsole.count;
+    config;
+    state = reactive({ open: false, import: "", stride: 1 });
+    time;
+    host;
+    clups = [];
+    keydown;
+    keyup;
+    /** Creates a docked TimeTravel overlay bound to a module instance.
+     * @param time TimeTravel module instance that owns timeline operations.
+     * @param build Optional initial overlay config overrides.
+     */
+    constructor(time, build = {}) {
+      this.time = time;
+      this.config = reactive({ title: `Time Travel Console ${this.index = ++_TimeTravelConsole.count}`, ...build });
+      this.state.open = !!this.config.startOpen;
+      let wlLive = false, blLive = false;
+      const s = this.time.state, host = this.host = createEl("div", { className: "tt-console-host" }), toggle = createEl("button", { className: "tt-console-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "tt-console", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyForDisplay(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory, false), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyForDisplay(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo, false), onclick: () => this.time.undo(this.state.stride) }), redo = createEl("button", { textContent: `Redo${formatKeyForDisplay(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo, false), onclick: () => this.time.redo(this.state.stride) }), genesis = createEl("button", { textContent: `Genesis${formatKeyForDisplay(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis, false), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause, false) }), rewind = createEl("button", { textContent: `Rewind${formatKeyForDisplay(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind, false), onclick: this.time.rewind }), trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack, false) }), range = createEl("input", { type: "range", min: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyForDisplay(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export, false), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyForDisplay(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import, false), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyForDisplay(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear, false), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "tt-footnote", innerHTML: "<span>Want this in your app? </span>" }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "tt-status-box" }), status = createEl("div", { className: "tt-status-row" }), filters = createEl("div", { className: "tt-status-row" }), filterBox = createEl("div", { className: "tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "tt-filter-input tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), speed = createEl("select", { className: "tt-speed", title: "Playback Speed", onchange: () => this.time.config.playbackRate = Number(speed.value) }), stride = createEl("input", { className: "tt-stride tt-button tt-mini-input", type: "number", min: "1", title: "Skip Stride i.e. how many steps count as one unit", oninput: () => this.state.stride = Math.max(1, Number(stride.value) || 1) }), stats = createEl("span", { className: "tt-stats" }), limit = createEl("input", { className: "tt-limit tt-mini-input tt-button", type: "number", min: "1", title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => this.time.config.limit = Math.max(1, Number(limit.value) || 1) }), delay = createEl("input", { className: "tt-delay tt-mini-input tt-button", type: "number", min: "0", step: "50", title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0) }), read = createEl("label", { className: "tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }), readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReads, onchange: () => this.time.config.mirrorReads = readBox.checked }), write = createEl("label", { className: "tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }), writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWrites, onchange: () => this.time.config.mirrorWrites = writeBox.checked }), filterRow1 = createEl("div", { className: "tt-filter-row" }), filterRow2 = createEl("div", { className: "tt-filter-row" }), row1 = createEl("div", { className: "tt-row" }), row2 = createEl("div", { className: "tt-row" }), row3 = createEl("div", { className: "tt-row" }), row4 = createEl("div", { className: "tt-row" }), row5 = createEl("div", { className: "tt-row tt-config-row" });
+      speed.append(...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4, 8, 16, 32].map((v) => createEl("option", { value: String(v), textContent: `${v}x` })));
+      status.append((box.append(frame), box), clrHistory);
+      filters.append((filterBox.append((filterRow1.append(whitelistLabel, whitelist), filterRow1), (filterRow2.append(blacklistLabel, blacklist), filterRow2)), filterBox));
+      panel.append(title, status, (row1.append(playPause, rewind, genesis), row1), (row2.append(undo, redo, trackUntrack, stride), row2), payload, (row3.append(speed, range), row3), filters, (row4.append(exp, imp, clr), row4), io, (row5.append(delay, limit, (read.append(readBox, " Read Mirror"), read), (write.append(writeBox, " Write Mirror"), write)), row5), (foot.prepend(stats), foot.append(link), foot));
+      this.host.append(toggle, panel);
+      this.keydown = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => (a && e.stopImmediatePropagation(), a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "prevFrame" ? this.time.step(this.state.stride, false) : a === "nextFrame" ? this.time.step(this.state.stride, true) : a === "skipBwd" ? this.time.step(5 * this.state.stride, false) : a === "skipFwd" ? this.time.step(5 * this.state.stride, true) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export() : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = ""));
+      this.keyup = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => a && e.stopImmediatePropagation();
+      window.addEventListener("keydown", this.keydown), window.addEventListener("keyup", this.keyup);
+      const sync = [
+        effect(() => this.config.color ? host.style.setProperty("--sia-tt-color", this.config.color) : host.style.removeProperty("--sia-tt-color")),
+        effect(() => {
+          if (this.config.devOnly && !CTX.isDevEnv) return void host.remove();
+          const dock = getDock(this.config.container);
+          if (host.parentNode !== dock) dock.appendChild(host);
+        }),
+        effect(() => toggle.textContent = `${(panel.hidden = !this.state.open) ? "Show" : "Hide"} ${title.textContent = this.config.title ?? ""}`),
+        effect(() => playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyForDisplay(keys.shortcuts.playPause)}`),
+        effect(() => trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyForDisplay(keys.shortcuts.trackUntrack)}`),
+        effect((sets = 0, txs = 0) => {
+          range.max = String(s.history.length);
+          range.disabled = clrHistory.disabled = !s.history.length;
+          for (let i = 0, len = s.history.length; i < len; i++) {
+            const frame2 = s.history[i];
+            "nodes" in frame2 ? txs++ : frame2.type === "set" && sets++;
+          }
+          stats.textContent = `Sets: ${sets} | Deletes: ${s.history.length - sets - txs} | Txs: ${txs}`;
+        }),
+        effect(() => {
+          frame.textContent = `Frame: ${s.currentFrame} / ${s.history.length}`;
+          genesis.disabled = undo.disabled = !this.time.canUndo;
+          rewind.disabled = !s.paused || !s.currentFrame;
+          playPause.disabled = redo.disabled = !this.time.canRedo;
+          range.value = String(Math.min(s.currentFrame, s.history.length));
+          payload.value = JSON.stringify(s.currentFrame ? s.history[s.currentFrame - 1] : { genesis: true, value: s.initialState }, null, 2);
+        }),
+        effect(() => {
+          clr.disabled = imp.disabled = !this.state.import.trim().length;
+          io.value !== this.state.import && (io.value = this.state.import);
+        }),
+        effect((v = String(this.time.config.playbackRate)) => v !== speed.value && (speed.value = v)),
+        effect((v = String(this.state.stride)) => v !== stride.value && (stride.value = v)),
+        effect((v = String(this.time.config.limit)) => v !== limit.value && (limit.value = v)),
+        effect((v = String(this.time.config.maxPlaybackDelay)) => v !== delay.value && (delay.value = v)),
+        effect((v = !!this.time.config.mirrorReads) => v !== readBox.checked && (readBox.checked = v)),
+        effect((v = !!this.time.config.mirrorWrites) => v !== writeBox.checked && (writeBox.checked = v)),
+        effect(() => (!wlLive && (whitelist.value = formatPaths(this.time.config.whitelist, "*")), !blLive && (blacklist.value = formatPaths(this.time.config.blacklist, ""))))
+      ];
+      this.clups.push(...sync);
+    }
+    destroy() {
+      for (const clup of this.clups) clup();
+      window.removeEventListener("keydown", this.keydown), window.removeEventListener("keyup", this.keyup);
+      this.host.remove(), nuke(this), --_TimeTravelConsole.count;
+    }
+  };
+  function getDock(container) {
+    const host = container && container !== document.documentElement ? container : document.body;
+    if (host !== document.body && getComputedStyle(host).position === "static") host.style.position = "relative";
+    const layer = host.querySelector(":scope > .tt-console-layer") || createEl("div", { className: "tt-console-layer" }, void 0, { position: host === document.body ? "fixed" : "absolute" });
+    if (layer.parentElement !== host) host.appendChild(layer);
+    const dock = layer.querySelector(":scope > .tt-console-dock") || createEl("div", { className: "tt-console-dock" });
+    return dock.parentElement !== layer && layer.appendChild(dock), dock;
+  }
+  function formatPaths(paths, emptyText) {
+    return !paths ? emptyText : Array.isArray(paths) ? paths.length ? paths.join(", ") : emptyText : "object" === typeof paths ? JSON.stringify(paths) : String(paths);
+  }
+  function parsePaths(raw, allowEmpty = false) {
+    const text = raw.trim();
+    if (!text) return allowEmpty ? void 0 : wpArr;
+    if (text[0] === "{")
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed && "object" === typeof parsed) return parsed;
+      } catch {
+        return null;
+      }
+    const list = text.split(",").map((p) => p.trim()).filter(Boolean);
+    return list.length ? list : allowEmpty ? void 0 : wpArr;
+  }
+
+  // beta/index.js
+  var tmg_Video_Controller = class {
+    constructor(medium, build) {
+      this.setReadyState(0, medium);
+      this.bindAllMethods();
+      this.buildCache = { ...build }, this.id = build.id, this.video = medium;
+      this.config = reactive(tmg.volatile(build));
+      this.settings = this.config.settings;
+      this.guardTimeValues(), this.plugSources(), this.plugTracks(), this.plugPlaylist();
+      const { src, sources, tracks } = this.config;
+      this.log(this.buildCache = { ...this.buildCache, ...src ? { src } : null, ...sources?.length ? { sources } : null, tracks });
+      this.audioSetup = this.loaded = this.isScrubbing = this.buffering = this.inFullscreen = this.inFloatingPlayer = this.overTimeline = this.overVolume = this.overBrightness = this.gestureTouchXCheck = this.gestureTouchYCheck = this.gestureWheelXCheck = this.gestureWheelYCheck = this.shouldSetLastVolume = this.shouldSetLastBrightness = this.speedPointerCheck = this.speedCheck = this.skipPersist = this.shouldCancelTimeScrub = false;
+      this.parentIntersecting = this.isIntersecting = this.gestureTouchCanCancel = this.canAutoMovePlaylist = this.stallCancelTimeScrub = true;
+      this.currentPlaylistIndex = this.skipDuration = this.textTrackIndex = this.rewindPlaybackRate = this.playTriggerCounter = 0;
+      this.wasPaused = !this.video.autoplay;
+      this.sliderAptVolume = this.sliderAptBrightness = 5;
+      this.throttleMap = /* @__PURE__ */ new Map(), this.rafLoopMap = /* @__PURE__ */ new Map(), this.rafLoopFnMap = /* @__PURE__ */ new Map();
+      this.pfps = 30, this.pframeDelay = Math.round(1e3 / this.pfps);
+      this.exportCanvas = tmg.createEl("canvas"), this.exportContext = this.exportCanvas.getContext("2d", { willReadFrequently: true });
+      this.mutatingDOMM = true;
+      this.buildContainers(), this.buildPlayerInterface();
+      this.plugControlPanelSettings();
+      this.initPlayer();
+      this.initSettingsUIManager();
+      setTimeout(() => this.mutatingDOMM = false);
+    }
+    plugSources() {
+      const { src, sources } = this.config;
+      this.config.get("src", () => this.video.src);
+      this.config.get("sources", () => tmg.getSources(this.video));
+      this.config.watch("src", (value) => !tmg.isSameURL(this.config.src, value) && (tmg.removeSources(this.video), this.video.src = value));
+      this.config.watch("sources", (value = []) => !tmg.isSameSources(this.config.sources, value) && (tmg.removeSources(this.video), tmg.addSources(value, this.video)));
+      if ("src" in this.config) this.config.src = src;
+      if ("sources" in this.config) this.config.sources = sources;
+    }
+    plugTracks() {
+      const { tracks } = this.config;
+      this.config.get("tracks", () => tmg.getTracks(this.video));
+      this.config.watch("tracks", (value = []) => !tmg.isSameTracks(this.config.tracks, value) && (tmg.removeTracks(this.video), tmg.addTracks(value, this.video)));
+      if ("tracks" in this.config) this.config.tracks = tracks;
+    }
+    plugPlaylist() {
+      this.config.get("playlist", (value) => value?.length ? value : null);
+      this.config.set("playlist", (value) => value?.map((v) => tmg.mergeObjs(tmg.DEFAULT_VIDEO_ITEM_BUILD, tmg.parsePathObj(v))));
+      this.config.on(
+        "playlist",
+        ({ root }) => {
+          if (this.readyState < 1) return;
+          const v = root.playlist?.find((v2) => v2.media.id && v2.media.id === root.media.id || tmg.isSameURL(v2.src, root.src));
+          this.currentPlaylistIndex = v ? root.playlist.indexOf(v) : 0;
+          v ? this.applyPlaylistItem(v, false) : this.movePlaylistTo(this.currentPlaylistIndex);
+        },
+        { depth: 1 }
+      );
+      this.config.playlist = this.config.playlist;
+    }
+    setPosterState(poster = this.config.media.artwork?.[0]?.src) {
+      !tmg.isSameURL(poster, this.video.poster) && (poster ? this.video.setAttribute("poster", poster) : this.video.removeAttribute("poster"));
+      this.settings.css.currentPosterUrl = `url(${poster})`;
+    }
+    plugMedia() {
+      this.setImgLoadState({ target: this.DOM.videoProfile });
+      ["media.title", "media.artist", "media.profile"].forEach((e) => this.config.watch(e, (value) => this.settings.controlPanel[e.replace("media.", "")] = value, { init: "auto" }));
+      ["media.links.title", "media.links.artist", "media.links.profile"].forEach(
+        (p) => this.config.on(
+          p,
+          ({ target: { key, value } }) => {
+            const el = key !== "profile" ? this.DOM[`video${tmg.capitalize(key)}`] : this.DOM.videoProfile?.parentElement;
+            el && Object.entries({ href: value, "tab-index": value ? "0" : null, target: value ? "_blank" : null, rel: value ? "noopener noreferrer" : null }).forEach(([attr, val]) => val ? el.setAttribute(attr, val) : el.removeAttribute(attr));
+          },
+          { init: true }
+        )
+      );
+      this.config.on("media.artwork", ({ currentTarget: { value } }) => this.setPosterState(value?.[0]?.src), { init: true });
+      this.config.on("media", () => !this.video.paused && this.syncMediaSession(), { init: true });
+    }
+    async autoGenerateMedia() {
+      const url = this.config.media.artwork?.[0]?.src;
+      if (!this.config.media.autoGenerate || url && !url.startsWith("blob:")) return;
+      this.config.media.artwork = [{ src: "" }];
+      this.config.media.artwork = [{ src: (await this.getVideoFrame(void 0, this.config.lightState.preview.time)).url || "" }];
+      url && URL.revokeObjectURL(url);
+    }
+    get payload() {
+      return { readyState: this.readyState, initialized: this.readyState > 0, destroyed: this.readyState < 0, Controller: this };
+    }
+    setReadyState(state2 = (this.readyState ?? -1) + 1, medium) {
+      this.readyState = tmg.clamp(0, state2, 3);
+      this.fire("tmgreadystatechange", this.payload, medium);
+    }
+    log(mssg, type, action) {
+      if (!this.config.debug) return;
+      switch (type) {
+        case "error":
+          return action === "swallow" ? console.warn(`TMG swallowed a Controller error:`, mssg) : console.error(`TMG Controller error:`, mssg);
+        case "warn":
+          return console.warn(`TMG Controller warning:`, mssg);
+        default:
+          return console.log(`TMG Controller log:`, mssg);
+      }
+    }
+    fire = (eventName, detail = null, el = this.video, bubbles = true, cancelable = true) => eventName && el?.dispatchEvent(new CustomEvent(eventName, { detail, bubbles, cancelable }));
+    notify = (event) => this.settings.notifiers && this.fire(event, null, this.DOM.notifiersContainer);
+    plugToastsSettings = () => {
+      this.config.on("settings.toasts.disabled", ({ value }) => value && t007.toast.dismissAll(this.id));
+      this.config.on("settings.toasts.nextVideoPreview.usePoster", ({ target: { value, object } }) => {
+        if (!this.nextVideoPreview || value && this.nextVideoPreview.poster) return;
+        if (object.tease) object.tease = true;
+        else this.nextVideoPreview.currentTime = object.time;
+      });
+      this.config.on("settings.toasts.nextVideoPreview.tease", ({ target: { value, object } }) => {
+        if (this.nextVideoPreview) this.nextVideoPreview.ontimeupdate = ({ target: p }) => tmg.safeNum(p.currentTime) >= object.time && p.pause();
+        value && (!object.usePoster || !this.nextVideoPreview.poster) && this.nextVideoPreview.play();
+      });
+      this.config.on("settings.toasts.nextVideoPreview.time", ({ target: { object } }) => this.nextVideoPreview && (!object.usePoster || !this.nextVideoPreview.poster) && (this.nextVideoPreview.currentTime = tmg.safeNum(object.time)));
+      this.config.on("settings.toasts", ({ type, target: { path, key, value } }) => type === "update" && !path.match(/disabled|nextVideoPreview|captureAutoClose/) && t007.toast.doForAll("update", { [key]: value }, this.id));
+    };
+    get toast() {
+      return !this.settings.toasts.disabled ? t007.toaster({ groupId: this.id, rootElement: this.videoContainer, ...this.settings.toasts }) : null;
+    }
+    bindAllMethods() {
+      tmg.bindAllMethods(this, (method) => {
+        const fn = this[method].bind(this);
+        this[method] = (...args) => {
+          const onError = (e) => {
+            this.log?.(e, "error", "swallow");
+            method !== "togglePlay" && this.toast?.("Something went wrong", { tag: "tmg-stwr" });
+          };
+          try {
+            const result = fn(...args);
+            return result instanceof Promise ? result.catch(onError) : result;
+          } catch (e) {
+            onError(e);
+          }
+        };
+      });
+    }
+    bindNotifiers() {
+      Array.prototype.forEach.call(this.DOM.notifiersContainer?.children ?? [], (n) => n.addEventListener("animationend", () => this.resetNotifiers("", true)));
+      tmg.NOTIFIER_EVENTS.forEach((eN) => this.DOM.notifiersContainer?.addEventListener(eN, this._handleNotifierEvent));
+    }
+    _handleNotifierEvent = ({ type: eN }) => (this.resetNotifiers(), this.RAFLoop("notifying", () => this.resetNotifiers(eN)));
+    resetNotifiers = (n = "", flush = false) => (flush && this.cancelRAFLoop("notifying"), this.DOM.notifiersContainer?.setAttribute("data-notify", n));
+    throttle(key, fn, delay = 30, strict = true) {
+      if (strict) {
+        const now = performance.now();
+        if (now - (this.throttleMap.get(key) ?? 0) < delay) return;
+        return this.throttleMap.set(key, now), fn();
+      }
+      if (this.throttleMap.has(key)) return;
+      const id = tmg.getWindow(this.videoContainer).setTimeout(() => this.throttleMap.delete(key), delay);
+      return this.throttleMap.set(key, id), fn();
+    }
+    RAFLoop(key, fn) {
+      this.rafLoopFnMap.set(key, fn);
+      const loop = () => (this.rafLoopFnMap.get(key)?.(), this.rafLoopMap.set(key, this.videoContainer.ownerDocument.defaultView.requestAnimationFrame(loop)));
+      !this.rafLoopMap.has(key) && this.rafLoopMap.set(key, tmg.getWindow(this.videoContainer).requestAnimationFrame(loop));
+    }
+    cancelRAFLoop = (key) => (tmg.getWindow(this.videoContainer).cancelAnimationFrame(this.rafLoopMap.get(key)), this.rafLoopFnMap.delete(key), this.rafLoopMap.delete(key));
+    cancelAllLoops = () => this.rafLoopMap.keys().forEach(this.cancelRAFLoop);
+    cleanUpDOM() {
+      this.mutatingDOMM = true;
+      this.video.classList.remove("tmg-video", "tmg-media");
+      this.floatingWindow?.removeEventListener("pagehide", this._handleFloatingPlayerClose), this.floatingWindow?.close(), this.floatingWindow = null;
+      if (this.pseudoVideo.isConnected) this.video.isConnected && this.deactivatePseudoMode(true), this.videoContainer.remove();
+      else if (this.video.isConnected) this.videoContainer.parentElement?.replaceChild(this.video, this.videoContainer);
+      setTimeout(() => this.mutatingDOMM = false);
+    }
+    _destroy() {
+      this.setReadyState(-1);
+      this.slowDown();
+      this.leaveSettingsView();
+      t007.toast.dismissAll(this.id);
+      this.cancelAudio(), this.cancelAllLoops();
+      this.unobserveResize(), this.unobserveIntersection();
+      this.video.cancelVideoFrameCallback?.(this.frameCallbackId);
+      this.setKeyEventListeners("remove"), this.setVideoEventListeners("remove");
+      this.cleanUpDOM();
+      return this.video = this.cloneOnDetach ? tmg.cloneVideo(this.video) : this.video;
+    }
+    plugCSSSettings() {
+      const apply = (key, value) => {
+        const pre = `tmg-video-${tmg.uncamelize(key, "-")}`, spec = () => (this.videoContainer.classList.forEach((cls) => cls.startsWith(pre) && this.videoContainer.classList.remove(cls)), this.videoContainer.classList.add(`${pre}-${value}`), true);
+        ({ captionsCharacterEdgeStyle: spec, captionsTextAlignment: spec })[key]?.() ?? [this.videoContainer, this.pseudoVideoContainer].forEach((el) => el?.style.setProperty(`--${pre}`, value));
+      };
+      const entries = Object.entries(this.settings.css);
+      this.classKeys = ["captionsCharacterEdgeStyle", "captionsTextAlignment"];
+      this.CSSCache ??= {};
+      this.config.get("*", (val, { target: { key, path } }) => {
+        if (!path.startsWith("settings.css.") || path.includes("sync")) return val;
+        const newVal = this[this.classKeys.includes(key) ? "getClassValue" : "getCSSValue"](key);
+        return this.CSSCache[key] ||= newVal, newVal;
+      });
+      this.config.watch("*", (val, { target: { key, path } }) => path.startsWith("settings.css.") && !path.includes("sync") && apply(key, val));
+      entries.forEach(([k, v]) => k !== "syncWithMedia" && (this.CSSCache[k] ||= this.settings.css[k], apply(k, v)));
+    }
+    getCSSValue(key) {
+      const cssVar = `--tmg-video-${tmg.uncamelize(key, "-")}`;
+      return getComputedStyle(this.videoContainer).getPropertyValue(cssVar);
+    }
+    getClassValue(key) {
+      const prefix = `tmg-video-${tmg.uncamelize(key, "-")}`;
+      return Array.prototype.find.call(this.videoContainer.classList, (c) => c.startsWith(prefix))?.replace(`${prefix}-`, "") || "none";
+    }
+    initSettingsUIManager() {
+      const options = [
+        { option: "Light Blue", value: "#3198f5" },
+        { option: "Hot Pink", value: "#ff69b4" },
+        { option: "Fiery Red", value: "#ff0033" },
+        // more like, Youtube red :)
+        { option: "Dark Turquoise", value: "#00ced1" },
+        { option: "Custom Hue", value: "custom" },
+        { option: "Video Derived", value: "auto" }
+      ], gcolors = options.slice(0, -2).map((opt) => opt.value), defs = { brand: this.settings.css.brandColor ?? "#e26e02", theme: this.settings.css.themeColor ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] }, bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : defs.brand }), cBField = t007.field({ type: "color" }), tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : defs.theme }), cTField = t007.field({ type: "color" }), bWrapper = tmg.createEl("div"), tWrapper = tmg.createEl("div");
+      this.config.watch("settings.css.brandColor", (v = defs.brand) => (v = v.toLowerCase(), cBField.inputEl.value = v, cBField.style.setProperty("--input-color", v), bField.inputEl.value = !defs.bcolors.includes(v) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : v), { init: true });
+      this.config.watch("settings.css.themeColor", (v = defs.theme) => (v = v.toLowerCase(), cTField.inputEl.value = v, cTField.style.setProperty("--input-color", v), tField.inputEl.value = !defs.tcolors.includes(v) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : v), { init: true });
+      this.queryDOM(".tmg-video-settings-bottom-panel").append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
+      const id = { theme: "", brand: "" }, sync = (cb, req = true, type = "brand") => (this.settings.css.syncWithMedia[`${type}Color`] = req, cb(req)), assert = (opts, type = "brand") => this.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }), onBColorChange = ({ target: { value: val } }) => {
+        this.throttle(
+          "brandColorPicking",
+          async () => {
+            id.brand && this.toast?.dismiss(id.brand);
+            let col;
+            if (val === "custom") return cBField.inputEl.click();
+            if (val !== "auto") col = this.settings.css.brandColor = val;
+            else col = this.settings.css.brandColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.brandColor;
+            const cb = (sync2) => bField.inputEl.value = defs.bcolors.includes(col) ? col : sync2 ? "auto" : "custom", No = () => (sync(cb, false), assert({ actions: { Yes } })), Yes = () => (sync(cb, true), assert({ actions: { No } }));
+            sync(cb, val === "auto"), val === "auto" && (id.brand = this.toast?.("Should the brand color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => id.brand = "" }));
+          },
+          150
+        );
+      }, onTColorChange = ({ target: { value: val } }) => {
+        this.throttle(
+          "themeColorPicking",
+          async () => {
+            id.theme && this.toast?.dismiss(id.theme);
+            let col;
+            if (val === "custom") return cTField.inputEl.click();
+            if (val !== "auto") col = this.settings.css.themeColor = val;
+            else col = this.settings.css.themeColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.themeColor;
+            const cb = (sync2) => tField.inputEl.value = defs.tcolors.includes(col) ? col : sync2 ? "auto" : "custom", No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")), Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
+            sync(cb, val === "auto", "theme"), val === "auto" && (id.theme = this.toast?.("Should the theme color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => id.theme = "" }));
+          },
+          150
+        );
+      };
+      bField.inputEl.addEventListener("input", onBColorChange);
+      cBField.inputEl.addEventListener("input", onBColorChange);
+      tField.inputEl.addEventListener("input", onTColorChange);
+      cTField.inputEl.addEventListener("input", onTColorChange);
+    }
+    buildContainers() {
+      this.setPosterState();
+      this.video.parentElement?.insertBefore(this.videoContainer = tmg.createEl("div", { role: "region", ariaLabel: "Video Player", className: `tmg-video-container tmg-media-container${tmg.ON_MOBILE ? " tmg-video-mobile" : ""}${this.video.paused ? " tmg-video-paused" : ""}` }, { trackKind: "captions", volumeLevel: "muted", brightnessLevel: "dark" }), this.video);
+      (this.pseudoVideoContainer = tmg.createEl("div", { role: "status", ariaLabel: "Video Player Placeholder", ariaLive: "polite", className: "tmg-pseudo-video-container tmg-media-container" })).append(this.pseudoVideo = tmg.createEl("video", { tmgPlayer: this.video.tmgPlayer, ariaHidden: true, className: "tmg-pseudo-video tmg-media", muted: true, autoplay: false }));
+      this.plugCSSSettings();
+      this.videoContainer.dataset.objectFit = this.settings.css.objectFit || "contain";
+      this.syncMediaAspectRatio(), this.syncWithMediaColor();
+    }
+    buildPlayerInterface() {
+      this.videoContainer.insertAdjacentHTML(
+        "beforeend",
+        `
+      <div class="tmg-video-container-content-wrapper">
+        <div class="tmg-video-container-content">
+          <div class="tmg-video-controls-container">
+            <div class="tmg-video-curtain tmg-video-top-curtain"></div>
+            <div class="tmg-video-curtain tmg-video-bottom-curtain"></div>
+            <div class="tmg-video-curtain tmg-video-cover-curtain"></div>
+          </div>
+        </div>
+        <div class="tmg-video-settings" inert>
+          <div class="tmg-video-settings-content">
+            <div class="tmg-video-settings-top-panel">
+              <button type="button" class="tmg-video-settings-close-btn">
+                <svg viewBox="0 0 25 25" class="tmg-video-settings-close-btn-icon">
+                  <path transform="translate(0, 4)" d="M1.307,5.988 L6.616,1.343 C7.027,0.933 7.507,0.864 7.918,1.275 L7.918,4.407 C8.014,4.406 8.098,4.406 8.147,4.406 C13.163,4.406 16.885,7.969 16.885,12.816 C16.885,14.504 16.111,13.889 15.788,13.3 C14.266,10.52 11.591,8.623 8.107,8.623 C8.066,8.623 7.996,8.624 7.917,8.624 L7.917,11.689 C7.506,12.099 6.976,12.05 6.615,11.757 L1.306,7.474 C0.897,7.064 0.897,6.399 1.307,5.988 L1.307,5.988 Z"></path>
+                </svg>
+                <span>Close Settings</span>
+              </button> 
+              <button type="button" class="tmg-video-settings-tips-btn">
+                <span>\u{1F4A1} Did You Know?</span>
+              </button>                    
+            </div>
+            <div class="tmg-video-settings-bottom-panel"><p>No Settings Available Yet!</p></div>
+          </div>
+        </div>         
+      </div>
+      <div class="tmg-video-screen-locked-wrapper">
+        <button type="button" title="Unlock Screen" class="tmg-video-screen-locked-btn" tabindex="-1">
+          <svg class="tmg-video-screen-locked-icon" viewBox="0 0 512 512" data-control-title="Lock Screen" style="scale: 0.825;">
+            <path d="M390.234 171.594v-37.375c.016-36.969-15.078-70.719-39.328-94.906A133.88 133.88 0 0 0 256 0a133.88 133.88 0 0 0-94.906 39.313c-24.25 24.188-39.344 57.938-39.313 94.906v37.375H24.906V512h462.188V171.594zm-210.343-37.375c.016-21.094 8.469-39.938 22.297-53.813C216.047 66.594 234.891 58.125 256 58.125s39.953 8.469 53.813 22.281c13.828 13.875 22.281 32.719 22.297 53.813v37.375H179.891zm-96.86 95.5h345.938v224.156H83.031z"/>
+            <path d="M297.859 321.844c0-23.125-18.75-41.875-41.859-41.875-23.125 0-41.859 18.75-41.859 41.875 0 17.031 10.219 31.625 24.828 38.156l-9.25 60.094h52.562L273.016 360c14.609-6.531 24.843-21.125 24.843-38.156"/>
+          </svg>  
+          <svg class="tmg-video-screen-unlock-icon" viewBox="0 0 512 512" data-control-title="Lock Screen" style="scale: 0.875; translate: 0 -1px;">
+            <path d="M186.984 203.297v-81.578c.016-19.141 7.688-36.219 20.219-48.813C219.766 60.391 236.859 52.719 256 52.703c19.141.016 36.234 7.688 48.813 20.203 12.531 12.594 20.203 29.672 20.219 48.813v43.406h52.703v-43.406c.016-33.531-13.672-64.125-35.656-86.063C320.125 13.656 289.531-.016 256 0c-33.531-.016-64.125 13.656-86.063 35.656-22 21.938-35.672 52.531-35.656 86.063v81.578H46.438V512h419.125V203.297zM99.141 256H412.86v203.297H99.141z"/>
+            <path d="M293.969 339.547c0-20.969-17-37.953-37.969-37.953s-37.953 16.984-37.953 37.953c0 15.453 9.266 28.703 22.516 34.609l-8.391 54.5h47.672l-8.406-54.5c13.25-5.906 22.531-19.156 22.531-34.609"/>
+          </svg>  
+          <p>Unlock controls?</p>
+        </button>
+        <p>Screen Locked</p>
+        <p>Tap to Unlock</p>
+      </div>
+      `
+      );
+      this.queryDOM(".tmg-video-container-content").prepend(this.video);
+    }
+    getTipsHTML() {
+      return `
+    <div style="text-align: left; font-family: inherit; color: inherit;">
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h2 style="margin: 0 0 10px 0; letter-spacing: -0.5px;">\u{1F3AC} Welcome to TVP</h2>
+        <p style="margin: 0; opacity: 0.9; line-height: 1.5;">
+          You aren't just watching a video; you're sitting in the cockpit of the most advanced, performance-first media engine on the web. We are thrilled to have you here. 
+          <br><strong>Here is your official flight manual to unlock its full power:</strong>
+        </p>
+      </div>
+      <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">\u{1F39B}\uFE0F The Smart Canvas (Touch & Mouse)</h3>
+      <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
+        <li><strong>Hyper-Speed on Demand:</strong> Click and hold the right side of the video screen or the play key (<strong>Spacebar</strong>) to fast-forward, left side or <strong>Shift</strong> + play key rewinds.</li>
+        <li><strong>Smart Scrubbing:</strong> Don't hunt for the tiny progress bar. Just scroll horizontally across the middle of the screen to scrub smoothly through time.</li>
+        <li><strong>Invisible Sliders:</strong> Scroll vertically on the <em>right edge</em> for Volume, and the <em>left edge</em> for Brightness.</li>
+        <li><strong>Precision Taps:</strong> Double-tap the edges to skip forward or backward. Double tap the center to toggle Fullscreen (or Play/Pause on mobile).</li>
+      </ul>
+      <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">\u{1F3D7}\uFE0F Total UI Control</h3>
+      <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
+        <li><strong>Build Your Own Player:</strong> Don't like our layout? <strong>Click and drag</strong> almost any button on the bottom control bar to physically rearrange the interface exactly how you want it.</li>
+        <li><strong>Draggable Subtitles:</strong> Subtitles blocking a crucial part of the scene? Just grab the text box and drag it anywhere else on the screen.</li>
+        <li><strong>The Chameleon Engine:</strong> Head to settings and set your Brand/Theme colors to "Video Derived". TVP will actively analyze the video frames and extract dominant colors to paint the UI dynamically.</li>
+        <li><strong>Descriptive Hints:</strong> Hover over the controls to expose their tooltips and get more information about how to trigger each function.</li>
+      </ul>
+      <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">\u2328\uFE0F Keyboard Ninja Status</h3>
+      <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
+        <li><strong>The Playback Trinity (J, K, L):</strong> Skip backward, Play/Pause, and Skip forward like a pro editor. Do the same with arrow keys, hold <strong>Ctrl</strong>, <strong>Shift</strong> or <strong>Alt</strong> to spice things up.</li>
+        <li><strong>Time Travel (0 - 9):</strong> Hit any number key to instantly jump to that percentage of the video (e.g., hitting '5' jumps to the exact middle).</li>
+        <li><strong>Frame-by-Frame:</strong> Paused the video? Use <strong>,</strong> (comma) and <strong>.</strong> (period) to step backward or forward one single frame at a time.</li>
+        <li><strong>Warp Speed:</strong> Use <strong>&gt;</strong> and <strong>&lt;</strong> to crank the playback speed up or down.</li>
+      </ul>
+      <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">\u{1F52C} Advanced Window Tech</h3>
+      <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 20px;">
+        <li><strong>The Snapshot Engine:</strong> Click the Camera icon or press <strong>s</strong> to screenshot a high-res image of the exact frame. <em>(Easter Egg: Double-Click or press <strong>Alt + s</strong> to capture in pure Black & White!)</em></li>
+        <li><strong>Ultra-readable Time:</strong> Click the time display or press <strong>q</strong> to toggle between elapsed time and remaining time. <em>(Easter Egg: Double-Click or press <strong>z</strong> to display the time in different formats!)</em></li>
+        <li><strong>Floating Miniplayer:</strong> Start playing a video and just scroll down the page. TVP will automatically detach into a draggable miniplayer so you never miss a second.</li>
+        <li><strong>Custom Picture-in-Picture:</strong> We bypassed standard browser limits to give you a floating player that actually keeps all your custom UI controls intact.</li>
+      </ul>
+      <div style="text-align: center; margin-top: 30px; padding: 15px; border-radius: 8px; background: rgba(128, 128, 128, 0.1);">
+        <p style="margin: 0 0 10px 0;"><strong>Enjoy the engine.</strong> We're still in active development, but we're already miles ahead. Welcome to the bleeding edge.</p>
+        <p style="margin: 0; opacity: 0.8;">\u{1F9EA} <strong>Beta Tester?</strong> Check the bottom of the page to find the hidden button to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
+        </div>
+      </div>
+    `;
+    }
+    getPlayerElements() {
+      const k = this.fetchKeyShortcutsForDisplay();
+      const _batch = (...els) => els.filter(Boolean);
+      return {
+        pictureinpicturewrapper: tmg.createEl("div", {
+          className: "tmg-video-picture-in-picture-wrapper",
+          innerHTML: `<button type="button" class="tmg-video-picture-in-picture-icon-wrapper"><svg class="tmg-video-picture-in-picture-icon" viewBox="0 0 73 73"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-video-pip-icon-background"><rect x="-1" y="-1" width="71" height="71" rx="14"></rect></g><g transform="translate(15, 15)" fill-rule="nonzero"><g><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 36 36 36 36 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="4.2890625" y="4.2890625" width="27.421875" height="13.2679687"></rect><g transform="translate(4.289063, 27.492187)"><rect x="0" y="0" width="3.1640625" height="2.109375" class="tmg-video-pip-icon-timeline-progress"></rect><rect x="7.3828125" y="0" width="20.0390625" height="2.109375" class="tmg-video-pip-icon-timeline-base"></rect></g><circle class="tmg-video-pip-icon-thumb-indicator" cx="9.5625" cy="28.546875" r="3.1640625"></circle><polygon class="tmg-video-pip-icon-content" points="31.7109375 17.5569609 31.7109375 23.2734375 4.2890625 23.2734375 4.2890625 17.5569609 13.78125 8.06477344 20.109375 14.3928984 24.328125 10.1741484"></polygon></g><g transform="translate(21, 26)"><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 17.7727273 23 17.7727273 23 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="2.74023438" y="2.74023438" width="17.5195312" height="8.47675781"></rect><polygon class="tmg-video-pip-icon-content"points="20.2597656 11.2169473 20.2597656 14.8691406 2.74023438 14.8691406 2.74023438 11.2169473 8.8046875 5.15249414 12.8476562 9.19546289 15.5429687 6.50015039"></polygon></g></g></g></svg></button><p>Playing in picture-in-picture</p>`
+        }),
+        meta: tmg.createEl("div", { className: "tmg-video-meta-wrapper", innerHTML: `<a class="tmg-video-profile-link"><img alt="Profile" class="tmg-video-profile"></a><div class="tmg-video-meta-text-wrapper-cover"><div class="tmg-video-title-wrapper"><a class="tmg-video-title"></a></div><div class="tmg-video-artist-wrapper"><a class="tmg-video-artist"></a></div></div>` }, { draggableControl: "", dragId: "wrapper", controlId: "meta" }),
+        videobuffer: tmg.createEl("div", { className: "tmg-video-buffer", innerHTML: `<div class="tmg-video-buffer-accent"></div><div class="tmg-video-buffer-eclipse"><div class="tmg-video-buffer-left"><div class="tmg-video-buffer-circle"></div></div><div class="tmg-video-buffer-right"><div class="tmg-video-buffer-circle"></div></div></div>` }),
+        thumbnail: _batch(tmg.createEl("div", { className: "tmg-video-thumbnail" }), tmg.createEl("canvas", { className: "tmg-video-thumbnail" })),
+        captionsContainer: tmg.createEl("div", { className: "tmg-video-captions-container" }, { part: "region" }),
+        playpausenotifier: _batch(tmg.createEl("div", { className: "tmg-video-notifier tmg-video-play-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-play-notifier-icon"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>` }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-pause-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-pause-notifier-icon"><path d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>` })),
+        prevnextnotifier: _batch(tmg.createEl("div", { className: "tmg-video-notifier tmg-video-prev-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-prev-icon"><rect x="4" y="5.14" width="2.5" height="14" transform="translate(2.1,0)"/><path d="M17,5.14V19.14L6,12.14L17,5.14Z" transform="translate(2.5,0)" /></svg>` }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-next-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-next-icon"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5,0)" /><rect x="19" y="5.14" width="2.5" height="14" transform="translate(-2.5,0)"/></svg>` })),
+        captionsnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-captions-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-subtitles-icon"><path style="scale: 0.5;" d="M44,6H4A2,2,0,0,0,2,8V40a2,2,0,0,0,2,2H44a2,2,0,0,0,2-2V8A2,2,0,0,0,44,6ZM12,26h4a2,2,0,0,1,0,4H12a2,2,0,0,1,0-4ZM26,36H12a2,2,0,0,1,0-4H26a2,2,0,0,1,0,4Zm10,0H32a2,2,0,0,1,0-4h4a2,2,0,0,1,0,4Zm0-6H22a2,2,0,0,1,0-4H36a2,2,0,0,1,0,4Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-captions-icon" style="scale: 1.15;"><path d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z"></path></svg>` }),
+        capturenotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-capture-notifier", innerHTML: `<svg viewBox="0 0 24 24" class="tmg-video-capture-icon"><path fill-rule="evenodd" d="M6.937 5.845c.07-.098.15-.219.25-.381l.295-.486C8.31 3.622 8.913 3 10 3h4c1.087 0 1.69.622 2.518 1.978l.295.486c.1.162.18.283.25.381q.071.098.12.155H20a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h2.816q.05-.057.121-.155M4 8a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-3c-.664 0-1.112-.364-1.56-.987a8 8 0 0 1-.329-.499c-.062-.1-.27-.445-.3-.492C14.36 5.282 14.088 5 14 5h-4c-.087 0-.36.282-.812 1.022-.029.047-.237.391-.3.492a8 8 0 0 1-.327.5C8.112 7.635 7.664 8 7 8zm15 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-7 7a5 5 0 1 1 0-10 5 5 0 0 1 0 10m0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>` }),
+        fastplaynotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-fast-play-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" /></svg><p class="tmg-video-fast-play-notifier-text"></p><svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" /></svg>` }),
+        playbackratenotifier: _batch(tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-notifier-content" }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-up-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5, 0)" /><path d="M19,5.14V19.14L30,12.14L19,5.14Z" transform="translate(-2.5, 0)" /></svg>` }), tmg.createEl("div", { className: "tmg-video-notifier tmg-video-playback-rate-down-notifier", innerHTML: `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" transform="translate(2.5, 0)" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" transform="translate(2.5, 0)" /></svg>` })),
+        volumenotifier: _batch(
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-notifier-content" }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-up-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-volume-up-notifier-icon" ><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg>` }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-down-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-volume-down-notifier-icon"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" /></svg>` }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-volume-muted-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-volume-muted-notifier-icon"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" /></svg>` })
+        ),
+        brightnessnotifier: _batch(
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-brightness-notifier-content" }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-brightness-up-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-brightness-up-icon"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg>` }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-brightness-down-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-brightness-down-icon"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg>` }),
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-brightness-dark-notifier", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg>` })
+        ),
+        objectfitnotifier: _batch(
+          tmg.createEl("div", { className: "tmg-video-notifier tmg-video-object-fit-notifier-content" }),
+          tmg.createEl("div", {
+            className: "tmg-video-notifier tmg-video-object-fit-contain-notifier",
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+          }),
+          tmg.createEl("div", {
+            className: "tmg-video-notifier tmg-video-object-fit-cover-notifier",
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg>`
+          }),
+          tmg.createEl("div", {
+            className: "tmg-video-notifier tmg-video-object-fit-fill-notifier",
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)">  <path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+          })
+        ),
+        fwdnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-fwd-notifier", innerHTML: `<svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>` }),
+        bwdnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-bwd-notifier", innerHTML: `<svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg>` }),
+        scrubnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-scrub-notifier", innerHTML: `<span><svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M17,5.14V19.14L6,12.14L17,5.14Z" /></svg></span><p class="tmg-video-scrub-notifier-text" tabindex="-1">Double tap left or right to skip ${this.settings.time.skip} seconds</p><span><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></span>` }),
+        cancelscrubnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-cancel-scrub-notifier", innerText: "Release to cancel" }),
+        touchtimelinenotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-touch-timeline-notifier tmg-video-touch-notifier" }),
+        touchvolumenotifier: tmg.createEl("div", {
+          className: "tmg-video-notifier tmg-video-touch-volume-notifier tmg-video-touch-vb-notifier",
+          innerHTML: `<span class="tmg-video-touch-volume-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-volume-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"></path></svg></span>`
+        }),
+        touchbrightnessnotifier: tmg.createEl("div", {
+          className: "tmg-video-notifier tmg-video-touch-brightness-notifier tmg-video-touch-vb-notifier",
+          innerHTML: `<span class="tmg-video-touch-brightness-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-brightness-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></span>`
+        }),
+        expandminiplayer: tmg.createEl("button", { className: "tmg-video-miniplayer-expand-btn", innerHTML: `<svg class="tmg-video-miniplayer-expand-icon" viewBox="0 -960 960 960" data-control-title="Expand miniplayer" style="scale: 0.9; rotate: 90deg;"><path d="M120-120v-320h80v184l504-504H520v-80h320v320h-80v-184L256-200h184v80H120Z"/></svg>` }, { draggableControl: "", controlId: "expandminiplayer" }),
+        removeminiplayer: tmg.createEl("button", { className: "tmg-video-miniplayer-remove-btn", innerHTML: `<svg class="tmg-video-miniplayer-remove-icon" viewBox="0 -960 960 960" data-control-title="Remove miniplayer (Escape)"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>` }, { draggableControl: "", controlId: "removeminiplayer" }),
+        capture: tmg.createEl("button", { className: "tmg-video-capture-btn", innerHTML: `<svg viewBox="0 0 24 24" class="tmg-video-capture-icon" data-control-title="Capture${k["capture"]} \u2194 DblClick\u2192B&W (+alt)"><path fill-rule="evenodd" d="M6.937 5.845c.07-.098.15-.219.25-.381l.295-.486C8.31 3.622 8.913 3 10 3h4c1.087 0 1.69.622 2.518 1.978l.295.486c.1.162.18.283.25.381q.071.098.12.155H20a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h2.816q.05-.057.121-.155M4 8a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-3c-.664 0-1.112-.364-1.56-.987a8 8 0 0 1-.329-.499c-.062-.1-.27-.445-.3-.492C14.36 5.282 14.088 5 14 5h-4c-.087 0-.36.282-.812 1.022-.029.047-.237.391-.3.492a8 8 0 0 1-.327.5C8.112 7.635 7.664 8 7 8zm15 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-7 7a5 5 0 1 1 0-10 5 5 0 0 1 0 10m0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>` }, { draggableControl: "", controlId: "capture" }),
+        fullscreenorientation: tmg.createEl(
+          "button",
+          {
+            className: "tmg-video-fullscreen-orientation-btn",
+            innerHTML: `<svg viewBox="0 0 512 512" class="tmg-video-fullscreen-orientation-icon" data-control-title="Change orientation" style="scale: 0.925;"><path d="M446.81,275.82H236.18V65.19c0-20.78-16.91-37.69-37.69-37.69H65.19c-20.78,0-37.69,16.91-37.69,37.69v255.32c0,20.78,16.91,37.68,37.69,37.68h88.62v88.62c0,20.78,16.9,37.69,37.68,37.69h255.32c20.78,0,37.69-16.91,37.69-37.69v-133.3C484.5,292.73,467.59,275.82,446.81,275.82zM65.19,326.19c-3.14,0-5.69-2.55-5.69-5.68V65.19c0-3.14,2.55-5.69,5.69-5.69h133.3c3.14,0,5.69,2.55,5.69,5.69v210.63h-12.69c-20.78,0-37.68,16.91-37.68,37.69v12.68H65.19zM452.5,446.81c0,3.14-2.55,5.69-5.69,5.69H191.49c-3.13,0-5.68-2.55-5.68-5.69V342.19v-28.68c0-2.94,2.24-5.37,5.1-5.66c0.19-0.02,0.38-0.03,0.58-0.03h28.69h226.63c3.14,0,5.69,2.55,5.69,5.69V446.81z"/><path d="M369.92,181.53c-6.25-6.25-16.38-6.25-22.63,0c-6.25,6.25-6.25,16.38,0,22.63l44.39,44.39c3.12,3.13,7.22,4.69,11.31,4.69c0.21,0,0.42-0.02,0.63-0.03c0.2,0.01,0.4,0.03,0.6,0.03c6.31,0,11.74-3.66,14.35-8.96l37.86-37.86c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-13.59,13.59v-86.58c0-8.84-7.16-16-16-16h-86.29l15.95-15.95c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-40.33,40.33c-5.19,2.65-8.75,8.03-8.75,14.25c0,0.19,0.02,0.37,0.03,0.56c-0.01,0.19-0.03,0.38-0.03,0.57c0,4.24,1.69,8.31,4.69,11.31l42.14,42.14c3.12,3.12,7.22,4.69,11.31,4.69s8.19-1.56,11.31-4.69c6.25-6.25,6.25-16.38,0-22.63l-15.95-15.95h72.54v73.05L369.92,181.53z"/></svg>`
+          },
+          { draggableControl: "", controlId: "fullscreenorientation" }
+        ),
+        fullscreenlock: tmg.createEl("button", { className: "tmg-video-fullscreen-locked-btn", innerHTML: `<svg class="tmg-video-fullscreen-locked-icon" viewBox="0 0 512 512" data-control-title="Lock Screen" style="scale: 0.825;"><path d="M390.234 171.594v-37.375c.016-36.969-15.078-70.719-39.328-94.906A133.88 133.88 0 0 0 256 0a133.88 133.88 0 0 0-94.906 39.313c-24.25 24.188-39.344 57.938-39.313 94.906v37.375H24.906V512h462.188V171.594zm-210.343-37.375c.016-21.094 8.469-39.938 22.297-53.813C216.047 66.594 234.891 58.125 256 58.125s39.953 8.469 53.813 22.281c13.828 13.875 22.281 32.719 22.297 53.813v37.375H179.891zm-96.86 95.5h345.938v224.156H83.031z"/><path d="M297.859 321.844c0-23.125-18.75-41.875-41.859-41.875-23.125 0-41.859 18.75-41.859 41.875 0 17.031 10.219 31.625 24.828 38.156l-9.25 60.094h52.562L273.016 360c14.609-6.531 24.843-21.125 24.843-38.156"/></svg>` }, { draggableControl: "", controlId: "fullscreenlock" }),
+        bigprev: tmg.createEl("button", { className: "tmg-video-big-prev-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-prev-icon" data-control-title="Previous video${k["prev"]}"><rect x="4" y="5.14" width="2.5" height="14" transform="translate(2.1,0)"/><path d="M17,5.14V19.14L6,12.14L17,5.14Z" transform="translate(2.5,0)" /></svg>` }, { draggableControl: "", dragId: "big", controlId: "bigprev" }),
+        bigplaypause: tmg.createEl("button", { className: "tmg-video-big-play-pause-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-play-icon" data-control-title="Play${k["playPause"]}"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-pause-icon" data-control-title="Pause${k["playPause"]}"><path d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg><svg class="tmg-video-replay-icon" viewBox="0 -960 960 960" data-control-title="Replay${k["playPause"]}"><path d="M480-80q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-440h80q0 117 81.5 198.5T480-160q117 0 198.5-81.5T760-440q0-117-81.5-198.5T480-720h-6l62 62-56 58-160-160 160-160 56 58-62 62h6q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-80Z"/></svg>` }, { draggableControl: "", dragId: "big", controlId: "bigplaypause" }),
+        bignext: tmg.createEl("button", { className: "tmg-video-big-next-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-next-icon" data-control-title="Next video${k["next"]}"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5,0)" /><rect x="19" y="5.14" width="2.5" height="14" transform="translate(-2.5,0)"/></svg>` }, { draggableControl: "", dragId: "big", controlId: "bignext" }),
+        timeline: tmg.createEl("div", { className: "tmg-video-timeline-container", tabIndex: 0, role: "slider", "aria-label": "Video timeline", "aria-valuemin": "0", "aria-valuenow": "0", "aria-valuetext": "0 seconds out of 0 seconds", innerHTML: `<div class="tmg-video-timeline"><div class="tmg-video-seek-bars-wrapper"><div class="tmg-video-seek-bar tmg-video-base-seek-bar"></div><div class="tmg-video-seek-bar tmg-video-buffered-seek-bar"></div><div class="tmg-video-seek-bar tmg-video-preview-seek-bar"></div><div class="tmg-video-seek-bar tmg-video-played-seek-bar"></div></div><div class="tmg-video-thumb-indicator"></div><div class="tmg-video-preview-container"><div class="tmg-video-preview"></div><canvas class="tmg-video-preview"></canvas></div></div>` }, { controlId: "timeline" }),
+        prev: tmg.createEl("button", { className: "tmg-video-prev-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-prev-icon" data-control-title="Previous video${k["prev"]}"><rect x="4" y="5.14" width="2.5" height="14" transform="translate(2.1,0)"/><path d="M17,5.14V19.14L6,12.14L17,5.14Z" transform="translate(2.5,0)" /></svg>` }, { draggableControl: "", controlId: "prev" }),
+        playpause: tmg.createEl("button", { className: "tmg-video-play-pause-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-play-icon" data-control-title="Play${k["playPause"]}"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-pause-icon" data-control-title="Pause${k["playPause"]}"><path d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg><svg class="tmg-video-replay-icon" viewBox="0 -960 960 960" data-control-title="Replay${k["playPause"]}"><path d="M480-80q-75 0-140.5-28.5t-114-77q-48.5-48.5-77-114T120-440h80q0 117 81.5 198.5T480-160q117 0 198.5-81.5T760-440q0-117-81.5-198.5T480-720h-6l62 62-56 58-160-160 160-160 56 58-62 62h6q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-440q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-80Z"/></svg>` }, { draggableControl: "", controlId: "playpause" }),
+        next: tmg.createEl("button", { className: "tmg-video-next-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-next-icon" data-control-title="Next video${k["next"]}"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" transform="translate(-2.5,0)" /><rect x="19" y="5.14" width="2.5" height="14" transform="translate(-2.5,0)"/></svg>` }, { draggableControl: "", controlId: "next" }),
+        volume: tmg.createEl(
+          "div",
+          {
+            className: "tmg-video-volume-container tmg-video-vb-container",
+            innerHTML: `<button type="button" class="tmg-video-mute-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon" data-control-title="Mute${k["mute"]}"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon" data-control-title="Mute${k["mute"]}"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon" data-control-title="Unmute${k["mute"]}"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" /></svg></button><span class="tmg-video-volume-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-volume-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`
+          },
+          { draggableControl: "", controlId: "volume" }
+        ),
+        brightness: tmg.createEl(
+          "div",
+          {
+            className: "tmg-video-brightness-container tmg-video-vb-container",
+            innerHTML: `<button type="button" class="tmg-video-dark-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon" data-control-title="Darken${k["dark"]}"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></button><span class="tmg-video-brightness-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-brightness-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`
+          },
+          { draggableControl: "", controlId: "brightness" }
+        ),
+        timeandduration: tmg.createEl("button", { className: "tmg-video-time-and-duration-btn", title: `Switch (mode${k["timeMode"]} / DblClick\u2192format${k["timeFormat"]})`, innerHTML: `<div class="tmg-video-current-time">${this.toTimeText(this.video.currentTime)}</div><span class="tmg-video-time-bridge">/</span><div class="tmg-video-total-time">${this.toTimeText(this.video.duration)}</div>` }, { draggableControl: "", controlId: "timeandduration" }),
+        playbackrate: tmg.createEl("button", { className: "tmg-video-playback-rate-btn", title: `Playback rate${k["playbackRateUp"]} \u2194 DblClick${k["playbackRateDown"]}`, innerText: `${this.settings.playbackRate.value}x` }, { draggableControl: "", controlId: "playbackrate" }),
+        captions: tmg.createEl("button", { className: "tmg-video-captions-btn", innerHTML: `<svg viewBox="0 0 25 25" data-control-title="Subtitles${k["captions"]}" class="tmg-video-subtitles-icon"><path style="scale: 0.5;" d="M44,6H4A2,2,0,0,0,2,8V40a2,2,0,0,0,2,2H44a2,2,0,0,0,2-2V8A2,2,0,0,0,44,6ZM12,26h4a2,2,0,0,1,0,4H12a2,2,0,0,1,0-4ZM26,36H12a2,2,0,0,1,0-4H26a2,2,0,0,1,0,4Zm10,0H32a2,2,0,0,1,0-4h4a2,2,0,0,1,0,4Zm0-6H22a2,2,0,0,1,0-4H36a2,2,0,0,1,0,4Z" /></svg><svg viewBox="0 0 25 25" data-control-title="Closed captions${k["captions"]}" class="tmg-video-captions-icon" style="scale: 1.15;"><path d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z"></path></svg>` }, { draggableControl: "", controlId: "captions" }),
+        settings: tmg.createEl("button", { className: "tmg-video-settings-btn", innerHTML: `<svg class="tmg-video-settings-icon" viewBox="0 -960 960 960" data-control-title="Settings${k["settings"]}"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>` }, { draggableControl: "", controlId: "settings" }),
+        objectfit: tmg.createEl(
+          "button",
+          {
+            className: "tmg-video-object-fit-btn",
+            innerHTML: `<svg class="tmg-video-object-fit-contain-icon" data-control-title="Crop to fit${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-cover-icon" data-control-title="Fit to screen${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+          },
+          { draggableControl: "", controlId: "objectfit" }
+        ),
+        pictureinpicture: tmg.createEl("button", { className: "tmg-video-picture-in-picture-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-enter-picture-in-picture-icon" data-control-title="Picture-in-picture${k["pictureInPicture"]}"><path fill-rule="nonzero" d="M21 3a1 1 0 0 1 1 1v7h-2V5H4v14h6v2H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zm0 10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h8zM6.707 6.293l2.25 2.25L11 6.5V12H5.5l2.043-2.043-2.25-2.25 1.414-1.414z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-leave-picture-in-picture-icon" data-control-title="Exit picture-in-picture${k["pictureInPicture"]}"><path fill-rule="nonzero" d="M21 3a1 1 0 0 1 1 1v7h-2V5H4v14h6v2H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h18zm0 10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h8zm-9.5-6L9.457 9.043l2.25 2.25-1.414 1.414-2.25-2.25L6 12.5V7h5.5z"></path></svg>` }, { draggableControl: "", controlId: "pictureinpicture" }),
+        theater: tmg.createEl("button", { className: "tmg-video-theater-btn", innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-enter-theater-icon" data-control-title="Cinema mode${k["theater"]}"><path fill-rule="evenodd" clip-rule="evenodd" d="M23 7C23 5.34315 21.6569 4 20 4H4C2.34315 4 1 5.34315 1 7V17C1 18.6569 2.34315 20 4 20H20C21.6569 20 23 18.6569 23 17V7ZM21 7C21 6.44772 20.5523 6 20 6H4C3.44772 6 3 6.44771 3 7V17C3 17.5523 3.44772 18 4 18H20C20.5523 18 21 17.5523 21 17V7Z"/></svg><svg viewBox="0 0 25 25" class="tmg-video-leave-theater-icon" data-control-title="Default view${k["theater"]}"><path d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"></path></svg>` }, { draggableControl: "", controlId: "theater" }),
+        fullscreen: tmg.createEl(
+          "button",
+          {
+            className: "tmg-video-fullscreen-btn",
+            innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-enter-fullscreen-icon" data-control-title="Full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M4 1.5C2.61929 1.5 1.5 2.61929 1.5 4V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H3.5C4.05228 9.5 4.5 9.05228 4.5 8.5V4.5H8.5C9.05228 4.5 9.5 4.05228 9.5 3.5V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H4Z" /><path d="M20 1.5C21.3807 1.5 22.5 2.61929 22.5 4V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H20.5C19.9477 9.5 19.5 9.05228 19.5 8.5V4.5H15.5C14.9477 4.5 14.5 4.05228 14.5 3.5V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H20Z" /><path d="M20 22.5C21.3807 22.5 22.5 21.3807 22.5 20V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H20.5C19.9477 14.5 19.5 14.9477 19.5 15.5V19.5H15.5C14.9477 19.5 14.5 19.9477 14.5 20.5V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H20Z" /><path d="M1.5 20C1.5 21.3807 2.61929 22.5 4 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V20.5C9.5 19.9477 9.05228 19.5 8.5 19.5H4.5V15.5C4.5 14.9477 4.05228 14.5 3.5 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V20Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-leave-fullscreen-icon" data-control-title="Exit full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M7 9.5C8.38071 9.5 9.5 8.38071 9.5 7V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H7.5C6.94772 1.5 6.5 1.94772 6.5 2.5V6.5H2.5C1.94772 6.5 1.5 6.94772 1.5 7.5V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H7Z" /><path d="M17 9.5C15.6193 9.5 14.5 8.38071 14.5 7V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H16.5C17.0523 1.5 17.5 1.94772 17.5 2.5V6.5H21.5C22.0523 6.5 22.5 6.94772 22.5 7.5V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H17Z" /><path d="M17 14.5C15.6193 14.5 14.5 15.6193 14.5 17V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H16.5C17.0523 22.5 17.5 22.0523 17.5 21.5V17.5H21.5C22.0523 17.5 22.5 17.0523 22.5 16.5V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H17Z" /><path d="M9.5 17C9.5 15.6193 8.38071 14.5 7 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V16.5C1.5 17.0523 1.94772 17.5 2.5 17.5H6.5V21.5C6.5 22.0523 6.94772 22.5 7.5 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V17Z" /></svg>`
+          },
+          { draggableControl: "", controlId: "fullscreen" }
+        )
+      };
+    }
+    plugControlPanelSettings() {
+      this.config.set("settings.controlPanel.bottom", tmg.parsePanelBottomObj);
+      const HTML = this.getPlayerElements(), getSplitControls = (row, spacer = "spacer") => {
+        if (!row?.length) return { left: [], center: [], right: [] };
+        const s1 = row.indexOf(spacer), s2 = row.indexOf(spacer, s1 + 1);
+        return s1 === -1 ? { left: row, center: [], right: [] } : s2 === -1 ? { left: row.slice(0, s1), center: [], right: row.slice(s1 + 1) } : { left: row.slice(0, s1), center: row.slice(s1 + 1, s2), right: row.slice(s2 + 1) };
+      }, getZoneW = (value, fb) => value.length === 1 ? value.includes("meta") ? HTML.meta : value.includes("timeline") ? HTML.timeline : fb : fb, fillSWrapper = (wrapper, zoneWs) => (wrapper.innerHTML = "", wrapper.append(...zoneWs.map((zoneW) => zoneW.cover ?? zoneW))), fillZone = (zoneW, controls) => zoneW.zone && (zoneW.zone.innerHTML = "", (controls || []).forEach((id) => HTML[id] && (tmg.isArr(HTML[id]) ? zoneW.zone.append(...HTML[id]) : zoneW.zone.append(HTML[id])))), buildWSkel = (side, isReverse) => {
+        const zone = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper tmg-video-${side}-side-controls-wrapper` }, { dropZone: "", scroller: isReverse ? "reverse" : "" }), cover = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper-cover tmg-video-${side}-side-controls-wrapper-cover` });
+        return cover.append(zone), { cover, zone };
+      };
+      const controlsContainer = this.queryDOM(".tmg-video-controls-container"), notifiersContainer = tmg.createEl("div", { className: "tmg-video-notifiers-container" }, { notify: "" });
+      notifiersContainer?.append(...[HTML.playpausenotifier, HTML.prevnextnotifier, HTML.captionsnotifier, HTML.capturenotifier, HTML.objectfitnotifier, HTML.fastplaynotifier, HTML.playbackratenotifier, HTML.volumenotifier, HTML.brightnessnotifier, HTML.fwdnotifier, HTML.bwdnotifier, HTML.scrubnotifier, HTML.cancelscrubnotifier, HTML.touchtimelinenotifier, HTML.touchvolumenotifier, HTML.touchbrightnessnotifier].flat().filter(Boolean));
+      this.zoneWs = { top: {}, center: {}, bottom: { 1: {}, 2: {}, 3: {} } }, this.cZoneWs = { top: {}, center: [], bottom: { 1: {}, 2: {}, 3: {} } };
+      const topWrapper = tmg.createEl("div", { className: "tmg-video-top-controls-wrapper tmg-video-apt-controls-wrapper" }, { dropZone: "", dragId: "wrapper" });
+      this.zoneWs.top.left = buildWSkel("left", false), this.zoneWs.top.center = buildWSkel("center", false), this.zoneWs.top.right = buildWSkel("right", true);
+      const centerWrapper = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper" }, { dropZone: "", dragId: "big" }), centerWrapperCover = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper-cover" });
+      this.zoneWs.center = this.cZoneWs.center = { zone: centerWrapper, cover: (centerWrapperCover.append(centerWrapper), centerWrapperCover) };
+      const bottomWrapper = tmg.createEl("div", { className: "tmg-video-bottom-controls-wrapper" });
+      [1, 2, 3].forEach((i) => {
+        bottomWrapper.append(tmg.createEl("div", { className: `tmg-video-bottom-sub-controls-wrapper tmg-video-bottom-${i}-sub-controls-wrapper tmg-video-apt-controls-wrapper` }, { dropZone: "", dragId: "wrapper" }));
+        this.zoneWs.bottom[i].left = buildWSkel("left", false), this.zoneWs.bottom[i].center = buildWSkel("center", false), this.zoneWs.bottom[i].right = buildWSkel("right", true);
+      });
+      this.zonesArr = [...Object.values(this.zoneWs.top), ...Object.values(this.zoneWs.bottom).map((v) => Object.values(v))].flat().map((w) => w.zone);
+      controlsContainer.prepend(...[HTML.pictureinpicturewrapper, HTML.thumbnail, HTML.videobuffer, HTML.captionsContainer].flat().filter(Boolean), notifiersContainer, topWrapper, centerWrapperCover, bottomWrapper);
+      this.pseudoVideoContainer.append(HTML.pictureinpicturewrapper?.cloneNode(true) || "");
+      this.config.on(
+        "settings.controlPanel.top",
+        ({ currentTarget: { value } }) => {
+          const t1 = getSplitControls(value);
+          fillSWrapper(topWrapper, [this.cZoneWs.top.left = getZoneW(t1.left, this.zoneWs.top.left), this.cZoneWs.top.center = getZoneW(t1.center, this.zoneWs.top.center), this.cZoneWs.top.right = getZoneW(t1.right, this.zoneWs.top.right)]);
+          fillZone(this.cZoneWs.top.left, t1.left), fillZone(this.cZoneWs.top.center, t1.center), fillZone(this.cZoneWs.top.right, t1.right);
+        },
+        { init: true }
+      );
+      this.config.on("settings.controlPanel.center", ({ currentTarget: { value } }) => fillZone(this.cZoneWs.center, value), { init: true });
+      this.config.on(
+        "settings.controlPanel.bottom",
+        ({ currentTarget: { value } }) => {
+          [1, 2, 3].forEach((i) => {
+            const bn = getSplitControls(value[i]);
+            fillSWrapper(bottomWrapper.children[i - 1], [this.cZoneWs.bottom[i].left = getZoneW(bn.left, this.zoneWs.bottom[i].left), this.cZoneWs.bottom[i].center = getZoneW(bn.center, this.zoneWs.bottom[i].center), this.cZoneWs.bottom[i].right = getZoneW(bn.right, this.zoneWs.bottom[i].right)]);
+            fillZone(this.cZoneWs.bottom[i].left, bn.left), fillZone(this.cZoneWs.bottom[i].center, bn.center), fillZone(this.cZoneWs.bottom[i].right, bn.right);
+          });
+        },
+        { init: true }
+      );
+      this.retrieveDOM();
+      ["settings.controlPanel.title", "settings.controlPanel.artist", "settings.controlPanel.profile"].forEach((e) => this.config.on(e, ({ target: { key, value } }) => value !== true && (this.DOM[`video${tmg.capitalize(key)}`][key === "profile" ? "src" : "textContent"] = this.DOM[`video${tmg.capitalize(key)}`].dataset["video" + tmg.capitalize(key)] = value || ""), { init: true }));
+      this.config.on("settings.controlPanel.buffer", ({ value }) => this.videoContainer.dataset.buffer = value, { init: true });
+      this.config.on("settings.controlPanel.timeline.thumbIndicator", ({ value }) => this.videoContainer.dataset.thumbIndicator = value, { init: true });
+      this.config.on("settings.controlPanel.progressBar", ({ value }) => this.videoContainer.classList.toggle("tmg-video-progress-bar", value), { init: true });
+      this.config.on("settings.controlPanel.draggable", ({ value }) => this.setDragEventListeners(value ? "add" : "remove"), { init: true });
+    }
+    getUIZoneWCoord(target, zoneW = false) {
+      let key;
+      const pos = { 0: "left", 1: "center", 2: "right" }[[...target.parentElement.children].indexOf(target)], cws = this.queryDOM(".tmg-video-top-controls-wrapper, .tmg-video-bottom-sub-controls-wrapper", false, true);
+      cws.forEach((w, i) => w.contains(target) && (key = { 0: "top.", 1: "bottom.1.", 2: "bottom.2.", 3: "bottom.3." }[i]));
+      return zoneW ? { coord: key + pos, zoneW: tmg.getPath(this.zoneWs, key + pos) } : key + pos;
+    }
+    syncControlPanelToUI() {
+      const id = (el) => el.dataset.controlId, derive = (zoneW, center = false) => [center ? "spacer" : "", ...!zoneW.zone ? [id(zoneW)] : Array.from(zoneW.zone.children || [], id), center && (zoneW.zone ? zoneW.zone.children.length : true) ? "spacer" : ""].filter(Boolean);
+      this.settings.controlPanel.top = [...derive(this.cZoneWs.top.left), ...derive(this.cZoneWs.top.center, true), ...derive(this.cZoneWs.top.right)];
+      this.settings.controlPanel.center = [...derive(this.zoneWs.center)];
+      this.settings.controlPanel.bottom = {
+        1: [...derive(this.cZoneWs.bottom[1].left), ...derive(this.cZoneWs.bottom[1].center, true), ...derive(this.cZoneWs.bottom[1].right)],
+        2: [...derive(this.cZoneWs.bottom[2].left), ...derive(this.cZoneWs.bottom[2].center, true), ...derive(this.cZoneWs.bottom[2].right)],
+        3: [...derive(this.cZoneWs.bottom[3].left), ...derive(this.cZoneWs.bottom[3].center, true), ...derive(this.cZoneWs.bottom[3].right)]
+      };
+    }
+    queryDOM = (query, isPseudo = false, all = false) => (isPseudo ? this.pseudoVideoContainer : this.videoContainer)[all ? "querySelectorAll" : "querySelector"](query);
+    retrieveDOM() {
+      this.DOM = {
+        screenLockedWrapper: this.queryDOM(".tmg-video-screen-locked-wrapper"),
+        screenLockedBtn: this.queryDOM(".tmg-video-screen-locked-btn"),
+        videoSettings: this.queryDOM(".tmg-video-settings"),
+        videoContainerContentWrapper: this.queryDOM(".tmg-video-container-content-wrapper"),
+        videoContainerContent: this.queryDOM(".tmg-video-container-content"),
+        controlsContainer: this.queryDOM(".tmg-video-controls-container"),
+        bigControlsWrapper: this.queryDOM(".tmg-video-big-controls-wrapper"),
+        topControlsWrapper: this.queryDOM(".tmg-video-top-controls-wrapper"),
+        bottomControlsWrapper: this.queryDOM(".tmg-video-bottom-controls-wrapper"),
+        pictureInPictureWrapper: this.queryDOM(".tmg-video-picture-in-picture-wrapper"),
+        pictureInPictureIconWrapper: this.queryDOM(".tmg-video-picture-in-picture-icon-wrapper"),
+        videoProfile: this.queryDOM(".tmg-video-profile"),
+        videoTitle: this.queryDOM(".tmg-video-title"),
+        videoArtist: this.queryDOM(".tmg-video-artist"),
+        thumbnailImg: this.queryDOM("div.tmg-video-thumbnail"),
+        thumbnailCanvas: this.queryDOM("canvas.tmg-video-thumbnail"),
+        videoBuffer: this.queryDOM(".tmg-video-buffer"),
+        notifiersContainer: this.queryDOM(".tmg-video-notifiers-container"),
+        fastPlayNotifier: this.queryDOM(".tmg-video-fast-play-notifier"),
+        fastPlayNotifierText: this.queryDOM(".tmg-video-fast-play-notifier-text"),
+        playbackRateNotifierContent: this.queryDOM(".tmg-video-playback-rate-notifier-content"),
+        volumeNotifierContent: this.queryDOM(".tmg-video-volume-notifier-content"),
+        brightnessNotifierContent: this.queryDOM(".tmg-video-brightness-notifier-content"),
+        objectFitNotifierContent: this.queryDOM(".tmg-video-object-fit-notifier-content"),
+        scrubNotifier: this.queryDOM(".tmg-video-scrub-notifier"),
+        cancelScrubNotifier: this.queryDOM(".tmg-video-cancel-scrub-notifier"),
+        fwdNotifier: this.queryDOM(".tmg-video-fwd-notifier"),
+        bwdNotifier: this.queryDOM(".tmg-video-bwd-notifier"),
+        touchTimelineNotifier: this.queryDOM(".tmg-video-touch-timeline-notifier"),
+        touchVolumeContent: this.queryDOM(".tmg-video-touch-volume-content"),
+        touchVolumeNotifier: this.queryDOM(".tmg-video-touch-volume-notifier"),
+        touchVolumeSlider: this.queryDOM(".tmg-video-touch-volume-slider"),
+        touchBrightnessContent: this.queryDOM(".tmg-video-touch-brightness-content"),
+        touchBrightnessNotifier: this.queryDOM(".tmg-video-touch-brightness-notifier"),
+        touchBrightnessSlider: this.queryDOM(".tmg-video-touch-brightness-slider"),
+        captionsContainer: this.queryDOM(".tmg-video-captions-container"),
+        bigPrevBtn: this.queryDOM(".tmg-video-big-prev-btn"),
+        bigPlayPauseBtn: this.queryDOM(".tmg-video-big-play-pause-btn"),
+        bigNextBtn: this.queryDOM(".tmg-video-big-next-btn"),
+        miniplayerExpandBtn: this.queryDOM(".tmg-video-miniplayer-expand-btn"),
+        miniplayerRemoveBtn: this.queryDOM(".tmg-video-miniplayer-remove-btn"),
+        fullscreenOrientationBtn: this.queryDOM(".tmg-video-fullscreen-orientation-btn"),
+        captureBtn: this.queryDOM(".tmg-video-capture-btn"),
+        fullscreenLockBtn: this.queryDOM(".tmg-video-fullscreen-locked-btn"),
+        timelineContainer: this.queryDOM(".tmg-video-timeline-container"),
+        timeline: this.queryDOM(".tmg-video-timeline"),
+        previewContainer: this.queryDOM(".tmg-video-preview-container"),
+        previewImg: this.queryDOM("div.tmg-video-preview"),
+        previewCanvas: this.queryDOM("canvas.tmg-video-preview"),
+        prevBtn: this.queryDOM(".tmg-video-prev-btn"),
+        playPauseBtn: this.queryDOM(".tmg-video-play-pause-btn"),
+        nextBtn: this.queryDOM(".tmg-video-next-btn"),
+        objectFitBtn: this.queryDOM(".tmg-video-object-fit-btn"),
+        volumeContainer: this.queryDOM(".tmg-video-volume-container"),
+        volumeSlider: this.queryDOM(".tmg-video-volume-slider"),
+        brightnessContainer: this.queryDOM(".tmg-video-brightness-container"),
+        brightnessSlider: this.queryDOM(".tmg-video-brightness-slider"),
+        timeAndDurationBtn: this.queryDOM(".tmg-video-time-and-duration-btn"),
+        currentTimeElement: this.queryDOM(".tmg-video-current-time"),
+        timeBridgeElement: this.queryDOM(".tmg-video-time-bridge"),
+        totalTimeElement: this.queryDOM(".tmg-video-total-time"),
+        muteBtn: this.queryDOM(".tmg-video-mute-btn"),
+        darkBtn: this.queryDOM(".tmg-video-dark-btn"),
+        captionsBtn: this.queryDOM(".tmg-video-captions-btn"),
+        settingsBtn: this.queryDOM(".tmg-video-settings-btn"),
+        playbackRateBtn: this.queryDOM(".tmg-video-playback-rate-btn"),
+        pictureInPictureBtn: this.queryDOM(".tmg-video-picture-in-picture-btn"),
+        theaterBtn: this.queryDOM(".tmg-video-theater-btn"),
+        fullscreenBtn: this.queryDOM(".tmg-video-fullscreen-btn"),
+        svgs: this.videoContainer.getElementsByTagName("svg"),
+        draggableControls: this.queryDOM("[data-draggable-control]", false, true),
+        dropZones: [...this.queryDOM("[data-drop-zone][data-drag-id]", false, true), ...this.zonesArr],
+        settingsCloseBtn: this.queryDOM(".tmg-video-settings-close-btn"),
+        settingsTipsBtn: this.queryDOM(".tmg-video-settings-tips-btn")
+      };
+    }
+    initPlayer() {
+      this.observeResize(), this.observeIntersection();
+      this.setUpSvgs();
+      this.setVideoEventListeners(), this.setControlsEventListeners();
+      this.plugMedia(), this.plugTimeSettings(), this.plugLightState(), this.plugVolumeSettings(), this.plugBrightnessSettings(), this.plugPlaybackRateSettings();
+      this.plugCaptionsSettings(), this.plugModesSettings(), this.plugKeysSettings(), this.plugToastsSettings(), this.plugLocked();
+      this[`toggle${tmg.capitalize(this.config.initialMode)}Mode`]?.(true);
+      !this.video.currentSrc && this._handleLoadedError();
+      this._handleLoadStart();
+      this.setReadyState(1);
+      !this.config.lightState.disabled ? this.addLightState() : this.initHeavyControls();
+      this.plugDisabled();
+    }
+    plugLightState() {
+      this.config.set("lightState.disabled", (value) => this.readyState !== 1 ? TERMINATOR : value);
+      this.config.on("lightState.disabled", ({ target: { value, object }, root }) => {
+        if (value) {
+          if (this.settings.time.start != null) this.actualTimeStart = this.settings.time.value = this.settings.time.start;
+          this.videoContainer.classList.remove("tmg-video-light");
+          this.video.removeEventListener("play", this.removeLightState);
+          this.DOM.controlsContainer.removeEventListener("click", this._handleLightStateClick);
+          this.initHeavyControls();
+        } else {
+          root.lightState.preview.usePoster = object.preview.usePoster;
+          this.videoContainer.classList.add("tmg-video-light");
+          this.video.addEventListener("play", this.removeLightState);
+          this.DOM.controlsContainer.addEventListener("click", this._handleLightStateClick);
+        }
+      });
+      this.config.on("lightState.controls", () => this.queryDOM("[data-control-id]", false, true).forEach((c) => c.dataset.lightControl = this.isLight(c.dataset.controlId) ? "true" : "false"), { init: true });
+      this.config.on("lightState.preview.usePoster", ({ target: { value, object }, root }) => !root.lightState.disabled && (!value || !this.video.poster) && (this.settings.time.value = object.time));
+      this.config.on("lightState.preview.time", ({ target: { object }, root }) => !root.lightState.disabled && (!object.usePoster || !this.video.poster) && (this.settings.time.value = object.time));
+    }
+    addLightState = () => this.config.lightState.disabled = false;
+    removeLightState = () => {
+      this.config.lightState.disabled = true;
+      this.isLight("bigplaypause") && this.stall(), this.togglePlay(true);
+    };
+    isLight = (controlId) => tmg.inBoolArrOpt(this.config.lightState.controls, controlId);
+    _handleLightStateClick = ({ target }) => target === this.DOM.controlsContainer && this.removeLightState();
+    stall() {
+      this.showOverlay();
+      this.DOM.bigPlayPauseBtn && this.videoContainer.classList.add("tmg-video-stall");
+      this.DOM.bigPlayPauseBtn?.addEventListener("animationend", () => this.videoContainer.classList.remove("tmg-video-stall"), { once: true });
+    }
+    setControlState = (btn, { hidden = false, disabled = false }) => (btn?.classList?.toggle("tmg-video-control-hidden", hidden), btn?.classList?.toggle("tmg-video-control-disabled", disabled));
+    setControlsState(controlId) {
+      const atFirst = this.currentPlaylistIndex <= 0, atLast = !this.config.playlist || this.currentPlaylistIndex >= this.config.playlist.length - 1;
+      const groups = {
+        fullscreenlock: () => this.setControlState(this.DOM.fullscreenLockBtn, { hidden: !(tmg.ON_MOBILE && this.isUIActive("fullscreen")) }),
+        fullscreenorientation: () => !this.isUIActive("fullscreen") && this.setControlState(this.DOM.fullscreenOrientationBtn, { hidden: true }),
+        captions: () => this.setControlState(this.DOM.captionsBtn, { disabled: !this.video.textTracks[this.textTrackIndex] }),
+        playbackrate: () => this.DOM.playbackRateBtn && (this.DOM.playbackRateBtn.textContent = `${this.settings.playbackRate.value}x`),
+        pictureinpicture: () => this.setControlState(this.DOM.pictureInPictureBtn, { hidden: this.settings.modes.pictureInPicture.disabled }),
+        theater: () => this.setControlState(this.DOM.theaterBtn, { hidden: !this.settings.modes.theater }),
+        fullscreen: () => this.setControlState(this.DOM.fullscreenBtn, { hidden: this.settings.modes.fullscreen.disabled }),
+        playlist: () => {
+          this.DOM && this.setControlState(this.DOM.bigPrevBtn, { hidden: !(this.config.playlist?.length > 1), disabled: atFirst }), this.setControlState(this.DOM.bigNextBtn, { hidden: !(this.config.playlist?.length > 1), disabled: atLast });
+          this.DOM && this.setControlState(this.DOM.prevBtn, { hidden: atFirst }), this.setControlState(this.DOM.nextBtn, { hidden: atLast });
+        }
+      };
+      if (tmg.isArr(controlId)) controlId.forEach((g) => groups[g]?.());
+      else if (controlId) groups[controlId]?.();
+      else Object.values(groups).forEach((fn) => fn());
+    }
+    setImgLoadState = ({ target: img }) => img?.setAttribute("data-loaded", img.complete && img.naturalWidth > 0);
+    setImgFallback = ({ target: img }) => img.src = TMG_VIDEO_ALT_IMG_SRC;
+    setCanvasFallback = (canvas, context, img) => img = canvas && tmg.createEl("img", { src: TMG_VIDEO_ALT_IMG_SRC, onload: () => context?.drawImage(img, 0, 0, canvas.width, canvas.height) });
+    initHeavyControls() {
+      if (this.readyState !== 1) return;
+      this.video.currentSrc && this._handleLoadedMetadata();
+      this.setContainersEventListeners(), this.setSettingsViewEventListeners();
+      this.setReadyState(2);
+      this._handleMediaIntersectionChange(this.isIntersecting);
+      !this.video.paused ? this.setReadyState(3) : this.video.addEventListener("play", () => this.setReadyState(3), { once: true });
+    }
+    setKeyEventListeners(act = "add", main = !this.isUIActive("settings"), area) {
+      if (act === "add" && this.readyState < 2 || this.disabled || this.settings.locked) return;
+      main && [this.floatingWindow, area !== "floating" ? window : null].forEach((w) => w?.[`${act}EventListener`]("keydown", this._handleKeyDown));
+      [this.floatingWindow, area !== "floating" ? window : null].forEach((w) => w?.[`${act}EventListener`]("keyup", main ? this._handleKeyUp : this._handleSettingsKeyUp));
+    }
+    setContainersEventListeners() {
+      this.videoContainer.addEventListener("click", this._handleLockScreenClick);
+      this.videoContainer.addEventListener("wheel", this._handleGestureWheel, { passive: false });
+      [this.DOM.controlsContainer, this.DOM.bottomControlsWrapper].forEach((el) => {
+        el.addEventListener("contextmenu", this._handleRightClick);
+        el.addEventListener("click", this._handleAnyClick, true);
+        el.addEventListener("focusin", this._handleFocusIn, true), el.addEventListener("keydown", this._handleKeyFocusIn, true);
+        ["pointermove", "dragenter", "scroll"].forEach((e) => el.addEventListener(e, this._handleHoverPointerActive, true));
+        el.addEventListener("mouseleave", this._handleHoverPointerOut, true);
+      });
+      tmg.addSafeClicks(this.DOM.controlsContainer, this._handleClick, this._handleDblClick, true);
+      this.DOM.controlsContainer.addEventListener("pointerdown", this._handleSpeedPointerDown, true);
+      this.DOM.controlsContainer.addEventListener("touchstart", this._handleGestureTouchStart, true);
+    }
+    setVideoEventListeners(act = "add") {
+      act !== "add" && !this.config.lightState.disabled && this.video.removeEventListener("play", this.removeLightState);
+      this.video[`${act}EventListener`]("error", this._handleLoadedError);
+      this.video[`${act}EventListener`]("play", this._handlePlay), this.video[`${act}EventListener`]("pause", this._handlePause);
+      this.video[`${act}EventListener`]("waiting", this._handleBufferStart), this.video[`${act}EventListener`]("playing", this._handleBufferStop);
+      this.video[`${act}EventListener`]("durationchange", this._handleDurationChange);
+      this.video[`${act}EventListener`]("ratechange", this._handlePlaybackRateChange);
+      this.video[`${act}EventListener`]("volumechange", this._handleNativeVolumeChange);
+      this.video[`${act}EventListener`]("timeupdate", this._handleTimeUpdate);
+      this.video[`${act}EventListener`]("progress", this._handleLoadedProgress);
+      this.video[`${act}EventListener`]("loadstart", this._handleLoadStart);
+      this.video[`${act}EventListener`]("loadedmetadata", this._handleLoadedMetadata);
+      this.video[`${act}EventListener`]("loadeddata", this._handleLoadedData);
+      this.video[`${act}EventListener`]("ended", this._handleEnded);
+      this.video[`${act}EventListener`]("enterpictureinpicture", this._handleEnterPictureInPicture);
+      this.video[`${act}EventListener`]("leavepictureinpicture", this._handleLeavePictureInPicture);
+      this.video[`${act}EventListener`]("webkitendfullscreen", this._handleIOSFullscreenEnd);
+      this.video.textTracks[`${act}EventListener`]("addtrack", this._handleTextTrackChange);
+      this.video.textTracks[`${act}EventListener`]("removetrack", this._handleTextTrackChange);
+      this.video.textTracks[`${act}EventListener`]("change", this._handleTextTrackChange);
+    }
+    setControlsEventListeners() {
+      this.bindNotifiers();
+      this.DOM.screenLockedBtn?.addEventListener("click", this._handleLockBtnClick);
+      this.DOM.miniplayerExpandBtn?.addEventListener("click", this.expandMiniplayer);
+      this.DOM.miniplayerRemoveBtn?.addEventListener("click", this.removeMiniplayer);
+      this.DOM.fullscreenOrientationBtn?.addEventListener("click", () => this.changeScreenOrientation());
+      this.DOM.fullscreenLockBtn?.addEventListener("click", this.lock);
+      [this.DOM.bigPrevBtn, this.DOM.prevBtn].forEach((el) => el?.addEventListener("click", this.previousVideo));
+      [this.DOM.bigPlayPauseBtn, this.DOM.playPauseBtn].forEach((el) => el?.addEventListener("click", this.togglePlay));
+      [this.DOM.bigNextBtn, this.DOM.nextBtn].forEach((el) => el?.addEventListener("click", this.nextVideo));
+      tmg.addSafeClicks(this.DOM.captureBtn, this.captureVideoFrame, () => this.captureVideoFrame("monochrome"));
+      tmg.addSafeClicks(this.DOM.timeAndDurationBtn, this.toggleTimeMode, this.rotateTimeFormat);
+      tmg.addSafeClicks(this.DOM.playbackRateBtn, this.rotatePlaybackRate, () => this.rotatePlaybackRate("backwards"));
+      this.DOM.captionsBtn?.addEventListener("click", this.toggleCaptions);
+      this.DOM.muteBtn?.addEventListener("click", this.toggleMute);
+      this.DOM.darkBtn?.addEventListener("click", this.toggleDark);
+      this.DOM.objectFitBtn?.addEventListener("click", this.rotateObjectFit);
+      this.DOM.theaterBtn?.addEventListener("click", this.toggleTheaterMode);
+      this.DOM.fullscreenBtn?.addEventListener("click", this.toggleFullscreenMode);
+      [this.DOM.pictureInPictureBtn, this.DOM.pictureInPictureIconWrapper].forEach((el) => el?.addEventListener("click", this.togglePictureInPictureMode));
+      this.DOM.settingsBtn?.addEventListener("click", this.toggleSettingsView);
+      this.DOM.timelineContainer?.addEventListener("pointerdown", this._handleTimelinePointerDown);
+      this.DOM.timelineContainer?.addEventListener("keydown", this._handleTimelineKeyDown);
+      this.DOM.timeline?.addEventListener("mousemove", this._handleTimelineInput);
+      ["mouseleave", "touchend", "touchcancel"].forEach((e) => this.DOM.timeline?.addEventListener(e, this.stopTimePreviewing));
+      this.DOM.captionsContainer.addEventListener("pointerdown", this._handleCaptionsDragStart);
+      this.DOM.volumeSlider?.addEventListener("input", this._handleVolumeSliderInput);
+      this.DOM.volumeContainer?.addEventListener("mousemove", this._handleVolumeContainerMouseMove);
+      this.DOM.volumeContainer?.addEventListener("mouseleave", this._handleVolumeContainerMouseLeave);
+      this.DOM.brightnessSlider?.addEventListener("input", this._handleBrightnessSliderInput);
+      this.DOM.brightnessContainer?.addEventListener("mousemove", this._handleBrightnessContainerMouseMove);
+      this.DOM.brightnessContainer?.addEventListener("mouseleave", this._handleBrightnessContainerMouseLeave);
+      ["load", "error"].forEach((e) => this.DOM.videoProfile?.addEventListener(e, this.setImgLoadState));
+      this.queryDOM(".tmg-video-picture-in-picture-icon-wrapper", true).addEventListener("click", this.togglePictureInPictureMode);
+    }
+    setDragEventListeners(want = "add") {
+      this.DOM.draggableControls?.forEach((c) => {
+        c.dataset.dragId = c.dataset.dragId ?? "";
+        const act = !tmg.inBoolArrOpt(this.settings.controlPanel.draggable, c.dataset.dragId) ? "remove" : want;
+        c.dataset.draggableControl = c.draggable = act === "add";
+        c[`${act}EventListener`]("dragstart", this._handleDragStart);
+        c[`${act}EventListener`]("drag", this._handleDrag);
+        c[`${act}EventListener`]("dragend", this._handleDragEnd);
+      });
+      this.DOM.dropZones?.forEach((c) => {
+        c.dataset.dragId = c.dataset.dragId ?? "";
+        const act = !tmg.inBoolArrOpt(this.settings.controlPanel.draggable, c.dataset.dragId) ? "remove" : want;
+        c.dataset.dropZone = act === "add";
+        c[`${act}EventListener`]("dragenter", this._handleDragEnter);
+        c[`${act}EventListener`]("dragover", this._handleDragOver);
+        c[`${act}EventListener`]("drop", this._handleDrop);
+        c[`${act}EventListener`]("dragleave", this._handleDragLeave);
+      });
+    }
+    setSettingsViewEventListeners() {
+      this.DOM.settingsCloseBtn?.addEventListener("click", this.leaveSettingsView);
+      this.DOM.settingsTipsBtn?.addEventListener("click", this.showTipsDialog);
+    }
+    toggleSettingsView = async () => await (!this.isUIActive("settings") ? this.enterSettingsView : this.leaveSettingsView)();
+    async enterSettingsView() {
+      if (this.isUIActive("settings")) return;
+      this.wasPaused = this.video.paused, this.togglePlay(false);
+      this.videoContainer.classList.add("tmg-video-settings-view");
+      await tmg.mockAsync(tmg.parseCSSTime(this.settings.css.settingsViewTransitionTime));
+      this.showOverlay();
+      this.DOM.videoSettings.removeAttribute("inert"), this.DOM.videoContainerContent.setAttribute("inert", "");
+      this.DOM.settingsCloseBtn.focus();
+      this.setKeyEventListeners("add", false), this.setKeyEventListeners("remove", true);
+    }
+    async leaveSettingsView() {
+      if (!this.isUIActive("settings")) return;
+      this.videoContainer.classList.remove("tmg-video-settings-view");
+      await tmg.mockAsync(tmg.parseCSSTime(this.settings.css.settingsViewTransitionTime));
+      this.togglePlay(!this.wasPaused);
+      this.DOM.videoSettings.setAttribute("inert", ""), this.DOM.videoContainerContent.removeAttribute("inert");
+      this.DOM.settingsCloseBtn.blur();
+      this.setKeyEventListeners("remove", false), this.setKeyEventListeners("add", true);
+    }
+    _handleSettingsKeyUp(e) {
+      const action = this.keyEventAllowed(e);
+      if (action === false) return;
+      else if (action) this.showOverlay();
+      switch (action) {
+        case "settings":
+          return this.leaveSettingsView();
+      }
+    }
+    async showTipsDialog() {
+      await this.leaveSettingsView();
+      t007.alert(this.getTipsHTML(), { id: `${this.id}-tips-dialog`, rootElement: this.DOM.videoContainerContent, confirmText: "Got it!" });
+    }
+    observeResize() {
+      this._handleMediaParentResize();
+      initScrollAssist(this.DOM.videoTitle, { pxPerSecond: 60, assistClassName: "tmg-video-controls-scroll-assist" });
+      initScrollAssist(this.DOM.videoArtist, { pxPerSecond: 30, assistClassName: "tmg-video-controls-scroll-assist" });
+      [...this.zonesArr, this.zoneWs.center.zone].forEach((el) => {
+        this._handleControlsView(el);
+        initScrollAssist(el, { pxPerSecond: el.dataset.dragId === "big" ? 120 : 60, assistClassName: "tmg-video-controls-scroll-assist" });
+        el && tmg.resizeObserver.observe(el);
+        el?.addEventListener("scroll", this._handleDirtyScroll, { passive: true });
+      });
+      [this.videoContainer, this.pseudoVideoContainer].forEach((el) => tmg.resizeObserver.observe(el));
+    }
+    unobserveResize() {
+      removeScrollAssist(this.DOM.videoTitle);
+      removeScrollAssist(this.DOM.videoArtist);
+      [...this.zonesArr, this.zoneWs.center.zone].forEach((el) => (removeScrollAssist(el), el && tmg.resizeObserver.unobserve(el)));
+      [this.videoContainer, this.pseudoVideoContainer].forEach((el) => tmg.resizeObserver.unobserve(el));
+    }
+    observeIntersection() {
+      tmg.intersectionObserver.observe(this.videoContainer.parentElement);
+      tmg.intersectionObserver.observe(this.video);
+    }
+    unobserveIntersection() {
+      const p = this.pseudoVideoContainer.parentElement ?? this.videoContainer.parentElement;
+      p && tmg.intersectionObserver.unobserve(p);
+      tmg.intersectionObserver.unobserve(this.video);
+    }
+    _handleResize = (target) => target.classList.contains("tmg-media-container") ? this._handleMediaParentResize(target.className.includes("pseudo")) : target.classList.contains("tmg-video-side-controls-wrapper") && this._handleControlsView(target);
+    _handleMediaParentResize(isPseudo = false) {
+      const getTier = (container) => {
+        const { offsetWidth: w, offsetHeight: h } = container;
+        return { w, h, tier: h <= 130 ? "xxxxx" : w <= 280 ? "xxxx" : w <= 380 ? "xxx" : w <= 480 ? "xx" : w <= 630 ? "x" : "" };
+      };
+      if (!isPseudo) {
+        const { w, h, tier } = getTier(this.videoContainer);
+        this.settings.css.currentContainerWidth = `${w}px`, this.settings.css.currentContainerHeight = `${h}px`;
+        this.videoContainer.dataset.sizeTier = tier;
+        this.syncThumbnailSize();
+        this.syncCaptionsSize(), this.previewCaptions("");
+      } else {
+        const { tier } = getTier(this.pseudoVideoContainer);
+        this.pseudoVideoContainer.dataset.sizeTier = tier;
+      }
+    }
+    _handleWindowResize() {
+      if (!this.isUIActive("fullscreen")) this.toggleMiniplayerMode();
+    }
+    _handleOrientationChange() {
+      if (!this.isIntersecting || !tmg.ON_MOBILE || this.readyState < 3 || this.settings.modes.fullscreen.onRotate === false || this.isUIActive("fullscreen") || this.isUIActive("miniplayer")) return;
+      const deg = "boolean" === typeof this.settings.modes.fullscreen.onRotate ? 90 : parseInt(this.settings.modes.fullscreen.onRotate);
+      if (screen.orientation?.angle === deg || screen.orientation?.angle === 360 - deg) this.toggleFullscreenMode();
+    }
+    _handleMediaIntersectionChange(isIntersecting) {
+      this.isIntersecting = isIntersecting;
+      this.readyState > 1 && this.setKeyEventListeners(this.isIntersecting ? "add" : "remove");
+    }
+    _handleMediaParentIntersectionChange(isIntersecting) {
+      this.parentIntersecting = isIntersecting;
+      this._handleMediaAptAutoPlay(this.settings.auto.pause, false), this._handleMediaAptAutoPlay();
+      this.readyState > 2 && this.toggleMiniplayerMode();
+    }
+    _handleMediaAptAutoPlay = (auto = this.settings.auto.play, bool = true, p = this.parentIntersecting ? "in" : "out") => auto == `${p}-view-always` ? this.togglePlay(bool) : auto == `${p}-view` && this.readyState < 3 && this.togglePlay(bool);
+    _handleVisibilityChange() {
+      document.visibilityState !== "visible" && this.stopTimeScrubbing();
+    }
+    _handleDirtyScroll({ currentTarget: el }) {
+      if (el.scrollLeft > 0) el.dataset.hasScrolled = true;
+      el.dataset.resetScrolled = el.scrollLeft === (el.dataset.scroller === "reverse" ? el.scrollWidth - el.clientWidth : 0);
+    }
+    _handleControlsView(w) {
+      if (!w.isConnected) return;
+      let spacer, c = w?.children?.[0];
+      do {
+        c?.setAttribute("data-displayed", getComputedStyle(c).display !== "none" ? "true" : "false");
+        c?.setAttribute("data-spacer", false);
+        if (c?.dataset.displayed === "true" && !spacer) spacer = c;
+      } while (c = c?.nextElementSibling);
+      this.settings.css.currentTopWrapperHeight = this.DOM.topControlsWrapper.offsetHeight + "px";
+      this.settings.css.currentBottomWrapperHeight = this.DOM.bottomControlsWrapper.offsetHeight + "px";
+      if (w?.dataset.scroller !== "reverse") return;
+      spacer?.setAttribute("data-spacer", true);
+      if (w.dataset.resetScrolled === "true") w.dataset.hasScrolled = false;
+      if (w.dataset.hasScrolled === "true" || w.scrollWidth <= w.clientWidth || w.scrollLeft === w.scrollWidth - w.clientWidth) return w.scrollWidth <= w.clientWidth && (w.dataset.hasScrolled = false);
+      w.addEventListener("scroll", () => w.dataset.hasScrolled = false, { once: true });
+      w.scrollLeft = w.scrollWidth - w.clientWidth;
+    }
+    setUpSvgs() {
+      Array.prototype.forEach.call(this.DOM.svgs, (svg) => {
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        const title = svg.getAttribute("data-control-title");
+        if (title) svg.addEventListener("mouseover", () => svg.parentElement.title = title);
+      });
+    }
+    deactivate(message) {
+      this.showOverlay(), this.showUIMessage(message);
+      this.setCanvasFallback(this.DOM.previewCanvas, this.previewContext), this.setCanvasFallback(this.DOM.thumbnailCanvas, this.thumbnailContext);
+      this.videoContainer.classList.add("tmg-video-inactive");
+    }
+    reactivate() {
+      t007.dialog?.dismiss(`${this.id}-error-dialog`, "recovered");
+      if (!this.videoContainer.classList.contains("tmg-video-inactive") || !this.loaded) return;
+      this.removeUIMessage();
+      this.videoContainer.classList.remove("tmg-video-inactive");
+    }
+    plugDisabled() {
+      this.config.on("disabled", ({ value }) => {
+        if (value) {
+          this.leaveSettingsView(), this.cancelAllLoops();
+          this.videoContainer.classList.add("tmg-video-disabled");
+          this.togglePlay(false), this.showOverlay();
+          this.DOM.videoContainerContent.setAttribute("inert", "");
+          this.setKeyEventListeners("remove");
+          this.toast?.warn("You cannot access the custom controls when disabled");
+          this.log("You cannot access the custom controls when disabled", "warn");
+        } else {
+          this.videoContainer.classList.remove("tmg-video-disabled");
+          this.DOM.videoContainerContent.removeAttribute("inert");
+          this.setKeyEventListeners("add");
+        }
+      });
+      this.config.disabled = this.config.disabled;
+    }
+    plugLocked() {
+      this.config.on("settings.locked", async ({ value }) => {
+        if (value) {
+          this.leaveSettingsView();
+          setTimeout(this.showLockedOverlay);
+          this.videoContainer.classList.add("tmg-video-locked", "tmg-video-progress-bar");
+          this.removeOverlay("force");
+          this.setKeyEventListeners("remove");
+        } else {
+          this.removeLockedOverlay();
+          await tmg.mockAsync(tmg.parseCSSTime(this.settings.css.switchTransitionTime));
+          this.videoContainer.classList.toggle("tmg-video-progress-bar", this.settings.controlPanel.progressBar);
+          this.videoContainer.classList.remove("tmg-video-locked");
+          this.showOverlay();
+          this.setKeyEventListeners("add");
+        }
+      });
+      this.settings.locked = this.settings.locked;
+    }
+    lock = () => this.settings.locked = true;
+    unlock = () => this.settings.locked = false;
+    _handleLockBtnClick(e) {
+      e.stopPropagation();
+      this.delayLockedOverlay();
+      e.currentTarget.classList.contains("tmg-video-control-unlock") ? this.unlock() : e.currentTarget.classList.add("tmg-video-control-unlock");
+    }
+    activatePseudoMode() {
+      this.mutatingDOMM = true;
+      this.pseudoVideo.id = this.video.id, this.video.id = "";
+      this.pseudoVideo.className += " " + this.video.className.replace(/tmg-media|tmg-video/g, "");
+      this.pseudoVideoContainer.className += " " + this.videoContainer.className.replace(/tmg-media-container|tmg-video-container/g, "");
+      this.videoContainer.parentElement?.insertBefore(this.pseudoVideoContainer, this.videoContainer);
+      document.body.append(this.videoContainer);
+      setTimeout(() => this.mutatingDOMM = false);
+    }
+    deactivatePseudoMode(destroy) {
+      this.mutatingDOMM = true;
+      this.video.id = this.pseudoVideo.id, this.pseudoVideo.id = "";
+      this.pseudoVideo.className = "tmg-pseudo-video tmg-media";
+      this.pseudoVideoContainer.className = "tmg-pseudo-video-container tmg-media-container";
+      this.pseudoVideoContainer.parentElement?.replaceChild(destroy ? this.video : this.videoContainer, this.pseudoVideoContainer);
+      !destroy && setTimeout(() => this.mutatingDOMM = false);
+    }
+    async getVideoFrame(display, time = this.settings.time.value, raw = false, min = 0, video = this.pseudoVideo) {
+      if (video !== this.video) {
+        await this.frameReadyPromise;
+        if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
+          this.frameReadyPromise ??= new Promise((res) => video.addEventListener(video.readyState ? "timeupdate" : "loadeddata", () => res(null), { once: true }));
+          video.currentTime = time;
+        }
+        this.frameReadyPromise = await this.frameReadyPromise;
+      }
+      this.exportCanvas.width = video.videoWidth || min, this.exportCanvas.height = video.videoHeight || min;
+      this.exportContext.filter = this.settings.css.filter;
+      display === "monochrome" && (this.exportContext.filter = `${this.exportContext.filter} grayscale(100%)`);
+      this.exportContext.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
+      this.exportContext.filter = "none";
+      if (raw === true) return { canvas: this.exportCanvas, context: this.exportContext };
+      const blob = (this.exportCanvas.width || this.exportCanvas.height) && await new Promise((res) => this.exportCanvas.toBlob(res));
+      return { blob, url: blob && URL.createObjectURL(blob) };
+    }
+    async captureVideoFrame(display = "", time = this.settings.time.value) {
+      this.notify("capture");
+      const tTxt = tmg.formatMediaTime({ time, format: "human", showMs: true }), fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`, frameToastId = this.toast?.loading(`Capturing ${fTxt}...`, { delay: tmg.parseCSSTime(this.settings.css.notifiersAnimationTime), image: TMG_VIDEO_ALT_IMG_SRC, tag: `tmg-${this.config.media.title ?? "Video"}fcpa${tTxt}${display}` }), frame = await this.getVideoFrame(display, time, false, 0, this.video), filename = `${this.config.media.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_");
+      const Save = () => {
+        this.toast?.loading(frameToastId, { render: `Saving ${fTxt}`, actions: {} });
+        tmg.createEl("a", { href: frame.url, download: filename })?.click?.();
+        this.toast?.success(frameToastId, { delay: 1e3, render: `Saved ${fTxt}`, actions: {} });
+      };
+      const Share = () => {
+        this.toast?.loading(frameToastId, { render: `Sharing ${fTxt}`, actions: {} });
+        navigator.share?.({ title: this.config.media.title ?? "Video", text: `Captured ${fTxt}`, files: [new File([frame.blob], filename, { type: frame.blob.type })] }).then(
+          () => this.toast?.success(frameToastId, { render: `Shared ${fTxt}`, actions: {} }),
+          () => this.toast?.error(frameToastId, { render: `Failed sharing ${fTxt}`, actions: { Save } })
+        ) || this.toast?.warn(frameToastId, { delay: 1e3, render: `Couldn't share ${fTxt}`, actions: { Save } });
+      };
+      frame?.url ? this.toast?.success(frameToastId, { render: `Captured ${fTxt}`, image: frame.url, autoClose: this.settings.toasts.captureAutoClose, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url) }) : this.toast?.error(frameToastId, { render: `Failed capturing ${fTxt}` });
+    }
+    async findGoodFrameTime({ time: t = this.settings.time.value, secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 }) {
+      const end = tmg.clamp(0, t + s, this.duration);
+      for (; t <= end; t += 0.333) {
+        const rgb = await tmg.getDominantColor((await this.getVideoFrame("", t, true, 1)).canvas, "rgb", true);
+        if (rgb && tmg.getRGBBri(rgb) > bri && tmg.getRGBSat(rgb) > sat) return t;
+      }
+      return null;
+    }
+    getMediaMainColor = async (time, poster = this.video.poster, config = {}) => await tmg.getDominantColor(poster ? poster : (await this.getVideoFrame("", time ? time : await this.findGoodFrameTime(config), true, 1)).canvas);
+    async syncWithMediaColor(...args) {
+      const color = this.loaded && await this.getMediaMainColor(...args), keys2 = Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k]);
+      keys2?.forEach((k) => this.settings.css[k] = (this.loaded ? color : null) ?? this.CSSCache[k]);
+    }
+    syncMediaSession() {
+      if (!navigator.mediaSession || document.pictureInPictureElement && !this.isUIActive("pictureInPicture")) return;
+      if (this.config.media) navigator.mediaSession.metadata = new MediaMetadata(this.config.media);
+      const set = (...args) => navigator.mediaSession.setActionHandler(...args);
+      set("play", () => this.togglePlay(true)), set("pause", () => this.togglePlay(false));
+      set("seekbackward", () => this.skip(-this.settings.time.skip)), set("seekforward", () => this.skip(this.settings.time.skip));
+      set("previoustrack", this.config.playlist && this.currentPlaylistIndex > 0 ? this.previousVideo : null);
+      set("nexttrack", this.config.playlist && this.currentPlaylistIndex < this.config.playlist.length - 1 ? this.nextVideo : null);
+    }
+    syncMediaAspectRatio() {
+      this.mediaAspectRatio = this.video.videoWidth && this.video.videoHeight ? this.video.videoWidth / this.video.videoHeight : 16 / 9;
+      this.settings.css.aspectRatio = this.video.videoWidth && this.video.videoHeight ? `${this.video.videoWidth} / ${this.video.videoHeight}` : "16 / 9";
+    }
+    isUIActive(mode) {
+      switch (mode) {
+        case "miniplayer":
+          return this.videoContainer.classList.contains("tmg-video-miniplayer");
+        case "fullscreen":
+          return this.videoContainer.classList.contains("tmg-video-fullscreen");
+        case "pictureInPicture":
+          return this.videoContainer.classList.contains("tmg-video-picture-in-picture");
+        case "floatingPlayer":
+          return this.videoContainer.classList.contains("tmg-video-floating-player");
+        case "theater":
+          return this.videoContainer.classList.contains("tmg-video-theater");
+        case "settings":
+          return this.videoContainer.classList.contains("tmg-video-settings-view");
+        case "captions":
+          return this.videoContainer.classList.contains("tmg-video-captions");
+        case "captionsPreview":
+          return this.videoContainer.classList.contains("tmg-video-captions-preview");
+        case "overlay":
+          return this.videoContainer.classList.contains("tmg-video-overlay");
+        default:
+          return false;
+      }
+    }
+    showUIMessage = (message) => message && this.DOM.videoContainerContent.setAttribute("data-message", message);
+    removeUIMessage = () => this.DOM.videoContainerContent.removeAttribute("data-message");
+    async _handleLoadedError(error) {
+      this.loaded = false, this.settings.css.currentBufferedPosition = 0;
+      const mssg = this.settings.errorMessages?.[this.video.error?.code ?? (error && 5)] || typeof error === "string" && error || error?.message || this.video.error?.message || error && "An unknown error occurred with the video :(";
+      if (this.readyState < 3) return this.deactivate(mssg);
+      if (t007.dialog?.isActive?.(`${this.id}-error-dialog`)) return;
+      const res = await t007.confirm(mssg, { id: `${this.id}-error-dialog`, rootElement: this.DOM.videoContainerContent, confirmText: "Try Again", cancelText: "Dismiss" });
+      if (res === true) {
+        const time = this.video.currentTime;
+        this.video.load(), this.settings.time.value = time, this.togglePlay(true);
+      } else if (res !== "recovered") this.deactivate(mssg);
+    }
+    _handleLoadStart() {
+      this.loaded = false;
+      this.stats = { fps: 30 };
+      this.setControlsState(), this.setCaptionsState();
+      this.showOverlay();
+      this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = this.settings.css.currentBufferedPosition = 0;
+    }
+    _handleLoadedMetadata() {
+      this.loaded = true;
+      this.actualTimeStart = this.settings.time.start;
+      if (this.settings.time.start != null && this.config.lightState.disabled) this.settings.time.value = this.actualTimeStart;
+      this.pseudoVideo.src = this.video.currentSrc;
+      this.pseudoVideo.crossOrigin = this.video.crossOrigin;
+      this.pseudoVideo.addEventListener("timeupdate", ({ target: v }) => v.ontimeupdate = this.syncCanvasPreviews, { once: true });
+      this.syncMediaAspectRatio(), this.syncWithMediaColor();
+      this.setCaptionsState();
+      this.reactivate();
+      this.config.lightState.preview.usePoster = this.config.lightState.preview.usePoster;
+      this.autoGenerateMedia();
+    }
+    _handleLoadedData = this._handleDurationChange;
+    _handleDurationChange = () => {
+      this.DOM.totalTimeElement.textContent = this.toTimeText(this.video.duration);
+      this.DOM.timelineContainer?.setAttribute("aria-valuemax", Math.floor(this.duration));
+    };
+    _handleLoadedProgress() {
+      for (let i = 0; i < this.video.buffered.length; i++) if (this.video.buffered.start(this.video.buffered.length - 1 - i) < this.settings.time.value) return this.settings.css.currentBufferedPosition = this.video.buffered.end(this.video.buffered.length - 1 - i) / this.duration;
+    }
+    togglePlay = async (bool) => await this.video[("boolean" === typeof bool ? bool : this.video.paused) ? "play" : "pause"]();
+    replay = () => (this.settings.time.value = 0, this.video.play());
+    // ! - start is 0 and falsy
+    previousVideo = () => this.settings.time.value >= 3 ? this.replay() : this.config.playlist && this.currentPlaylistIndex > 0 && this.movePlaylistTo(this.currentPlaylistIndex - 1, true);
+    nextVideo = () => this.config.playlist && this.currentPlaylistIndex < this.config.playlist.length - 1 && this.movePlaylistTo(this.currentPlaylistIndex + 1, true);
+    movePlaylistTo(index, shouldPlay) {
+      if (!this.config.playlist) return this.setControlsState("playlist");
+      this.currentPlaylistIndex = index;
+      this.applyPlaylistItem(this.config.playlist[index]);
+      "boolean" === typeof shouldPlay && this.togglePlay(shouldPlay);
+      this.canAutoMovePlaylist = true;
+    }
+    applyPlaylistItem(v, reset = true) {
+      fanout(this.config.media, tmg.deepClone(v.media), { merge: true, depth: 2 });
+      ["min", "max", "start", "end", "previews"].forEach((prop) => this.settings.time[prop] = v.settings.time[prop]);
+      this.config.tracks = tmg.deepClone(v.tracks ?? []);
+      if (reset) this.config.src = v.src || "";
+      if (reset && "sources" in v) this.config.sources = tmg.deepClone(v.sources);
+      this.setControlsState("playlist");
+    }
+    autonextVideo() {
+      if (!this.loaded || !this.config.playlist || this.settings.auto.next < 0 || !this.canAutoMovePlaylist || this.currentPlaylistIndex >= this.config.playlist.length - 1 || this.video.paused || this.buffering) return;
+      this.canAutoMovePlaylist = false;
+      const count = tmg.clamp(1, Math.round((this.settings.time.end ?? this.duration) - this.settings.time.value), this.settings.auto.next), v = this.config.playlist[this.currentPlaylistIndex + 1];
+      const nVTId = this.toast?.("", {
+        autoClose: count * 1e3,
+        hideProgressBar: false,
+        position: "bottom-right",
+        bodyHTML: `<span title="Play next video" class="tmg-video-next-preview-wrapper">
+        <button type="button"><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></button>
+        <video class="tmg-video-next-preview" poster="${v.media?.artwork?.[0]?.src}" src="${v.src || ""}" muted playsinline webkit-playsinline preload="metadata"></video>
+        <p>${this.toTimeText(NaN)}</p>
+      </span>
+      <span class="tmg-video-next-info">
+        <h2>Next Video in <span class="tmg-video-next-countdown">${count}</span></h2>
+        ${v.media.title ? `<p class="tmg-video-next-title">${v.media.title}</p>` : ""}
+      </span>`,
+        onTimeUpdate: (time) => this.throttle("nextVideoCountdown", () => (this.queryDOM(".tmg-video-next-countdown").textContent = Math.max(Math.round(count - time / 1e3), 1), 250)),
+        onClose: (timeElapsed) => (removeListeners(), timeElapsed && this.nextVideo()),
+        tag: "tmg-anvi"
+      });
+      const cleanUpWhenNeeded = () => !this.video.ended && cleanUp(), autoCleanUpToast = () => Math.floor((this.settings.time.end ?? this.duration) - this.settings.time.value) > this.settings.auto.next && cleanUp(), cleanUp = (permanent = false) => (t007.toast.dismiss(nVTId, "instant"), this.nextVideoPreview = null, this.canAutoMovePlaylist = !permanent), removeListeners = () => ["timeupdate", "pause", "waiting"].forEach((e, i) => this.video.removeEventListener(e, !i ? autoCleanUpToast : cleanUpWhenNeeded));
+      ["timeupdate", "pause", "waiting"].forEach((e, i) => this.video.addEventListener(e, !i ? autoCleanUpToast : cleanUpWhenNeeded));
+      const nVP = this.nextVideoPreview = this.queryDOM(".tmg-video-next-preview");
+      nVP?.toggleAttribute("poster", v.media?.artwork?.[0]?.src);
+      v.sources?.length && tmg.addSources(v.sources, nVP);
+      ["loadedmetadata", "loaded", "durationchange"].forEach((e) => nVP?.addEventListener(e, ({ target: p }) => p.nextElementSibling.textContent = this.toTimeText(p.duration)));
+      fanout(this.settings.toasts.nextVideoPreview, this.settings.toasts.nextVideoPreview);
+      nVP?.previousElementSibling?.addEventListener("click", () => (cleanUp(true), this.nextVideo()), true);
+    }
+    _handlePlay() {
+      for (const media of document.querySelectorAll("video, audio")) media !== this.video && !media.paused && media.pause();
+      this.RAFLoop("timeUpdating", this._handleTimeUpdateLoop);
+      this.videoContainer.classList.remove("tmg-video-paused");
+      this.delayOverlay();
+      this.syncMediaSession();
+      this.leaveSettingsView();
+      this.toggleMiniplayerMode();
+      if (this.loaded || this.video.currentSrc) this.loaded = true, !this.video.error && this.reactivate();
+    }
+    _handlePause() {
+      this.cancelRAFLoop("timeUpdating");
+      this.videoContainer.classList.add("tmg-video-paused");
+      this.showOverlay();
+      this._handleBufferStop();
+    }
+    _handleEnded = () => {
+      this.showOverlay();
+      this.videoContainer.classList.add("tmg-video-replay");
+    };
+    _handleBufferStart() {
+      this.buffering = tmg.ON_MOBILE && this.currentSkipNotifier ? "skip" : true;
+      tmg.ON_MOBILE && this.showOverlay();
+      this.videoContainer.classList.add("tmg-video-buffering");
+    }
+    _handleBufferStop() {
+      const buffered = this.buffering;
+      this.buffering = false;
+      tmg.ON_MOBILE && (buffered === "skip" ? this.removeOverlay() : this.delayOverlay());
+      this.videoContainer.classList.remove("tmg-video-buffering");
+    }
+    get duration() {
+      return tmg.safeNum(this.video.duration);
+    }
+    plugTimeSettings() {
+      this.config.get("settings.time.value", () => tmg.safeNum(this.video.currentTime));
+      this.config.watch("settings.time.value", (value) => this.video.currentTime = tmg.safeNum(tmg.clamp(this.settings.time.min, value, this.settings.time.max)), { init: "auto" });
+      this.config.set("settings.time.previews", (value, _, { target: { oldValue } }) => tmg.isObj(value) && tmg.isObj(oldValue) ? tmg.mergeObjs(oldValue, value) : value);
+      this.config.on(
+        "settings.time.previews",
+        ({ type, currentTarget: { value } }) => {
+          if (type === "update") return;
+          const manual = value && value?.address && (value?.spf || value?.cols && value?.rows);
+          this.settings.css.altImgUrl = `url(${TMG_VIDEO_ALT_IMG_SRC})`;
+          this.videoContainer.classList.toggle("tmg-video-no-previews", !value);
+          this.videoContainer.dataset.previewType = value ? manual ? value?.cols && value?.rows ? "sprite" : "image" : "canvas" : "none";
+          if (value?.cols && value?.rows && value?.address) this.settings.css.currentPreviewUrl = this.settings.css.currentThumbnailUrl = `url(${value.address})`;
+          else this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
+          if (!value || manual) return;
+          this.previewContext ??= this.DOM.previewCanvas?.getContext("2d"), this.thumbnailContext ??= this.DOM.thumbnailCanvas?.getContext("2d");
+          !this.loaded && (this.setCanvasFallback(this.DOM.previewCanvas, this.previewContext), this.setCanvasFallback(this.DOM.thumbnailCanvas, this.thumbnailContext), this.pseudoVideo.ontimeupdate = null);
+        },
+        { init: true }
+      );
+      this.config.on("settings.css.currentThumbnailWidth", ({ value }) => this.DOM.thumbnailCanvas.width = parseFloat(value));
+      this.config.on("settings.css.currentThumbnailHeight", ({ value }) => this.DOM.thumbnailCanvas.height = parseFloat(value));
+    }
+    guardTimeValues = () => ["lightState.preview.time", "settings.time.min", "settings.time.max", "settings.time.start", "settings.time.end", "settings.toasts.nextVideoPreview.time"].forEach((p) => this.config.get(p, this.toTimeVal));
+    toTimeText = (time = this.video.currentTime, useMode = false, showMs = false) => !useMode || this.settings.time.mode !== "remaining" ? tmg.formatMediaTime({ time, format: this.settings.time.format, elapsed: true, showMs }) : `${tmg.formatMediaTime({ time: this.video.duration - time, format: this.settings.time.format, elapsed: false, showMs })}`;
+    // DRY quick util
+    toTimeVal = (value) => tmg.parseIfPercent(value, this.duration);
+    _handleTimelinePointerDown(e) {
+      if (this.isScrubbing) return;
+      this.isScrubbing = true;
+      this.DOM.timelineContainer?.setPointerCapture(e.pointerId);
+      this.lastTimelinePointerX = e.clientX, this.lastTimelineThumbPosition = Number(this.settings.css.currentThumbPosition);
+      this.wasPaused = this.video.paused;
+      this.scrubbingId = requestAnimationFrame(() => {
+        this.togglePlay(false);
+        this.videoContainer.classList.add("tmg-video-scrubbing");
+        tmg.ON_MOBILE && this.DOM.scrubNotifier?.classList.add("tmg-video-control-active");
+      });
+      this.syncThumbnailSize();
+      this._handleTimelineInput(e);
+      this.DOM.timelineContainer?.addEventListener("pointermove", this._handleTimelineInput);
+      this.DOM.timelineContainer?.addEventListener("pointerup", this.stopTimeScrubbing);
+    }
+    stopTimeScrubbing() {
+      if (!this.isScrubbing) return;
+      this.isScrubbing = false;
+      const newPos = this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = this.shouldCancelTimeScrub ? this.lastTimelineThumbPosition : this.settings.css.currentThumbPosition;
+      this.DOM.currentTimeElement.textContent = this.toTimeText(newPos * this.duration, true);
+      if (!this.shouldCancelTimeScrub) this.settings.time.value = newPos * this.duration;
+      cancelAnimationFrame(this.scrubbingId);
+      this.togglePlay(!this.wasPaused);
+      this.videoContainer.classList.remove("tmg-video-scrubbing");
+      this.DOM.scrubNotifier?.classList.remove("tmg-video-control-active");
+      this.stopTimePreviewing();
+      this.allowTimeScrubbing(), this.stallCancelTimeScrub = true;
+      this.DOM.timelineContainer?.removeEventListener("pointermove", this._handleTimelineInput);
+      this.DOM.timelineContainer?.removeEventListener("pointerup", this.stopTimeScrubbing);
+    }
+    stopTimePreviewing = () => (this.overTimeline = false, setTimeout(() => this.videoContainer.classList.remove("tmg-video-previewing")));
+    cancelTimeScrubbing() {
+      if (this.stallCancelTimeScrub || this.shouldCancelTimeScrub || this.cancelScrubTimeoutId) return;
+      this.shouldCancelTimeScrub = true;
+      this.DOM.cancelScrubNotifier?.classList.add("tmg-video-control-active");
+      this.cancelScrubTimeoutId = setTimeout(this.allowTimeScrubbing, this.settings.controlPanel.timeline.seek.cancel.timeout, false);
+    }
+    allowTimeScrubbing(reset = true) {
+      this.stallCancelTimeScrub = this.shouldCancelTimeScrub = false;
+      this.DOM.cancelScrubNotifier?.classList.remove("tmg-video-control-active");
+      clearTimeout(this.cancelScrubTimeoutId), reset && (this.cancelScrubTimeoutId = null);
+    }
+    _handleTimelineInput({ clientX }) {
+      this.overTimeline = true;
+      if (!tmg.ON_MOBILE) this.videoContainer.classList.add("tmg-video-previewing");
+      this.throttle(
+        "timelineInput",
+        () => {
+          const rect = this.DOM.timelineContainer?.getBoundingClientRect(), currX = tmg.clamp(0, !this.isScrubbing || this.settings.controlPanel.timeline.seek.relative ? clientX - rect.left : this.lastTimelineThumbPosition * rect.width + (clientX - this.lastTimelinePointerX), rect.width), p = tmg.safeNum(currX / rect.width), previewImgMin = this.DOM.previewContainer.offsetWidth / 2 / rect.width;
+          this.DOM.previewContainer?.setAttribute("data-preview-time", this.toTimeText(p * this.video.duration, true));
+          if (this.isScrubbing) {
+            this.settings.css.currentThumbPosition = p;
+            if (this.settings.time.seekSync) this.settings.css.currentPlayedPosition = p;
+            if (this.settings.time.seekSync && this.DOM.currentTimeElement) this.DOM.currentTimeElement.textContent = this.toTimeText(this.settings.time.value = p * this.duration, true);
+            Math.abs(currX - this.lastTimelineThumbPosition * rect.width) < this.settings.controlPanel.timeline.seek.cancel.delta ? this.cancelTimeScrubbing() : this.allowTimeScrubbing();
+            this.showOverlay();
+          }
+          this.settings.css.currentPreviewPosition = p;
+          this.settings.css.currentPreviewImgPosition = tmg.clamp(previewImgMin, p, 1 - previewImgMin);
+          if (["sprite", "image"].includes(this.videoContainer.dataset.previewType)) {
+            const frameI = Math.floor(p * this.duration / this.settings.time.previews.spf) || 1;
+            if (this.videoContainer.dataset.previewType === "sprite") {
+              const { cols, rows } = this.settings.time.previews, clampedI = Math.min(frameI, cols * rows - 1), xPercent = clampedI % cols * 100 / (cols - 1 || 1), yPercent = Math.floor(clampedI / cols) * 100 / (rows - 1 || 1);
+              if (!tmg.ON_MOBILE) this.settings.css.currentPreviewPosition = `${xPercent}% ${yPercent}%`;
+              if (this.isScrubbing) this.settings.css.currentThumbnailPosition = `${xPercent}% ${yPercent}%`;
+            } else {
+              const url = `url(${this.settings.time.previews.address.replace("$", frameI)})`;
+              if (!tmg.ON_MOBILE) this.settings.css.currentPreviewUrl = url;
+              if (this.isScrubbing) this.settings.css.currentThumbnailUrl = url;
+            }
+          } else if (this.settings.time.previews && !this.frameReadyPromise) this.pseudoVideo.currentTime = p * this.duration;
+        },
+        30
+      );
+    }
+    _handleGestureTimelineInput({ percent, sign, multiplier }) {
+      multiplier = multiplier.toFixed(1);
+      percent = percent * multiplier;
+      const time = sign === "+" ? this.settings.time.value + percent * this.duration : this.settings.time.value - percent * this.duration;
+      this.gestureNextTime = tmg.clamp(0, time, this.duration);
+      if (this.overTimeline) this.settings.time.value = this.gestureNextTime;
+      this.DOM.touchTimelineNotifier.textContent = `${sign}${this.toTimeText(Math.abs(this.gestureNextTime - this.settings.time.value))} (${this.toTimeText(this.gestureNextTime, true)}) ${multiplier < 1 ? `x${multiplier}` : ""}`;
+    }
+    _handleTimelineKeyDown(e) {
+      switch (e.key?.toLowerCase()) {
+        case "arrowleft":
+        case "arrowdown":
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return this.settings.time.value -= e.shiftKey ? 5 : 1;
+        case "arrowright":
+        case "arrowup":
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return this.settings.time.value += e.shiftKey ? 5 : 1;
+      }
+    }
+    _handleTimeUpdate() {
+      const t = { c: this.settings.time.value, vc: this.video.currentTime, d: this.duration, s: this.settings };
+      this.video.paused && this._handleTimeUpdateLoop(false, t.vc, t.s);
+      if (t.c < t.s.time.min || t.c > t.s.time.max) this.settings.time.value = t.s.time.loop ? t.s.time.min : t.c, !t.s.time.loop && this.togglePlay(false);
+      this.DOM.currentTimeElement.textContent = this.toTimeText(t.vc, true);
+      if (this.speedCheck && !this.video.paused) this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(t.vc, true));
+      if (this.video.readyState && t.c && this.readyState > 1) {
+        if (Math.floor((t.s.time.end ?? t.d) - t.c) <= t.s.auto.next) this.autonextVideo();
+        t.s.time.start = t.c > 3 && t.c < (t.s.time.end ?? t.d) - 3 ? t.c : this.actualTimeStart;
+        if (this.config.playlist) this.config.playlist[this.currentPlaylistIndex].settings.time.start = t.s.time.start;
+      }
+      this.DOM.timelineContainer?.setAttribute("aria-valuenow", Math.floor(t.c));
+      this.DOM.timelineContainer?.setAttribute("aria-valuetext", `${tmg.formatMediaTime({ time: t.c, format: "human-long" })} out of ${tmg.formatMediaTime({ time: t.d, format: "human-long" })}`);
+      this.videoContainer.classList.remove("tmg-video-replay");
+    }
+    _handleTimeUpdateLoop(optimize = true, vc = this.video.currentTime, s = this.settings) {
+      if (optimize && !this.isIntersecting) return;
+      if (!this.isScrubbing) s.css.currentPlayedPosition = s.css.currentThumbPosition = tmg.safeNum(vc / tmg.safeNum(this.video.duration, 60));
+      if (!s.captions.visible) this._handleCaptionsKaraoke();
+    }
+    toggleTimeMode() {
+      this.settings.time.mode = this.settings.time.mode !== "elapsed" ? "elapsed" : "remaining";
+      this.DOM.currentTimeElement.textContent = this.toTimeText(this.video.currentTime, true);
+      this.DOM.previewContainer?.setAttribute("data-preview-time", this.toTimeText(Number(this.settings.css.currentPreviewPosition) * this.video.duration, true));
+    }
+    rotateTimeFormat() {
+      const formats = [["digital", "/"], ["human", "of"], ["human-long", "out of"]], i = formats.findIndex((f) => f[0] === this.settings.time.format), nextFormat = formats[(i + 1) % formats.length];
+      this.settings.time.format = nextFormat[0];
+      this.DOM.currentTimeElement.textContent = this.toTimeText(this.video.currentTime, true);
+      this.DOM.timeBridgeElement.textContent = nextFormat[1];
+      this.DOM.totalTimeElement.textContent = this.toTimeText(this.video.duration);
+      this.DOM.previewContainer?.setAttribute("data-preview-time", this.toTimeText(Number(this.settings.css.currentPreviewPosition) * this.video.duration, true));
+      if (this.nextVideoPreview) this.nextVideoPreview.nextElementSibling.textContent = this.toTimeText(this.nextVideoPreview.duration);
+    }
+    skip(duration) {
+      const notifier = duration > 0 ? this.DOM.fwdNotifier : this.DOM.bwdNotifier;
+      duration = duration > 0 ? this.duration - this.settings.time.value > duration ? duration : this.duration - this.settings.time.value : duration < 0 ? this.settings.time.value > Math.abs(duration) ? duration : -this.settings.time.value : 0;
+      this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = tmg.safeNum((this.settings.time.value += duration) / this.video.duration);
+      if (this.skipPersist) {
+        if (this.currentSkipNotifier && notifier !== this.currentSkipNotifier) this.skipDuration = 0, this.currentSkipNotifier.classList.remove("tmg-video-control-persist");
+        this.showOverlay();
+        this.currentSkipNotifier = notifier;
+        notifier?.classList.add("tmg-video-control-persist");
+        this.skipDuration += duration;
+        clearTimeout(this.skipDurationId);
+        this.skipDurationId = setTimeout(() => {
+          this.deactivateSkipPersist();
+          notifier?.classList.remove("tmg-video-control-persist");
+          this.skipDuration = 0, this.currentSkipNotifier = null;
+          !this.video.paused ? this.removeOverlay() : this.showOverlay();
+        }, tmg.parseCSSTime(this.settings.css.notifiersAnimationTime));
+        return notifier?.setAttribute("data-skip", Math.trunc(this.skipDuration));
+      } else this.currentSkipNotifier?.classList.remove("tmg-video-control-persist");
+      notifier?.setAttribute("data-skip", Math.trunc(Math.abs(duration)));
+    }
+    syncCanvasPreviews() {
+      if (!this.loaded || this.frameReadyPromise) return;
+      this.throttle(
+        "canvasPreviewSync",
+        () => {
+          this.DOM.previewCanvas.width = this.DOM.previewCanvas.offsetWidth || this.DOM.previewCanvas.width, this.DOM.previewCanvas.height = this.DOM.previewCanvas.offsetHeight || this.DOM.previewCanvas.height;
+          if (!tmg.ON_MOBILE) this.previewContext?.drawImage(this.pseudoVideo, 0, 0, this.DOM.previewCanvas.width, this.DOM.previewCanvas.height);
+          if (this.isScrubbing) this.thumbnailContext?.drawImage(this.pseudoVideo, 0, 0, this.DOM.thumbnailCanvas.width, this.DOM.thumbnailCanvas.height);
+        },
+        30
+      );
+    }
+    syncThumbnailSize() {
+      if (!this.DOM.thumbnailCanvas || !this.DOM.thumbnailImg) return;
+      const { width = this.videoContainer.offsetWidth, height = this.videoContainer.offsetHeight } = tmg.getRenderedBox(this.video);
+      this.settings.css.currentThumbnailHeight = height + 1 + "px", this.settings.css.currentThumbnailWidth = width + 1 + "px";
+    }
+    _handleFrameUpdate(now, m) {
+      const diff = m.presentedFrames - (this.stats?.presentedFrames ?? 0), fps = diff > 0 ? diff / (now - (this.stats?.now ?? now)) * 1e3 : 30, droppedFrames = (this.stats?.droppedFrames ?? 0) + (diff > 1 ? diff - 1 : 0);
+      this.stats = { ...m, now, fps, droppedFrames };
+      this.frameCallbackId = this.video.requestVideoFrameCallback?.(this._handleFrameUpdate);
+    }
+    moveVideoFrame = (dir = "forwards") => this.video.paused && this.throttle("frameStepping", () => this.settings.time.value = tmg.clamp(0, Math.round(this.settings.time.value * this.pfps) + (dir === "backwards" ? -1 : 1), Math.floor(this.duration * this.pfps)) / this.pfps, this.pframeDelay);
+    plugPlaybackRateSettings() {
+      this.config.watch("settings.playbackRate.value", (value, { target: { object } }) => this.video.playbackRate = this.video.defaultPlaybackRate = tmg.clamp(object.min, value, object.max));
+      this.config.watch("settings.playbackRate.min", (min, { target: { object } }) => object.value < min && (object.value = min));
+      this.config.watch("settings.playbackRate.max", (max, { target: { object } }) => object.value > max && (object.value = max));
+      fanout(this.settings.playbackRate, { value: this.video.playbackRate, ...this.settings.playbackRate });
+      this.config.get("settings.playbackRate.value", () => this.video.playbackRate, true);
+    }
+    rotatePlaybackRate(dir = "forwards") {
+      const rate = this.settings.playbackRate.value, { min, max, skip } = this.settings.playbackRate, steps = Array.from({ length: Math.floor((max - min) / skip) + 1 }, (_, i2) => min + i2 * skip), i = steps.reduce((cIdx, s, idx) => Math.abs(s - rate) < Math.abs(steps[cIdx] - rate) ? idx : cIdx, 0);
+      this.settings.playbackRate.value = steps[dir === "backwards" ? (i - 1 + steps.length) % steps.length : (i + 1) % steps.length];
+    }
+    setPlaybackRate(value) {
+      const sign = value >= 0 ? "+" : "-";
+      value = Math.abs(value);
+      const rate = this.settings.playbackRate.value;
+      switch (sign) {
+        case "-":
+          if (rate > this.settings.playbackRate.min) this.settings.playbackRate.value -= rate % value ? rate % value : value;
+          return this.notify("playbackratedown");
+        default:
+          if (rate < this.settings.playbackRate.max) this.settings.playbackRate.value += rate % value ? rate % value : value;
+          return this.notify("playbackrateup");
+      }
+    }
+    _handlePlaybackRateChange() {
+      this.DOM.playbackRateNotifierContent.textContent = `${this.settings.playbackRate.value}x`;
+      this.DOM.fastPlayNotifierText.textContent = `${this.settings.playbackRate.value}x`;
+      this.setControlsState("playbackrate");
+    }
+    fastPlay(pos) {
+      if (this.speedCheck) return;
+      this.speedCheck = true;
+      this.wasPaused = this.video.paused, this.lastPlaybackRate = this.settings.playbackRate.value;
+      this.DOM.fastPlayNotifier?.classList.add("tmg-video-control-active");
+      setTimeout(pos === "backwards" && this.settings.fastPlay.rewind ? this.rewind : this.fastForward, 0);
+    }
+    fastForward(rate = this.settings.fastPlay.playbackRate) {
+      this.settings.playbackRate.value = rate;
+      this.DOM.fastPlayNotifier?.classList.remove("tmg-video-rewind");
+      this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
+      this.togglePlay(true);
+    }
+    rewind(rate = this.settings.fastPlay.playbackRate) {
+      this.settings.playbackRate.value = 1, this.rewindPlaybackRate = rate;
+      this.DOM.fastPlayNotifierText.textContent = `${rate}x`;
+      this.DOM.fastPlayNotifier?.classList.add("tmg-video-rewind");
+      this.video.addEventListener("play", this.rewindReset);
+      this.speedIntervalId = setInterval(this.rewindVideo, this.pframeDelay - 20);
+    }
+    rewindVideo() {
+      !this.video.paused && this.togglePlay(false);
+      this.settings.time.value -= this.rewindPlaybackRate / this.pfps;
+      this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = tmg.safeNum(this.video.currentTime / this.video.duration);
+      this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(this.video.currentTime, true));
+    }
+    rewindReset() {
+      if (this.speedIntervalId) {
+        this.notify("videopause");
+        this.togglePlay(false);
+        clearInterval(this.speedIntervalId);
+        this.speedIntervalId = null;
+      } else this.speedIntervalId = setInterval(this.rewindVideo, this.pframeDelay - 20);
+    }
+    slowDown() {
+      if (!this.speedCheck) return;
+      this.speedCheck = false, clearInterval(this.speedIntervalId);
+      this.video.removeEventListener("play", this.rewindReset);
+      this.settings.playbackRate.value = this.lastPlaybackRate, this.rewindPlaybackRate = 0;
+      this.togglePlay(this.settings.fastPlay.reset ? !this.wasPaused : true);
+      this.removeOverlay();
+      this.DOM.fastPlayNotifier?.classList.remove("tmg-video-control-active", "tmg-video-rewind");
+    }
+    setCaptionsState() {
+      this.textTrackIndex = 0;
+      Array.prototype.forEach.call(this.video.textTracks, (track, i) => {
+        track.oncuechange = () => i === this.textTrackIndex && !(!this.isUIActive("captions") && this.isUIActive("captionsPreview")) && this._handleCueChange(track.activeCues?.[0]);
+        if (track.mode === "showing" || track.default) this.textTrackIndex = i;
+        track.mode = "hidden";
+      });
+      this.videoContainer.classList.toggle("tmg-video-captions", this.video.textTracks.length && this.settings.captions.visible);
+      this.videoContainer.dataset.trackKind = this.video.textTracks[this.textTrackIndex]?.kind || "captions";
+      this.setControlsState("captions");
+      this._handleCueChange(this.video.textTracks[this.textTrackIndex]?.activeCues?.[0]);
+    }
+    plugCaptionsSettings() {
+      Object.entries(this.settings.captions.font).forEach(([k, { value }]) => this.settings.css[`captionsFont${tmg.capitalize(k)}`] = value);
+      Object.entries(this.settings.captions.background).forEach(([k, { value }]) => this.settings.css[`captionsBackground${tmg.capitalize(k)}`] = value);
+      Object.entries(this.settings.captions.window).forEach(([k, { value }]) => this.settings.css[`captionsWindow${tmg.capitalize(k)}`] = value);
+      this.settings.css.captionsCharacterEdgeStyle = this.settings.captions.characterEdgeStyle.value;
+      this.settings.css.captionsTextAlignment = this.settings.captions.textAlignment.value;
+      this.settings.css.currentCaptionsX, this.settings.css.currentCaptionsY;
+      this.config.on("settings.captions.visible", ({ value }) => {
+        this.settings.css.currentCaptionsX = this.CSSCache.currentCaptionsX, this.settings.css.currentCaptionsY = this.CSSCache.currentCaptionsY;
+        if (!this.video.textTracks[this.textTrackIndex]) return;
+        !value ? this.videoContainer.classList.add("tmg-video-captions") : this.videoContainer.classList.remove("tmg-video-captions", "tmg-video-captions-preview");
+        !value && this.previewCaptions(`${this.video.textTracks[this.textTrackIndex].label} ${this.videoContainer.dataset.trackKind} 
+ Click \u2699 for settings`);
+      });
+      ["font.family", "font.size", "font.weight", "font.variant", "background.color", "background.opacity", "window.color", "window.opacity", "characterEdgeStyle", "textAlignment"].forEach((prop) => this.config.watch(`settings.captions.${prop}.value`, (value) => (this.settings.css[tmg.camelize(`captions.${prop}`, /\./)] = value, this.syncCaptionsSize())));
+      this.config.watch("settings.captions.font.size.min", (min, { target: { object } }) => object.value < min && (object.value = min));
+      this.config.watch("settings.captions.font.size.max", (max, { target: { object } }) => object.value > max && (object.value = max));
+    }
+    toggleCaptions() {
+      if (!this.video.textTracks[this.textTrackIndex]) return this.previewCaptions("No captions available for this video");
+      this.settings.captions.visible = !this.settings.captions.visible;
+    }
+    previewCaptions(preview = `${tmg.capitalize(this.videoContainer.dataset.trackKind)} look like this`, flush = this.DOM.captionsContainer.textContent.replace(/\s/g, "") === this.lastCaptionsPreview?.replace(/\s/g, "")) {
+      const shouldPreview = flush || !this.isUIActive("captions") || !this.DOM.captionsContainer.textContent;
+      shouldPreview && this.videoContainer.classList.add("tmg-video-captions-preview");
+      this._handleCueChange(shouldPreview ? { text: preview } : this.lastCue);
+      clearTimeout(this.previewCaptionsTimeoutId);
+      this.previewCaptionsTimeoutId = setTimeout((flush2 = this.DOM.captionsContainer.textContent.replace(/\s/g, "") === preview.replace(/\s/g, "")) => {
+        this.videoContainer.classList.remove("tmg-video-captions-preview");
+        if (flush2) this.DOM.captionsContainer.innerHTML = "";
+      }, 1500);
+      this.lastCaptionsPreview = preview;
+    }
+    syncCaptionsSize() {
+      this.DOM.captionsContainer.style.setProperty("display", "block", "important");
+      const measurer = tmg.createEl("span", { className: "tmg-video-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" });
+      this.DOM.captionsContainer.append(measurer);
+      this.captionsCharW = measurer.offsetWidth / 52;
+      const { lineHeight, fontSize } = getComputedStyle(measurer);
+      this.captionsLineHPx = !tmg.safeNum(parseFloat(lineHeight), 0) ? tmg.safeNum(parseFloat(fontSize), 16) * 1.2 : parseFloat(lineHeight);
+      measurer.remove(), this.DOM.captionsContainer.style.removeProperty("display");
+    }
+    _handleTextTrackChange = () => this.setCaptionsState();
+    _handleCueChange(cue) {
+      const existing = this.DOM.captionsContainer.querySelector(".tmg-video-captions-wrapper");
+      if (!cue) return existing?.remove();
+      const container = this.DOM.captionsContainer, wrapper = existing ?? tmg.createEl("div", { className: "tmg-video-captions-wrapper", ariaLive: "off", ariaAtomic: "true" }, { part: "cue-display" }), { offsetWidth: vCWidth, offsetHeight: vCHeight } = this.videoContainer;
+      ["style", "data-active", "data-scroll"].forEach((attr) => container.removeAttribute(attr));
+      wrapper.innerHTML = "", cue.text ||= "", this.lastCue = cue;
+      const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
+      lines.forEach((p) => tmg.formatVttLine(p, Math.floor(vCWidth / this.captionsCharW)).forEach((l) => wrapper.append(tmg.createEl("div", { className: "tmg-video-captions-line" }, { part: "cue", id: cue.id }, this.settings.captions.allowVideoOverride && cue.align && { style: { textAlign: cue.align } }).appendChild(tmg.createEl("span", { className: "tmg-video-captions-text", innerHTML: tmg.parseVttText(l) })).parentElement)));
+      !existing && this.DOM.captionsContainer.append(wrapper);
+      const { offsetWidth: cWidth, offsetHeight: cHeight } = container;
+      this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`, this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`;
+      if (this.settings.captions.allowVideoOverride) {
+        if (cue.region) {
+          container.setAttribute("data-active", "");
+          const { width, lines: lines2, viewportAnchorX: vpAnX, viewportAnchorY: vpAnY, scroll } = cue.region;
+          if (tmg.isDef(vpAnX)) container.style.setProperty("--tmg-video-current-captions-x", `${vpAnX}%`);
+          if (tmg.isDef(vpAnY)) container.style.setProperty("--tmg-video-current-captions-y", `${100 - vpAnY}%`);
+          if (tmg.isDef(width)) container.style.maxWidth = `${width}%`;
+          if (tmg.isDef(lines2)) container.style.maxHeight = `${lines2 * (this.captionsLineHPx / vCHeight * 100)}%`;
+          if (scroll === "up") {
+            container.style.maxHeight = `${lines2 * (this.captionsLineHPx / vCHeight * 100)}%`;
+            container.dataset.scroll = scroll;
+            this.config.stall(() => container.scrollTop = wrapper.scrollHeight);
+          }
+        } else {
+          if (tmg.isDef(cue.position) && cue.position !== "auto") {
+            const elemHalfWPct = cWidth / vCWidth * 100 / 2, posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elemHalfWPct : -elemHalfWPct;
+            container.style.setProperty("--tmg-video-current-captions-x", `calc(${cue.position}% + ${posOffset}% + ${elemHalfWPct}%)`);
+          }
+          if (tmg.isDef(cue.line) && cue.line !== "auto") {
+            const line = tmg.parseIfPercent(cue.line, 100), lhPct = this.captionsLineHPx / vCHeight * 100, elemHalfHPct = cHeight / vCHeight * 100 / 2, lAlign = cue.lineAlign && cue.lineAlign !== "auto" ? cue.lineAlign : line < 0 ? "end" : "start", lineOffset = lAlign === "start" ? -2 * elemHalfHPct : lAlign === "end" ? 0 : -elemHalfHPct, bottomVal = cue.snapToLines ? line < 0 ? (Math.abs(line) - 1) * lhPct : 100 - line * lhPct : 100 - line;
+            container.style.setProperty("--tmg-video-current-captions-y", `calc(${bottomVal}% + ${lineOffset}% + ${elemHalfHPct}%)`);
+          }
+          if (tmg.isDef(cue.size) && cue.size !== 100) container.style.maxWidth = `${cue.size}%`;
+        }
+        if (cue.vertical) container.style.writingMode = cue.vertical === "lr" ? "vertical-lr" : "vertical-rl";
+      }
+      this.currentKaraokeNodes = Array.from(wrapper.querySelectorAll("[data-part='timed']") ?? [], (el) => {
+        const [, m, s, ms] = el.dataset.time.match(/(\d+):(\d+)\.(\d+)/) || [];
+        return { el, time: m ? +m * 60 + +s + +ms / 1e3 : 0 };
+      });
+      this._handleCaptionsKaraoke();
+    }
+    _handleCaptionsKaraoke() {
+      if (!this.currentKaraokeNodes) return;
+      for (const { el, time } of this.currentKaraokeNodes) {
+        const isPast = this.settings.time.value > time;
+        el.toggleAttribute("data-past", isPast), el.toggleAttribute("data-future", !isPast);
+      }
+    }
+    setCaptionsFontSize(value) {
+      const sign = value >= 0 ? "+" : "-";
+      value = Math.abs(value);
+      const size = Number(this.settings.css.captionsFontSize);
+      switch (sign) {
+        case "-":
+          if (size > this.settings.captions.font.size.min) this.settings.captions.font.size.value = size - (size % value ? size % value : value);
+          break;
+        default:
+          if (size < this.settings.captions.font.size.max) this.settings.captions.font.size.value = size + (size % value ? size % value : value);
+      }
+      this.config.stall(this.previewCaptions);
+    }
+    rotateCaptionsProp(steps, prop, numeric = true) {
+      const curr = this.settings.css[tmg.camelize(prop.replace(".value", ""), /\./)], i = Math.max(0, numeric ? steps.reduce((cIdx, s, idx) => Math.abs(s - curr) < Math.abs(steps[cIdx] - curr) ? idx : cIdx, 0) : steps.indexOf(curr));
+      tmg.setPath(this.settings, prop, steps[(i + 1) % steps.length]);
+      this.config.stall(this.previewCaptions);
+    }
+    rotateCaptionsFontFamily = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).font.family.values, "captions.font.family.value", false);
+    rotateCaptionsFontWeight = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).font.weight.values, "captions.font.weight.value", false);
+    rotateCaptionsFontVariant = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).font.variant.values, "captions.font.variant.value", false);
+    rotateCaptionsFontOpacity = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).font.opacity.values, "captions.font.opacity.value");
+    rotateCaptionsBackgroundOpacity = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).background.opacity.values, "captions.background.opacity.value");
+    rotateCaptionsWindowOpacity = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).window.opacity.values, "captions.window.opacity.value");
+    rotateCaptionsCharacterEdgeStyle = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).characterEdgeStyle.values, "captions.characterEdgeStyle.value", false);
+    rotateCaptionsTextAlignment = () => this.rotateCaptionsProp(tmg.parseUIObj(this.settings.captions).textAlignment.values, "captions.textAlignment.value", false);
+    _handleCaptionsDragStart({ pointerId, clientX, clientY }) {
+      this.DOM.captionsContainer.setPointerCapture(pointerId);
+      const { left, bottom } = getComputedStyle(this.DOM.captionsContainer);
+      this.lastCaptionsPosX = parseFloat(left), this.lastCaptionsPosY = parseFloat(bottom);
+      this.lastCaptionsPtrX = clientX, this.lastCaptionsPtrY = clientY;
+      this.DOM.captionsContainer.addEventListener("pointermove", this._handleCaptionsDragging);
+      this.DOM.captionsContainer.addEventListener("pointerup", this._handleCaptionsDragEnd);
+    }
+    _handleCaptionsDragging({ clientX, clientY }) {
+      this.videoContainer.classList.add("tmg-video-captions-dragging");
+      this.RAFLoop("captionsDragging", () => {
+        const { offsetWidth: ww, offsetHeight: hh } = this.videoContainer, { offsetWidth: w, offsetHeight: h } = this.DOM.captionsContainer, posX = tmg.clamp(w / 2, this.lastCaptionsPosX + (clientX - this.lastCaptionsPtrX), ww - w / 2), posY = tmg.clamp(h / 2, this.lastCaptionsPosY - (clientY - this.lastCaptionsPtrY), hh - h / 2);
+        this.settings.css.currentCaptionsX = `${posX / ww * 100}%`, this.settings.css.currentCaptionsY = `${posY / hh * 100}%`;
+      });
+    }
+    _handleCaptionsDragEnd() {
+      this.cancelRAFLoop("captionsDragging");
+      this.videoContainer.classList.remove("tmg-video-captions-dragging");
+      this.DOM.captionsContainer.removeEventListener("pointermove", this._handleCaptionsDragging);
+      this.DOM.captionsContainer.removeEventListener("pointerup", this._handleCaptionsDragEnd);
+    }
+    setUpAudio() {
+      if (this.audioSetup) return;
+      if (tmg.connectMediaToAudioManager(this.video) === "unavailable") return;
+      this._mediaElementSourceNode = this.video.mediaElementSourceNode;
+      this._tmgGainNode = this.video._tmgGainNode;
+      const DCN = this._tmgDynamicsCompressorNode = this.video._tmgDynamicsCompressorNode;
+      DCN.threshold.value = -30, DCN.knee.value = 20, DCN.ratio.value = 12, DCN.attack.value = 3e-3, DCN.release.value = 0.25;
+      this.audioSetup = true;
+    }
+    cancelAudio() {
+      this.video.volume = tmg.clamp(0, (this._tmgGainNode?.gain?.value ?? 2) / 2, 1);
+      this._mediaElementSourceNode?.disconnect();
+      this._tmgGainNode?.disconnect();
+      this.audioSetup = false;
+    }
+    plugVolumeSettings() {
+      this.setUpAudio();
+      this.lastVolume = tmg.clamp(this.settings.volume.min, this.settings.volume.value ?? this.video.volume * 100, this.settings.volume.max);
+      this.shouldMute = this.shouldSetLastVolume = this.video.muted;
+      this.config.on("settings.volume.value", ({ value }) => {
+        const v = tmg.clamp(this.shouldMute ? 0 : this.settings.volume.min, value, this.settings.volume.max);
+        if (this._tmgGainNode) this._tmgGainNode.gain.setTargetAtTime(v / 100 * 2, tmg.AUDIO_CONTEXT.currentTime, 0.02);
+        if (v > 0) this.video.muted = this.video.defaultMuted = this.settings.volume.muted = false;
+        this._handleVolumeChange(v);
+      });
+      this.config.on("settings.volume.muted", ({ oldValue, value: muted }) => {
+        if (oldValue === muted && !!this.settings.volume.value) return;
+        if (muted) {
+          if (this.settings.volume.value) this.lastVolume = this.settings.volume.value, this.shouldSetLastVolume = true;
+          this.shouldMute = true;
+          if (this.settings.volume.value) this.settings.volume.value = 0;
+        } else {
+          const restore = this.shouldSetLastVolume ? this.lastVolume : this.settings.volume.value;
+          this.settings.volume.value = restore ? restore : this.sliderAptVolume;
+          this.shouldMute = this.shouldSetLastVolume = false;
+        }
+      });
+      this.config.on("settings.volume.min", ({ target: { value: min, object } }) => (object.value < min && (object.value = min), this.lastVolume < min && (this.lastVolume = min)));
+      this.config.on("settings.volume.max", ({ target: { value: max, object } }) => {
+        object.value > max && (object.value = max), this.lastVolume > max && (this.lastVolume = max);
+        this.videoContainer.classList.toggle("tmg-video-volume-boost", max > 100);
+        this.DOM.volumeSlider.max = max;
+        this.settings.css.volumeSliderPercent = Math.round(100 / max * 100);
+        this.settings.css.maxVolumeRatio = max / 100;
+      });
+      fanout(this.settings.volume, { ...this.settings.volume, value: this.shouldMute ? 0 : this.lastVolume });
+      this.config.get("settings.volume.value", (value) => this._tmgGainNode ? Math.round((this._tmgGainNode.gain?.value ?? 2) / 2 * 100) : value, true);
+    }
+    toggleMute = (option) => {
+      if (option === "auto" && this.shouldSetLastVolume && !this.lastVolume) this.lastVolume = this.settings.volume.skip;
+      this.settings.volume.muted = !(this.settings.volume.muted || !this.settings.volume.value);
+    };
+    setVolume(value) {
+      const sign = value >= 0 ? "+" : "-";
+      value = Math.abs(value);
+      let volume = this.shouldSetLastVolume ? this.lastVolume : this.settings.volume.value;
+      switch (sign) {
+        case "-":
+          if (volume > this.settings.volume.min) volume -= volume % value ? volume % value : value;
+          if (volume === 0) {
+            this.notify("volumemuted");
+            break;
+          }
+          this.notify("volumedown");
+          break;
+        default:
+          if (volume < this.settings.volume.max) volume += volume % value ? value - volume % value : value;
+          this.notify("volumeup");
+      }
+      if (this.shouldSetLastVolume) {
+        this.DOM.volumeNotifierContent.textContent = volume + "%";
+        this.lastVolume = volume;
+      } else this.settings.volume.value = volume;
+    }
+    _handleVolumeSliderInput({ target: { value: volume } }, delay = true) {
+      this.shouldMute = this.shouldSetLastVolume = false, this.settings.volume.value = volume;
+      if (volume > 5) this.sliderAptVolume = volume;
+      delay && this.delayVolumeActive();
+    }
+    _handleGestureVolumeSliderInput({ percent, sign }) {
+      const volume = sign === "+" ? this.settings.volume.value + percent * this.settings.volume.max : this.settings.volume.value - percent * this.settings.volume.max;
+      this._handleVolumeSliderInput({ target: { value: tmg.clamp(0, Math.round(volume), this.settings.volume.max) } }, false);
+    }
+    _handleVolumeChange(value) {
+      const v = value ?? this.settings.volume.value;
+      this.DOM.volumeNotifierContent.textContent = v + "%";
+      const vLevel = v == 0 ? "muted" : v < 50 ? "low" : v <= 100 ? "high" : v > 100 ? "boost" : "", vPercent = (v - 0) / (this.settings.volume.max - 0);
+      this.videoContainer.dataset.volumeLevel = vLevel;
+      this.DOM.volumeSlider.value = v;
+      this.DOM.volumeSlider?.parentElement.setAttribute("data-volume", v);
+      this.DOM.touchVolumeContent.textContent = v + "%";
+      this.settings.css.currentVolumeTooltipPosition = `${10.5 + vPercent * 79.5}%`;
+      if (this.settings.volume.max > 100) {
+        if (v <= 100) {
+          this.settings.css.currentVolumeSliderPosition = (v - 0) / (100 - 0);
+          this.settings.css.currentVolumeSliderBoostPosition = 0;
+          this.settings.css.volumeSliderBoostPercent = 0;
+        } else if (v > 100) {
+          this.settings.css.currentVolumeSliderPosition = 1;
+          this.settings.css.currentVolumeSliderBoostPosition = (v - 100) / (this.settings.volume.max - 100);
+          this.settings.css.volumeSliderBoostPercent = this.settings.css.volumeSliderPercent;
+        }
+      } else this.settings.css.currentVolumeSliderPosition = vPercent;
+    }
+    _handleNativeVolumeChange = () => (this.video.volume = 1, this.settings.volume.muted !== this.video.muted && this.toggleMute());
+    // tough choice, took over; browser :)
+    _handleVolumeContainerMouseMove = () => (this.overVolume = this.DOM.volumeSlider?.matches(":hover"), this.startVolumeActive());
+    _handleVolumeContainerMouseLeave = () => (this.overVolume = false, this.stopVolumeActive());
+    startVolumeActive = () => (this.DOM.volumeSlider?.classList.add("tmg-video-control-active"), this.delayVolumeActive());
+    delayVolumeActive() {
+      this.delayOverlay();
+      clearTimeout(this.delayVolumeActiveId);
+      this.delayVolumeActiveId = setTimeout(this.stopVolumeActive, this.settings.overlay.delay);
+    }
+    stopVolumeActive() {
+      if (this.DOM.volumeSlider?.matches(":active")) return this.delayVolumeActive();
+      clearTimeout(this.delayVolumeActiveId);
+      this.DOM.volumeSlider?.classList.remove("tmg-video-control-active");
+    }
+    plugBrightnessSettings() {
+      this.lastBrightness = tmg.clamp(this.settings.brightness.min, this.settings.brightness.value ?? this.settings.css.brightness ?? 100, this.settings.brightness.max);
+      this.config.on("settings.brightness.value", ({ value }) => {
+        const b = tmg.clamp(this.shouldDark ? 0 : this.settings.brightness.min, value, this.settings.brightness.max);
+        this.settings.css.brightness = b;
+        if (b > 0) this.settings.brightness.dark = false;
+        this._handleBrightnessChange(b);
+      });
+      this.config.on("settings.brightness.dark", ({ oldValue, value: dark }) => {
+        if (oldValue === dark && !!this.settings.brightness.value) return;
+        if (dark) {
+          if (this.settings.brightness.value) this.lastBrightness = this.settings.brightness.value, this.shouldSetLastBrightness = true;
+          this.shouldDark = true;
+          if (this.settings.brightness.value) this.settings.brightness.value = 0;
+        } else {
+          const restore = this.shouldSetLastBrightness ? this.lastBrightness : this.settings.brightness.value;
+          this.settings.brightness.value = restore ? restore : this.sliderAptBrightness;
+          this.shouldDark = this.shouldSetLastBrightness = false;
+        }
+      });
+      this.config.on("settings.brightness.min", ({ target: { value: min, object } }) => (object.value < min && (object.value = min), this.lastBrightness < min && (this.lastBrightness = min)));
+      this.config.on("settings.brightness.max", ({ target: { value: max, object } }) => {
+        object.value > max && (object.value = max), this.lastBrightness > max && (this.lastBrightness = max);
+        this.videoContainer.classList.toggle("tmg-video-brightness-boost", max > 100);
+        this.DOM.brightnessSlider.max = max;
+        this.settings.css.brightnessSliderPercent = Math.round(100 / max * 100);
+        this.settings.css.maxBrightnessRatio = max / 100;
+      });
+      fanout(this.settings.brightness, { ...this.settings.brightness, value: this.lastBrightness });
+      this.config.get("settings.brightness.value", () => Number(this.settings.css.brightness ?? 100), true);
+    }
+    toggleDark = (option) => {
+      if (option === "auto" && this.shouldSetLastBrightness && !this.lastBrightness) this.lastBrightness = this.settings.brightness.skip;
+      this.settings.brightness.dark = !(this.settings.brightness.dark || !this.settings.brightness.value);
+    };
+    _handleBrightnessSliderInput({ target: { value: brightness } }, delay = true) {
+      this.shouldDark = this.shouldSetLastBrightness = false, this.settings.brightness.value = brightness;
+      if (brightness > 5) this.sliderAptBrightness = brightness;
+      delay && this.delayBrightnessActive();
+    }
+    _handleGestureBrightnessSliderInput({ percent, sign }) {
+      const brightness = sign === "+" ? this.settings.brightness.value + percent * this.settings.brightness.max : this.settings.brightness.value - percent * this.settings.brightness.max;
+      this._handleBrightnessSliderInput({ target: { value: tmg.clamp(0, Math.round(brightness), this.settings.brightness.max) } }, false);
+    }
+    _handleBrightnessChange(value) {
+      const b = value ?? this.settings.brightness.value;
+      this.DOM.brightnessNotifierContent.textContent = b + "%";
+      const bLevel = b == 0 ? "dark" : b < 50 ? "low" : b <= 100 ? "high" : b > 100 ? "boost" : "", bPercent = (b - 0) / (this.settings.brightness.max - 0);
+      this.videoContainer.dataset.brightnessLevel = bLevel;
+      this.DOM.brightnessSlider.value = b;
+      this.DOM.brightnessSlider?.parentElement.setAttribute("data-brightness", b);
+      this.DOM.touchBrightnessContent.textContent = b + "%";
+      this.settings.css.currentBrightnessTooltipPosition = `${10.5 + bPercent * 79.5}%`;
+      if (this.settings.brightness.max > 100) {
+        if (b <= 100) {
+          this.settings.css.currentBrightnessSliderPosition = (b - 0) / (100 - 0);
+          this.settings.css.currentBrightnessSliderBoostPosition = 0;
+          this.settings.css.brightnessSliderBoostPercent = 0;
+        } else if (b > 100) {
+          this.settings.css.currentBrightnessSliderPosition = 1;
+          this.settings.css.currentBrightnessSliderBoostPosition = (b - 100) / (this.settings.brightness.max - 100);
+          this.settings.css.brightnessSliderBoostPercent = this.settings.css.brightnessSliderPercent;
+        }
+      } else this.settings.css.currentBrightnessSliderPosition = bPercent;
+    }
+    setBrightness(value) {
+      const sign = value >= 0 ? "+" : "-";
+      value = Math.abs(value);
+      let brightness = this.shouldSetLastBrightness ? this.lastBrightness : this.settings.brightness.value;
+      value = Math.abs(value);
+      switch (sign) {
+        case "-":
+          if (brightness > this.settings.brightness.min) brightness -= brightness % value ? brightness % value : value;
+          if (brightness === 0) {
+            this.notify("brightnessdark");
+            break;
+          }
+          this.notify("brightnessdown");
+          break;
+        default:
+          if (brightness < this.settings.brightness.max) brightness += brightness % value ? value - brightness % value : value;
+          this.notify("brightnessup");
+      }
+      if (this.shouldSetLastBrightness) {
+        this.DOM.brightnessNotifierContent.textContent = brightness + "%";
+        this.lastBrightness = brightness;
+      } else this.settings.brightness.value = brightness;
+    }
+    _handleBrightnessContainerMouseMove = () => (this.overBrightness = this.DOM.brightnessSlider?.matches(":hover"), this.startBrightnessActive());
+    _handleBrightnessContainerMouseLeave = () => (this.overBrightness = false, this.stopBrightnessActive());
+    startBrightnessActive = () => (this.DOM.brightnessSlider?.classList.add("tmg-video-control-active"), this.delayBrightnessActive());
+    delayBrightnessActive() {
+      this.delayOverlay();
+      clearTimeout(this.settings.brightness.valueActiveDelayId);
+      this.settings.brightness.valueActiveDelayId = setTimeout(this.stopBrightnessActive, this.settings.overlay.delay);
+    }
+    stopBrightnessActive() {
+      if (this.DOM.brightnessSlider?.matches(":active")) return this.delayBrightnessActive();
+      clearTimeout(this.settings.brightness.valueActiveDelayId);
+      this.DOM.brightnessSlider?.classList.remove("tmg-video-control-active");
+    }
+    rotateObjectFit() {
+      const fits = [["contain", "Crop to Fit"], ["cover", "Fit To Screen"], ["fill", "Stretch"]], i = fits.findIndex((f) => f[0] === this.settings.css.objectFit), nextFit = fits[(i + 1) % fits.length];
+      this.notify(`objectfit${nextFit[0]}`);
+      this.videoContainer.dataset.objectFit = this.settings.css.objectFit = nextFit[0];
+      this.settings.css.bgSafeObjectFit = nextFit[0] === "fill" ? "contain" : nextFit[0];
+      this.DOM.objectFitNotifierContent.textContent = nextFit[1];
+      this.syncThumbnailSize();
+    }
+    plugModesSettings() {
+      this.config.on("settings.modes.fullscreen.disabled", ({ value }) => value && this.isUIActive("fullscreen") && this.toggleFullscreenMode());
+      this.config.on("settings.modes.theater", ({ value }) => !value && this.isUIActive("theater") && this.toggleTheaterMode());
+      this.config.on("settings.modes.pictureInPicture.disabled", ({ value }) => value && (this.isUIActive("pictureInPicture") || this.isUIActive("floatingPlayer")) && this.togglePictureInPictureMode());
+      this.config.on("settings.modes.miniplayer.disabled", ({ value }) => value && this.toggleMiniplayerMode(false));
+    }
+    toggleTheaterMode = () => {
+      if (!this.settings.modes.theater && !this.isUIActive("theater")) return;
+      this.videoContainer.classList.toggle("tmg-video-theater");
+    };
+    async toggleFullscreenMode() {
+      if (this.settings.modes.fullscreen.disabled && !this.inFullscreen) return;
+      if (!this.isUIActive("fullscreen")) {
+        if (tmg._currentFullscreenController) return;
+        if (this.isUIActive("floatingPlayer")) return this.floatingWindow?.addEventListener("pagehide", this.toggleFullscreenMode), this.floatingWindow?.close();
+        if (this.isUIActive("pictureInPicture")) document.exitPictureInPicture();
+        this.toggleMiniplayerMode(false);
+        tmg._currentFullscreenController = this;
+        const vC = this.videoContainer;
+        vC.requestFullscreen ? await vC.requestFullscreen() : vC.mozRequestFullscreen ? await vC.mozRequestFullscreen() : vC.msRequestFullscreen ? await vC.msRequestFullscreen() : vC.webkitRequestFullscreen ? await vC.webkitRequestFullscreen() : this.video.webkitEnterFullscreen && await this.video.webkitEnterFullscreen();
+        this.inFullscreen = true;
+      } else {
+        document.exitFullscreen ? document.exitFullscreen() : document.mozCancelFullscreen ? document.mozCancelFullscreen() : document.msExitFullscreen ? document.msExitFullscreen() : document.webkitCancelFullscreen && document.webkitCancelFullscreen();
+        this.inFullscreen = false;
+      }
+    }
+    async _handleFullscreenChange() {
+      if (this.inFullscreen) this.videoContainer.classList.add("tmg-video-fullscreen");
+      if (!this.inFullscreen || !tmg.queryFullscreen()) {
+        this.videoContainer.classList.remove("tmg-video-fullscreen");
+        this.unlock();
+        tmg._currentFullscreenController = null, this.inFullscreen = false;
+        this.toggleMiniplayerMode();
+      }
+      this.setControlsState("fullscreenlock");
+      tmg.ON_MOBILE && await this.changeScreenOrientation(this.isUIActive("fullscreen") ? this.settings.modes.fullscreen.orientationLock : false);
+      tmg.ON_MOBILE && this.setControlState(this.DOM.fullscreenOrientationBtn, { hidden: !this.isUIActive("fullscreen") });
+    }
+    _handleIOSFullscreenEnd = () => (this.inFullscreen = false, this._handleFullscreenChange());
+    changeScreenOrientation = async (option = true) => option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option === "auto" ? this.video.videoHeight > this.video.videoWidth ? "portrait" : "landscape" : option !== true ? option : screen.orientation.angle === 0 ? "landscape" : "portrait");
+    async togglePictureInPictureMode() {
+      if (this.settings.modes.pictureInPicture.disabled && !this.isUIActive("pictureInPicture") && !this.inFloatingPlayer) return;
+      if (this.inFullscreen) await this.toggleFullscreenMode();
+      if (!this.isUIActive("pictureInPicture") && window.documentPictureInPicture && !this.settings.modes.pictureInPicture.floatingPlayer.disabled) return !this.inFloatingPlayer ? this.initFloatingPlayer() : this.floatingWindow?.close();
+      !this.isUIActive("pictureInPicture") ? await this.video.requestPictureInPicture() : await document.exitPictureInPicture();
+    }
+    _handleEnterPictureInPicture() {
+      this.videoContainer.classList.add("tmg-video-picture-in-picture");
+      this.showOverlay();
+      this.toggleMiniplayerMode(false);
+      this.syncMediaSession();
+    }
+    async _handleLeavePictureInPicture() {
+      await tmg.mockAsync(180);
+      this.videoContainer.classList.remove("tmg-video-picture-in-picture");
+      this.toggleMiniplayerMode();
+      this.delayOverlay();
+    }
+    async initFloatingPlayer() {
+      if (this.inFloatingPlayer) return;
+      documentPictureInPicture.window?.close?.();
+      this.toggleMiniplayerMode(false);
+      this.floatingWindow = await documentPictureInPicture.requestWindow(this.settings.modes.pictureInPicture.floatingPlayer);
+      this.inFloatingPlayer = true;
+      this.floatingWindow.document.documentElement.style.cssText = `height:100%; background:url(${this.config.media.profile}) center / 32px no-repeat, url(${this.video.poster}) center / ${this.settings.css.bgSafeObjectFit} no-repeat, black;`;
+      await tmg.breath(this.floatingWindow);
+      const cssTexts = [], parse = (src) => "string" === typeof src ? src : null, whitelist = [parse(window.T007_TOAST_CSS_SRC), parse(window.T007_INPUT_CSS_SRC), parse(window.T007_DIALOG_CSS_SRC), parse(window.TMG_VIDEO_CSS_SRC)].filter(Boolean);
+      for (const sheet of document.styleSheets) {
+        try {
+          if (!whitelist.some((src) => tmg.isSameURL(src, sheet.href))) {
+            for (const cssRule of sheet.cssRules) if (cssRule.selectorText?.includes(":root") || cssRule.cssText.includes("tmg") || cssRule.cssText.includes("t007")) cssTexts.push(cssRule.cssText);
+          }
+        } catch {
+          continue;
+        }
+      }
+      this.floatingWindow.document.head.append(tmg.createEl("style", { innerHTML: cssTexts.join("\n") }));
+      await Promise.all(whitelist.map((href) => href.includes(".css") && tmg.loadResource(href, "style", void 0, this.floatingWindow)));
+      this.activatePseudoMode();
+      this.videoContainer.classList.add("tmg-video-floating-player", "tmg-video-progress-bar");
+      this.floatingWindow.document.body.append(this.videoContainer);
+      this.floatingWindow.document.documentElement.id = document.documentElement.id;
+      this.floatingWindow.document.documentElement.className = document.documentElement.className;
+      this.floatingWindow && document.documentElement.getAttributeNames().forEach((attr) => this.floatingWindow.document.documentElement.setAttribute(attr, document.documentElement.getAttribute(attr)));
+      tmg.DOMMutationObserver.observe(this.floatingWindow.document.documentElement, { childList: true, subtree: true });
+      this.floatingWindow.addEventListener("resize", this._handleFloatingPlayerResize);
+      this.floatingWindow.addEventListener("pagehide", this._handleFloatingPlayerClose);
+      this.setKeyEventListeners("add");
+    }
+    _handleFloatingPlayerResize() {
+      this.settings.modes.pictureInPicture.floatingPlayer.width = this.floatingWindow?.innerWidth ?? this.settings.modes.pictureInPicture.floatingPlayer.width;
+      this.settings.modes.pictureInPicture.floatingPlayer.height = this.floatingWindow?.innerHeight ?? this.settings.modes.pictureInPicture.floatingPlayer.height;
+    }
+    _handleFloatingPlayerClose() {
+      this.inFloatingPlayer = false, this.floatingWindow = null;
+      this.videoContainer.classList.toggle("tmg-video-progress-bar", this.settings.controlPanel.progressBar);
+      this.videoContainer.classList.remove("tmg-video-floating-player");
+      this.deactivatePseudoMode();
+      this.toggleMiniplayerMode();
+    }
+    expandMiniplayer = () => this.toggleMiniplayerMode(false, "smooth");
+    removeMiniplayer = () => (this.togglePlay(false), this.toggleMiniplayerMode(false));
+    toggleMiniplayerMode(bool, behavior) {
+      if (this.settings.modes.miniplayer.disabled && !this.isUIActive("miniplayer")) return;
+      const active = this.isUIActive("miniplayer");
+      if (!active && !this.isUIActive("pictureInPicture") && !this.inFloatingPlayer && !this.inFullscreen && !this.parentIntersecting && window.innerWidth >= this.settings.modes.miniplayer.minWindowWidth && !this.video.paused || bool === true && !active) {
+        this.activatePseudoMode();
+        this.videoContainer.classList.add("tmg-video-miniplayer", "tmg-video-progress-bar");
+        ["mousedown", "touchstart"].forEach((e) => this.videoContainer.addEventListener(e, this._handleMiniplayerDragStart));
+      } else if (active && this.parentIntersecting || active && window.innerWidth < this.settings.modes.miniplayer.minWindowWidth || bool === false && active) {
+        if (behavior && tmg.inDocView(this.pseudoVideoContainer)) this.pseudoVideoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
+        this.deactivatePseudoMode();
+        this.videoContainer.classList.remove("tmg-video-miniplayer");
+        this.videoContainer.classList.toggle("tmg-video-progress-bar", this.settings.controlPanel.progressBar);
+        ["mousedown", "touchstart"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleMiniplayerDragStart));
+      }
+    }
+    _handleMiniplayerDragStart({ target, clientX, clientY, targetTouches }) {
+      if (!this.isUIActive("miniplayer") || target.scrollWidth > target.clientWidth || isInteractive(target) || [this.DOM.topControlsWrapper, this.DOM.bottomControlsWrapper, this.DOM.captionsContainer].some((w) => w?.contains?.(target)) || target.closest("[class$='toast-container']")) return;
+      const { left, bottom } = getComputedStyle(this.videoContainer);
+      this.lastMiniplayerPosX = parseFloat(left), this.lastMiniplayerPosY = parseFloat(bottom);
+      this.lastMiniplayerPtrX = clientX ?? targetTouches[0].clientX, this.lastMiniplayerPtrY = clientY ?? targetTouches[0].clientY;
+      this.nextMiniplayerX = this.settings.css.currentMiniplayerX, this.nextMiniplayerY = this.settings.css.currentMiniplayerY;
+      this.wildMiniplayerX = this.nextMiniplayerX, this.wildMiniplayerY = this.nextMiniplayerY;
+      document.addEventListener("mousemove", this._handleMiniplayerDragging);
+      document.addEventListener("touchmove", this._handleMiniplayerDragging, { passive: false });
+      ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach((e) => document.addEventListener(e, this._handleMiniplayerDragEnd));
+      this.videoContainer.style.setProperty("transition", "none", "important");
+    }
+    _handleMiniplayerDragging(e) {
+      if (e.touches?.length > 1) return;
+      e.preventDefault();
+      this.removeOverlay("force");
+      this.videoContainer.classList.add("tmg-video-player-dragging");
+      this.RAFLoop("miniplayerDragging", () => {
+        let { innerWidth: ww, innerHeight: wh } = window, { offsetWidth: w, offsetHeight: h } = this.videoContainer;
+        const x = e.clientX ?? e.changedTouches[0].clientX, y = e.clientY ?? e.changedTouches[0].clientY, newX = this.lastMiniplayerPosX + (x - this.lastMiniplayerPtrX), newY = this.lastMiniplayerPosY - (y - this.lastMiniplayerPtrY), posX = tmg.clamp(w / 2, newX, ww - w / 2), posY = tmg.clamp(h / 2, newY, wh - h / 2);
+        this.videoContainer.style.setProperty("transform", `translate(${x - this.lastMiniplayerPtrX}px, ${y - this.lastMiniplayerPtrY}px)`, "important");
+        this.nextMiniplayerX = `${posX / ww * 100}%`, this.nextMiniplayerY = `${posY / wh * 100}%`;
+        this.wildMiniplayerX = `${newX / ww * 100}%`, this.wildMiniplayerY = `${newY / wh * 100}%`;
+      });
+    }
+    _handleMiniplayerDragEnd() {
+      this.cancelRAFLoop("miniplayerDragging");
+      this.videoContainer.classList.remove("tmg-video-player-dragging");
+      this.videoContainer.style.setProperty("left", this.wildMiniplayerX, "important");
+      this.videoContainer.style.setProperty("bottom", this.wildMiniplayerY, "important");
+      this.videoContainer.style.removeProperty("transform");
+      setTimeout(() => {
+        this.settings.css.currentMiniplayerX = this.nextMiniplayerX, this.settings.css.currentMiniplayerY = this.nextMiniplayerY;
+        ["transition", "left", "bottom"].forEach((prop) => this.videoContainer.style.removeProperty(prop));
+      });
+      document.removeEventListener("mousemove", this._handleMiniplayerDragging);
+      document.removeEventListener("touchmove", this._handleMiniplayerDragging, { passive: false });
+      ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach((e) => document.removeEventListener(e, this._handleMiniplayerDragEnd));
+    }
+    _handleAnyClick = () => (this.delayOverlay(), this.stopTimeScrubbing());
+    _handleClick({ target }) {
+      if (target !== this.DOM.controlsContainer) return;
+      if (this.speedCheck && this.playTriggerCounter < 1) return;
+      if (tmg.ON_MOBILE && !this.isUIActive("pictureInPicture") && !this.buffering && !this.video.ended && !this.currentSkipNotifier ? true : !this.isUIActive("overlay")) !this.settings.overlay.behavior.match(/hidden|persistent/) && this.videoContainer.classList.toggle("tmg-video-overlay");
+      if (!this.isUIActive("miniplayer")) this[this.settings.gesture.click]?.(), this.settings.gesture.click === "togglePlay" && (this.video.paused ? this.notify("videopause") : this.notify("videoplay"));
+    }
+    _handleLockScreenClick() {
+      if (!this.settings.locked) return;
+      this.videoContainer.classList.toggle("tmg-video-locked-overlay");
+      this.DOM.screenLockedBtn.classList.remove("tmg-video-control-unlock");
+      this.delayLockedOverlay();
+    }
+    _handleRightClick(e) {
+      e.preventDefault();
+    }
+    _handleDblClick(e) {
+      const { clientX: x, target, detail } = e;
+      if (target !== this.DOM.controlsContainer) return;
+      const rect = this.videoContainer.getBoundingClientRect();
+      let pos = x - rect.left > rect.width * 0.65 ? "right" : x - rect.left < rect.width * 0.35 ? "left" : "center";
+      if (this.skipPersist && pos !== this.skipPersistPosition) {
+        this.deactivateSkipPersist();
+        if (detail == 1) return;
+      }
+      if (pos === "center") return this[this.settings.gesture.dblClick]?.(), this.settings.gesture.dblClick === "togglePlay" && (this.video.paused ? this.notify("videopause") : this.notify("videoplay"));
+      if (this.skipPersist && detail == 2) return;
+      this.activateSkipPersist(pos);
+      pos === "right" ? this.skip(this.settings.time.skip) : this.skip(-this.settings.time.skip);
+      rippleHandler(e, { target: this.currentSkipNotifier, wrapperClassName: "tmg-video-ripple-container", className: "tmg-video-ripple", holdClassName: "tmg-video-ripple-hold", fadeClassName: "tmg-video-ripple-fade" });
+    }
+    activateSkipPersist(pos) {
+      if (this.skipPersist) return;
+      this.videoContainer.addEventListener("click", this._handleDblClick);
+      this.skipPersist = true, this.skipPersistPosition = pos;
+    }
+    deactivateSkipPersist() {
+      if (!this.skipPersist) return;
+      this.videoContainer.removeEventListener("click", this._handleDblClick);
+      this.skipPersist = false, this.skipPersistPosition = null;
+    }
+    _handleHoverPointerActive({ target, pointerType }) {
+      (!tmg.ON_MOBILE ? true : !pointerType) && this.showOverlay();
+      pointerType && target.closest(".tmg-video-side-controls-wrapper") && clearTimeout(this.overlayDelayId);
+    }
+    _handleHoverPointerOut = () => setTimeout(() => !tmg.ON_MOBILE && !this.videoContainer.matches(":hover") && this.removeOverlay());
+    showOverlay() {
+      if (!this.shouldShowOverlay()) return;
+      this.videoContainer.classList.add("tmg-video-overlay");
+      this.delayOverlay();
+    }
+    shouldShowOverlay = () => this.settings.overlay.behavior !== "hidden" && !this.settings.locked && !this.videoContainer.classList.contains("tmg-video-player-dragging");
+    delayOverlay() {
+      clearTimeout(this.overlayDelayId);
+      if (this.shouldRemoveOverlay()) this.overlayDelayId = setTimeout(this.removeOverlay, this.settings.overlay.delay);
+    }
+    removeOverlay = (manner) => this.shouldRemoveOverlay(manner) && this.videoContainer.classList.remove("tmg-video-overlay");
+    shouldRemoveOverlay = (manner) => this.settings.overlay.behavior !== "persistent" && (manner === "force" || !this.isUIActive("pictureInPicture") && !this.isUIActive("settings") && (tmg.ON_MOBILE ? !this.buffering && !this.video.paused : this.settings.overlay.behavior === "strict" ? true : !this.video.paused));
+    showLockedOverlay = () => (this.videoContainer.classList.add("tmg-video-locked-overlay"), this.delayLockedOverlay());
+    removeLockedOverlay() {
+      this.videoContainer.classList.remove("tmg-video-locked-overlay");
+      this.DOM.screenLockedBtn.classList.remove("tmg-video-control-unlock");
+    }
+    delayLockedOverlay() {
+      clearTimeout(this.lockOverlayDelayId);
+      this.lockOverlayDelayId = setTimeout(this.removeLockedOverlay, this.settings.overlay.delay);
+    }
+    _handleFocusIn = ({ target: t }) => this.focusSubjectId = !t.matches(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId);
+    _handleKeyFocusIn = ({ target: t }) => (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId) === this.focusSubjectId && t.blur();
+    _handleGestureWheel(e) {
+      if (!this.settings.locked && !this.disabled && (this.overVolume || this.overBrightness || this.overTimeline || e.target === this.DOM.controlsContainer && !this.gestureTouchXCheck && !this.gestureTouchYCheck && !this.speedCheck && (this.isUIActive("fullscreen") || this.isUIActive("floatingPlayer")))) {
+        e.preventDefault();
+        this.gestureWheelTimeoutId ? clearTimeout(this.gestureWheelTimeoutId) : this._handleGestureWheelInit(e);
+        this.gestureWheelTimeoutId = setTimeout(this._handleGestureWheelStop, this.settings.gesture.wheel.timeout);
+        this._handleGestureWheelMove(e);
+      }
+    }
+    _handleGestureWheelInit({ clientX: x, clientY: y }) {
+      const rect = this.videoContainer.getBoundingClientRect();
+      this.gestureWheelZone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
+      this.gestureWheelDeltaY = this.gestureWheelTimePercent = 0, this.gestureWheelTimeMultiplier = 1;
+    }
+    _handleGestureWheelMove({ clientX: x, deltaX, deltaY, shiftKey }) {
+      deltaX = shiftKey || this.overTimeline ? deltaY : deltaX;
+      const wc = this.settings.gesture.wheel, rect = this.videoContainer.getBoundingClientRect(), width = shiftKey || this.overTimeline ? rect.height : rect.width, height = shiftKey || this.overTimeline ? rect.width : rect.height;
+      let xPercent = -deltaX / (width * wc.xRatio);
+      xPercent = this.overTimeline ? xPercent : this.gestureWheelTimePercent += xPercent;
+      const xSign = xPercent >= 0 ? "+" : "-";
+      xPercent = Math.abs(xPercent);
+      if (deltaX || shiftKey || this.overTimeline) {
+        if (!wc.timeline.slider && this.overTimeline || !wc.timeline.normal && !this.overTimeline || this.gestureWheelYCheck) return this._handleGestureWheelStop();
+        this.gestureWheelXCheck = true;
+        !this.overTimeline && this.DOM.touchTimelineNotifier?.classList.add("tmg-video-control-active");
+        if (this.overTimeline) this.delayOverlay();
+        this._handleGestureTimelineInput({ percent: xPercent, sign: xSign, multiplier: this.gestureWheelTimeMultiplier });
+        if (shiftKey || this.overTimeline) return;
+      }
+      if (deltaY) {
+        if (wc.timeline.slider && this.overTimeline || this.gestureWheelXCheck) {
+          const mY = tmg.clamp(0, Math.abs(this.gestureWheelDeltaY += deltaY), height * wc.yRatio * 0.5);
+          this.gestureWheelTimeMultiplier = 1 - mY / (height * wc.yRatio * 0.5);
+          return this._handleGestureTimelineInput({ percent: xPercent, sign: xSign, multiplier: this.gestureWheelTimeMultiplier });
+        }
+        const cancel = !wc.volume.slider && this.overVolume || this.gestureWheelZone?.x === "right" && !wc.volume.normal && !this.overVolume || !wc.brightness.slider && this.overBrightness || this.gestureWheelZone?.x === "left" && !wc.brightness.normal && !this.overBrightness, currentXZone = x - rect.left > width * 0.5 ? "right" : "left";
+        if (cancel || currentXZone !== this.gestureWheelZone.x) return this._handleGestureWheelStop();
+        this.gestureWheelYCheck = true;
+        !this.overVolume && !this.overBrightness && (this.gestureWheelZone?.x === "right" ? this.DOM.touchVolumeNotifier : this.DOM.touchBrightnessNotifier)?.classList.add("tmg-video-control-active");
+        if (this.overVolume) this.delayVolumeActive();
+        if (this.overBrightness) this.delayBrightnessActive();
+        const ySign = -deltaY >= 0 ? "+" : "-", yPercent = tmg.clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
+        this.gestureWheelZone?.x === "right" || this.overVolume ? this._handleGestureVolumeSliderInput({ percent: yPercent, sign: ySign }) : this._handleGestureBrightnessSliderInput({ percent: yPercent, sign: ySign });
+      }
+    }
+    _handleGestureWheelStop() {
+      this.gestureWheelTimeoutId = null;
+      if (this.gestureWheelYCheck) {
+        this.gestureWheelYCheck = false;
+        this.removeOverlay();
+        this.DOM.touchVolumeNotifier?.classList.remove("tmg-video-control-active");
+        this.DOM.touchBrightnessNotifier?.classList.remove("tmg-video-control-active");
+      }
+      if (this.gestureWheelXCheck) {
+        this.gestureWheelXCheck = false;
+        this.DOM.touchTimelineNotifier?.classList.remove("tmg-video-control-active");
+        this.settings.time.value = this.gestureNextTime;
+      }
+    }
+    _handleGestureTouchStart(e) {
+      if (e.touches?.length > 1 || e.target !== this.DOM.controlsContainer || this.isUIActive("miniplayer") || this.speedCheck) return;
+      this._handleGestureTouchEnd();
+      this.lastGestureTouchX = e.clientX ?? e.targetTouches[0].clientX, this.lastGestureTouchY = e.clientY ?? e.targetTouches[0].clientY;
+      this.videoContainer.addEventListener("touchmove", this._handleGestureTouchInit, { once: true });
+      this.gestureTouchCancelTimeoutId = setTimeout(() => this.gestureTouchCanCancel = false, this.settings.gesture.touch.threshold);
+      ["touchend", "touchcancel"].forEach((e2) => this.videoContainer.addEventListener(e2, this._handleGestureTouchEnd));
+    }
+    _handleGestureTouchInit(e) {
+      if (e.touches?.length > 1 || this.isUIActive("miniplayer") || this.speedCheck) return;
+      e.preventDefault();
+      const tc = this.settings.gesture.touch, rect = this.videoContainer.getBoundingClientRect(), x = e.clientX ?? e.targetTouches[0].clientX, y = e.clientY ?? e.targetTouches[0].clientY, deltaX = Math.abs(this.lastGestureTouchX - x), deltaY = Math.abs(this.lastGestureTouchY - y);
+      this.gestureTouchZone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
+      const rLeft = this.lastGestureTouchX - rect.left, rTop = this.lastGestureTouchY - rect.top;
+      if (deltaX > deltaY * tc.axesRatio && rLeft > tc.inset && rLeft < rect.width - tc.inset) tc.timeline && (this.gestureTouchXCheck = true, this.videoContainer.addEventListener("touchmove", this._handleGestureTouchXMove, { passive: false }));
+      else if (deltaY > deltaX * tc.axesRatio && rTop > tc.inset && rTop < rect.height - tc.inset) (tc.volume && this.gestureTouchZone?.x === "right" || tc.brightness && this.gestureTouchZone?.x === "left") && (this.gestureTouchYCheck = true, this.videoContainer.addEventListener("touchmove", this._handleGestureTouchYMove, { passive: false }));
+    }
+    _handleGestureTouchXMove(e) {
+      if (this.gestureTouchCanCancel) return this._handleGestureTouchEnd();
+      e.preventDefault();
+      this.DOM.touchTimelineNotifier?.classList.add("tmg-video-control-active");
+      this.throttle(
+        "gestureTouchMove",
+        () => {
+          const tc = this.settings.gesture.touch, { offsetWidth: width, offsetHeight: height } = this.videoContainer, x = e.clientX ?? e.targetTouches[0].clientX, y = e.clientY ?? e.targetTouches[0].clientY, deltaX = x - this.lastGestureTouchX, deltaY = y - this.lastGestureTouchY, sign = deltaX >= 0 ? "+" : "-", percent = tmg.clamp(0, Math.abs(deltaX), width * tc.xRatio) / (width * tc.xRatio), mY = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio * 0.5), multiplier = 1 - mY / (height * tc.yRatio * 0.5);
+          this._handleGestureTimelineInput({ percent, sign, multiplier });
+        },
+        30,
+        false
+      );
+    }
+    _handleGestureTouchYMove(e) {
+      if (!this.isUIActive("fullscreen") && this.gestureTouchCanCancel) return this._handleGestureTouchEnd();
+      e.preventDefault();
+      (this.gestureTouchZone.x === "right" ? this.DOM.touchVolumeNotifier : this.DOM.touchBrightnessNotifier)?.classList.add("tmg-video-control-active");
+      this.throttle(
+        "gestureTouchMove",
+        () => {
+          const tc = this.settings.gesture.touch, height = this.videoContainer.offsetHeight, y = e.clientY ?? e.targetTouches[0].clientY, deltaY = y - this.lastGestureTouchY, sign = deltaY >= 0 ? "-" : "+", percent = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio) / (height * tc.yRatio);
+          this.lastGestureTouchY = y;
+          this.gestureTouchZone?.x === "right" ? this._handleGestureVolumeSliderInput({ percent, sign }) : this._handleGestureBrightnessSliderInput({ percent, sign });
+        },
+        30,
+        false
+      );
+    }
+    _handleGestureTouchEnd() {
+      if (this.gestureTouchXCheck) {
+        this.gestureTouchXCheck = false;
+        this.videoContainer.removeEventListener("touchmove", this._handleGestureTouchXMove, { passive: false });
+        this.DOM.touchTimelineNotifier?.classList.remove("tmg-video-control-active");
+        if (!this.gestureTouchCanCancel) this.settings.time.value = this.gestureNextTime;
+      }
+      if (this.gestureTouchYCheck) {
+        this.gestureTouchYCheck = false;
+        this.videoContainer.removeEventListener("touchmove", this._handleGestureTouchYMove, { passive: false });
+        clearTimeout(this.gestureTouchSliderTimeoutId);
+        this.gestureTouchSliderTimeoutId = setTimeout(() => [this.DOM.touchVolumeNotifier, this.DOM.touchBrightnessNotifier].forEach((el) => el?.classList.remove("tmg-video-control-active")), this.settings.gesture.touch.sliderTimeout);
+        if (!this.gestureTouchCanCancel) this.removeOverlay();
+      }
+      clearTimeout(this.gestureTouchCancelTimeoutId), this.gestureTouchCanCancel = true;
+      this.videoContainer.removeEventListener("touchmove", this._handleGestureTouchInit, { once: true });
+      ["touchend", "touchcancel"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleGestureTouchEnd));
+    }
+    _handleSpeedPointerDown(e) {
+      if (!this.settings.fastPlay.pointer.type.match(new RegExp(`all|${e.pointerType}`)) || e.target !== this.DOM.controlsContainer || this.isUIActive("miniplayer") || this.speedCheck) return;
+      ["touchmove", "mouseup", "touchend", "touchcancel"].forEach((e2) => this.videoContainer.addEventListener(e2, this._handleSpeedPointerUp));
+      this.videoContainer.addEventListener("mouseleave", this._handleSpeedPointerOut);
+      clearTimeout(this.speedTimeoutId);
+      this.speedTimeoutId = setTimeout(() => {
+        this.videoContainer.removeEventListener("touchmove", this._handleSpeedPointerUp);
+        this.speedPointerCheck = true;
+        const x = e.clientX ?? e.targetTouches[0].clientX, rect = this.videoContainer.getBoundingClientRect(), rLeft = x - rect.left;
+        this.speedDirection = rLeft >= rect.width * 0.5 ? "forwards" : "backwards";
+        if (rLeft < this.settings.fastPlay.pointer.inset || rLeft > rect.width - this.settings.fastPlay.pointer.inset) return;
+        if (this.settings.fastPlay.rewind) ["mousemove", "touchmove"].forEach((e2) => this.videoContainer.addEventListener(e2, this._handleSpeedPointerMove));
+        this.fastPlay(this.speedDirection);
+      }, this.settings.fastPlay.pointer.threshold);
+    }
+    _handleSpeedPointerMove(e) {
+      if (e.touches?.length > 1) return;
+      this.throttle(
+        "speedPointerMove",
+        () => {
+          const rect = this.videoContainer.getBoundingClientRect(), x = e.clientX ?? e.targetTouches[0].clientX, currPos = x - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
+          if (currPos !== this.speedDirection) this.speedDirection = currPos, this.slowDown(), this.fastPlay(this.speedDirection);
+        },
+        200,
+        false
+      );
+    }
+    _handleSpeedPointerUp() {
+      clearTimeout(this.speedTimeoutId), this.speedPointerCheck = false;
+      if (this.speedCheck && this.playTriggerCounter < 1) setTimeout(this.slowDown);
+      ["touchmove", "mouseup", "touchend", "touchcancel"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleSpeedPointerUp));
+      ["mousemove", "touchmove"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleSpeedPointerMove));
+      this.videoContainer.removeEventListener("mouseleave", this._handleSpeedPointerOut);
+    }
+    _handleSpeedPointerOut = (e) => !this.videoContainer.matches(":hover") && this._handleSpeedPointerUp(e);
+    plugKeysSettings = () => this.config.on("settings.keys.disabled", ({ value }) => value ? (this.setKeyEventListeners("remove", true), this.setKeyEventListeners("remove", false)) : this.isIntersecting && this.setKeyEventListeners("add"));
+    // devx shortcut
+    fetchKeyShortcutsForDisplay = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyForDisplay(this.settings.keys.shortcuts[action])]));
+    getTermsForKey(combo) {
+      const terms = { override: false, block: false, allowed: false, action: null }, { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
+      if (tmg.matchKeys(overrides, combo, s)) terms.override = true;
+      if (tmg.matchKeys(blocks, combo, s)) terms.block = true;
+      if (tmg.matchKeys(tmg.WHITE_LISTED_KEYS, combo)) terms.allowed = true;
+      terms.action = Object.keys(shortcuts).find((key) => tmg.matchKeys(shortcuts[key], combo, s)) || null;
+      return terms;
+    }
+    keyEventAllowed(e) {
+      if (this.settings.keys.disabled || (e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable]")) return false;
+      const combo = tmg.stringifyKeyEvent(e), { override, block, action, allowed } = this.getTermsForKey(combo);
+      if (block) return false;
+      if (override) e.preventDefault();
+      if (action) return action;
+      if (allowed) return e.key.toLowerCase();
+      return false;
+    }
+    _handleKeyDown(e) {
+      const action = this.keyEventAllowed(e), mod = this.settings.keys.mods.disabled ? "" : e.ctrlKey ? "ctrl" : e.altKey ? "alt" : e.shiftKey ? "shift" : "";
+      if (action === false) return;
+      else if (action) this.showOverlay();
+      this.throttle(
+        "keyDown",
+        () => {
+          switch (action) {
+            case " ":
+            // -w
+            case "playPause":
+              this.playTriggerCounter++;
+              if (this.playTriggerCounter === 1) e.currentTarget.addEventListener("keyup", this._handlePlayTriggerUp);
+              if (this.playTriggerCounter === 2 && !this.speedPointerCheck && this.settings.fastPlay.key) e.shiftKey ? this.fastPlay("backwards") : this.fastPlay("forwards");
+              break;
+            case "prev":
+              return this.previousVideo(), this.notify("videoprev");
+            case "next":
+              return this.nextVideo(), this.notify("videonext");
+            case "skipFwd":
+              this.deactivateSkipPersist();
+              return this.skip(this.settings.keys.mods.skip[mod] ?? this.settings.time.skip), this.notify("fwd");
+            case "skipBwd":
+              this.deactivateSkipPersist();
+              return this.skip(-(this.settings.keys.mods.skip[mod] ?? this.settings.time.skip)), this.notify("bwd");
+            case "stepBwd":
+              return this.moveVideoFrame("backwards");
+            case "stepFwd":
+              return this.moveVideoFrame("forwards");
+            case "objectFit":
+              return this.rotateObjectFit();
+            case "volumeUp":
+              return this.setVolume(this.settings.keys.mods.volume[mod] ?? this.settings.volume.skip);
+            case "volumeDown":
+              return this.setVolume(-(this.settings.keys.mods.volume[mod] ?? this.settings.volume.skip));
+            case "brightnessUp":
+              return this.setBrightness(this.settings.keys.mods.brightness[mod] ?? this.settings.brightness.skip);
+            case "brightnessDown":
+              return this.setBrightness(-(this.settings.keys.mods.brightness[mod] ?? this.settings.brightness.skip));
+            case "playbackRateUp":
+              return this.setPlaybackRate(this.settings.keys.mods.playbackRate[mod] ?? this.settings.playbackRate.skip);
+            case "playbackRateDown":
+              return this.setPlaybackRate(-(this.settings.keys.mods.playbackRate[mod] ?? this.settings.playbackRate.skip));
+            case "captionsFontSizeUp":
+              return this.setCaptionsFontSize(this.settings.keys.mods.captionsFontSize[mod] ?? this.settings.captions.font.size.skip);
+            case "captionsFontSizeDown":
+              return this.setCaptionsFontSize(-(this.settings.keys.mods.captionsFontSize[mod] ?? this.settings.captions.font.size.skip));
+            case "captionsFontWeight":
+            case "captionsFontVariant":
+            case "captionsFontFamily":
+            case "captionsFontOpacity":
+            case "captionsBackgroundOpacity":
+            case "captionsWindowOpacity":
+            case "captionsCharacterEdgeStyle":
+            case "captionsTextAlignment":
+              return this[`rotate${tmg.capitalize(action)}`]?.();
+            case "escape":
+              this.isUIActive("miniplayer") && this.removeMiniplayer();
+              (this.isUIActive("pictureInPicture") || this.isUIActive("floatingPlayer")) && this.togglePictureInPictureMode();
+              break;
+            case "arrowup":
+              return this.setVolume(this.settings.keys.mods.volume[mod] ?? 5);
+            case "arrowdown":
+              return this.setVolume(-(this.settings.keys.mods.volume[mod] ?? 5));
+            case "arrowleft":
+              this.deactivateSkipPersist();
+              return this.skip(-(this.settings.keys.mods.skip[mod] ?? 5)), this.notify("bwd");
+            case "arrowright":
+              this.deactivateSkipPersist();
+              return this.skip(this.settings.keys.mods.skip[mod] ?? 5), this.notify("fwd");
+          }
+        },
+        30
+      );
+    }
+    _handleKeyUp(e) {
+      const action = this.keyEventAllowed(e);
+      if (action === false) return;
+      else if (action) this.showOverlay();
+      switch (action) {
+        case "capture":
+          return this.captureVideoFrame(e.altKey ? "monochrome" : void 0);
+        case "timeMode":
+          return this.toggleTimeMode();
+        case "timeFormat":
+          return this.rotateTimeFormat();
+        case "mute":
+          return this.toggleMute("auto"), this.config.wonce("settings.volume.value", (v) => !v ? this.notify("volumemuted") : this.notify("volumeup"));
+        case "dark":
+          return this.toggleDark("auto"), this.config.wonce("settings.brightness.value", (v) => !v ? this.notify("brightnessdark") : this.notify("brightnessup"));
+        case "captions":
+          this.toggleCaptions();
+          return this.video.textTracks[this.textTrackIndex] && this.notify("captions");
+        case "pictureInPicture":
+          return this.togglePictureInPictureMode();
+        case "theater":
+          return !this.isUIActive("fullscreen") && !this.isUIActive("miniplayer") && !this.isUIActive("floatingPlayer") && this.toggleTheaterMode();
+        case "fullscreen":
+          return this.toggleFullscreenMode();
+        case "settings":
+          return this.toggleSettingsView();
+        case "home":
+        // -w
+        case "0":
+          return this.settings.time.value = 0;
+        case "1":
+        // -w
+        case "2":
+        // -w
+        case "3":
+        // -w
+        case "4":
+        // -w
+        case "5":
+        // -w
+        case "6":
+        // -w
+        case "7":
+        // -w
+        case "8":
+        // -w
+        case "9":
+          return this.settings.time.value = action / 10 * this.duration;
+        case "end":
+          return this.settings.time.value = this.duration;
+      }
+    }
+    _handlePlayTriggerUp(e) {
+      const action = this.keyEventAllowed(e);
+      if (action) this.showOverlay();
+      switch (action) {
+        case " ":
+        // -w
+        case "playPause":
+          e.stopImmediatePropagation();
+          if (this.playTriggerCounter === 1) this.togglePlay(), this.video.paused ? this.notify("videopause") : this.notify("videoplay");
+        default:
+          if (this.speedCheck && this.playTriggerCounter > 1 && !this.speedPointerCheck) this.slowDown();
+          this.playTriggerCounter = 0;
+      }
+      e.currentTarget.removeEventListener("keyup", this._handlePlayTriggerUp);
+    }
+    _handleDragStart(e) {
+      const { target: t, dataTransfer } = e;
+      if (!t?.tagName || t.dataset.draggableControl !== "true") return;
+      if (t.matches(":has(input:is(:hover, :active))")) return e.preventDefault();
+      dataTransfer.effectAllowed = "move";
+      this.dragging = t;
+      requestAnimationFrame(() => t.classList.add("tmg-video-control-dragging"));
+      this.dragSafeTimeoutId = setTimeout(() => t.classList.remove("tmg-video-control-dragging"), 1e3);
+      if (t.dataset.dragId !== "wrapper" || t.parentElement?.dataset.dragId !== "wrapper") return;
+      const { coord, zoneW } = this.getUIZoneWCoord(t, true);
+      tmg.setPath(this.cZoneWs, coord, zoneW);
+      this.dragReplaced = { target: t.parentElement, child: zoneW.cover };
+    }
+    _handleDrag = () => (this.delayOverlay(), clearTimeout(this.dragSafeTimeoutId));
+    _handleDragEnd({ target: t }) {
+      if (!t?.tagName) return;
+      t.classList.remove("tmg-video-control-dragging");
+      this.dragReplaced = this.dragging = null;
+      if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") tmg.setPath(this.cZoneWs, this.getUIZoneWCoord(t), t);
+      this.syncControlPanelToUI();
+    }
+    noDropOff = (t, drop = this.dragging) => !drop?.tagName || t.dataset.dropZone !== "true" || t.dataset.dragId !== drop.dataset.dragId && (t.dataset.dragId === "wrapper" || drop.dataset.dragId === "wrapper");
+    _handleDragEnter = ({ target: t }) => !this.noDropOff(t) && this.dragging && t.classList.add("tmg-video-dragover");
+    _handleDragOver(e) {
+      const { target: t, clientX: x, dataTransfer } = e;
+      if (this.noDropOff(t)) return;
+      e.preventDefault();
+      dataTransfer.dropEffect = "move";
+      this.throttle(
+        "dragOver",
+        () => {
+          if (t.dataset.dragId === "wrapper") {
+            const atWrapper = tmg.getElSiblingAt(x, "x", t.querySelectorAll('.tmg-video-side-controls-wrapper-cover:has([data-drop-zone="true"][data-drag-id=""]:empty)'), "at");
+            if (!atWrapper) return;
+            this.dragReplaced?.target.replaceChild(this.dragReplaced.child, this.dragging);
+            this.dragReplaced = { target: t, child: atWrapper };
+            return t.replaceChild(this.dragging, atWrapper);
+          }
+          const afterControl = tmg.getElSiblingAt(x, "x", t.querySelectorAll("[draggable=true]:not(.tmg-video-control-dragging)"));
+          afterControl ? t.insertBefore(this.dragging, afterControl) : t.append(this.dragging);
+          !t.dataset.dragId && this.zonesArr.forEach(this._handleControlsView);
+        },
+        500,
+        false
+      );
+    }
+    _handleDrop = ({ target: t }) => !this.noDropOff(t) && t.classList.remove("tmg-video-dragover");
+    _handleDragLeave = ({ target: t }) => !this.noDropOff(t) && t.classList.remove("tmg-video-dragover");
+  };
+  var tmg_Media_Player = class {
+    #medium;
+    #active = false;
+    #build = structuredClone(tmg.DEFAULT_VIDEO_BUILD);
+    constructor(customBuild = {}) {
+      this.Controller = this.#medium = null;
+      this.configure({ ...customBuild, id: customBuild.id ?? `${tmg.uid()}_Controller_${tmg.Controllers.length + 1}` });
+    }
+    get build() {
+      return this.#build;
+    }
+    set build(customBuild) {
+      this.configure(customBuild);
+    }
+    queryBuild = () => !this.#active ? true : (console.error("TMG has already deployed the custom controls of your build configuration"), console.warn("Consider setting your build configuration before attaching your media element"), false);
+    configure(customBuild) {
+      if (!this.queryBuild() || !tmg.isObj(customBuild)) return;
+      this.#build = tmg.mergeObjs(this.#build, tmg.parsePathObj(customBuild));
+      Object.entries(this.#build.settings.keys.shortcuts).forEach(([k, v]) => this.#build.settings.keys.shortcuts[k] = tmg.cleanKeyCombo(v));
+      ["blocks", "overrides"].forEach((k) => this.#build.settings.keys[k] = tmg.cleanKeyCombo(this.#build.settings.keys[k]));
+    }
+    async attach(medium) {
+      if (tmg.isIter(medium)) console.error("An iterable argument cannot be attached to the TMG media player"), console.warn("Consider looping the iterable argument to get a single argument and instantiate a new 'tmg.Player' for each");
+      if (this.#active) return;
+      medium.tmgPlayer?.detach();
+      tmg.Controllers.push(this.build.id);
+      medium.tmgPlayer = this, this.#medium = medium;
+      await this.fetchCustomOptions(), await this.#deployController();
+      return this.Controller.fire("tmgattached", this.Controller.payload), medium;
+    }
+    detach() {
+      if (!this.#active) return;
+      const medium = this.#medium = this.Controller?._destroy();
+      tmg.Controllers.splice(tmg.Controllers.indexOf(this.Controller), 1);
+      this.#medium.tmgcontrols = this.#active = false;
+      this.Controller.fire("tmgdetached", this.Controller.payload);
+      return this.#medium.tmgPlayer = this.Controller = this.#medium = null, medium;
+    }
+    async fetchCustomOptions() {
+      let fetchedControls;
+      if (this.#medium.getAttribute("tmg")?.includes(".json")) {
+        fetchedControls = fetch(this.#medium.getAttribute("tmg")).then((res) => {
+          if (!res.ok) throw new Error(`TMG could not find provided JSON file!. Status: ${res.status}`);
+          return res.json();
+        }).catch(({ message }) => (console.error(`${message}`), console.warn("TMG requires a valid JSON file for parsing your build configuration")));
+      }
+      const customBuild = await fetchedControls ?? {}, attributes = this.#medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
+      attributes?.forEach((attr) => tmg.setHTMLConfig(customBuild, attr, this.#medium.getAttribute(attr)));
+      if (this.#medium.poster) this.configure({ "media.artwork[0].src": customBuild.media?.artwork?.[0]?.src ?? this.#medium.poster });
+      this.configure(customBuild);
+    }
+    async #deployController() {
+      if (this.#active || !this.#medium.isConnected) return;
+      if (this.#build.playlist?.[0]) this.configure(tmg.mergeObjs(tmg.DEFAULT_VIDEO_ITEM_BUILD, tmg.parsePathObj(this.#build.playlist[0])));
+      if (!(this.#medium instanceof HTMLVideoElement)) return console.error(`TMG could not deploy custom controls on the '${this.#medium.tagName}' element as it is not supported`), console.warn("TMG only supports the 'VIDEO' element currently");
+      this.#medium.tmgcontrols = this.#active = !(this.#medium.controls = false);
+      this.#medium.classList.add("tmg-video", "tmg-media");
+      const s = this.#build.settings;
+      this.#medium.playsInline = s.playsInline ??= this.#medium.playsInline;
+      this.#medium.toggleAttribute("webkit-playsinline", s.playsInline);
+      this.#medium.autoplay = "string" === typeof (s.auto.play ??= this.#medium.autoplay) ? false : s.auto.play;
+      this.#medium.muted = s.volume.muted ??= this.#medium.muted;
+      this.#medium.loop = s.time.loop ??= this.#medium.loop;
+      this.#medium.volume = 1;
+      Object.entries(s.modes).forEach(([k, v]) => tmg.isObj(s.modes[k]) && (s.modes[k].disabled = !v.disabled && (tmg[`supports${tmg.capitalize(k)}`]?.() ?? true) ? false : true));
+      await Promise.all([tmg.loadResource(TMG_VIDEO_CSS_SRC), tmg.loadResource(T007_TOAST_JS_SRC, "script"), tmg.loadResource(T007_INPUT_JS_SRC, "script")]);
+      console.time(`TMG Controller ${tmg.Controllers.indexOf(this.build.id) + 1} INIT`);
+      tmg.Controllers[tmg.Controllers.indexOf(this.build.id)] = this.Controller = new tmg.Controller(this.#medium, this.#build);
+      console.timeEnd(`TMG Controller ${tmg.Controllers.indexOf(this.Controller) + 1} INIT`);
+    }
+  };
+  var tmg = {
+    ON_MOBILE: /Mobi|Android|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent),
+    ALLOWED_CONTROLS: ["removeminiplayer", "expandminiplayer", "bigprev", "bigplaypause", "bignext", "capture", "fullscreenorientation", "fullscreenLock", "prev", "playPause", "next", "brightness", "volume", "timeAndDuration", "spacer", "playbackRate", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen"],
+    NOTIFIER_EVENTS: ["videoplay", "videopause", "videoprev", "videonext", "playbackrateup", "playbackratedown", "volumeup", "volumedown", "volumemuted", "brightnessup", "brightnessdown", "brightnessdark", "objectfitcontain", "objectfitcover", "objectfitfill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd"],
+    WHITE_LISTED_KEYS: [" ", "Enter", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map((k) => k.toLowerCase()),
+    IS_DOC_TRANSIENT: false,
+    AUDIO_CONTEXT: null,
+    _mutationSet: /* @__PURE__ */ new WeakSet(),
+    _mutationId: null,
+    _currentFullscreenController: null,
+    PersistModule,
+    IndexedDBAdapter,
+    TimeTravelModule,
+    TimeTravelConsole,
+    async timeTravel() {
+      await tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
+      for (let i = 0, n = 0, len = tmg.Controllers.length; i < len; i++) {
+        const con = tmg.Controllers[i];
+        if (con.config.__Reactor__.modules?.has(window[`TTM${n + 1}`])) continue;
+        con.config.use(window[`TTM${++n}`] = new TimeTravelModule({ blacklist: ["settings.css.syncWithMedia"] }));
+        window[`TTO${n}`] = new TimeTravelConsole(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
+        con.config.watch("settings.css.brandColor", (v) => window[`TTO${n}`].config.color = v, { init: true });
+      }
+    },
+    breath: (w = window) => new Promise((res) => w.requestAnimationFrame(res)),
+    // The "Single Frame" breathe - GPU Readiness, the loading animation is the build process itself. Sike!!
+    deepBreath: (w = window) => new Promise((res) => w.requestAnimationFrame(() => w.requestAnimationFrame(res))),
+    // The "Double Frame" breathe - guaranteed layout completion
+    flagMutation: (m, check = true) => !tmg._mutationSet.has(m) && check && tmg._mutationSet.add(m),
+    freeMutation(m) {
+      clearTimeout(tmg._mutationId);
+      tmg._mutationId = setTimeout(() => !(tmg._mutationId = null) && tmg._mutationSet.delete(m));
+    },
+    mountMedia() {
+      Object.defineProperty(HTMLVideoElement.prototype, "tmgcontrols", {
+        get: function() {
+          return this.hasAttribute("tmgcontrols");
+        },
+        set: async function(value) {
+          if (value) {
+            tmg.flagMutation(this);
+            await (this.tmgPlayer || new tmg.Player()).attach(this);
+            this.setAttribute("tmgcontrols", "");
+            tmg.freeMutation(this);
+          } else {
+            tmg.flagMutation(this, this.hasAttribute("tmgcontrols"));
+            this.removeAttribute("tmgcontrols");
+            this.tmgPlayer?.detach();
+            tmg.freeMutation(this);
+          }
+        },
+        enumerable: true,
+        configurable: true
+      });
+    },
+    unmountMedia: () => delete HTMLVideoElement.prototype.tmgcontrols,
+    init() {
+      tmg.mountMedia();
+      ["click", "pointerdown", "keydown"].forEach((e) => document.addEventListener(e, () => (tmg.IS_DOC_TRANSIENT = true, tmg.startAudioManager()), true));
+      for (const medium of document.querySelectorAll("video")) {
+        tmg.VIDMutationObserver.observe(medium, { attributes: true });
+        medium.tmgcontrols = medium.hasAttribute("tmgcontrols");
+      }
+      tmg.DOMMutationObserver.observe(document.documentElement, { childList: true, subtree: true });
+      window.addEventListener("resize", tmg._handleWindowResize);
+      window.addEventListener("orientationchange", tmg._handleOrientationChange);
+      ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"].forEach((e) => document.addEventListener(e, tmg._handleFullscreenChange));
+      document.addEventListener("visibilitychange", tmg._handleVisibilityChange);
+    },
+    intersectionObserver: "undefined" !== typeof window && new IntersectionObserver(
+      (entries) => {
+        for (const { target, isIntersecting } of entries) target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller?._handleMediaIntersectionChange(isIntersecting) : target.querySelector(".tmg-media")?.tmgPlayer?.Controller?._handleMediaParentIntersectionChange(isIntersecting);
+      },
+      { root: null, rootMargin: "0px", threshold: 0.3 }
+    ),
+    resizeObserver: "undefined" !== typeof window && new ResizeObserver((entries) => {
+      for (const { target } of entries) (target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller : (target.querySelector(".tmg-media") || target.closest(".tmg-media-container")?.querySelector(".tmg-media"))?.tmgPlayer?.Controller)?._handleResize(target);
+    }),
+    VIDMutationObserver: "undefined" !== typeof window && new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type !== "attributes") continue;
+        if (mutation.attributeName === "tmgcontrols") !tmg._mutationSet.has(mutation.target) && (mutation.target.tmgcontrols = mutation.target.hasAttribute("tmgcontrols"));
+        else if (mutation.attributeName?.startsWith("tmg")) mutation.target.hasAttribute(mutation.attributeName) && mutation.target.tmgPlayer?.fetchCustomOptions();
+        else if (mutation.attributeName === "controls") mutation.target.hasAttribute("tmgcontrols") && mutation.target.removeAttribute("controls");
+      }
+    }),
+    DOMMutationObserver: "undefined" !== typeof window && new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (!node.tagName || !(node.matches("video:not(.tmg-media") || node.querySelector("video:not(.tmg-media)"))) continue;
+          for (const el of [...node.querySelector("video:not(.tmg-media)") ? node.querySelectorAll("video:not(.tmg-media)") : [node]]) {
+            tmg.VIDMutationObserver.observe(el, { attributes: true });
+            el.tmgcontrols = el.hasAttribute("tmgcontrols");
+          }
+        }
+        for (const node of mutation.removedNodes) {
+          if (!node.tagName || !(node.matches("video.tmg-media") || node.querySelector("video.tmg-media")) || node.isConnected) continue;
+          for (const el of [...node.querySelector("video.tmg-media") ? node.querySelectorAll("video.tmg-media") : [node]]) if (!el.tmgPlayer?.Controller?.mutatingDOMM) el.tmgcontrols = false;
+        }
+      }
+    }),
+    _handleWindowResize: () => tmg.Controllers?.forEach((c) => c._handleWindowResize?.()),
+    _handleOrientationChange: () => tmg.Controllers?.forEach((c) => c._handleOrientationChange?.()),
+    _handleVisibilityChange: () => tmg.Controllers?.forEach((c) => c._handleVisibilityChange?.()),
+    _handleFullscreenChange: () => tmg._currentFullscreenController?._handleFullscreenChange?.(),
+    startAudioManager() {
+      if (!tmg.AUDIO_CONTEXT && tmg.IS_DOC_TRANSIENT) {
+        tmg.AUDIO_CONTEXT = new (AudioContext || webkitAudioContext)();
+        const L = tmg._limiter = tmg.AUDIO_CONTEXT.createDynamicsCompressor();
+        L.threshold.value = -1, L.knee.value = 0, L.ratio.value = 20, L.attack.value = 1e-3, L.release.value = 0.05;
+        tmg.Controllers?.forEach((c) => c.setUpAudio?.());
+      } else if (tmg.AUDIO_CONTEXT?.state === "suspended") tmg.AUDIO_CONTEXT.resume();
+    },
+    connectMediaToAudioManager(medium) {
+      if (!tmg.AUDIO_CONTEXT) return "unavailable";
+      medium.mediaElementSourceNode ??= tmg.AUDIO_CONTEXT.createMediaElementSource(medium);
+      medium._tmgGainNode ??= tmg.AUDIO_CONTEXT.createGain();
+      medium._tmgDynamicsCompressorNode ??= tmg.AUDIO_CONTEXT.createDynamicsCompressor();
+      medium.mediaElementSourceNode.connect(medium._tmgDynamicsCompressorNode);
+      medium._tmgDynamicsCompressorNode.connect(medium._tmgGainNode);
+      medium._tmgGainNode.connect(tmg._limiter);
+      tmg._limiter.connect(tmg.AUDIO_CONTEXT.destination);
+    },
+    queryMediaMobile: (strict = true) => strict ? /Mobi|Android|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) : matchMedia("(max-width: 480px), (max-width: 940px) and (max-height: 480px) and (orientation: landscape)").matches,
+    queryFullscreen: () => !!(document.fullscreenElement || document.fullscreen || document.webkitIsFullscreen || document.mozFullscreen || document.msFullscreenElement),
+    supportsFullscreen: () => !!(document.fullscreenEnabled || document.mozFullscreenEnabled || document.msFullscreenEnabled || document.webkitFullscreenEnabled || document.webkitSupportsFullscreen || HTMLVideoElement.prototype.webkitEnterFullscreen),
+    supportsPictureInPicture: () => !!(document.pictureInPictureEnabled || HTMLVideoElement.prototype.requestPictureInPicture || window.documentPictureInPicture),
+    loadResource,
+    isSameURL,
+    putSourceDetails(source, el) {
+      if (source.src) el.src = source.src;
+      if (source.type) el.type = source.type;
+      if (source.media) el.media = source.media;
+    },
+    addSources(sources = [], medium) {
+      const addSource = (source, med) => {
+        const sourceEl = tmg.createEl("source");
+        tmg.putSourceDetails(source, sourceEl);
+        return med.appendChild(sourceEl);
+      };
+      return tmg.isIter(sources) ? Array.from(sources, (source) => addSource(source, medium)) : addSource(sources, medium);
+    },
+    getSources(medium) {
+      const sources = medium.querySelectorAll("source"), _sources = [];
+      sources.forEach((source) => {
+        const obj = {};
+        tmg.putSourceDetails(source, obj);
+        _sources.push(obj);
+      });
+      return _sources;
+    },
+    removeSources: (medium) => medium?.querySelectorAll("source")?.forEach((source) => source.remove()),
+    isSameSources(a, b) {
+      if (!a || !b || a.length !== b.length) return false;
+      return a.every((s1) => b.some((s2) => tmg.isSameURL(s1.src, s2.src) && s1.type === s2.type && s1.media === s2.media));
+    },
+    putTrackDetails(track, el) {
+      if (track.id) el.id = track.id;
+      if (track.kind) el.kind = track.kind;
+      if (track.label) el.label = track.label;
+      if (track.srclang) el.srclang = track.srclang;
+      if (track.src) el.src = track.src;
+      if (track.default) el.default = track.default;
+    },
+    addTracks(tracks = [], medium) {
+      const addTrack = (track, med) => {
+        const trackEl = tmg.createEl("track");
+        tmg.putTrackDetails(track, trackEl);
+        return med.appendChild(trackEl);
+      };
+      return tmg.isIter(tracks) ? Array.from(tracks, (track) => addTrack(track, medium)) : addTrack(tracks, medium);
+    },
+    getTracks(medium, captionsOnly = false) {
+      const selector = !captionsOnly ? "track" : "track:is([kind='captions'], [kind='subtitles'])", tracks = medium.querySelectorAll(selector), _tracks = [];
+      tracks.forEach((track) => {
+        const obj = {};
+        tmg.putTrackDetails(track, obj);
+        _tracks.push(obj);
+      });
+      return _tracks;
+    },
+    removeTracks: (medium) => medium.querySelectorAll("track")?.forEach((track) => (track.kind === "subtitles" || track.kind === "captions") && track.remove()),
+    isSameTracks(a, b) {
+      if (!a || !b || a.length !== b.length) return false;
+      return a.every((t1) => b.some((t2) => tmg.isSameURL(t1.src, t2.src) && t1.kind === t2.kind && t1.label === t2.label && t1.srclang === t2.srclang && t1.default === t2.default));
+    },
+    stripTags: (text) => text.replace(/<(\/)?([a-z0-9.:]+)([^>]*)>/gi, ""),
+    srtToVtt(srt, vttLines = ["WEBVTT", ""]) {
+      const input = srt.replace(/\r\n?/g, "\n").trim();
+      for (const block of input.split(/\n{2,}/)) {
+        const lines = block.split("\n");
+        let idx = /^\d+$/.test(lines[0].trim()) ? 1 : 0;
+        const timing = lines[idx]?.trim().replace(/\s+/g, " "), m = timing?.match(/(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?\s*-->\s*(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?/);
+        if (!m) continue;
+        const [, startHms, startMsRaw = "0", endHms, endMsRaw = "0"] = m, to3 = (ms) => ms.padEnd(3, "0").slice(0, 3);
+        vttLines.push(startHms + "." + to3(startMsRaw) + " --> " + endHms + "." + to3(endMsRaw));
+        for (let i = idx + 1; i < lines.length; i++) vttLines.push(lines[i]);
+        vttLines.push("");
+      }
+      return vttLines.join("\n");
+    },
+    parseVttText(text) {
+      const state2 = { tag: /<(\/)?([a-z0-9.:]+)([^>]*)>/gi, o: "", l: 0, p: null, c: "" }, esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      let m;
+      while (m = state2.tag.exec(text)) {
+        const chunk = text.slice(state2.l, m.index);
+        if (chunk) state2.c += esc(chunk);
+        const [_, cls, tag_n, rest] = m, low = tag_n.toLowerCase();
+        if (/^[0-9]/.test(tag_n)) {
+          state2.o += state2.p ? `<span data-part="timed" data-time="${state2.p}">${state2.c}</span>` : state2.c;
+          state2.p = tag_n;
+          state2.c = "";
+        } else {
+          if (cls) state2.c += ["c", "v", "lang"].includes(low) ? "</span>" : `</${low}>`;
+          else if (["b", "i", "u", "ruby", "rt"].includes(low)) state2.c += `<${low}>`;
+          else if (low === "c") state2.c += `<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`;
+          else if (low === "v") state2.c += `<span data-part="voice"${rest.trim() ? ` title="${esc(rest.trim())}"` : ""}>`;
+          else if (low === "lang") state2.c += `<span lang="${esc(rest.trim())}">`;
+        }
+        state2.l = state2.tag.lastIndex;
+      }
+      const lChunk = text.slice(state2.l);
+      if (lChunk) state2.c += esc(lChunk);
+      return state2.o + (state2.p ? `<span data-part="timed" data-time="${state2.p}">${state2.c}</span>` : state2.c);
+    },
+    formatVttLine(p, maxChars) {
+      const state2 = { tokens: p.match(/<[^>]+>|\S+/g) || [], stack: [], parts: [], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false }, updateTags = () => (state2.openStr = state2.stack.map((n) => `<${n}>`).join(""), state2.closeStr = state2.stack.reduceRight((a, n) => a + `</${n}>`, "")), flush = () => state2.line && (state2.parts.push(state2.line + state2.closeStr), state2.line = (state2.timeTag || "") + state2.openStr, state2.len = 0, state2.lastWasTag = true);
+      state2.tokens.forEach((tok) => {
+        const tag = tok[0] === "<", closeTag = tag && tok[1] === "/";
+        if (tag) {
+          if (state2.line && !state2.lastWasTag && !closeTag) state2.line += " ";
+          const m = tok.match(/^<\/?\s*([a-z0-9._:-]+)/i), n = m?.[1] || "", timing = /^\d/.test(n);
+          if (timing) return state2.timeTag = tok, state2.line += tok, state2.lastWasTag = true;
+          if (!closeTag && !tok.endsWith("/>") && n) state2.stack.push(n), updateTags();
+          if (closeTag && state2.stack.length) state2.stack.pop(), updateTags();
+          return state2.lastWasTag = true, state2.line += tok;
+        }
+        const len = tmg.stripTags(tok).length, needSpace = state2.line && !state2.lastWasTag;
+        if (state2.len + (needSpace ? 1 : 0) + len > maxChars) flush();
+        if (needSpace) state2.line += " ", state2.len += 1;
+        state2.line += tok, state2.len += len, state2.lastWasTag = false;
+      });
+      return flush(), state2.parts;
+    },
+    uid: (prefix = "tmg-") => uid(prefix),
+    clamp,
+    remToPx,
+    isDef,
+    isIter,
+    isObj,
+    isArr,
+    isValidNum: (number) => !isNaN(number ?? NaN) && number !== Infinity,
+    inBoolArrOpt: (opt, str) => opt?.includes?.(str) ?? opt,
+    inDocView(el, axis = "y") {
+      const rect = el.getBoundingClientRect(), inX = rect.right >= 0 && rect.left <= (window.innerWidth || document.documentElement.clientWidth), inY = rect.bottom >= 0 && rect.top <= (window.innerHeight || document.documentElement.clientHeight);
+      return axis === "x" ? inY : axis === "y" ? inX : inY && inX;
+    },
+    setHTMLConfig(target, attr, value) {
+      value = value.trim();
+      const path = attr.replace("tmg--", "");
+      const parsedValue = (() => {
+        if (value.includes(",")) return value.split(",")?.map((v) => v.trim());
+        if (value === "true") return true;
+        if (value === "false") return false;
+        if (value === "null") return null;
+        if (/^\d+$/.test(value)) return Number(value);
+        return value;
+      })();
+      tmg.setPath(target, path, parsedValue, "--", (p) => tmg.camelize(p));
+    },
+    setPath,
+    getPath,
+    fanout,
+    force,
+    bindAllMethods,
+    reactive,
+    TERMINATOR,
+    volatile,
+    silence,
+    safeNum: (number, fallback = 0) => tmg.isValidNum(number) ? number : fallback,
+    parseIfPercent: (percent, amount, autocap = 0.25) => {
+      const val = percent?.endsWith?.("%") ? tmg.safeNum(parseFloat(percent) / 100 * amount) : percent;
+      return val && amount && autocap && amount <= val ? amount * autocap : val;
+    },
+    parseCSSTime,
+    parseCSSSize,
+    parseUIObj(obj) {
+      const result = {};
+      for (const key of Object.keys(obj)) {
+        const entry = obj[key];
+        if (!tmg.isObj(entry)) continue;
+        result[key] = entry.options ? {
+          values: entry.options.map((opt) => opt.value ?? opt),
+          displays: entry.options.map((opt) => opt.display ?? `${opt}`)
+        } : tmg.parseUIObj(entry);
+      }
+      return result;
+    },
+    parsePathObj,
+    parsePanelBottomObj(obj = [], arr = false) {
+      if (!tmg.isObj(obj) && !tmg.isArr(obj)) return false;
+      const [third = [], second = [], first = []] = tmg.isObj(obj) ? Object.values(obj).reverse() : tmg.isArr(obj[0]) ? obj.toReversed() : [obj];
+      return !arr ? { 1: first, 2: second, 3: third } : [...third, ...second, ...first];
+    },
+    mergeObjs,
+    deepClone,
+    formatMediaTime({ time, format = "digital", elapsed = true, showMs = false, casing = "normal" } = {}) {
+      const long = format.endsWith("long"), sx = (n = 0) => n == 1 ? "" : "s", cs = (str) => casing === "upper" ? str.toUpperCase() : casing === "title" ? tmg.capitalize(str) : str.toLowerCase(), wrd = (n = 0) => ({ h: cs(long ? ` hour${sx(n)} ` : "h"), m: cs(long ? ` minute${sx(n)} ` : "m"), s: cs(long ? ` second${sx(n)} ` : "s"), ms: cs(long ? ` millisecond${sx(n)} ` : "ms") }), pad = (v, n = 2, f) => long && !f ? v : String(v).padStart(n, "number" === typeof +n ? "0" : "-");
+      if (!this.isValidNum(time)) return format !== "digital" ? `-${wrd().h}${pad("-")}${wrd().m}${!elapsed ? "left" : ""}`.trim() : !elapsed ? "--:--" : "-:--";
+      const s = Math.floor(Math.abs(time) % 60), m = Math.floor(Math.abs(time) / 60) % 60, h = Math.floor(Math.abs(time) / 3600), ms = Math.floor(Math.abs(time) % 1 * 1e3);
+      if (format === "digital") {
+        const base2 = h ? `${h}:${pad(m, 2, true)}:${pad(s, 2, true)}` : `${m}:${pad(s, 2, true)}`;
+        return !elapsed ? `-${base2}` : base2;
+      }
+      const base = h ? `${h}${wrd(h).h}${pad(m)}${wrd(m).m}${pad(s)}${wrd(s).s}` : `${m}${wrd(m).m}${pad(s)}${wrd(s).s}`, msPart = showMs && ms ? `${pad(ms, 3)}${wrd(ms).ms}` : "";
+      return `${base}${msPart}${!long ? " " : ""}${!elapsed ? "left" : ""}`.trim();
+    },
+    formatSize,
+    capitalize: (word = "") => word.replace(/^(\s*)([a-z])/i, (_, s, l) => s + l.toUpperCase()),
+    // supports leading spaces like it should
+    camelize: (str = "", { source } = /[\s_-]+/, { preserveInnerCase: pIC = true, upperFirst: uF = false } = {}) => (pIC ? str : str.toLowerCase()).replace(new RegExp(`${source}(\\w)`, "g"), (_, c) => c.toUpperCase()).replace(/^\w/, (c) => c[uF ? "toUpperCase" : "toLowerCase"]()),
+    // '\\w' to preserve \
+    uncamelize: (str = "", separator = " ") => str.replace(/([a-z])([A-Z])/g, `$1${separator}$2`).toLowerCase(),
+    mockAsync,
+    addSafeClicks(el, onClick, onDblClick, options) {
+      el && tmg.removeSafeClicks(el);
+      el?.addEventListener("click", el._clickHandler = (e) => (clearTimeout(el._clickTimeoutId), el._clickTimeoutId = setTimeout(() => onClick?.(e), 300)), options);
+      el?.addEventListener("dblclick", el._dblClickHandler = (e) => (clearTimeout(el._clickTimeoutId), onDblClick?.(e)), options);
+    },
+    // all just to smoothe out browser perks with tiny logic, nothing deep :)
+    removeSafeClicks: (el) => (el?.removeEventListener("click", el._clickHandler), el?.removeEventListener("dblclick", el._dblClickHandler)),
+    getExtension: (fn) => fn.split(".").pop().toLowerCase(),
+    noExtension: (fn) => fn.replace(/(?:\.(?:mp4|mkv|avi|mov|webm|flv|wmv|m4v|mpg|mpeg|3gp|ogv|ts))+$/i, ""),
+    getMimeTypeFromExtension: (fn) => ({ avi: "video/x-msvideo", mp4: "video/mp4", mkv: "video/x-matroska", mov: "video/quicktime", flv: "video/x-flv", webm: "video/webm", ogg: "video/ogg", wmv: "video/x-ms-wmv", "3gp": "video/3gpp", "3g2": "video/3gpp2", mpeg: "video/mpeg", ts: "video/mp2t", m4v: "video/x-m4v" })[tmg.getExtension(fn)] || "application/octet-stream",
+    // mov- Apple MOV format, flv- Flash Video, wmv- Windows Media Video, ts- MPEG transport stream, Default to binary stream
+    getRGBBri: ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b,
+    getRGBSat: ([r, g, b]) => Math.max(r, g, b) - Math.min(r, g, b),
+    clampRGBBri([r, g, b], m = 40) {
+      const br = tmg.getRGBBri([r, g, b]), d = br < m ? m - br : br > 255 - m ? -(br - (255 - m)) : 0;
+      return [r + d, g + d, b + d].map((v) => tmg.clamp(0, Math.round(v), 255));
+    },
+    async getDominantColor(src, format = "hex", raw = false) {
+      if (typeof src == "string")
+        src = await new Promise((res, rej) => {
+          const i = tmg.createEl("img", { src, crossOrigin: "anonymous", onload: () => res(i), onerror: () => rej(new Error(`Image load error: ${src}`)) });
+        });
+      if (src?.canvas) src = src.canvas;
+      const s = Math.min(64, src.width, src.height), c = tmg.createEl("canvas", { width: s, height: s }), x = c.getContext("2d");
+      const d = src?.width && src?.height ? (x.drawImage(src, 0, 0, s, s), x.getImageData(0, 0, s, s).data) : null, ct = {}, pt = {};
+      for (let i = 0; i < +d?.length; i += 4) {
+        if (d[i + 3] < 128) continue;
+        const r2 = d[i] & 240, g2 = d[i + 1] & 240, b2 = d[i + 2] & 240;
+        const k = r2 << 16 | g2 << 8 | b2;
+        ct[k] = (ct[k] || 0) + 1;
+        pt[k] = pt[k] ? [pt[k][0] + d[i], pt[k][1] + d[i + 1], pt[k][2] + d[i + 2]] : [d[i], d[i + 1], d[i + 2]];
+      }
+      const clrs = Object.keys(ct).sort((a, b2) => ct[b2] - ct[a]).slice(0, 7).map((k) => ({ key: k, rgb: pt[k].map((v) => Math.round(v / ct[k])) }));
+      if (!clrs.length) return null;
+      const [r, g, b] = tmg.clampRGBBri(clrs.reduce((sat, curr) => tmg.getRGBSat(sat.rgb) > tmg.getRGBSat(curr.rgb) ? sat : curr, clrs[0]).rgb, 70);
+      return format === "hex" ? `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}` : raw == false ? `rgb(${r},${g},${b})` : [r, g, b];
+    },
+    createEl,
+    getWindow: (el) => el instanceof Window ? el : el instanceof Document ? el?.defaultView : el?.ownerDocument?.defaultView,
+    cloneVideo(v) {
+      const newV = v.cloneNode(true);
+      newV.tmgPlayer = v.tmgPlayer;
+      v.parentElement?.replaceChild(newV, v);
+      if (v.currentTime) newV.currentTime = v.currentTime;
+      if (v.playbackRate !== 1) newV.playbackRate = v.playbackRate;
+      if (v.defaultPlaybackRate !== 1) newV.defaultPlaybackRate = v.defaultPlaybackRate;
+      if (v.volume !== 1) newV.volume = v.volume;
+      if (v.muted) newV.muted = true;
+      if (v.defaultMuted) newV.defaultMuted = true;
+      if (v.srcObject) newV.srcObject = v.srcObject;
+      if (v.autoplay) newV.autoplay = true;
+      if (v.loop) newV.loop = true;
+      if (v.controls) newV.controls = true;
+      if (v.crossOrigin) newV.crossOrigin = v.crossOrigin;
+      if (v.playsInline) newV.playsInline = true;
+      if (v.controlsList?.length) newV.controlsList = v.controlsList;
+      if (v.disablePictureInPicture) newV.disablePictureInPicture = true;
+      if (!v.paused && newV.isConnected) newV.play();
+      return newV;
+    },
+    getElSiblingAt: (p, dir, els, pos = "after") => els.length && Array.prototype.reduce.call(
+      els,
+      (closest, child) => {
+        const { top: cT, left: cL, width: cW, height: cH } = child.getBoundingClientRect(), offset = p - (dir === "y" ? cT : cL) - (dir === "y" ? cH : cW) / 2, condition = pos === "after" ? offset < 0 && offset > closest.offset : pos === "before" ? offset > 0 && offset < closest.offset : pos === "at" ? Math.abs(offset) <= (dir === "y" ? cH : cW) / 2 && Math.abs(offset) < Math.abs(closest.offset) : false;
+        return condition ? { offset, element: child } : closest;
+      },
+      { offset: pos === "after" ? -Infinity : Infinity }
+    ).element,
+    getRenderedBox(elem) {
+      const getResourceDimensions = (source) => source.videoWidth ? { width: source.videoWidth, height: source.videoHeight } : null;
+      function parsePositionAsPx(str, bboxSize, objectSize) {
+        const num = parseFloat(str);
+        return !str.endsWith("%") ? num : bboxSize * (num / 100) - objectSize * (num / 100);
+      }
+      function parseObjectPosition(position, bbox2, object2) {
+        const [left, top] = position.split(" ");
+        return { left: parsePositionAsPx(left, bbox2.width, object2.width), top: parsePositionAsPx(top, bbox2.height, object2.height) };
+      }
+      let { objectFit, objectPosition } = getComputedStyle(elem);
+      const bbox = elem.getBoundingClientRect(), object = getResourceDimensions(elem);
+      if (!object || !objectFit || !objectPosition) return {};
+      if (objectFit === "scale-down") objectFit = bbox.width < object.width || bbox.height < object.height ? "contain" : "none";
+      if (objectFit === "none") return { ...parseObjectPosition(objectPosition, bbox, object), ...object };
+      else if (objectFit === "contain") {
+        const objectRatio = object.height / object.width, bboxRatio = bbox.height / bbox.width, width = bboxRatio > objectRatio ? bbox.width : bbox.height / objectRatio, height = bboxRatio > objectRatio ? bbox.width * objectRatio : bbox.height;
+        return { ...parseObjectPosition(objectPosition, bbox, { width, height }), width, height };
+      } else if (objectFit === "fill") {
+        const { left, top } = parseObjectPosition(objectPosition, bbox, object), objPosArr = objectPosition.split(" ");
+        return { left: objPosArr[0].endsWith("%") ? 0 : left, top: objPosArr[1].endsWith("%") ? 0 : top, width: bbox.width, height: bbox.height };
+      } else if (objectFit === "cover") {
+        const minRatio = Math.min(bbox.width / object.width, bbox.height / object.height);
+        let width = object.width * minRatio, height = object.height * minRatio, outRatio = 1;
+        if (width < bbox.width) outRatio = bbox.width / width;
+        if (Math.abs(outRatio - 1) < 1e-14 && height < bbox.height) outRatio = bbox.height / height;
+        width *= outRatio;
+        height *= outRatio;
+        return { ...parseObjectPosition(objectPosition, bbox, { width, height }), width, height };
+      }
+    },
+    parseKeyCombo,
+    stringifyKeyEvent,
+    cleanKeyCombo,
+    matchKeys,
+    formatKeyForDisplay,
+    AsyncQueue: class AsyncQueue {
+      constructor() {
+        this.jobs = [], this.running = false;
+      }
+      async _handle() {
+        if (this.running) return;
+        this.running = true;
+        while (this.jobs.length > 0) {
+          const job = this.jobs.shift();
+          if (job) job.cancelled ? job.resolve({ success: false, cancelled: true, dropped: false }) : (job.preTask?.(), job.resolve(await job.task()));
+        }
+        this.running = false;
+      }
+      add = (task, id, cancelled, preTask) => new Promise((resolve) => (this.jobs.push({ task, id, preTask, cancelled, resolve }), this._handle()));
+      drop(id) {
+        const idx = this.jobs.findIndex((j) => j.id === id);
+        this.jobs[idx]?.resolve({ success: false, cancelled: true, dropped: true });
+        return idx !== -1 && this.jobs.splice(idx, 1), !!~idx;
+      }
+      cancel(id) {
+        const job = this.jobs.find((j) => j.id === id);
+        return job && (job.cancelled = true), !!job?.cancelled;
+      }
+    },
+    Controller: tmg_Video_Controller,
+    // THE TMG MEDIA PLAYER CONTROLLER CLASS
+    Player: tmg_Media_Player,
+    // THE TMG MEDIA PLAYER BUILDER CLASS
+    Controllers: []
+    // REFERENCES TO ALL THE DEPLOYED TMG MEDIA CONTROLLERS
+  };
+  if (typeof window !== "undefined") {
+    window.tmg = tmg;
+    tmg.DEFAULT_VIDEO_BUILD = {
+      mediaPlayer: "TMG",
+      mediaType: "video",
+      media: { title: "", artist: "", profile: "", album: "", artwork: [], chapterInfo: [], links: { title: "", artist: "", profile: "" }, autoGenerate: true },
+      disabled: false,
+      lightState: { disabled: false, controls: ["meta", "bigplaypause", "fullscreenorientation"], preview: { usePoster: true, time: 4 } },
+      debug: true,
+      settings: {
+        auto: { next: 20 },
+        css: { syncWithMedia: {} },
+        brightness: { min: 0, max: 150, value: 100, skip: 5 },
+        captions: {
+          visible: true,
+          allowVideoOverride: true,
+          font: {
+            family: {
+              value: "inherit",
+              options: [
+                { value: "inherit", display: "Default" },
+                { value: "monospace", display: "Monospace" },
+                { value: "sans-serif", display: "Sans Serif" },
+                { value: "serif", display: "Serif" },
+                { value: "cursive", display: "Cursive" },
+                { value: "fantasy", display: "Fantasy" },
+                { value: "system-ui", display: "System UI" },
+                { value: "arial", display: "Arial" },
+                { value: "verdana", display: "Verdana" },
+                { value: "tahoma", display: "Tahoma" },
+                { value: "times new roman", display: "Times New Roman" },
+                { value: "georgia", display: "Georgia" },
+                { value: "impact", display: "Impact" },
+                { value: "comic sans ms", display: "Comic Sans MS" }
+              ]
+            },
+            size: {
+              min: 100,
+              max: 400,
+              value: 100,
+              skip: 100,
+              options: [
+                { value: 25, display: "25%" },
+                { value: 50, display: "50%" },
+                { value: 100, display: "100%" },
+                { value: 150, display: "150%" },
+                { value: 200, display: "200%" },
+                { value: 300, display: "300%" },
+                { value: 400, display: "400%" }
+              ]
+            },
+            color: {
+              value: "white",
+              options: [
+                { value: "white", display: "White" },
+                { value: "yellow", display: "Yellow" },
+                { value: "green", display: "Green" },
+                { value: "cyan", display: "Cyan" },
+                { value: "blue", display: "Blue" },
+                { value: "magenta", display: "Magenta" },
+                { value: "red", display: "Red" },
+                { value: "black", display: "Black" }
+              ]
+            },
+            opacity: {
+              value: 1,
+              options: [
+                { value: 0.25, display: "25%" },
+                { value: 0.5, display: "50%" },
+                { value: 0.75, display: "75%" },
+                { value: 1, display: "100%" }
+              ]
+            },
+            weight: {
+              value: "400",
+              options: [
+                { value: "100", display: "Thin" },
+                { value: "200", display: "Extra Light" },
+                { value: "300", display: "Light" },
+                { value: "400", display: "Normal" },
+                { value: "500", display: "Medium" },
+                { value: "600", display: "Semi Bold" },
+                { value: "700", display: "Bold" },
+                { value: "800", display: "Extra Bold" },
+                { value: "900", display: "Black" }
+              ]
+            },
+            variant: {
+              value: "normal",
+              options: [
+                { value: "normal", display: "Normal" },
+                { value: "small-caps", display: "Small Caps" },
+                { value: "all-small-caps", display: "All Small Caps" }
+              ]
+            }
+          },
+          background: {
+            color: {
+              value: "black",
+              options: [
+                { value: "white", display: "White" },
+                { value: "yellow", display: "Yellow" },
+                { value: "green", display: "Green" },
+                { value: "cyan", display: "Cyan" },
+                { value: "blue", display: "Blue" },
+                { value: "magenta", display: "Magenta" },
+                { value: "red", display: "Red" },
+                { value: "black", display: "Black" }
+              ]
+            },
+            opacity: {
+              value: 0.75,
+              options: [
+                { value: 0, display: "0%" },
+                { value: 0.25, display: "25%" },
+                { value: 0.5, display: "50%" },
+                { value: 0.75, display: "75%" },
+                { value: 1, display: "100%" }
+              ]
+            }
+          },
+          window: {
+            color: {
+              value: "black",
+              options: [
+                { value: "white", display: "White" },
+                { value: "yellow", display: "Yellow" },
+                { value: "green", display: "Green" },
+                { value: "cyan", display: "Cyan" },
+                { value: "blue", display: "Blue" },
+                { value: "magenta", display: "Magenta" },
+                { value: "red", display: "Red" },
+                { value: "black", display: "Black" }
+              ]
+            },
+            opacity: {
+              value: 0,
+              options: [
+                { value: 0, display: "0%" },
+                { value: 0.25, display: "25%" },
+                { value: 0.5, display: "50%" },
+                { value: 0.75, display: "75%" },
+                { value: 1, display: "100%" }
+              ]
+            }
+          },
+          characterEdgeStyle: {
+            value: "none",
+            options: [
+              { value: "none", display: "None" },
+              { value: "drop-shadow", display: "Drop Shadow" },
+              { value: "raised", display: "Raised" },
+              { value: "depressed", display: "Depressed" },
+              { value: "outline", display: "Outline" }
+            ]
+          },
+          textAlignment: {
+            value: "left",
+            options: [
+              { value: "left", display: "Left" },
+              { value: "center", display: "Center" },
+              { value: "right", display: "Right" }
+            ]
+          }
+        },
+        controlPanel: {
+          profile: true,
+          title: true,
+          artist: true,
+          top: ["expandminiplayer", "spacer", "meta", "spacer", "capture", "fullscreenlock", "fullscreenorientation", "removeminiplayer"],
+          center: ["bigprev", "bigplaypause", "bignext"],
+          bottom: { 1: [], 2: ["spacer", "timeline", "spacer"], 3: [...!tmg.ON_MOBILE ? ["prev", "playpause", "next"] : [], "brightness", "volume", "timeandduration", "spacer", "captions", "settings", "objectfit", "pictureinpicture", "theater", "fullscreen"] },
+          buffer: "spinner",
+          timeline: { thumbIndicator: true, seek: { relative: !tmg.ON_MOBILE, cancel: { delta: 15, timeout: 2e3 } } },
+          progressBar: tmg.ON_MOBILE,
+          draggable: ["", "big", "wrapper"]
+        },
+        errorMessages: { 1: "The video playback was aborted :(", 2: "The video failed due to a network error :(", 3: "The video could not be decoded :(", 4: "The video source is not supported :(" },
+        fastPlay: { playbackRate: 2, key: true, pointer: { type: "all", threshold: 800, inset: 20 }, reset: true, rewind: true },
+        gesture: {
+          click: tmg.ON_MOBILE ? "" : "togglePlay",
+          dblClick: tmg.ON_MOBILE ? "togglePlay" : "toggleFullscreenMode",
+          wheel: { volume: { normal: true, slider: true }, brightness: { normal: true, slider: true }, timeline: { normal: true, slider: true }, timeout: 2e3, xRatio: 12, yRatio: 6 },
+          touch: { volume: true, brightness: true, timeline: true, threshold: 200, axesRatio: 3, inset: 20, sliderTimeout: 1e3, xRatio: 1, yRatio: 1 }
+        },
+        keys: {
+          disabled: false,
+          strictMatches: false,
+          overrides: [" ", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
+          shortcuts: { prev: "Shift+p", next: "Shift+n", playPause: "k", mute: "m", dark: "d", skipBwd: "j", skipFwd: "l", stepFwd: ".", stepBwd: ",", volumeUp: "ArrowUp", volumeDown: "ArrowDown", brightnessUp: "y", brightnessDown: "h", playbackRateUp: ">", playbackRateDown: "<", timeFormat: "z", timeMode: "q", capture: "s", objectFit: "a", pictureInPicture: "i", theater: "t", fullscreen: "f", captions: "c", captionsFontSizeUp: ["+", "="], captionsFontSizeDown: ["-", "_"], captionsFontFamily: "u", captionsFontWeight: "g", captionsFontVariant: "v", captionsFontOpacity: "o", captionsBackgroundOpacity: "b", captionsWindowOpacity: "w", captionsCharacterEdgeStyle: "e", captionsTextAlignment: "x", settings: "?" },
+          mods: { disabled: false, skip: { ctrl: 60, shift: 10 }, volume: { ctrl: 50, shift: 10 }, brightness: { ctrl: 50, shift: 10 }, playbackRate: { ctrl: 1 }, captionsFontSize: {} },
+          // prettier-ignore
+          blocks: ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"]
+        },
+        locked: false,
+        modes: {
+          fullscreen: { disabled: false, orientationLock: "auto", onRotate: 90 },
+          theater: !tmg.ON_MOBILE,
+          pictureInPicture: {
+            disabled: false,
+            floatingPlayer: {
+              disabled: false,
+              width: 270,
+              height: 145,
+              disallowReturnToOpener: false,
+              preferInitialWindowPlacement: false
+            }
+          },
+          miniplayer: { disabled: false, minWindowWidth: 240 }
+        },
+        notifiers: true,
+        noOverride: false,
+        overlay: { delay: 3e3, behavior: "strict" },
+        persist: true,
+        playbackRate: { min: 0.25, max: 8, skip: 0.25 },
+        playsInline: true,
+        time: { min: 0, skip: 10, previews: false, mode: "elapsed", format: "digital", seekSync: false },
+        toasts: { disabled: false, nextVideoPreview: { usePoster: true, time: 4, tease: true }, captureAutoClose: 15e3, maxToasts: 7, position: "bottom-left", hideProgressBar: true, closeButton: !tmg.ON_MOBILE, animation: "slide-up", dragToCloseDir: "x||y" },
+        volume: { min: 0, max: 300, skip: 5 }
+      }
+    };
+    tmg.DEFAULT_VIDEO_ITEM_BUILD = {
+      media: { title: "", chapterInfo: [], links: { title: "" } },
+      src: "",
+      tracks: [],
+      settings: { time: { start: 0, previews: false } }
+    };
+    window.TMG_VIDEO_ALT_IMG_SRC ??= "/tmg-media-player/assets/icons/movie-tape.png";
+    window.TMG_VIDEO_CSS_SRC ??= "/tmg-media-player/beta/index-video.css";
+    window.T007_TOAST_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/toast@latest`;
+    window.T007_TOAST_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/toast@latest/dist/index.min.css`;
+    window.T007_INPUT_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/input@latest`;
+    window.T007_INPUT_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/input@latest/dist/index.min.css`;
+    window.T007_DIALOG_JS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest`;
+    window.T007_DIALOG_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest/dist/index.min.css`;
+    tmg.loadResource(TMG_VIDEO_CSS_SRC), tmg.loadResource(T007_TOAST_JS_SRC, "script"), tmg.loadResource(T007_INPUT_JS_SRC, "script"), tmg.loadResource(T007_DIALOG_JS_SRC, "script", { module: true });
+    tmg.init();
+    console.log("%cTMG Media Player Available", "color: darkturquoise");
+  } else {
+    console.log("\x1B[38;2;139;69;19mTMG Media Player Unavailable\x1B[0m");
+    console.error("TMG Media Player cannot run in a terminal!"), console.warn("Consider moving to a browser environment to use the TMG Media Player");
+  }
+})();
