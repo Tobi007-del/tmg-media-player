@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TMG Media Player</title>
+    <title>TMG Beta Player</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico" />
     <style>
       html {
@@ -33,14 +33,14 @@
   <body>
     <div class="container">
       <h2>Single Media</h2>
-      <video poster="../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--title="Justice League Teaser" tmg--settings--time--previews--address="../assets/images/previews/preview$.jpg" tmg--settings--time--previews--spf="10" tmg--settings--overlay--behavior--value="persistent" class="tmg-media">
+      <video poster="../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--title="Justice League Teaser" tmg--settings--time--previews--address="../assets/images/previews/preview$.jpg" tmg--settings--time--previews--spf="10" tmg--settings--overlay--behavior="persistent" class="tmg-media">
         <track kind="subtitles" srclang="en" src="../assets/tracks/justice_league_preview.vtt" label="English" />
         <!-- <track default kind="captions" src="../assets/tracks/test-captions-ultimate.vtt" /> -->
       </video>
     </div>
     <div class="container">
       <h2>Media Playlist</h2>
-      <video muted type="video/mp4" tmg--media--artist="TMG Media Prototype" tmg--media--profile="../assets/icons/tmg-icon.jpeg" tmg--media--links--artist="../" tmg--media--links--profile="https://github.com/Tobi007-del/tmg-media-player" tmg--settings--overlay--behavior--value="persistent" class="tmg-media"></video>
+      <video muted type="video/mp4" tmg--media--artist="TMG Media Prototype" tmg--media--profile="../assets/icons/tmg-icon.jpeg" tmg--media--links--artist="../" tmg--media--links--profile="https://github.com/Tobi007-del/tmg-media-player" tmg--settings--overlay--behavior="persistent" class="tmg-media"></video>
     </div>
     <button type="button" id="beta-time-travel" onclick="__betaTimeTravel()" style="position: fixed; bottom: 0; right: 0; z-index: 9999">Time travel?</button>
     <script>
