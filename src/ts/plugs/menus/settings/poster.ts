@@ -2,8 +2,8 @@ import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { PosterPlug } from "@plugs/settings/poster";
 
 export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
-  id: "general",
-  label: "General",
+  id: "advanced",
+  label: "Advanced",
   icon: "settings",
   widget: "group",
   getValue: () => "",
@@ -12,18 +12,13 @@ export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
       id: "poster",
       label: "Poster",
       widget: "group",
-      tipHTML: "If enabled, the poster strictly hides as soon as playback starts or time changes, and doesn't come back when the video ends.",
-      getValue: () => (plug.settings.poster.strict ? "Strict" : "Normal"),
-      configPaths: ["settings.poster.strict"],
+      hidden: () => !plug.ctlr.config.devMode,
+      getValue: () => "On",
+      title: "Configure how the poster image is displayed and generated.",
+      configPaths: ["devMode", "settings.poster.strict"],
       items: [
-        {
-          id: "posterStrict",
-          label: "Strict Mode",
-          widget: "toggle",
-          getValue: () => (plug.settings.poster.strict ? "On" : "Off"),
-          onChange: (val: boolean) => (plug.settings.poster.strict = val),
-          configPaths: ["settings.poster.strict"],
-        },
+        { id: "posterStrict", label: "Strict mode", widget: "toggle", getValue: () => (plug.settings.poster.strict ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.strict = val), configPaths: ["settings.poster.strict"], title: "If strict, the poster hides as soon as playback starts or time changes, and doesn't come back when the video ends." },
+        { id: "posterAutoGenerate", label: "Auto-generate", widget: "toggle", getValue: () => (plug.settings.poster.autoGenerate ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.autoGenerate = val), configPaths: ["settings.poster.autoGenerate"], title: "Automatically generate a poster image from the video frame if none is provided." },
       ],
     },
   ],

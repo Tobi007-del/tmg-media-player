@@ -47,14 +47,14 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.locked.disabled">): void {
-    this.media.features.locked = !value;
+    this.media.features.locked = !value; // #ABSOLUTE: always this outcome
     if (value && this.ctlr.isUIActive("locked")) this.media.intent.locked = false;
   }
 
   protected handleLockedIntent(e: REvent<CtlrMedia, "intent.locked">): void {
     if (e.resolved) return;
     const active = this.ctlr.isUIActive("locked");
-    e.value && !active ? this.enter() : active && this.exit();
+    e.value ? !active && this.enter() : active && this.exit();
     e.resolve(this.name);
   }
 

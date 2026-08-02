@@ -1,7 +1,7 @@
 import { BasePlug } from "../../base";
 import type { PersistConfig } from "./types";
 import { PERSIST_BUILD } from "./build";
-import { fanout } from "sia-reactor/utils";
+import { createReactorSync } from "sia-reactor/utils";
 import { PersistModule } from "sia-reactor/modules";
 
 export class PersistPlug extends BasePlug<PersistConfig> {
@@ -18,7 +18,7 @@ export class PersistPlug extends BasePlug<PersistConfig> {
 
   public override wire(): void {
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.persist", (e) => fanout<PersistConfig>(this.module.config, e.currentTarget.value), { depth: 1, signal: this.signal, init: false }); // #STABLE: snubs unchanged writes
+    createReactorSync(this.module.config, this.ctlr.config, "", "settings.persist", this.signal);
     // Post Wiring
     this.module.clearCache(), super.wire();
   }

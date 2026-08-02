@@ -18,11 +18,11 @@ export const VIMEO_EVENTS = ["loaded", "play", "playing", "pause", "ended", "tim
 export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName: string = "vimeo";
   public host: Player | null = null;
-  public hostDiv: HTMLDivElement;
-  protected hostSrc: string | null = null;
   public static override canPlaySource(src: string): boolean {
     return MATCH_URL_VIMEO.test(src);
   }
+  public hostDiv: HTMLDivElement;
+  protected hostSrc: string | null = null;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {
@@ -38,7 +38,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       currentTextTrack: true, currentAudioTrack: true, currentLevel: true, autoLevel: true,
       // Infos
       readyState: true, error: true, waiting: true, seeking: true, buffered: true, seekable: true,
-      loadedMetadata: true, loadedData: true, canPlay: true, canPlayThrough: true, activeCue: true, 
+      loadedMetadata: true, loadedData: true, canPlay: true, canPlayThrough: true, activeCues: true, 
       // Settings
       metadata: true, liveTolerance: true, minDVRWindow: true,  ...features
     });
@@ -51,7 +51,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     try {
       this.destroyHost(); // Vimeo prefers a fresh iframe for new URLs to ensure clean state
       if (!(window as any).Vimeo) await loadResource(window.TMG_VIMEO_API_SRC!, "script");
-      if (this.signal.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       const base = this.config[this.ctlr.payload.wired ? "state" : "intent"];
       this.host = new (window as any).Vimeo.Player(this.el.firstElementChild as HTMLElement, {
         url: (this.hostSrc = url),
@@ -114,11 +114,11 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentTextTrack(): void {
-    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as VimeoTextTrack[]).find((t) => t.language === term && t.kind === term)), { signal: this.signal });
+    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as VimeoTextTrack[]).findIndex((t) => t.language === term && t.kind === term)), { signal: this.signal });
     this.config.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentAudioTrack(): void {
-    this.config.set("intent.currentAudioTrack", (term) => (isNum(term) ? term : (this.config.status.audioTracks as VimeoAudioTrack[]).find((t) => t.language === term && t.kind === term)), { signal: this.signal });
+    this.config.set("intent.currentAudioTrack", (term) => (isNum(term) ? term : (this.config.status.audioTracks as VimeoAudioTrack[]).findIndex((t) => t.language === term && t.kind === term)), { signal: this.signal });
     this.config.on("intent.currentAudioTrack", this.handleCurrentAudioTrackIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {
@@ -138,12 +138,11 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   // ===========================================================================
   // --- Core States ---
   protected setLoadStartInfo(): void {
-    const { state: s, status: st } = this.config;
-    st.error = st.activeCue = null;
-    st.buffered = createTimeRanges([]);
-    st.seekable = createTimeRanges([]);
+    const { state: s, status: st, settings: set } = this.config;
+    st.error = st.activeCues = null;
+    (st.buffered = createTimeRanges([])), (st.seekable = createTimeRanges([]));
     st.duration = NaN;
-    st.waiting = s.paused = true;
+    st.waiting = set.idleWaiting || !s.paused;
     st.readyState = s.currentTime = 0; // HAVE NOTHING
     st.ended = st.stalled = st.loadedData = st.loadedMetadata = st.canPlay = st.canPlayThrough = false;
   }
@@ -158,30 +157,30 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     this.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
       if (e.value < min! || e.value > max!) e.reject(this.name); // Out of bounds
-      this.host!.setCurrentTime(clamp(min, e.value, max)).catch((err) => this.ctlr.log(err, "error", true));
+      this.host!.setCurrentTime(clamp(min, e.value, max)).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch((err) => this.ctlr.log(err, "error", true)));
+    this.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   // --- Feature Intents ---
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
     if (e.resolved) return;
-    if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds
-    this.when("hostReady", e, () => this.host!.setVolume(clamp(0, e.value / 100, 1)).catch((err) => this.ctlr.log(err, "error", true))); // Vimeo uses 0-1
+    if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds; Vimeo uses 0-1
+    this.when("hostReady", e, () => this.host!.setVolume(clamp(0, e.value / 100, 1)).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.host!.setMuted(e.value).catch((err) => this.ctlr.log(err, "error", true))); // Restored correct Mute API
+    this.when("hostReady", e, () => this.host!.setMuted(e.value).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   protected handlePlaybackRateIntent(e: REvent<CtlrMedia, "intent.playbackRate">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.host!.setPlaybackRate(e.value).catch((err) => this.ctlr.log(err, "error", true)));
+    this.when("hostReady", e, () => this.host!.setPlaybackRate(e.value).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
@@ -196,15 +195,19 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleLoopIntent(e: REvent<CtlrMedia, "intent.loop">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.host!.setLoop(e.value).catch((err) => this.ctlr.log(err, "error", true)));
-    this.config.state.loop = e.value;
+    this.when("hostReady", e, () =>
+      this.host!.setLoop(e.value).then(
+        () => (this.config.state.loop = e.value),
+        (err) => this.ctlr.log(err, "error", true)
+      )
+    ); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   protected handleCurrentTextTrackIntent(e: REvent<CtlrMedia, "intent.currentTextTrack">): void {
     if (e.resolved) return;
     this.when("loadedMetadata", e, () => {
       const track = (this.config.status.textTracks as VimeoTextTrack[])[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-      track ? this.host!.enableTextTrack(track.language, track.kind).catch((err) => this.ctlr.log(err, "error", true)) : this.host!.disableTextTrack().catch((err) => this.ctlr.log(err, "error", true));
+      track ? this.host!.enableTextTrack(track.language, track.kind).catch((err) => this.ctlr.log(err, "error", true)) : this.host!.disableTextTrack().catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
   }
@@ -212,7 +215,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     this.when("loadedMetadata", e, () => {
       const track = (this.config.status.audioTracks as VimeoAudioTrack[])[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-      if (track) this.host!.selectAudioTrack(track.language, track.kind).catch((err) => this.ctlr.log(err, "error", true));
+      if (track) this.host!.selectAudioTrack(track.language, track.kind).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
   }
@@ -220,16 +223,18 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     this.when("loadedMetadata", e, () => {
       const quality = (this.config.status.levels as VimeoQuality[])[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-      if (quality) this.host!.setQuality(quality.id).catch((err) => this.ctlr.log(err, "error", true));
+      if (quality) this.host!.setQuality(quality.id).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => {
-      this.host!.setQuality(e.value ? "auto" : (this.config.status.levels as VimeoQuality[])[0]?.id).catch((err) => this.ctlr.log(err, "error", true));
-      this.config.state.autoLevel = e.value;
-    });
+    this.when("loadedMetadata", e, () =>
+      this.host!.setQuality(e.value ? "auto" : (this.config.status.levels as VimeoQuality[])[0]?.id).then(
+        () => (this.config.state.autoLevel = e.value),
+        (err) => this.ctlr.log(err, "error", true)
+      )
+    ); // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
@@ -245,7 +250,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   private durationSeq = 0;
   private durationSrc = "";
   protected handleHostStateChange(evt: (typeof VIMEO_EVENTS)[number], data: any): void {
-    const { state: s, status: st } = this.config;
+    const { state: s, status: st, settings: set } = this.config;
     // console.log("Vimeo Event:", evt, data);
     switch (evt) {
       case "loaded":
@@ -253,7 +258,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
         setTimeout(
           () => {
             st.readyState = 1; // HAVE METADATA
-            st.waiting = false;
+            st.waiting = false; // UX boost
             st.loadedMetadata = true;
           },
           100, // promise abuse effects
@@ -264,13 +269,15 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       case "play":
         st.readyState = 4; // HAVE ENOUGH DATA
         st.canPlay = st.canPlayThrough = st.loadedData = true;
-        st.ended = st.waiting = s.paused = false;
-        if (evt === "playing") st.error = null; // UX boost
+        st.ended = s.paused = false;
+        if (evt !== "playing") break;
+        st.stalled = st.waiting = false;
+        st.error = null; // UX boost
         break;
       case "pause":
         s.paused = true;
         this.host!.getPlayed().then((played) => (st.played = createTimeRanges(played)));
-        st.waiting = false;
+        if (!set.idleWaiting) st.waiting = false;
         break;
       case "ended":
         return void (s.paused = st.ended = true);
@@ -288,7 +295,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
         if (this.hostSrc !== this.durationSrc) (this.durationSeq = 0), (this.durationSrc = this.hostSrc!);
         const prev = st.duration;
         if ((st.duration = data.duration) === Infinity) return void (st.isLive = true);
-        prev === Infinity ? (st.isLive = false) : prev > 0 && st.duration > prev && ++this.durationSeq > 3 && (st.isLive = true); // UX boost
+        prev !== Infinity && prev > 0 && st.duration > prev && ++this.durationSeq > 3 ? (st.isLive = true) : (st.isLive = s.live = false); // UX boost
         break;
       case "progress":
         this.host!.getBuffered().then((buffered) => (st.buffered = createTimeRanges(buffered)));
@@ -299,11 +306,11 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
         this.host!.getPlayed().then((played) => (st.played = createTimeRanges(played)));
         break;
       case "seeked":
-        s.currentTime = data.seconds;
+        s.currentTime = data.seconds; // UX boost
         st.seeking = false;
         break;
       case "bufferstart":
-        st.waiting = true;
+        st.waiting = set.idleWaiting || !s.paused;
         st.readyState = 2; // HAVE CURRENT DATA
         break;
       case "bufferend":
@@ -319,9 +326,9 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       case "texttrackchange":
         return void (s.currentTextTrack = (st.textTracks as VimeoTextTrack[]).findIndex((t) => t.language === data.language && t.kind === data.kind));
       case "cuechange":
-        return void (st.activeCue = data.cues[0] || null);
+        return void (st.activeCues = data.cues || null);
       case "chapterchange":
-        this.config.state.currentChapter = data.index - 1;
+        s.currentChapter = data.index - 1;
         break;
       case "qualitychange":
         return void (s.currentLevel = (st.levels as VimeoQuality[]).findIndex((q) => q.id === data.quality));
@@ -338,32 +345,25 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     }
   }
   protected handleHostError(err: any): void {
+    if (!this.signal || this.signal?.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err?.message || "Vimeo Video Not Found." }; // 5 = MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }
   // --- Lifecycle ---
   protected async setInitInfo(): Promise<void> {
-    if (!this.host) return;
-    this.autoChapters = !this.config.settings.metadata.allowOverride; // maybe chapter "cuechange" over to u; base
+    if (!this.host || !this.media.status.hostReady) return;
     // Status (Infos & Lists)
     this.host.getDuration().then((duration) => (this.config.status.isLive = (this.config.status.duration = duration) === Infinity));
     this.host.getPlayed().then((played) => (this.config.status.played = createTimeRanges(played)));
     this.host.getBuffered().then((buffered) => (this.config.status.buffered = createTimeRanges(buffered)));
     this.host.getSeekable().then((seekable) => (this.config.status.seekable = createTimeRanges(seekable)));
-    this.host.getChapters().then((chapters, _meta = this.config.settings.metadata) => _meta.allowOverride && (_meta.chapterInfo = inert(chapters)));
+    this.host.getChapters().then((chapters, _meta = this.config.settings.metadata) => _meta.allowMediaOverride && (_meta.chapterInfo = inert(chapters)));
     this.host.getTextTracks().then((tracks) => (this.config.status.textTracks = inert(tracks)));
     this.host.getAudioTracks().then((tracks) => (this.config.status.audioTracks = inert(tracks)));
     this.host.getQualities().then((qualities) => (this.config.status.levels = inert(qualities)));
     Promise.all([this.host.getVideoWidth(), this.host.getVideoHeight()]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h))); // Fixed the comma-operator bug here
-    // States (Sync engine to reality)
-    this.host.getPaused().then((paused) => (this.config.state.paused = paused));
-    this.host.getCurrentTime().then((time) => (this.config.state.currentTime = time));
-    this.host.getVolume().then((vol) => (this.config.state.volume = vol * 100)); // Map 1.0 to 100
-    this.host.getMuted().then((muted) => (this.config.state.muted = muted));
-    this.host.getPlaybackRate().then((rate) => (this.config.state.playbackRate = rate));
-    this.host.getLoop().then((loop) => (this.config.state.loop = loop));
-    this.host.getPictureInPicture().then((pip) => (this.config.state.pictureInPicture = pip));
-    this.host.getFullscreen().then((fs) => (this.config.state.fullscreen = fs));
+    // Post Init
+    this.autoChapters = !this.config.settings.metadata.allowMediaOverride; // maybe chapter "cuechange" over to u; base
   }
   protected destroyHost(): void {
     if (!this.host) return;

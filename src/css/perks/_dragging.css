@@ -9,7 +9,7 @@
 .tmg-media-container:has(.tmg-media-control-dragging:is([data-drag-id=""], [data-drag-id="big"])) :has(> [data-drop-zone="true"][data-drag-id=""]),
 .tmg-media-container:has(.tmg-media-control-dragging:is([data-drag-id="big"], [data-drag-id=""])) :has(> [data-drop-zone="true"][data-drag-id="big"]),
 .tmg-media-container:has(.tmg-media-control-dragging[data-drag-id="wrapper"]) [data-drop-zone="true"][data-drag-id="wrapper"] {
-  background: rgb(from var(--tmg-media-control-color) r g b / 0.1);
+  background: rgb(from var(--tmg-media-current-control-color) r g b / 0.1);
   outline: 2px dashed var(--tmg-media-brand-complement-color);
   outline-offset: -1px;
   border-radius: calc(var(--tmg-media-current-unit) / 5); /* since everyone's in love with curves :) */
@@ -18,7 +18,7 @@
 .tmg-media-container :has(> [data-drop-zone="true"][data-drag-id="big"] .tmg-media-control-dragging:is([data-drag-id="big"], [data-drag-id=""])),
 .tmg-media-container [data-drop-zone="true"][data-drag-id="wrapper"]:has(.tmg-media-control-dragging[data-drag-id="wrapper"]) {
   background: linear-gradient(to top, var(--tmg-media-brand-complement-color), transparent);
-  outline: 2px dashed rgb(from var(--tmg-media-control-color) r g b / 0.4);
+  outline: 2px dashed rgb(from var(--tmg-media-current-control-color) r g b / 0.4);
 }
 .tmg-media-container:has(.tmg-media-control-dragging) :has(> [data-drop-zone="true"].tmg-media-dragover[data-drag-id=""]),
 .tmg-media-container:has(.tmg-media-control-dragging) :has(> [data-drop-zone="true"].tmg-media-dragover[data-drag-id="big"]),
@@ -26,7 +26,7 @@
   background: var(--tmg-media-brand-complement-color);
 }
 .tmg-media-container:has(.tmg-media-control-dragging[data-drag-id="wrapper"]) :has(> [data-drop-zone="true"][data-drag-id=""]:empty) {
-  border: 1.7px solid rgb(from var(--tmg-media-control-color) r g b / 0.1);
+  border: 1.7px solid rgb(from var(--tmg-media-current-control-color) r g b / 0.1);
 }
 .tmg-media-control-dragging[data-drag-id="wrapper"] {
   border: 1.7px solid var(--tmg-media-brand-complement-color);
@@ -34,6 +34,6 @@
 .tmg-media-container:has(.tmg-media-control-dragging[data-drag-id="wrapper"]) :has(> [data-drop-zone="true"][data-drag-id=""]:empty),
 .tmg-media-container .tmg-media-control-dragging[data-drag-id="wrapper"] {
   align-self: center;
-  border-inline-start-color: var(--tmg-media-control-color);
+  border-inline-start-color: var(--tmg-media-current-control-color);
   border-radius: 0 !important;
 }

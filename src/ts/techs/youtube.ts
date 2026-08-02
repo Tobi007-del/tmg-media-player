@@ -6,7 +6,7 @@ import { createEl, enterFullscreen, exitFullscreen, loadResource, queryFullscree
 import { createTimeRanges } from "@utils/time";
 import { MATCH_URL_YOUTUBE } from "@utils/match";
 import { isSameURL } from "@utils/str";
-import { isNum } from "@utils/obj";
+import { isFunc, isNum } from "@utils/obj";
 import { setTimeout, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { silence } from "sia-reactor/modules";
@@ -16,12 +16,12 @@ import { getMediaMax, getMediaMin } from "@utils/media";
 export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName: string = "youtube";
   public host: YT.Player | null = null;
-  public hostDiv: HTMLDivElement;
-  protected hostSrc: string | null = null;
   protected intervalId = -1;
   public static override canPlaySource(src: string): boolean {
     return MATCH_URL_YOUTUBE.test(src);
   }
+  public hostDiv: HTMLDivElement;
+  protected hostSrc: string | null = null;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr,{
@@ -49,10 +49,11 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected async initHost(url: string, videoId: string) {
     try {
       const base = this.config[this.ctlr.techTruth];
-      if (this.host) return this.host.loadVideoById(videoId, base.currentTime, this.config.status.levels[base.currentLevel as number] || "default");
+      if (isFunc(this.host?.loadVideoById)) return (this.hostSrc = url), (this.media.status.hostReady = isFunc(this.host?.getPlayerState)), (this.reInitInfo = true), this.host.loadVideoById(videoId, base.currentTime, this.config.status.levels[base.currentLevel as number] || "default");
+      else this.destroyHost();
       // Setup & Bulk Wiring
       if (!window.YT) await loadResource(window.TMG_YT_API_SRC!, "script"), await new Promise<void>((res, _, _prev = (window as any).onYouTubeIframeAPIReady) => (window.YT?.Player ? res() : ((window as any).onYouTubeIframeAPIReady = () => (_prev?.(), res()))));
-      if (this.signal.aborted) return;
+      if (!this.signal || this.signal?.aborted) return;
       this.hostSrc = url;
       this.host = new window.YT.Player(this.el.firstElementChild!.firstElementChild as HTMLElement, {
         videoId,
@@ -72,7 +73,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         },
         events: {
           onReady: () => {
-            this.media.status.hostReady = true;
+            this.media.status.hostReady = isFunc(this.host?.getPlayerState);
             (this.element = this.host!.getIframe()), this.el.classList.add("tmg-foreign-host", "tmg-youtube-host"), this.el.toggleAttribute("data-hide-ui", !base.controls); // YT replaces el
             this.setInitInfo();
           },
@@ -84,7 +85,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
           onPlaybackRateChange: (e: { data: number }): void => void (this.config.state.playbackRate = e.data),
           onApiChange: () => {
             this.config.status.textTracks = ((this.host as any).getOption("captions", "tracklist") ?? []).map((t: any) => ({ id: `yt-cc-${t.languageCode}`, kind: "captions", label: t.languageName || t.displayName, srclang: t.languageCode }));
-            if (this.state.hostReady) this.config.intent.currentTextTrack = this.config.state.currentTextTrack;
+            if (this.media.status.hostReady) this.config.intent.currentTextTrack = this.config.state.currentTextTrack;
             (this.host as any).setOption("captions", "fontSize", this.settings.captions.font.size.value / 100);
           }, // Fired when modules like Captions load
           onError: this.handleHostError,
@@ -102,7 +103,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.src", this.handleSrcIntent, this.evtOpts.CONFIG);
   }
   protected override wireCurrentTime(): void {
-    this.config.get("state.currentTime", (v) => (this.config.status.ended ? this.config.status.duration : this.host?.getCurrentTime()) ?? v, { signal: this.signal }); // #VIRTUAL: reliable return value, for those faster than the poll
+    this.config.get("state.currentTime", (v) => (this.config.status.ended ? this.config.status.duration : this.host?.getCurrentTime?.()) ?? v, { signal: this.signal }); // #VIRTUAL: reliable return value, for those faster than the poll
     this.config.on("intent.currentTime", this.handleCurrentTimeIntent, this.evtOpts.CONFIG);
   }
   protected override wireDuration(): void {} // Polled dynamically in sync loop; YT emits no explicit duration event
@@ -160,12 +161,11 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   // ===========================================================================
   // --- Core States ---
   protected setLoadStartInfo(): void {
-    const { state: s, status: st } = this.config;
-    st.error = st.activeCue = null;
-    st.buffered = createTimeRanges([]);
-    st.seekable = createTimeRanges([]);
+    const { state: s, status: st, settings: set } = this.config;
+    st.error = st.activeCues = null;
+    (st.buffered = createTimeRanges([])), (st.seekable = createTimeRanges([]));
     st.duration = NaN;
-    st.waiting = s.paused = true;
+    st.waiting = set.idleWaiting || !s.paused;
     st.readyState = s.currentTime = 0; // HAVE NOTHING
     st.ended = st.stalled = st.loadedData = st.loadedMetadata = st.canPlay = st.canPlayThrough = false;
   }
@@ -292,19 +292,20 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- API Logic ---
   protected handleHostStateChange(e: { data: number }): void {
-    const { state: s, status: st } = this.config,
+    const { state: s, status: st, settings: set } = this.config,
       STATE = window.YT.PlayerState;
     // console.log("YouTube Event:", e);
     switch (e.data) {
       case STATE.UNSTARTED:
-        silence(() => (this.media.intent.currentTime = clamp(0, this.media.state.currentTime, this.media.status.duration - 1))); // #PAMPERING: observed quirk
+        this.reInitInfo && this.setInitInfo(), silence(() => (this.media.intent.currentTime = clamp(0, this.media.state.currentTime, this.media.status.duration - 1))); // #PAMPERING: observed quirk
         break;
       case STATE.CUED:
         st.duration = this.host!.getDuration();
         st.readyState = 1; // HAVE METADATA
         break;
       case STATE.BUFFERING:
-        st.waiting = true;
+        this.reInitInfo && this.setInitInfo();
+        st.waiting = set.idleWaiting || !s.paused;
         st.readyState = 2; // HAVE CURRENT DATA
         break;
       case STATE.PLAYING:
@@ -312,7 +313,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         st.ended = st.seeking = st.waiting = s.paused = false;
         st.canPlay = st.canPlayThrough = true;
         st.duration = this.host!.getDuration();
-        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // // pampering obseerved quirk
+        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // pampering obseerved quirk
         st.readyState = 4; // HAVE ENOUGH DATA
         st.loadedData = true;
         this.syncMetadata(), clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentTime, 100, this.signal)); // updates 10 times a sec
@@ -321,12 +322,14 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       case STATE.ENDED:
         s.paused = true;
         st.ended = e.data === STATE.ENDED;
-        st.seeking = st.waiting = false;
+        st.seeking = false;
+        if (!set.idleWaiting) st.waiting = false;
         clearInterval(this.intervalId), this.syncCurrentTime();
         break;
     }
   }
   protected handleHostError(err: { data?: number; message?: string }): void {
+    if (!this.signal || this.signal?.aborted) return;
     let msg = "Unknown YouTube Error";
     if (err.data === 2 || err.data === 100) msg = "YouTube Video Not Found";
     else if (err.data === 101 || err.data === 150) msg = "Playback disabled by owner";
@@ -347,28 +350,25 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     } else st.ended = s.currentTime === st.duration; // UX boost
   }
   protected syncMetadata(data = this.host!.getVideoData() as any): void {
-    data && this.config.settings.metadata.allowOverride && fanout(this.media.settings.metadata, { id: data.video_id, title: data.title, artist: data.author || undefined }, { skipUndefined: true });
+    data && this.config.settings.metadata.allowMediaOverride && fanout(this.media.settings.metadata, { id: data.video_id, title: data.title, artist: data.author || undefined }, { skipUndefined: true, txLabel: "YouTube Metadata Override" });
   }
   // --- Lifecycle ---
-  protected setInitInfo(data = this.host!.getVideoData() as any, isShort = this.hostSrc?.includes("/shorts/")): void {
+  protected reInitInfo = false;
+  protected setInitInfo(data = this.media.status.hostReady && this.host!.getVideoData(), isShort = this.hostSrc?.includes("/shorts/")): void {
+    if (!this.host || !data) return;
     // Status (Infos & Lists)
     this.config.status.readyState = 1; // HAVE METADATA
-    this.config.status.duration = this.host!.getDuration();
-    this.config.status.isLive = data.isLive || this.config.status.duration === 0; // pampering obseerved quirk
+    this.config.status.duration = this.host.getDuration();
+    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // pampering obseerved quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;
     this.config.status.loadedMetadata = true;
-    // States (Sync engine to reality)
-    this.syncCurrentTime();
-    this.config.state.volume = this.host!.getVolume();
-    this.config.state.muted = this.host!.isMuted();
-    this.config.state.playbackRate = this.host!.getPlaybackRate();
-    // Settings (Metadata)
-    this.syncMetadata(data);
+    // Settings & Post-Init
+    this.syncCurrentTime(), this.syncMetadata(data), (this.reInitInfo = false);
   }
   protected setHighResPoster(videoId: string): void {
-    if (!this.config.settings.metadata.allowOverride) return;
+    if (!this.config.settings.metadata.allowMediaOverride) return;
     const hq = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       img = createEl("img", { src: hq, onload: () => (this.config.intent.poster = img.naturalWidth <= 120 ? hq : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`), onerror: () => (this.config.intent.poster = hq) }); // Preload HQ for immediate use, then conditionally switch to MX if valid
   }

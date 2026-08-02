@@ -15,11 +15,16 @@ export function luid(key = LUID_KEY, prefix = "tmg_local_"): string {
 // Parsers
 export { remToPx, pxToRem, parseCSSTime, parseCSSSize } from "@t007/utils";
 
+export function formatMenuPx(v: string | number, long = false): string {
+  const num = typeof v === "string" ? parseFloat(v) : v;
+  return isNaN(num) ? `0${long ? " px" : "px"}` : `${Math.round(num)}${long ? " px" : "px"}`;
+}
+
 // Checkers
 export { cleanURL, isSameURL } from "@t007/utils";
 
 // Fuzzy String Matching
-export function getSimilarity(target: string, spoken: string): number {
+export function getBigRamSimilarity(target: string, spoken: string): number {
   if (target === spoken) return 1;
   if (target.length < 2 || spoken.length < 2) return 0;
   let matches = 0;
@@ -29,6 +34,23 @@ export function getSimilarity(target: string, spoken: string): number {
   }
   // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${matches} / ${target.length - 1} = ${matches / (target.length - 1)}`);
   return matches / (target.length - 1); // Returns a score from 0.0 to 1.0 (e.g., 0.85 = 85% match)
+}
+
+export function getLevenshteinSimilarity(target: string, spoken: string): number {
+  if (target === spoken) return 1;
+  const tLen = target.length,
+    sLen = spoken.length;
+  if (!tLen || !sLen) return 0;
+  let prev = Array.from({ length: sLen + 1 }, (_, j) => j);
+  for (let i = 0; i < tLen; i++) {
+    const curr = [i + 1];
+    for (let j = 0; j < sLen; j++) {
+      curr[j + 1] = Math.min(curr[j] + 1, prev[j + 1] + 1, prev[j] + (target[i] === spoken[j] ? 0 : 1));
+    }
+    prev = curr;
+  }
+  // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${prev[sLen]} / ${Math.max(tLen, sLen)} = ${1 - prev[sLen] / Math.max(tLen, sLen)}`);
+  return 1 - prev[sLen] / Math.max(tLen, sLen);
 }
 
 export function fuzzyMatch(targets: string[], transcript: string, threshold: number): string | null {
@@ -42,7 +64,7 @@ export function fuzzyMatch(targets: string[], transcript: string, threshold: num
       for (let j = i; j < tokens.length; j++) {
         rawChunk += (j === i ? "" : " ") + tokens[j]; // The exact string with spaces
         chunkBlob += tokens[j]; // The squashed string for math
-        if (chunkBlob === targetBlob || getSimilarity(targetBlob, chunkBlob) >= threshold) return rawChunk; // Returns exactly what was spoken (e.g., "six seven")
+        if (chunkBlob === targetBlob || getLevenshteinSimilarity(targetBlob, chunkBlob) >= threshold) return rawChunk; // Returns exactly what was spoken (e.g., "six seven")
       }
     }
   }

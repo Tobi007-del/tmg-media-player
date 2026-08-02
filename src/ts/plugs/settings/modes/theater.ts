@@ -12,6 +12,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     return ModesPlug;
   }
   public static readonly BUILD = MODES_THEATER_BUILD;
+  public snublist: string[] = ["fullscreen", "miniplayer", "floatingPlayer"]; // #DEFAULT: build privilege
 
   public override wire(): void {
     // Ctlr Media Watchers
@@ -30,7 +31,9 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
   }
 
   protected handleTheaterIntent(e: REvent<CtlrMedia, "intent.theater">): void {
-    if (e.resolved || (e.value && (this.ctlr.isUIActive("fullscreen") || this.ctlr.isUIActive("miniplayer") || this.ctlr.isUIActive("floatingPlayer")))) return;
+    if (e.resolved) return;
+    const snub = this.snublist.some(this.ctlr.isUIActive);
+    if (e.value && snub) return void (snub && e.stopImmediatePropagation());
     this.media.container.classList.toggle("tmg-media-theater", e.value);
     this.media.state.theater = e.value;
     e.resolve(this.name);

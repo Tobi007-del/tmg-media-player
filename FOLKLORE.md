@@ -1,4 +1,4 @@
-This is the **Folklore of the Three Brushes**. 🖌️
+# This is the **Folklore of the Three Brushes**. 🖌️
 
 The documentation for a system where "Truth" and "Desire" are separate frequencies. This is the explained **Three Modes of Interaction** using a Royal Court metaphor, followed by the technical translation.
 

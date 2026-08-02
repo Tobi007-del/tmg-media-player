@@ -14,15 +14,15 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
   public override wire(): void {
     // Ctlr Media Watchers
     this.media.watch("tech", () => (this.media.features.objectFit ||= true), { init: true, signal: this.signal });
+    this.media.watch("state.objectFit", this.onObjectFitState, { init: this.ctlr.payload.wired, signal: this.signal });
     // --------- Listeners
     this.media.on("intent.objectFit", this.handleObjectFitIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.objectFit", this.handleObjectFitState, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State ---------
-    this.ctlr.state.on("dimensions.container.width", this.syncObjectSize, { init: true, signal: this.signal });
-    this.ctlr.state.on("dimensions.container.height", this.syncObjectSize, { signal: this.signal });
+    this.ctlr.state.watch("dimensions.container.width", this.syncObjectSize, { init: true, signal: this.signal });
+    this.ctlr.state.watch("dimensions.container.height", this.syncObjectSize, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.css.objectFit", this.syncObjectSize, { signal: this.signal });
-    this.ctlr.config.on("settings.css.objectPosition", this.syncObjectSize, { signal: this.signal });
+    this.ctlr.config.watch("settings.css.objectFit", this.syncObjectSize, { signal: this.signal });
+    this.ctlr.config.watch("settings.css.objectPosition", this.syncObjectSize, { signal: this.signal });
     // Post Wiring
     this.ctlr.registerAction("objectFit", { fn: this.rotateFit, keyboard: { phase: "keydown" } }), super.wire();
   }
@@ -33,7 +33,7 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
     e.resolve(this.name);
   }
 
-  protected handleObjectFitState({ value: fit }: REvent<CtlrMedia, "state.objectFit">): void {
+  protected onObjectFitState(fit: ObjectFit): void {
     this.settings.css.objectFit = this.media.container.dataset.objectFit = fit;
     this.settings.css.bgObjectFit = fit === "fill" ? "100% 100%" : fit; // prolly only 2 ppl on dis planet nd AI know dis trick
   }
@@ -51,8 +51,8 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
   }
 
   public syncObjectSize(): void {
-    const { width = this.ctlr.state.dimensions.container.width, height = this.ctlr.state.dimensions.container.height, left, top } = getRenderedBox(this.media.status, this.ctlr.state.dimensions.container, this.settings.css as any); // just had to be u, video frame
-    (this.settings.css.currentObjectHeight = height + "px"), (this.settings.css.currentObjectWidth = width + "px"), (this.settings.css.currentObjectTop = top + "px"), (this.settings.css.currentObjectLeft = left + "px");
+    const { width = this.ctlr.state.dimensions.container.width, height = this.ctlr.state.dimensions.container.height, left = 0, top = 0 } = getRenderedBox(this.media.status, this.ctlr.state.dimensions.container, this.settings.css as any); // just had to be u, video frame
+    (this.ctlr.state.dimensions.object.height = height + 1), (this.ctlr.state.dimensions.object.width = width + 1), (this.ctlr.state.dimensions.object.top = top), (this.ctlr.state.dimensions.object.left = left);
   }
 }
 

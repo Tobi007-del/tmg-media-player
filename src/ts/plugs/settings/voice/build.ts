@@ -1,7 +1,8 @@
+import { DeepPartial } from "sia-reactor";
 import { VoiceConfig } from "./types";
 import { TOAST_UI_POSITIONS } from "@t007/toast";
 
-export const VOICE_BUILD: VoiceConfig = {
+export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {
     value: "passive",
     options: [
@@ -10,6 +11,7 @@ export const VOICE_BUILD: VoiceConfig = {
       { value: "passive", display: "Passive" },
     ],
   },
+  muted: false,
   wakeWord: "player",
   behavior: {
     value: "persistent",
@@ -31,16 +33,17 @@ export const VOICE_BUILD: VoiceConfig = {
       ],
     },
     accuracy: 0.75,
+    autoToggles: false,
+    commandsDisabled: false,
   },
-  autoToggles: false,
-  commandsDisabled: false,
   commands: {
-    voiceQuit: ["byebye", "exit", "quit"],
+    voiceQuit: ["bye bye", "exit", "quit"],
+    voiceMute: ["snub"],
     voiceSleep: ["sleep"],
     voiceSubmit: ["submit", "enter", "confirm"],
     voiceHistoryFirst: ["start", "first", "root"],
-    voiceHistoryPrev: ["goback", "back", "previous"],
-    voiceHistoryNext: ["gofront", "front", "goforward", "forward", "next"],
+    voiceHistoryPrevious: ["go back", "back", "previous"],
+    voiceHistoryNext: ["go front", "front", "go forward", "forward", "next"],
     voiceHistoryLast: ["end", "last", "leaf"],
     voiceHistoryClear: ["reset", "clear"],
     voiceToggleOn: ["on", "yes", "true", "enable", "start"],

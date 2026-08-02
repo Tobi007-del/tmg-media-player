@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type TheaterConfig = undefined;
 
@@ -22,6 +22,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
     this.media.on("state.theater", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.theater", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.theater", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -30,7 +31,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.theater ? "Default view" : "Cinema mode";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.theater);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.theater), (this.state.voiceCommand = this.settings.voice.commands.theater));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -27,14 +27,17 @@ export async function getDominantColor(src: string | HTMLImageElement | HTMLCanv
 export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement | { canvas: HTMLCanvasElement; width: number; height: number }, format: "rgb" | "hex" = "hex", raw = false): Promise<string | RGB | null> {
   if (isStr(src))
     src = await new Promise<HTMLImageElement>((res, rej) => {
-      const i = createEl("img", { src: String(src), crossOrigin: "anonymous", onload: () => res(i), onerror: () => rej(new Error(`Image load error: ${src}`)) });
+      const i = createEl("img", { crossOrigin: "anonymous", src: String(src), onload: () => res(i), onerror: () => rej(new Error(`Image load error: ${src}`)) });
     });
   if ((src as { canvas?: HTMLCanvasElement })?.canvas) src = (src as { canvas: HTMLCanvasElement }).canvas;
   const s = Math.min(64, (src as HTMLImageElement | HTMLCanvasElement).width, (src as HTMLImageElement | HTMLCanvasElement).height),
     c = createEl("canvas", { width: s, height: s }),
     x = c.getContext("2d", { willReadFrequently: true, alpha: false });
-  const d = src?.width && src?.height ? (x?.drawImage(src as CanvasImageSource, 0, 0, s, s), x?.getImageData(0, 0, s, s).data as Uint8ClampedArray) : null, // had to fool ts, coallesced to 0 below
-    ct: Record<string, number> = {},
+  let d: Uint8ClampedArray | null | undefined = null;
+  try {
+    d = src?.width && src?.height ? (x?.drawImage(src as CanvasImageSource, 0, 0, s, s), x?.getImageData(0, 0, s, s).data as Uint8ClampedArray) : null;
+  } catch (e) {}
+  const ct: Record<string, number> = {},
     pt: Record<string, RGB> = {} as Record<string, RGB>;
   for (let i = 0; i < (d?.length ?? 0); i += 4) {
     if (d![i + 3] < 128) continue;

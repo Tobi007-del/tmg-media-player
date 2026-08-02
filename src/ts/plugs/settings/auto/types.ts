@@ -5,8 +5,8 @@ import { UISettings } from "@defs/UIOptions";
 export type AptAutoplayOption = (typeof APT_AUTOPLAY_OPTIONS)[number];
 
 export interface AutoConfig {
-  play: UISettings<boolean | AptAutoplayOption>;
-  pause: UISettings<boolean | AptAutoplayOption>;
+  play: UISettings<boolean | AptAutoplayOption[], boolean | AptAutoplayOption>;
+  pause: UISettings<boolean | AptAutoplayOption[], boolean | AptAutoplayOption>;
   next: {
     value: number; // -1 for false
     preview: PosterPreview;

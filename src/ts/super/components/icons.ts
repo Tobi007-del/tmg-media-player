@@ -2,7 +2,7 @@ export * from "@core/registries";
 export * from "@components/icons/play";
 export * from "@components/icons/pause";
 export * from "@components/icons/replay";
-export * from "@components/icons/prev";
+export * from "@components/icons/previous";
 export * from "@components/icons/next";
 export * from "@components/icons/settings";
 export * from "@components/icons/lock";

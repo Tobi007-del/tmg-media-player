@@ -11,6 +11,7 @@ import { setTimeout, requestAnimationFrame } from "@utils/fn";
 import { safeNum } from "@utils/num";
 import { isBool } from "@t007/utils";
 import { silence } from "sia-reactor/modules";
+import { HTML5Tech } from "@techs/html5";
 
 export class Timeline extends RangeInput<TimelineConfig> {
   public static readonly componentName = "timeline"; // enforced name
@@ -71,12 +72,13 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelscrubnotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
     // Config --------
     this.config.on("previewValue", this.syncPreviewText, { init: true, signal: this.signal });
-    this.config.on("previews", this.handlePreviews, { init: true, signal: this.signal });
+    this.config.on("previews", this.syncPreviews, { init: true, signal: this.signal });
     this.config.on("autopause", ({ value }) => [this.thumbnailCanvas, this.thumbnailImg].forEach((el) => el.classList.toggle("tmg-media-control-hidden", !value)), { init: true, signal: this.signal });
     this.config.on("compact", ({ value }) => this.el.classList.toggle("tmg-media-control-compact", value), { init: true, signal: this.signal });
     this.config.on("bufferMarks", () => this.syncMarks(this.config.marks, true), { init: true, signal: this.signal });
     this.config.on("playedMarks", () => this.syncMarks(this.config.marks, true), { init: true, signal: this.signal });
     // Ctlr Media Listeners
+    this.media.on("type", this.syncPreviews, { signal: this.signal });
     this.media.on("state.paused", ({ value }) => (!value ? this.ctlr.RAFLoop(`${this.config.label}Updating`, this.syncValue, this.signal) : this.ctlr.cancelRAFLoop(`${this.config.label}Updating`)), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("state.currentTime", this.handleCurrentTime, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("intent.currentTime", this.handleCurrentTime, { signal: this.signal }); // #APPRENTICE: folklore embodiment
@@ -87,11 +89,12 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.media.on("status.isLive", ({ value }) => (this.config.readonly = value && !this.media.status.canSeekLive), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.canSeekLive", ({ value }) => (this.config.readonly = !value && !!this.media.status.isLive), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("settings.metadata.chapterInfo", this.handleMetadataChapterInfoSetting, { init: this.ctlr.payload.wired, signal: this.signal });
+    // ---- State --------
+    this.ctlr.state.on("dimensions.object.width", ({ value }) => (this.thumbnailCanvas.width = value), { init: true, signal: this.signal });
+    this.ctlr.state.on("dimensions.object.height", ({ value }) => (this.thumbnailCanvas.height = value), { init: true, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncPreviewText, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.mode", this.syncPreviewText, { signal: this.signal });
-    this.ctlr.config.on("settings.css.currentObjectWidth", ({ value }) => (this.thumbnailCanvas.width = parseInt(value as string)), { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.css.currentObjectHeight", ({ value }) => (this.thumbnailCanvas.height = parseInt(value as string)), { init: true, signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
     return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(this.getTime(value / 100))), true) : false;
@@ -101,7 +104,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     if (this.state.scrubbing || (rejectable && !resolved)) return; // shouldn't mind `.scrubbing`; it's binded to `intent.currentTime` but base class `.value` just renders faster
     if (this.media.state.paused) this.syncValue(false, target.value);
     this.el.ariaValueText = `${formatMediaTime({ time: target.value, format: "human-long" })} of ${formatMediaTime({ time: this.media.status.duration, format: "human-long" })}`;
-  } // !a full embodiment for near native range perf but close enough
+  } // !(a full embodiment) for near native range perf but close enough
 
   protected handleBufferedStatus({ value }: REvent<CtlrMedia, "status.buffered">): void {
     this.config.bufferMarks && this.syncMarks(this.config.marks, true);
@@ -128,18 +131,8 @@ export class Timeline extends RangeInput<TimelineConfig> {
       this.clearCanvasPreviews();
     }
   }
-  protected handlePreviews({ target }: REvent<TimelineConfig, "previews">): void {
-    const value = target.value === true ? {} : target.value;
-    this.media.container.classList.toggle("tmg-media-no-previews", !value || this.media.type !== "video");
-    if (!value || this.media.type !== "video") return void (this.media.container.dataset.previewType = "none");
-    const manual = value.address && (value.spf || (value.cols && value.rows)),
-      type = manual ? (value.cols && value.rows ? "sprite" : "image") : "canvas";
-    this.media.container.dataset.previewType = type;
-    if (type === "sprite" && value.address) this.settings.css.currentPreviewUrl = this.settings.css.currentThumbnailUrl = `url(${value.address})`;
-    else this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
-  }
 
-  protected handleMetadataChapterInfoSetting({ value }: REvent<CtlrMedia, "settings.metadata.chapterInfo">): void {
+  protected handleMetadataChapterInfoSetting({ currentTarget: { value } }: REvent<CtlrMedia, "settings.metadata.chapterInfo">): void {
     if (!value || value.length < 2) return void (this.config.divs = []);
     const divs: RangeInputDiv[] = [];
     for (let i = 0, len = value.length; i < len; i++) divs.push({ value: (value[i].startTime / getMediaMax(this.media)) * 100, label: value[i].title });
@@ -178,11 +171,20 @@ export class Timeline extends RangeInput<TimelineConfig> {
     );
   }
 
+  protected syncPreviews(): void {
+    const value = this.config.previews === true ? {} : this.config.previews,
+      manual = value && value.address && (value.spf || (value.cols && value.rows)),
+      type = manual ? (value.cols && value.rows ? "sprite" : "image") : value ? "canvas" : "none";
+    this.media.container.classList.toggle("tmg-media-no-previews", !value || ((this.media.type === "audio" || this.media.tech.constructor !== HTML5Tech) && type === "canvas"));
+    this.media.container.dataset.previewType = type;
+    if (type === "sprite" && value && value.address) this.settings.css.currentPreviewUrl = this.settings.css.currentThumbnailUrl = `url(${value.address})`;
+    else if (type !== "none") this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
+  }
   public syncPreviewText(): void {
     if (this.plug) this.previewContainer.dataset.previewText = `${this.plug.toTimeText(this.getTime(this.config.previewValue / 100), true)}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
   }
   public syncCanvasPreviews(): void {
-    if (!this.previewContext || !this.thumbnailContext || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 2) return;
+    if (!this.previewContext || !this.thumbnailContext || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 1) return;
     this.ctlr.throttle(
       "canvasPreviewSync",
       () => {
@@ -194,8 +196,8 @@ export class Timeline extends RangeInput<TimelineConfig> {
       33
     );
   }
-  public clearCanvasPreviews(bool = this.media.container.dataset.previewType === "canvas" && this.media.pseudoElement.readyState < 2): void {
-    bool && (this.ctlr.setCanvasFallback(this.previewCanvas, this.previewContext), this.ctlr.setCanvasFallback(this.thumbnailCanvas, this.thumbnailContext));
+  public clearCanvasPreviews(bool = this.media.container.dataset.previewType === "canvas" && this.media.pseudoElement.readyState < 1): void {
+    if (bool) this.ctlr.setCanvasFallback(this.previewCanvas, this.previewContext), this.ctlr.setCanvasFallback(this.thumbnailCanvas, this.thumbnailContext);
   }
 
   protected override syncDivs(divs = this.config.divs): void {

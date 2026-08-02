@@ -57,9 +57,9 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     if (e.resolved) return;
     const pipActive = this.ctlr.isUIActive("pictureInPicture");
     if (!this.ctlr.isNativeEl && this.config.floatingPlayer.disabled) return e.reject(this.name);
-    if (this.ctlr.plug("settings.modes")?.fullscreen?.inFullscreen) silence(() => (this.media.intent.fullscreen = false));
+    if (e.value && this.ctlr.plug("settings.modes")?.fullscreen?.inFullscreen) silence(() => (this.media.intent.fullscreen = false));
     if (!pipActive && this.media.features.floatingPlayer) {
-      e.value && !this.inFloatingPlayer ? this.initFloatingPlayer() : this.floatingWindow?.close();
+      e.value ? !this.inFloatingPlayer && this.initFloatingPlayer() : this.inFloatingPlayer && this.floatingWindow?.close();
       e.resolve(this.name);
     } // tech will handle PiP toggle if not using floating player
   }
@@ -114,9 +114,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
   } // #STANDALONE: needs scoped behavior
 
   protected handleFloatingPlayerResize(): void {
-    if (!this.config.floatingPlayer.preferInitialWindowPlacement) return;
-    this.config.floatingPlayer.width = this.floatingWindow?.innerWidth ?? this.config.floatingPlayer.width;
-    this.config.floatingPlayer.height = this.floatingWindow?.innerHeight ?? this.config.floatingPlayer.height;
+    if (!this.config.floatingPlayer.preferInitialWindowPlacement) (this.config.floatingPlayer.width = this.floatingWindow?.innerWidth ?? this.config.floatingPlayer.width), (this.config.floatingPlayer.height = this.floatingWindow?.innerHeight ?? this.config.floatingPlayer.height);
   }
 
   protected handleFloatingPlayerClose(): void {
@@ -131,9 +129,9 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
 
   public syncFeatures(): void {
     if (this.config.disabled) return void (this.media.features.pictureInPicture = this.media.features.floatingPlayer = false);
-    if (!this.config.floatingPlayer.disabled) this.media.features.floatingPlayer ||= (window as any).documentPictureInPicture && this.ctlr.isNativeEl;
+    if (!this.config.floatingPlayer.disabled) this.media.features.floatingPlayer ||= supportsPictureInPicture(false) && this.ctlr.isNativeEl;
     else this.media.features.floatingPlayer = false;
-    this.media.features.pictureInPicture ||= this.ctlr.isNativeEl && ((supportsPictureInPicture() && !this.media.state.disablePictureInPicture) || this.media.features.floatingPlayer);
+    this.media.features.pictureInPicture ||= this.media.features.floatingPlayer || (this.ctlr.isNativeEl && supportsPictureInPicture() && !this.media.state.disablePictureInPicture);
   }
 
   protected override onDestroy(): void {

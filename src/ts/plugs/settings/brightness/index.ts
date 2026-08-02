@@ -5,6 +5,7 @@ import type { Controller } from "@core/controller";
 import { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { clamp } from "@utils/num";
+import { KeyMod } from "../keys";
 
 export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessState> {
   public static readonly plugName = "brightness";
@@ -45,8 +46,7 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
     if (e.resolved) return;
     if (isNext) this.nextLevel = null;
     this.setValueState(e.value, isNext);
-    this.settings.css.brightness = e.value;
-    this.media.state.brightness = e.value;
+    this.media.state.brightness = this.settings.css.brightness = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
@@ -59,16 +59,17 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
-  protected handleKeyDark = (): void => {
+  protected handleKeyDark(): void {
     this.toggle("auto");
     this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessdark" : "brightnessup"), { signal: this.signal });
-  };
-  protected handleKeyBrightnessUp = (): void => {
-    this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", "", this.config.skip) ?? this.config.skip);
-  };
-  protected handleKeyBrightnessDown = (): void => {
-    this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", "", this.config.skip) ?? this.config.skip));
-  };
+  }
+  protected handleKeyBrightnessUp(_: KeyboardEvent, mod: KeyMod): void {
+    this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip);
+  }
+  protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
+    this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
+    if (this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessmuted") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessdark" : "brightnessdown"), { signal: this.signal });
+  }
 }
 
 export type * from "./types";

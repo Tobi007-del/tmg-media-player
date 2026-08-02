@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type PictureInPictureConfig = undefined;
 
@@ -22,6 +22,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
     this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.pictureInPicture", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.pictureInPicture", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -30,7 +31,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   public syncARIA(): void {
     this.state.label = this.media.state.pictureInPicture ? "Exit picture in picture" : "Picture in picture";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.pictureInPicture);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

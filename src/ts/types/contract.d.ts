@@ -28,8 +28,11 @@ export interface MediaState {
   // --- The Presentation Modes (Heavily Rejectable) ---
   pictureInPicture: boolean;
   fullscreen: boolean;
+  fullscreenOrientation: OrientationType | false;
+  autoFullscreenOrientation: boolean;
   theater: boolean;
   miniplayer: boolean;
+  ambience: boolean;
   locked: boolean;
   // --- Casting (Connection Handshakes) ---
   airplay: boolean; // Apple AirPlay
@@ -94,7 +97,7 @@ export interface MediaStatus {
   readyState: number;
   networkState: number;
   error: Inert<{ code?: number; message?: string; [key: string]: any }> | null;
-  bandwidth: number | null; // Estimated Mbps
+  bandwidth: number | null; // Estimated bps
   // --- Buffering & Time ---
   waiting: boolean; // Spinner Active?
   stalled: boolean; // Network died?
@@ -118,7 +121,7 @@ export interface MediaStatus {
   videoTracks: ArrayLike<any>; // | VideoTrackList
   levels: ArrayLike<any>;
   // --- Active Content ---
-  activeCue: Inert<CueLike> | null; // The current subtitle/caption line
+  activeCues: ArrayLike<CueLike> | null; // The current subtitle/caption lines
   // --- VR / XR Info ---
   xrCapabilities: Record<"hasPosition" | "hasOrientation" | "isEmulated", boolean> | null; // 6DoF- Room-scale, 3DoF- Head rotation, Emulated- Magic Window
   // --- Live Content ---
@@ -132,6 +135,7 @@ export interface MediaSettings {
   defaultPlaybackRate: number;
   // --- Stream Sources ---
   srcObject: SrcObject; // HTML courtesy
+  idleWaiting: boolean;
   // --- Metadata ---
   metadata: Metadata;
   protection: Record<string, { serverURL: string }> | null; // { "com.widevine.alpha": { serverURL: "https://..." } }
@@ -140,9 +144,7 @@ export interface MediaSettings {
   minDVRWindow: number; // seconds
 }
 
-export interface MediaExtraFeatures {
-  multipleCaptions?: boolean;
-} // for external but custom usecases
+export interface MediaExtraFeatures {} // for external but custom usecases
 export type MediaFeatures = {
   [K in Exclude<keyof MediaState, keyof MediaContract>]?: boolean;
 } & {

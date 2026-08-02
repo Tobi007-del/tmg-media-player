@@ -17,8 +17,8 @@ export class HLSTech extends HTML5Tech {
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && HLS_EXTENSIONS.test(src);
   }
-  protected strictTracks: boolean = true;
   protected hostSrc: string | null = null;
+  protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {
@@ -38,11 +38,11 @@ export class HLSTech extends HTML5Tech {
       this.destroyHls();
       const isAudio = this.config.type === "audio",
         HLS = ((window as any).Hls ?? (await loadResource(window.TMG_HLS_JS_SRC!, "script"), (window as any).Hls)) as typeof Hls;
-      if (this.signal.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!HLS?.isSupported()) return this.ctlr.notice("HLS is not supported in this browser", "error", null);
       this.hostSrc = src;
       this.host = new HLS({ autoStartLoad: true, startPosition: this.config[this.ctlr.techTruth].currentTime, enableWorker: isAudio, defaultAudioCodec: isAudio ? "mp4a.40.2" : undefined }); // tells hls.js to behave if it's an audio-only manifest
-      if (this.config.settings.metadata.allowOverride) this.config.settings.metadata.chapterInfo = [];
+      if (this.config.settings.metadata.allowMediaOverride) this.config.settings.metadata.chapterInfo = [];
       // Status & State (Bulk Wiring)
       this.host.on(HLS.Events.MEDIA_ATTACHED, () => this.host!.loadSource(src));
       this.host.on(HLS.Events.MANIFEST_PARSED, (_, data) => {
@@ -60,13 +60,13 @@ export class HLSTech extends HTML5Tech {
       this.host.on(HLS.Events.LEVEL_SWITCHED, (_, data) => (this.config.state.currentLevel = data.level));
       this.host.on(HLS.Events.LEVEL_LOADED, (_, data) => (this.config.status.isLive = data.details.live));
       this.host.on(HLS.Events.FRAG_PARSING_METADATA, (_, data) => {
-        if (!this.config.settings.metadata.allowOverride) return;
+        if (!this.config.settings.metadata.allowMediaOverride) return;
         const chapters = this.config.settings.metadata.chapterInfo;
         let updated = false;
         for (const s of data.samples) if ((s as any).type === "TIT2" || (s as any).info === "TIT2" || (s as any).key === "T1T2") if (!chapters.find((c) => c.startTime === s.pts)) chapters.push({ title: new TextDecoder("utf-8").decode(s.data).replace(/\0/g, "").trim(), startTime: s.pts }), (updated = true); // supports minor versions
         if (updated) this.config.settings.metadata.chapterInfo = chapters.sort((a: any, b: any) => a.startTime - b.startTime);
       });
-      this.host.on(HLS.Events.FRAG_LOADED, () => this.ctlr.throttle("hlsBandwidth", () => (this.config.status.bandwidth = Math.round((this.host!.bandwidthEstimate / 1_000_000) * 10) / 10), 2000)); // Converted to Mbps, 1 decimal
+      this.host.on(HLS.Events.FRAG_LOADED, () => this.ctlr.throttle("hlsBandwidthing", () => (this.config.status.bandwidth = Math.round(this.host!.bandwidthEstimate)), 2000));
       this.host.on(HLS.Events.ERROR, (_, data) => {
         if (!data.fatal) return;
         switch (data.type) {
@@ -86,6 +86,7 @@ export class HLSTech extends HTML5Tech {
   // ===========================================================================
   // WIRING OVERRIDES
   // ===========================================================================
+  protected override wireMediaTracks(): void {}
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
     if (type === "Video" || _type === "video") return super.wireCurrentTrack(type); // HLS.js doesn't support video tracks
     this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as MediaPlaylist[]).findIndex((t) => t.id === term || t.name === term || t.lang === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
@@ -137,6 +138,7 @@ export class HLSTech extends HTML5Tech {
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
+    if (!this.signal || this.signal?.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err.message ?? "Fatal HLS error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }

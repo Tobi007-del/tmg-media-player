@@ -35,6 +35,11 @@ export function getElSiblingAt(p: number, dir: "x" | "y", els: HTMLElement[] | N
   );
 }
 
+export function getClientWH(el?: HTMLElement | null) {
+  const { clientWidth, clientHeight } = el === document.body ? document.documentElement : el || document.documentElement;
+  return { clientWidth, clientHeight };
+}
+
 // Fullscreen & Picture-in-Picture
 export const queryFullscreen = (): boolean => Boolean(queryFullscreenEl());
 export const queryFullscreenEl = (d = document as any): Element | null => d.fullscreenElement || d.webkitFullscreenElement || d.mozFullScreenElement || d.msFullscreenElement || null;
@@ -42,8 +47,8 @@ export const queryFullscreenEl = (d = document as any): Element | null => d.full
 export const queryPictureInPicture = (): boolean => Boolean(queryPictureInPictureEl());
 export const queryPictureInPictureEl = () => document.pictureInPictureElement;
 
-export const supportsFullscreen = (vp = HTMLVideoElement.prototype as any, d = document as any) => Boolean(d.fullscreenEnabled || d.mozFullscreenEnabled || d.msFullscreenEnabled || d.webkitFullscreenEnabled || d.webkitSupportsFullscreen || vp.webkitEnterFullscreen);
-export const supportsPictureInPicture = (vp = HTMLVideoElement.prototype as any, d = document as any, w = window as any) => Boolean(d.pictureInPictureEnabled || vp.requestPictureInPicture || w.documentPictureInPicture);
+export const supportsFullscreen = (video = true, vp = HTMLVideoElement.prototype as any, d = document as any) => Boolean(d.fullscreenEnabled || d.mozFullscreenEnabled || d.msFullscreenEnabled || d.webkitFullscreenEnabled || d.webkitSupportsFullscreen || (video && vp.webkitEnterFullscreen));
+export const supportsPictureInPicture = (video = true, vp = HTMLVideoElement.prototype as any, d = document as any, w = window as any) => Boolean(video ? d.pictureInPictureEnabled || vp.requestPictureInPicture : w.documentPictureInPicture);
 
 export const enterFullscreen = (el: any): Promise<void> => (el.webkitEnterFullscreen ? el.webkitEnterFullscreen() : el.requestFullscreen ? el.requestFullscreen() : el.mozRequestFullScreen ? el.mozRequestFullScreen() : el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : el.msRequestFullscreen ? el.msRequestFullscreen() : Promise.reject(new Error("Fullscreen API is not supported")));
 export const exitFullscreen = (el: any, d = document as any): Promise<void> => (queryFullscreenEl(d) === el ? (el.webkitExitFullscreen ? el.webkitExitFullscreen() : d.exitFullscreen ? d.exitFullscreen() : d.mozCancelFullScreen ? d.mozCancelFullScreen() : d.webkitExitFullscreen ? d.webkitExitFullscreen() : d.msExitFullscreen ? d.msExitFullscreen() : Promise.reject(new Error("Fullscreen API is not supported"))) : Promise.resolve());

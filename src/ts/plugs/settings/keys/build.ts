@@ -11,7 +11,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   strictMatches: false,
   overrides: ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
   shortcuts: {
-    prev: "Shift+p",
+    previous: "Shift+p",
     next: "Shift+n",
     playPause: "k",
     mute: "m",
@@ -46,7 +46,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     captionsTextAlignment: "x",
     settings: "?",
     cast: "Shift+r",
-    airplay: "Shift+r"
+    airplay: "Shift+r",
   },
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,

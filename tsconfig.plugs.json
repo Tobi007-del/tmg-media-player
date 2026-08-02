@@ -1,1 +1,0 @@
-{ "extends": "./tsconfig.json", "include": ["src/ts/plugs/**/*.ts", "src/ts/types/**/*.d.ts", "src/ts/core/**/*.ts", "src/ts/components/**/*.ts"] }

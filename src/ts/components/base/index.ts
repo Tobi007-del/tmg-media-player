@@ -17,7 +17,7 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   }
 
   constructor(ctlr: Controller, config: Config, state?: State) {
-    super(ctlr, config, { label: "", cmd: "", active: false, disabled: false, hidden: false, ...state } as State);
+    super(ctlr, config, { label: "", cmd: "", active: false, disabled: false, hidden: false, keyShortcut: "", voiceCommand: "", ...state } as State);
   }
   protected override onSetup(): void {
     this.mount?.();
@@ -59,11 +59,14 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
     return true;
   } // override to make gating smarter
 
+  public setBadge(val: string): void {
+    val ? (this.el.dataset.badge = val) : delete this.el.dataset.badge;
+  }
   protected setBtnARIA(dblAction?: string, target: HTMLElement = this.el): void {
     this.state.label && target.setAttribute("aria-label", this.state.label);
-    this.state.cmd && target.setAttribute("aria-keyshortcuts", parseForARIAKS(this.state.cmd));
+    this.state.keyShortcut && target.setAttribute("aria-keyShortcuts", parseForARIAKS(this.state.keyShortcut, false));
     if (dblAction) target.setAttribute("aria-description", `Double-press to ${dblAction}`);
-    else if (target.hasAttribute("aria-description")) target.removeAttribute("aria-description");
+    else target.hasAttribute("aria-description") && target.removeAttribute("aria-description");
   }
 }
 

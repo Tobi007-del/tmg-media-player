@@ -33,7 +33,7 @@ export interface Metadata extends MediaMetadata {
     artwork?: Array<Artwork>;
   }>;
   links: Partial<Record<"title" | "artist" | "profile", string>>;
-  allowOverride: boolean; // Lets YouTube/Vimeo/Parsers inject data
+  allowMediaOverride: boolean; // Lets YouTube/Vimeo/Parsers inject data
 }
 
 export interface Artwork {

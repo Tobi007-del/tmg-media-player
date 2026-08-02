@@ -6,10 +6,10 @@
   display: flex;
   flex-direction: column;
 }
-:is(#o#o#o#o#o, .tmg-media-bottom-controls-wrapper, .tmg-media-bottom-controls-wrapper > :last-child, .tmg-media-bottom-controls-wrapper > :last-child > :first-child) {
+:is(#o#o#o#o#o, .tmg-media-bottom-controls-wrapper, .tmg-media-bottom-controls-wrapper :is(> :last-child:not(:has(.tmg-media-profile)), > :last-child:not(:has(.tmg-media-profile)) > :first-child)) {
   border-bottom-left-radius: inherit;
 }
-:is(#o#o#o#o#o, .tmg-media-bottom-controls-wrapper, .tmg-media-bottom-controls-wrapper > :last-child, .tmg-media-bottom-controls-wrapper > :last-child > :last-child) {
+:is(#o#o#o#o#o, .tmg-media-bottom-controls-wrapper, .tmg-media-bottom-controls-wrapper :is(> :last-child:not(:has(.tmg-media-profile)), > :last-child:not(:has(.tmg-media-profile)) > :last-child)) {
   border-bottom-right-radius: inherit;
 }
 .tmg-media-apt-controls-wrapper {

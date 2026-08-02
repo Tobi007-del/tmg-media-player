@@ -1,16 +1,18 @@
 import { BasePlug } from "../../base";
 import { TIME_TRAVEL_BUILD } from "./build";
 import type { TimeTravelConfig } from "./types";
-import { fanout } from "sia-reactor/utils";
+import { createReactorSync, fanout } from "sia-reactor/utils";
 import { createTxPathMerger, TimeTravelModule } from "sia-reactor/modules";
 import { TimeTravelConsole } from "sia-reactor/adapters/vanilla";
 import { getCtlrIdx } from "@tools/player";
+import { CtlrConfig } from "@defs/config";
+import { REvent } from "sia-reactor";
 
 export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   public static readonly plugName = "timeTravel";
   public static readonly BUILD = TIME_TRAVEL_BUILD;
   public module!: TimeTravelModule<any>;
-  public overlay!: TimeTravelConsole;
+  public console?: TimeTravelConsole | undefined;
 
   public override mount(): void {
     // Variables Assignment
@@ -22,31 +24,31 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   public override wire(): void {
-    // Variables Assignment
-    this.overlay = new TimeTravelConsole(this.module, { title: `TMG Controller ${getCtlrIdx(this.ctlr) + 1} Tape`, ...(this.config.overlay as Partial<TimeTravelConfig["overlay"]>) });
-    // Ctlr Config Watchers
-    this.ctlr.config.watch("settings.css.brandColor", (v) => (this.overlay.config.color = v as string), { init: true, signal: this.signal });
+    // ---- Media Listeners
+    this.media.on("state.fullscreen", ({ value }) => this.console && !this.ctlr._build.settings.timeTravel.console.container && (this.console.config.container = value ? this.media.container : undefined), { signal: this.signal }); // if dev didn't hardcode
     // ----------- Listeners
-    this.ctlr.config.on(
-      "settings.timeTravel.persist",
-      (e) => {
-        const pmdle = this.ctlr.plug("settings.persist")?.module;
-        if (!pmdle) return;
-        Array.isArray(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : !pmdle.config.whitelist && (pmdle.config.whitelist = {} as any);
-        (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
-      },
-      { signal: this.signal, init: true }
-    );
-    this.ctlr.config.on("settings.timeTravel.module", (e) => fanout(this.module.config, e.currentTarget.value), { signal: this.signal, init: false }); // #STABLE: snubs unchanged writes
-    this.ctlr.config.on("settings.timeTravel.overlay", (e) => fanout(this.overlay.config, e.currentTarget.value), { signal: this.signal, init: false }); // #STABLE: snubs unchanged writes
+    createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
+    this.ctlr.config.on("settings.timeTravel.console.disabled", this.handleConsoleDisabled, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.timeTravel.persist", this.handlePersist, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.timeTravel.console", (e) => this.console && fanout(this.console.config, e.currentTarget.value), { signal: this.signal }); // #FLEX: needs no standard stress
+    this.ctlr.config.on("settings.css.brandColor", ({ value }) => this.console && (this.console.config.color = value as string), { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("timeTravelUndo", { fn: this.module.undo, zen: true });
-    this.ctlr.registerAction("timeTravelRedo", { fn: this.module.redo, zen: true });
+    this.ctlr.registerAction("timeTravelUndo", { fn: () => this.module.undo() }), this.ctlr.registerAction("timeTravelRedo", { fn: () => this.module.redo() });
     super.wire();
   }
 
+  protected handleConsoleDisabled(e: REvent<CtlrConfig, "settings.timeTravel.console.disabled">): void {
+    if (e.value) this.console?.destroy(), (this.console = undefined);
+    else this.console ||= new TimeTravelConsole(this.module, { title: `TMG Controller ${getCtlrIdx(this.ctlr) + 1} Tape`, color: this.ctlr.config.settings.css.brandColor as string, container: this.media.state.fullscreen ? this.media.container : undefined, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
+  }
+
+  protected handlePersist(e: REvent<CtlrConfig, "settings.timeTravel.persist">, pmdle = this.ctlr.plug("settings.persist")?.module): void {
+    if (pmdle?.config) Array.isArray(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : !pmdle.config.whitelist && (pmdle.config.whitelist = {} as any);
+    if (pmdle?.config) (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
+  }
+
   protected override onDestroy(): void {
-    this.overlay.destroy(), this.module.destroy(), super.onDestroy();
+    this.console?.destroy(), this.module.destroy(), super.onDestroy();
   }
 }
 

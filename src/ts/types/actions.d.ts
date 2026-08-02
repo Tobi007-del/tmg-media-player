@@ -1,20 +1,19 @@
 import type { ToastOptions } from "@t007/toast";
+import type { ACTIONS_BUILD } from "@consts/actions";
 
-export type KeyPhase = "keydown" | "keyup";
-export type VoiceStage = "always" | "pre-process" | "post-process";
-export type ActionOp = "set" | "increment" | "decrement" | "toggle";
-
+export type ActionLogicOp = "set" | "increment" | "decrement" | "toggle";
 export interface ActionLogic {
   path: string; // any path reachable from { media, settings }, e.g. "media.intent.volume", "settings.time.format.value"
   value?: any; // required for "set"; optional for "increment"/"decrement"; unused for "toggle"
-  op?: ActionOp; // defaults to "set"
+  op?: ActionLogicOp; // defaults to "set"
 }
 
-export interface ActionOptions {} // plugs extend via declaration merging
+export interface ActionLogicOptions {} // plugs extend via declaration merging
 
-export interface Action extends ActionOptions {
-  id: string;
+export interface Action extends ActionLogicOptions {
+  id: keyof typeof ACTIONS_BUILD;
   label?: string;
+  gates?: (keyof import("@defs/contract").MediaFeatures)[]; // gates notifications/toasts: aborts them if any listed feature is false
   logic?: ActionLogic[]; // serializable ops, wide scope on { media, settings }
   fn?: (...args: any[]) => void; // transient; undefined when serialized, re-filled by plug on boot
   notify?: string; // notifier key to fire after execution

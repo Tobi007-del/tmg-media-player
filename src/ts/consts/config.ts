@@ -1,13 +1,14 @@
 import type { CtlrConfig } from "@defs/config";
-import type { DeepPartial } from "sia-reactor";
+import { CTX, type DeepPartial } from "sia-reactor";
 import { ACTIONS_BUILD } from "./actions";
 
 export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
-  mediaType: "video",
   mediaPlayer: "TMG",
   media: { intent: { playsInline: true, textVisible: true, brightness: 100 } },
-  actions: Object.fromEntries(Object.entries(ACTIONS_BUILD).map(([k, v]) => [k, { id: k, ...v }])) as any,
-  logicPathBlacklist: ["media.state", "media.status", "media.tech", "media.features", "media.type", "media.element", "media.pseudoElement", "media.container", "media.pseudoContainer"],
+  actions: {
+    entries: Object.fromEntries(Object.entries(ACTIONS_BUILD).map(([k, v]) => [k, { id: k, ...v }])) as any,
+    logicBlacklist: ["media.state", "media.status", "media.tech", "media.features", "media.type", "media.element", "media.pseudoElement", "media.container", "media.pseudoContainer"],
+  },
   settings: {
     // techOrder: [
     //   "youtube", // 1. Black-box (Regex must catch these URLs instantly)
@@ -19,6 +20,6 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
     // ],
   },
   debug: true,
-  devMode: true,
-  noPlugList: ["settings.persist"], // dev: "settings.persist"
+  devMode: CTX.isDevEnv,
+  noPlugList: [], // dev: "settings.persist"
 };

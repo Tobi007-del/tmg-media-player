@@ -1,8 +1,6 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { clamp } from "@utils/num";
-import { formatKeyForDisplay } from "@utils/keys";
 
 export type Backward10Config = undefined;
 
@@ -15,17 +13,18 @@ export class Backward10Button extends BaseComponent<Backward10Config, ComponentS
   }
 
   public override wire(): void {
+    // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.backward10", this.syncARIA, { init: true, signal: this.signal });
+    // Post Wiring
+    this.syncARIA();
   }
 
   protected handleClick(): void {
-    this.media.intent.currentTime = clamp(0, this.media.state.currentTime - 10, this.media.status.duration);
+    this.media.intent.currentTime -= 10;
   }
 
   public syncARIA(): void {
-    this.state.label = "Backward 10s";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.backward10);
+    this.state.label = "Backward 10 seconds";
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

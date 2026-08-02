@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type AirPlayPlaceholderConfig = undefined;
 
@@ -33,7 +33,7 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.airplay ? "Stop airplaying" : "AirPlay to Display";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.airplay);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.airplay));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

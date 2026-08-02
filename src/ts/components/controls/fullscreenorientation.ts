@@ -29,16 +29,16 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
   }
 
   protected handleClick(): void {
-    this.pin?.changeScreenOrientation();
+    this.media.intent.fullscreenOrientation = (this.media.state.fullscreenOrientation || this.ctlr.state.screenOrientation.type).startsWith("portrait") ? "landscape-primary" : "portrait-primary";
   }
 
   public syncARIA(): void {
-    this.el.title = this.state.label = "Change orientation";
+    this.el.title = this.state.label = "Change fullscreen orientation";
     this.setBtnARIA();
   }
 
   protected override get canShow(): boolean {
-    return this.media.state.fullscreen && !!this.media.features.fullscreen && !!this.media.features.fullscreenOrientation;
+    return !!this.media.features.fullscreen && !!this.media.features.fullscreenOrientation; // this.media.state.fullscreen &&
   }
 }
 

@@ -1,5 +1,5 @@
 import { BaseTech } from "./base";
-import { type REvent, type Paths, inert } from "sia-reactor";
+import { type REvent, inert } from "sia-reactor";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaIntent, MediaFeatures } from "@defs/contract";
 import type { Source, Track } from "@defs/generics";
@@ -20,7 +20,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   public static override canPlaySource(src: string): boolean {
     return VIDEO_EXTENSIONS.test(src) || AUDIO_EXTENSIONS.test(src) || !!(!MSE_ENABLED && DUMMY_VID.canPlayType("application/vnd.apple.mpegurl") && HLS_EXTENSIONS.test(src)); // Safari has native HLS support, but only if MSE is not available (iOS)
   }
-  protected strictTracks: boolean = false;
+  protected readonly isAlien: boolean = false;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     const isAudio = ctlr.media.type === "audio", canTxtTrack = canTextTracks(ctlr.media.type), canVidTrack = !isAudio && canVideoTracks(ctlr.media.type), canAudTrack = canAudioTracks(ctlr.media.type);
@@ -36,7 +36,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       // Lists
       textTracks: canTxtTrack, videoTracks: !isAudio && canVidTrack, audioTracks: canAudTrack,
       // Currents
-      currentChapter: canTxtTrack, currentTextTrack: canTxtTrack, currentVideoTrack: canVidTrack, currentAudioTrack: canAudTrack, textVisible: canTxtTrack, activeCue: canTxtTrack,
+      currentChapter: canTxtTrack, currentTextTrack: canTxtTrack, currentVideoTrack: canVidTrack, currentAudioTrack: canAudTrack, textVisible: canTxtTrack, activeCues: canTxtTrack,
       // Infos
       readyState: true, networkState: true, error: true, waiting: true, stalled: true,
       seeking: true, buffered: true, played: true, seekable: true, videoWidth: !isAudio, videoHeight: !isAudio, 
@@ -67,10 +67,11 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected override wirePaused(): void {
     this.el.addEventListener("play", this.setPlayState, this.evtOpts.EL);
     this.el.addEventListener("pause", this.setPauseState, this.evtOpts.EL);
+    this.config.get("state.paused", () => this.el.paused, { signal: this.signal }); // #VIRTUAL: reliable return value
     this.config.on("intent.paused", this.handlePausedIntent, this.evtOpts.CONFIG);
   }
   protected override wireEnded(): void {
-    this.el.addEventListener("ended", this.setEndedState, this.evtOpts.EL);
+    this.el.addEventListener("ended", this.setPlayState, this.evtOpts.EL);
   }
   // --- Features Wiring ---
   protected override wireFeatures(): void {
@@ -78,15 +79,15 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.wireHTMLState(); // Attributes Reverse-Sync (Mutation Observer)
     // Status (Bulk wiring)
     const loadEvents = ["loadstart", "progress", "suspend", "abort", "emptied", "stalled"];
-    for (const e of loadEvents) this.el.addEventListener(e, this.handleLoadStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("error", this.handleErrorStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("waiting", this.handleWaitingStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("playing", this.handlePlayingStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("stalled", this.handleStalledStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("loadedmetadata", this.handleLoadedMetadataStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("loadeddata", this.handleLoadedDataStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("canplay", this.handleCanPlayStatus, this.evtOpts.CONFIG);
-    this.el.addEventListener("canplaythrough", this.handleCanPlayThroughStatus, this.evtOpts.CONFIG);
+    for (const e of loadEvents) this.el.addEventListener(e, this.handleLoadStatus, this.evtOpts.EL);
+    this.el.addEventListener("loadedmetadata", this.handleLoadedMetadataStatus, this.evtOpts.EL);
+    this.el.addEventListener("loadeddata", this.handleLoadedDataStatus, this.evtOpts.EL);
+    this.el.addEventListener("canplay", this.handleCanPlayStatus, this.evtOpts.EL);
+    this.el.addEventListener("canplaythrough", this.handleCanPlayThroughStatus, this.evtOpts.EL);
+    this.el.addEventListener("playing", this.handlePlayingStatus, this.evtOpts.EL);
+    this.el.addEventListener("waiting", this.handleWaitingStatus, this.evtOpts.EL);
+    this.el.addEventListener("stalled", this.handleStalledStatus, this.evtOpts.EL);
+    this.el.addEventListener("error", this.handleErrorStatus, this.evtOpts.EL);
   }
   // --- Engine Inputs Wiring ---
   protected wireVolume(): void {
@@ -108,15 +109,15 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.on("intent.pictureInPicture", this.handlePictureInPictureIntent, this.evtOpts.CONFIG);
   }
   protected wireFullscreen(): void {
-    this.el.addEventListener("webkitbeginfullscreen", this.setWebkitBeginFullscreenState, this.evtOpts.CONFIG);
-    this.el.addEventListener("webkitendfullscreen", this.setWebkitEndFullscreenState, this.evtOpts.CONFIG);
+    this.el.addEventListener("webkitbeginfullscreen", this.setWebkitBeginFullscreenState, this.evtOpts.EL);
+    this.el.addEventListener("webkitendfullscreen", this.setWebkitEndFullscreenState, this.evtOpts.EL);
     this.ctlr.state.watch("docInFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
     this.config.on("intent.fullscreen", this.handleFullscreenIntent, this.evtOpts.CONFIG);
   }
   // --- Track Switching Wiring ---
   protected wireCurrentTrack(type: TrackType): void {
     this.config.set(`intent.current${type}Track`, (term) => getTrackIdx(this.el, type, term, this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`]), { signal: this.signal }); // #VALIDATOR: intent type conformation
-    (this.el as any)[`${type.toLowerCase()}Tracks`]?.addEventListener("change", () => this.setCurrentTrackState(type), this.evtOpts.CONFIG);
+    (this.el as any)[`${type.toLowerCase()}Tracks`]?.addEventListener("change", () => this.setCurrentTrackState(type), this.evtOpts.EL);
     this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentTrackIntent(e, type), this.evtOpts.CONFIG);
   }
   protected wireCurrentTextTrack(): void {
@@ -137,7 +138,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   // --- Attribute Wiring ---
   protected bindAttribute<K extends keyof MediaIntent>(key: K, isBool = false): void {
-    this.config.on(`intent.${key}` as Paths<CtlrMedia>, (e) => this.handleAttributeIntent(e, key, isBool), this.evtOpts.CONFIG); // non-casted union reached peak ts complexity :)
+    this.config.on(`intent.${key}` as any, (e) => this.handleAttributeIntent(e, key, isBool), this.evtOpts.CONFIG); // non-casted union reached peak ts complexity :)
   }
   protected wirePoster(): void {
     this.bindAttribute("poster");
@@ -176,8 +177,8 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   // --- Status Tracks Wiring ---
   protected wireMediaTracks(type: TrackType, list = (this.el as any)[`${type.toLowerCase()}Tracks`]): void {
-    if (list) for (const e of ["addtrack", "removetrack"]) list.addEventListener(e, () => this.handleTracksStatus(type, list), this.evtOpts.CONFIG);
-    if (list) this.handleTracksStatus(type, list, true);
+    if (list) for (const e of ["addtrack", "removetrack"]) list.addEventListener(e, () => this.handleTracksStatus(type, list), this.evtOpts.EL);
+    list && this.handleTracksStatus(type, list, true);
   }
   protected wireTextTracks(): void {
     this.wireMediaTracks("Text");
@@ -190,12 +191,17 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   // --- Active Cue Wiring ---
   protected textTrack: TextTrack | null = null;
-  protected wireActiveCue(): void {
-    const onChange = (idx = -1, track = this.media.status.textTracks[idx]) => {
-      if (this.textTrack && this.textTrack !== track) this.textTrack.removeEventListener("cuechange", this.handleActiveCueChange, this.evtOpts.EL);
-      (this.textTrack = track)?.addEventListener("cuechange", this.handleActiveCueChange, this.evtOpts.EL), this.handleActiveCueChange({ target: track });
+  protected wireActiveCues(): void {
+    const onChange = () => {
+      const track = !this.isAlien ? this.media.status.textTracks[this.config.state.currentTextTrack] : this.alienTextTrack;
+      this.textTrack !== track && this.textTrack?.removeEventListener("cuechange", this.handleActiveCuesChange, this.evtOpts.EL);
+      (this.textTrack = track)?.addEventListener("cuechange", this.handleActiveCuesChange, this.evtOpts.EL), this.handleActiveCuesChange({ target: track });
     };
-    this.config.on("state.currentTextTrack", ({ value }) => onChange(!this.strictTracks ? value : getTrackIdx(this.el, "Text", this.config.status.textTracks[value]?.id, this.config.status.textTracks)), this.evtOpts.CONFIG);
+    this.config.on("state.currentTextTrack", onChange, this.evtOpts.CONFIG), this.config.on("status.textTracks", onChange, this.evtOpts.CONFIG);
+    if (this.isAlien) for (const evt of ["change"] as const) this.el.textTracks?.addEventListener(evt, onChange, this.evtOpts.EL); // , "addtrack", "removetrack"
+  }
+  protected get alienTextTrack(): TextTrack | null {
+    return Array.prototype.find.call(this.el.textTracks, (t) => t.mode === "showing") || null;
   }
   protected chapterTrack: TextTrack | null = null;
   protected wireChapterCue(track: TextTrack): void {
@@ -223,11 +229,13 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   // --- Core States ---
   protected setLoadStartInfo(): void {
     const { state: s, status: st } = this.config;
-    st.error = st.activeCue = null;
+    st.activeCues = null;
+    st.error = this.el.error;
     force(() => ((st.buffered = this.el.buffered), (st.seekable = this.el.seekable)));
     st.duration = this.el.duration;
-    s.paused = this.el.paused;
-    st.ended = st.stalled = st.loadedData = st.loadedMetadata = st.canPlay = st.canPlayThrough = false;
+    st.waiting = this.config.settings.idleWaiting || !s.paused;
+    st.ended = this.el.ended;
+    st.stalled = st.loadedData = st.loadedMetadata = st.canPlay = st.canPlayThrough = false;
   }
   protected setTimeUpdateState(): void {
     const { status: st, settings: set, state: s } = this.config;
@@ -253,22 +261,18 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (this.el.currentSrc !== this.durationSrc) (this.durationSeq = 0), (this.durationSrc = this.el.currentSrc);
     const prev = this.config.status.duration;
     if ((this.config.status.duration = this.el.duration) === Infinity) return void (this.config.status.isLive = true);
-    prev === Infinity ? (this.config.status.isLive = false) : prev > 0 && this.el.duration > prev && ++this.durationSeq > 3 && (this.config.status.isLive = true); // UX boost
+    prev !== Infinity && prev > 0 && this.el.duration > prev && ++this.durationSeq > 3 ? (this.config.status.isLive = true) : (this.config.status.isLive = this.config.state.live = false); // UX boost
   }
   protected setPlayState(): void {
-    this.config.status.ended = this.config.state.paused = false;
+    (this.config.state.paused = this.el.paused), (this.config.status.ended = this.el.ended);
   }
   protected setPauseState(): void {
-    this.config.state.paused = true;
-    force(() => (this.config.status.played = this.el.played));
-    this.config.status.waiting = false; // UX boost
-  }
-  protected setEndedState(): void {
-    this.config.status.ended = this.config.state.paused = true;
+    this.setPlayState(), force(() => (this.config.status.played = this.el.played));
+    if (!this.config.settings.idleWaiting) this.config.status.waiting = false; // UX boost
   }
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || (this.wired && isSameURL(this.el.currentSrc, e.value))) return;
+    if (e.resolved || (this.wired && isSameURL(this.el.src, e.value))) return;
     this.el.src = e.value;
     e.resolve(this.name);
   }
@@ -282,7 +286,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((e) => this.ctlr.log(e, "error", true)), false); // #EYE-SERVICE: hinged only on init
+    this.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => this.ctlr?.log(err, "error", true)), this.isAlien && !e.value); // #EYE-SERVICE: hinged only on init // #LESS: error not worth notifying
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -384,7 +388,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
     if (e.resolved) return;
     this.when("loadedMetadata", e, () => {
-      if (e.value && this.media.status.textTracks.length && this.media.state.currentTextTrack === -1) silence(() => (this.media.intent.currentTextTrack = Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default)?.id, this.media.status.textTracks))));
+      if (e.value && this.media.status.textTracks.length && this.media.state.currentTextTrack === -1) silence(() => (this.media.intent.currentTextTrack = !this.isAlien ? Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default)?.id, this.media.status.textTracks)) : 0));
       if (this.textTrack) this.textTrack.mode = e.value ? "showing" : "hidden";
       this.config.state.textVisible = e.value;
     });
@@ -430,28 +434,29 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleCanPlayStatus(): void {
     this.config.status.canPlay = true;
+    this.config.status.waiting = false; // UX boost
   }
   protected handleCanPlayThroughStatus(): void {
     this.config.status.canPlayThrough = true;
   }
+  protected handlePlayingStatus(): void {
+    this.config.status.stalled = this.config.status.waiting = false;
+    this.config.status.error = null; // UX boost
+  }
+  protected handleWaitingStatus(): void {
+    this.config.status.waiting = this.config.settings.idleWaiting || !this.media.state.paused;
+  }
   protected handleStalledStatus(): void {
     this.config.status.stalled = true;
   }
-  protected handleWaitingStatus(): void {
-    this.config.status.waiting = true;
-  }
-  protected handlePlayingStatus(): void {
-    this.config.status.error = null; // UX boost
-    this.config.status.waiting = this.config.status.stalled = false;
-  }
   protected handleErrorStatus(e: any, target = e?.target): void {
-    if (target && target !== this.el) return this.ctlr.log({ message: `Media ${target.nodeName || "Child"} element error occurred!`, event: e, target }, "error", true); // not an error but u gotta know
+    if (target && target !== this.el) return this.ctlr?.log({ message: `Media ${target.nodeName || "Child"} element error occurred!`, event: e, target }, "error", true); // not an error but u gotta know
     this.config.status.error = this.el.error ?? { message: (isStr(e) && e) || e?.message };
     this.config.status.waiting = false;
   }
   protected handleTracksStatus(type: TrackType, list: any, init = false): void {
     this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`] = Array.prototype.filter.call(list, (t) => (type === "Text" ? t.kind === "subtitles" || t.kind === "captions" : true)); // filter out non-cue text tracks
-    type === "Text" && (this.autoChapters = this.config.settings.metadata.allowOverride) && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
+    type === "Text" && (this.autoChapters = this.config.settings.metadata.allowMediaOverride) && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
     !init && silence(() => (this.config.intent[`current${type}Track`] = this.config.state[`current${type}Track`])); // #RE-TRIGGER: sync intent resolution
     !init && type === "Text" && silence(() => (this.config.intent.textVisible = this.config.state.textVisible)); // you too
   }
@@ -459,11 +464,11 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     const track = Array.prototype.find.call(list, (t) => t.kind === "chapters") || null;
     if (!track) return void ((this.config.settings.metadata.chapterInfo = []), (this.config.state.currentChapter = -1));
     if (track.mode === "disabled") track.mode = "hidden"; // ensure cue access
-    const extract = () => (this.config.settings.metadata.chapterInfo = track.cues?.length ? Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] })) : []);
-    track.cues.length ? extract() : track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true }), this.wireChapterCue(track);
+    const extract = () => (this.config.settings.metadata.chapterInfo = track.cues?.length ? inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] }))) : []);
+    extract(), !track.cues?.length && track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true }), this.wireChapterCue(track);
   }
-  protected handleActiveCueChange(e?: globalThis.Event | { target?: TextTrack }, strict = false, track = e?.target as TextTrack | null): void {
-    if (!strict || getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack) this.config.status.activeCue = track?.activeCues?.[0] || null; // incase of multiple tracks `cuechange`
+  protected handleActiveCuesChange(e?: globalThis.Event | { target?: TextTrack }, strict = false, track = e?.target as TextTrack | null): void {
+    if (!strict || (track && getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack)) force(() => (this.config.status.activeCues = track?.activeCues || null)); // incase of multiple tracks `cuechange`
   }
   protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0] || null): void {
     this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo?.findIndex((c) => c.startTime === cue.startTime) ?? -1 : -1;

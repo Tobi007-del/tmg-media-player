@@ -7,12 +7,14 @@ import { assignEl } from "@utils/dom";
 import { capitalize } from "@utils/str";
 import { IS_MOBILE } from "@utils/env";
 import { IconRegistry, MenuRegistry } from "@core/registries";
+import { setTimeout } from "sia-reactor/utils";
 
 export class SkeletonPlug extends BasePlug<SkeletonConfig> {
   public static readonly plugName = "skeleton";
   public static readonly BUILD = SKELETON_BUILD;
   public static readonly isCore: boolean = true;
   public static readonly isMain: boolean = true;
+  public rootElement = document.body;
 
   public override mount(): void {
     // Properties Assignment
@@ -40,9 +42,6 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     // ---- State --------
     this.ctlr.state.on("readyState", () => (this.media.container.dataset.readyTier = "x".repeat(this.ctlr.state.readyState)), { init: this.ctlr.payload.wired, signal: this.signal });
     // Post Wiring
-    const menu = this.ctlr.plug("settings.settingsView")?.menu;
-    menu?.register(MenuRegistry.get("main.skeleton")?.(this.ctlr));
-    menu?.register(MenuRegistry.get("settings.actions")?.(this.ctlr));
     super.wire();
   }
 
@@ -75,7 +74,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
 
   protected handlePaused({ value, rejectable, resolved }: REvent<CtlrMedia, "state.paused" | "intent.paused">): void {
     if (rejectable && !resolved) return;
-    if (!rejectable && !value && this.config.autoPauseAll) for (const media of document.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
+    if (!rejectable && !value && this.config.autoPauseOthers) for (const media of document.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
     this.media.container.classList.toggle("tmg-media-paused", value);
   }
 
@@ -90,7 +89,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.media.pseudoElement.className += " " + this.media.element.className.replace(/tmg-media|tmg-video|tmg-audio|tmg-host/g, "");
     this.media.pseudoContainer.className += " " + this.media.container.className.replace(/tmg-media-container|tmg-video-container|tmg-audio-container|tmg-host-container/g, "");
     this.media.container.parentElement?.insertBefore(this.media.pseudoContainer, this.media.container);
-    document.body.append(this.media.container);
+    this.rootElement.append(this.media.container);
   }
 
   public leavePseudoMode(destroy = false): void {
@@ -98,6 +97,10 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.media.pseudoElement.className = `tmg-pseudo-${this.media.type} tmg-pseudo-media tmg-host`;
     this.media.pseudoContainer.className = `tmg-pseudo-${this.media.type}-container tmg-pseudo-media-container tmg-host-container`;
     this.media.pseudoContainer.parentElement?.replaceChild(destroy ? this.media.element : this.media.container, this.media.pseudoContainer);
+  }
+
+  protected registerMenu(): void {
+    setTimeout(() => super.registerMenu(), 0, this.signal), this.ctlr.plug("settings.settingsView")?.menu.register(MenuRegistry.get("actions")?.(this.ctlr));
   }
 }
 
@@ -116,5 +119,11 @@ declare module "@defs/registries" {
     settingsContent?: HTMLDivElement | null;
     settingsTopPanel?: HTMLDivElement | null;
     settingsBottomPanel?: HTMLDivElement | null;
+  }
+}
+
+declare module "@defs/config" {
+  interface CtlrConfig {
+    skeleton: SkeletonConfig;
   }
 }

@@ -19,7 +19,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     // Ctlr Media Watchers
     this.media.watch("tech", () => (this.media.features.frameCapture ||= this.ctlr.isNativeEl && this.media.type === "video" && !this.config.disabled), { init: true, signal: this.signal });
     // ---- Config Listeners
-    this.ctlr.config.on("settings.frame.disabled", ({ value }) => (this.media.features.frameCapture = !value), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.frame.disabled", ({ value }) => value && (this.media.features.frameCapture = false), { init: true, signal: this.signal });
     // Post Wiring
     this.ctlr.registerAction("capture", { fn: () => this.capture(""), keyboard: { phase: "keyup" } });
     this.ctlr.registerAction("stepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } });
@@ -30,6 +30,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   public async extract(display: "" | "monochrome", time?: number, raw?: false, min?: number, video?: HTMLVideoElement): Promise<{ blob: Blob | null; url: string }>;
   public async extract(display: "" | "monochrome", time?: number, raw?: true, min?: number, video?: HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }>;
   public async extract(display: string = "", time = safeNum(this.media.state.currentTime), raw = false, min = 0, video = this.media.pseudoElement as HTMLVideoElement): Promise<any> {
+    if (!this.media.features.frameCapture) return raw ? { canvas: this.exportCanvas, context: this.exportContext } : { blob: null, url: "" };
     if (video !== this.media.element) {
       if (this.ctlr.state.frameReadyPromise) await this.ctlr.state.frameReadyPromise; // wait for it to get set by last getter 5 lines below
       if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
@@ -44,7 +45,10 @@ export class FramePlug extends BasePlug<FrameConfig> {
     this.exportContext.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
     this.exportContext.filter = "none";
     if (raw === true) return { canvas: this.exportCanvas, context: this.exportContext };
-    const blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));
+    let blob: Blob | null | false | 0 = null;
+    try {
+      blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));
+    } catch (e) {}
     return { blob: blob || null, url: blob ? URL.createObjectURL(blob) : "" };
   }
 
@@ -64,7 +68,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     };
     const Share = () => {
       toast?.loading(frameToastId, { render: `Sharing ${fTxt}`, actions: {} });
-      navigator.share?.({ title: this.media.settings.metadata.title ?? "Video", text: `Captured ${fTxt}`, files: [new File([frame.blob as Blob], filename, { type: (frame.blob as Blob).type })] }).then(
+      navigator.share?.({ title: this.media.settings.metadata.title ?? "Video", text: `Captured ${fTxt}`, files: [new File([frame.blob!], filename, { type: frame.blob!.type })] }).then(
         () => toast?.success(frameToastId, { render: `Shared ${fTxt}`, actions: {} }),
         () => toast?.error(frameToastId, { render: `Failed sharing ${fTxt}`, actions: { Save } })
       ) || toast?.warn(frameToastId, { delay: 1000, render: `Couldn't share ${fTxt}`, actions: { Save } });
@@ -73,13 +77,16 @@ export class FramePlug extends BasePlug<FrameConfig> {
   }
 
   public async findGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | null> {
-    const end = clamp(getMediaMin(this.media), t + s, getMediaMax(this.media));
+    const end = clamp(getMediaMin(this.media), t + s, getMediaMax(this.media)),
+      seq = ++this.findSeq;
     for (; t <= end; t += 0.333) {
+      if (seq !== this.findSeq) return null;
       const rgb = await getDominantColor((await this.extract("", t, true, 1)).canvas, "rgb", true);
       if (rgb && getRGBBri(rgb) > bri && getRGBSat(rgb) > sat) return t; // <= FIRST legit content frame
     }
     return null;
   }
+  private findSeq = 0;
 
   public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config = {}): Promise<string | null> {
     return getDominantColor(poster ? poster : (await this.extract("", time ? time : (await this.findGoodTime(config)) ?? undefined, true, 1)).canvas);

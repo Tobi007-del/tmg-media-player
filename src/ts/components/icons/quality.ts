@@ -1,4 +1,4 @@
-export const quality = `<svg viewBox="0 0 24 24" class="tmg-media-quality-icon" stroke-width="1" stroke="currentColor"><path d="M15 17h6v1h-6v-1zm-2 0H3v1h10v-1zm1-2h1v3h-1v-3zm3-4h4v1h-4v-1zm-5 0H3v1h9v-1zm1-2h1v3h-1V9zm-5-4h11v1H8V5zM3 5h3v1H3V5zm2-2h1v3H5V3z"/></svg>`;
+export const quality = `<svg viewBox="0 0 24 24" class="tmg-media-quality-icon" stroke-width="0.2" stroke="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>`;
 
 declare module "@defs/registries" {
   interface IconRegistryMap {

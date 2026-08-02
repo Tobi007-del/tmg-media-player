@@ -11,12 +11,12 @@ import { CtlrMedia } from "@defs/contract";
 import type { Controller } from "@core/controller";
 import { silence } from "sia-reactor/modules";
 import { getMediaMax, getMediaMin } from "@utils/media";
+import { KeyMod } from "../keys";
 
 export class TimePlug extends BasePlug<TimeConfig, TimeState> {
   public static readonly plugName = "time";
   public static readonly BUILD = TIME_BUILD;
-  public realStart = 0;
-  public pseudoStart = 0;
+  public actualStart = 0;
   public skipDuration = 0;
   public skipNotifier?: HTMLElement | null = null;
   private skipDurationId = -1;
@@ -29,13 +29,13 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
 
   public override wire(): void {
     // Variables Assignment
-    this.realStart = this.pseudoStart = this.config.start ?? 0;
+    this.actualStart = this.config.start ?? 0;
+    // State Listeners
+    this.state.on("whitelist", this.handleWhitelistState, { init: true, signal: this.signal });
     // Ctlr Media Setters
     this.media.set("intent.currentTime", (v) => clamp(this.config.min, v, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // ---- Config Watchers
-    this.ctlr.config.watch("settings.time.start", (v) => v !== this.pseudoStart && (this.realStart = +v!), { signal: this.signal });
-    // State Listeners
-    this.state.on("whitelist", this.handleWhitelistState, { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.time.start", (v) => !this.writing && (this.actualStart = +v!), { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("status.loadedData", this.handleLoadedDataStatus, { signal: this.signal });
     this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.payload.wired, signal: this.signal });
@@ -49,24 +49,25 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
   }
 
   protected handleWhitelistState({ value: paths = [] }: REvent<TimeState, "whitelist">): void {
-    for (const path of paths) this.ctlr.config.get(path, this.toTimeVal, { signal: this.signal });
+    for (const path of paths) this.ctlr.config.get(path, this.toTime, { signal: this.signal });
   }
 
   protected handleLoadedDataStatus({ value }: REvent<CtlrMedia, "status.loadedData">): void {
-    if (value && this.config.start != null && this.media.state.currentTime !== this.realStart) this.media.intent.currentTime = this.realStart;
+    if (value && this.config.start != null && this.media.state.currentTime !== this.actualStart) this.media.intent.currentTime = this.actualStart;
   }
 
   protected handleCurrentTimeState({ value: curr }: REvent<CtlrMedia, "state.currentTime">): void {
     curr = safeNum(curr);
     (curr < this.config.min || curr > this.config.max) && silence(() => ((this.media.intent.currentTime = this.config.loop ? this.config.min : curr), !this.config.loop && (this.media.intent.paused = true))); // "Time Clamp Guard" if transaction
-    if (this.media.status.readyState && curr && this.ctlr.payload.wired) this.config.start = this.pseudoStart = curr > 3 && curr < (this.config.end ?? this.media.status.duration) - 3 ? curr : this.realStart;
+    if (this.media.status.readyState && curr && this.ctlr.payload.wired) (this.writing = true), (this.config.start = curr > this.toTime(3) && curr < (this.config.end ?? this.media.status.duration) - this.toTime(3) ? curr : this.actualStart), (this.writing = false);
   }
+  private writing = false;
 
   protected handleWaitingStatus({ value }: REvent<CtlrMedia, "status.waiting">): void {
-    value && IS_MOBILE && this.media.once("status.waiting", () => this.ctlr.plug("settings.overlay")?.[this.skipNotifier ? "hide" : "delay"](), { signal: this.signal });
+    IS_MOBILE && value && this.media.once("status.waiting", () => this.ctlr.plug("settings.overlay")?.[this.skipNotifier ? "hide" : "delay"](), { signal: this.signal });
   }
 
-  public toTimeVal(value?: any): number {
+  public toTime(value?: any): number {
     return parseIfPercent(value, this.media.status.duration);
   }
   public toTimeText(time = this.media.state.currentTime, useMode = false, showMs = false): string {
@@ -122,16 +123,14 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     notifier?.setAttribute("data-skip", String(Math.trunc(Math.abs(duration))));
   }
 
-  protected handleKeySkipFwd(): void {
+  protected handleKeySkipFwd(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.skip(this.ctlr.plug("settings.keys")?.getModded("skip", "", this.config.skip) ?? this.config.skip);
-    this.ctlr.plug("settings.notifiers")?.notify("fwd");
+    this.skip(this.ctlr.plug("settings.keys")?.getModded("skip", mod, this.config.skip) ?? this.config.skip);
   }
 
-  protected handleKeySkipBwd(): void {
+  protected handleKeySkipBwd(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.skip(-(this.ctlr.plug("settings.keys")?.getModded("skip", "", this.config.skip) ?? this.config.skip));
-    this.ctlr.plug("settings.notifiers")?.notify("bwd");
+    this.skip(-(this.ctlr.plug("settings.keys")?.getModded("skip", mod, this.config.skip) ?? this.config.skip));
   }
 }
 

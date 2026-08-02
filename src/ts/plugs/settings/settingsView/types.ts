@@ -11,7 +11,7 @@ export interface SettingsMenuConfig {
   disabled: boolean;
   showView: boolean;
   viewLabel: string;
-  preserveStack: boolean;
+  blacklist: string[];
 }
 
 export interface SettingsViewConfig {
@@ -37,12 +37,13 @@ export interface SettingsMenuRangeConfig {
   formatTooltip?: (val: number) => string;
 }
 
-export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"> & {
+export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title" | "hidden"> & {
   id: string;
   label: string;
   icon?: keyof IconRegistryMap;
   infoText?: string | (() => string);
   title?: string | (() => string);
+  getBadge?: () => { label?: string; value?: string } | string | undefined;
   widget: MenuItemWidget;
   /** Hide the row based on custom logic */
   hidden?: boolean | (() => boolean);
@@ -54,7 +55,7 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   getValue(): string | string[] | undefined | null;
   /** Called when the user commits a new value */
   onChange?(value: T | Record<string, string | number | undefined>): void;
-  inputs?: (DOmit<Partial<FieldOptions>, "value"> & { value?: string | number | undefined | (() => string | number | undefined) })[];
+  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max"> & { name?: string; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
   /** Whether this widget (e.g. select) supports selecting multiple options */
   getMultiple?(): boolean;
   /** For "limits" */
@@ -78,11 +79,11 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   /** Custom lifecycle hook called when the row is rendered. Used to attach custom event listeners to trigger `syncUI`. */
   onWire?: (syncUI: () => void, signal: AbortSignal) => void;
   /** For "group" or general widgets, optional header actions (buttons) */
-  actions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void }[];
+  actions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void; getDisabled?: () => boolean; hidden?: () => boolean }[];
   /** Optional form-like actions rendered at the bottom of a sub-panel */
-  footerActions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void }[];
+  footerActions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void; getDisabled?: () => boolean; hidden?: () => boolean }[];
   /** For general widgets, optional helper text/HTML to show below the widget */
-  tipHTML?: string | (() => string);
+  getTipHTML?: () => string;
   /** For "drag-select", called when a drag/drop reorder occurs */
   onReorder?: (oldIdx: number, newIdx: number) => void;
 };

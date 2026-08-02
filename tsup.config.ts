@@ -1,6 +1,7 @@
 import { defineConfig, type Options } from "tsup";
 import path from "node:path";
 import { sassPlugin } from "esbuild-sass-plugin";
+import { existsSync, cpSync } from "node:fs";
 
 const isProd = process.env.NODE_ENV === "production" || process.argv.includes("--prod");
 const config: Options = {
@@ -27,6 +28,10 @@ export default defineConfig([
     globalName: "tmg",
     noExternal: ["sia-reactor", /@t007/],
     ...config,
-    onSuccess: async () => console.log("\x1b[38;2;139;69;19mTMG Media Player\x1b[0m is ready to serve :)"),
   },
 ]);
+
+process.on("exit", () => {
+  if (existsSync("src/assets/icons")) cpSync("src/assets/icons", "dist/assets/icons", { recursive: true }), console.log("✅ Copied icons to dist");
+  console.log("\x1b[38;2;139;69;19mTMG Media Player\x1b[0m is ready to serve :)");
+});

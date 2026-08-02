@@ -4,6 +4,7 @@ import { POSTER_BUILD } from "./build";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
+import { silence } from "sia-reactor/modules";
 import { createEl } from "@utils/dom";
 
 export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
@@ -31,25 +32,38 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     // Ctlr Media Watchers
     this.media.watch("tech", () => ((this.media.features.poster ||= true), this.syncView()), { init: true, signal: this.signal });
     // --------- Listeners
+    this.media.on("type", this.syncView, { signal: this.signal });
     this.media.on("intent.poster", this.handlePosterIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("intent.src", (e) => e.resolved && (this.state.visible = true), { signal: this.signal });
-    this.media.on("state.paused", ({ value }) => !value && !this.config.strict && (this.state.visible = false), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.currentTime", () => (this.config.strict || this.media.state.currentTime) && (this.state.visible = false), { init: this.ctlr.payload.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
+    this.media.on("intent.src", (e) => e.resolved && this.syncState(true), { signal: this.signal });
+    this.media.on("state.paused", ({ value }) => !value && !this.config.strict && this.syncState(false), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.currentTime", () => (this.config.strict || this.media.state.currentTime) && this.syncState(false), { init: this.ctlr.payload.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
     this.media.on("status.ended", this.syncView, { signal: this.signal });
-    this.media.on("state.poster", ({ value }) => (value ? (this.element.src = value) : this.element.removeAttribute("src")), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.poster", ({ value }) => ((this.element.dataset.loaded = "false"), value ? (this.element.src = value) : this.element.removeAttribute("src")), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.loadedMetadata", this.autoGenerate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Post Wiring
     super.wire();
   }
 
   protected handlePosterIntent(e: REvent<CtlrMedia, "intent.poster">): void {
     if (e.resolved) return;
-    if (e.value) this.element.src = e.value; // start the load
+    if (e.value) (this.element.dataset.loaded = "false"), (this.element.src = e.value); // start the load
     this.media.state.poster = e.value;
-    e.resolve(this.name);
+    e.resolve(this.name), this.syncView();
   }
 
   protected syncView(): void {
-    this.media.container.classList.toggle("tmg-media-poster-shown", this.media.type === "audio" || this.state.visible || (!this.config.strict && this.media.status.ended));
+    if (this.media.type === "audio") this.media.state.poster ||= window.TMG_MEDIA_ALT_IMG_SRC || "";
+    this.media.container.classList.toggle("tmg-media-poster-shown", this.syncState());
+  }
+  protected syncState(bool = this.state.visible): boolean {
+    return (this.state.visible = bool || this.media.type === "audio" || (!this.config.strict && this.media.status.ended));
+  }
+
+  public async autoGenerate(): Promise<void> {
+    const url = this.media.state.poster;
+    if (!this.config.autoGenerate || !this.ctlr.isNativeEl || this.media.type === "audio" || (url && !url.endsWith(this.config.autoGenHash))) return;
+    const frame = this.ctlr.isNativeEl && (await this.ctlr.plug("settings.frame")?.extract("", this.ctlr.config.lightState.preview.time));
+    silence(() => (this.media.intent.poster = frame?.url ? `${frame.url}${this.config.autoGenHash}` : "")), url && URL.revokeObjectURL(url.replace(this.config.autoGenHash, ""));
   }
 }
 

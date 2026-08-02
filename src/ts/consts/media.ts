@@ -17,8 +17,11 @@ export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   // Modes
   pictureInPicture: false,
   fullscreen: false,
+  fullscreenOrientation: false,
+  autoFullscreenOrientation: false,
   theater: false,
   miniplayer: false,
+  ambience: true,
   locked: false,
   // Casting
   airplay: false,
@@ -95,7 +98,7 @@ export const MEDIA_STATUS_BUILD: Partial<MediaStatus> = {
   videoTracks: [],
   levels: [],
   // Active
-  activeCue: null,
+  activeCues: null,
   // VR
   xrCapabilities: null,
   // Live Content
@@ -110,6 +113,7 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
   defaultPlaybackRate: 1,
   // Streams
   srcObject: null,
+  idleWaiting: false,
   // Metadata
   metadata: {
     title: "",
@@ -123,7 +127,7 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
       artist: "",
       profile: "",
     },
-    allowOverride: true,
+    allowMediaOverride: true,
   },
   protection: null,
   // Live Content

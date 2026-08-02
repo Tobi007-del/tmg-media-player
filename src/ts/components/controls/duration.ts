@@ -1,6 +1,6 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 import { silence } from "sia-reactor/modules";
 
 export type DurationConfig = undefined;
@@ -26,6 +26,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.timeFormat", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -37,7 +38,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
   public syncARIA(): void {
     this.state.label = "Switch time format";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.timeFormat);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeFormat), (this.state.voiceCommand = this.settings.voice.commands.timeFormat));
     this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd : "Skip ahead to live broadcast";
     this.setBtnARIA();
   }

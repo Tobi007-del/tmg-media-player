@@ -1,6 +1,6 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { addSafeClicks, createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 import { silence } from "sia-reactor/modules";
 
 export type TimeAndDurationConfig = undefined;
@@ -39,6 +39,7 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
     this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.mode", this.syncTime, { signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeMode", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.timeMode", this.syncARIA, { signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
   }
 
@@ -61,8 +62,8 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode} time`;
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.timeMode);
-    this.el.title = !this.media.status.isLive || this.media.state.live ? `Switch (mode${this.state.cmd} / DblClick?format${formatKeyForDisplay(this.settings.keys.shortcuts.timeFormat)})` : "Skip ahead to live broadcast";
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeMode), (this.state.voiceCommand = this.settings.voice.commands.timeMode));
+    this.el.title = !this.media.status.isLive || this.media.state.live ? `Switch (mode${this.state.cmd} / DblClick→format${formatActionForDisplay(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)})` : "Skip ahead to live broadcast";
     this.setBtnARIA("Switch time format");
   }
 }

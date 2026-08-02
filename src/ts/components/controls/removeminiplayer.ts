@@ -1,6 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type RemoveMiniplayerConfig = undefined;
 
@@ -30,7 +31,7 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
 
   public syncARIA(): void {
     this.state.label = "Remove miniplayer";
-    this.state.cmd = " (Escape)";
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = "Escape"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -1,13 +1,11 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { KeysPlug } from "@plugs/settings/keys";
-import { capitalize } from "@utils/str";
+import { capitalize, uncamelize } from "@utils/str";
 import { KEY_SHORTCUT_MOD_ACTIONS } from "@plugs/settings/keys/build";
-import type { KeysConfig } from "@plugs/settings/keys/types";
 
-const fmt = (action: string) => capitalize(action.replace(/([A-Z])/g, " $1"));
 export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
-  id: "general",
-  label: "General",
+  id: "advanced",
+  label: "Advanced",
   icon: "settings",
   widget: "group",
   getValue: () => "",
@@ -17,44 +15,21 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
       label: "Keyboard",
       widget: "group",
       getValue: () => (plug.config.disabled ? "Off" : "On"),
-      tipHTML: "Configure keyboard shortcuts and modifier keys",
+      getTipHTML: () => "Configure keyboard shortcuts and modifier keys",
       configPaths: ["settings.keys.disabled"],
       items: [
-        {
-          id: "keyboardDisabled",
-          label: "Disable",
-          widget: "toggle",
-          getValue: () => (plug.config.disabled ? "On" : "Off"),
-          onChange: (val: boolean) => (plug.config.disabled = val),
-          configPaths: ["settings.keys.disabled"],
-        },
-        {
-          id: "keyboardStrictMatches",
-          label: "Strict Matches",
-          widget: "toggle",
-          getValue: () => (plug.config.strictMatches ? "On" : "Off"),
-          onChange: (val: boolean) => (plug.config.strictMatches = val),
-          configPaths: ["settings.keys.strictMatches"],
-          title: "Require exact key combo matches for actions (e.g., Shift+f will not trigger the action for f).",
-        },
+        { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
+        { id: "keyboardStrictMatches", label: "Strict matches", widget: "toggle", getValue: () => (plug.config.strictMatches ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatches = val), configPaths: ["settings.keys.strictMatches"], title: "Require exact key combo matches for actions (e.g., Shift+f will not trigger the action for f)." },
         {
           id: "keyboardMods",
           label: "Modifier keys",
           widget: "group",
           getValue: () => (plug.config.mods.disabled ? "Off" : "On"),
           items: [
-            {
-              id: "keyboardModsDisabled",
-              label: "Disable",
-              widget: "toggle",
-              getValue: () => (plug.config.mods.disabled ? "On" : "Off"),
-              onChange: (val: boolean) => (plug.config.mods.disabled = val),
-              configPaths: ["settings.keys.mods.disabled"],
-              title: "Allow holding Shift or Ctrl/Cmd to change how much the action steps by (e.g. holding Shift to seek 10s instead of 5s)",
-            },
+            { id: "keyboardModsDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.mods.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.mods.disabled = val), configPaths: ["settings.keys.mods.disabled"], title: "Allow holding Shift or Ctrl/Cmd to change how much the action steps by (e.g. holding Shift to seek 10s instead of 5s)" },
             ...KEY_SHORTCUT_MOD_ACTIONS.map((mod) => ({
               id: `keyboardMod-${mod}`,
-              label: `${fmt(mod)} Modifier`,
+              label: `${capitalize(uncamelize(mod))}`,
               widget: "group" as const,
               getValue: () => "",
               items: [
@@ -84,7 +59,8 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
           id: "keyboardLists",
           label: "Lists & Overrides",
           widget: "group",
-          getValue: () => "",
+          getValue: () => (plug.config.overrides.length || plug.config.blocks.length || plug.config.whitelist.length ? "On" : "Off"),
+          configPaths: ["settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],
           items: [
             {
               id: "keyboardOverrides",
@@ -100,7 +76,7 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
               id: "keyboardBlocks",
               label: "Blocks",
               widget: "input" as const,
-              inputs: [{ label: "Keys", placeholder: "Space, ArrowUp", helperText: { info: "Comma-separated keys to completely block" }, value: () => plug.config.blocks.join(", ") }],
+              inputs: [{ label: "Keys", placeholder: "Space, ArrowUp", helperText: { info: "Comma-separated keys that block key shortcuts" }, value: () => plug.config.blocks.join(", ") }],
               getValue: () => plug.config.blocks.join(", "),
               // prettier-ignore
               onChange: (val: any) => (plug.config.blocks = val["Keys"].split(",").map((s: string) => s.trim()).filter(Boolean)),

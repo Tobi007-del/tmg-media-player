@@ -82,7 +82,7 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   }
 
   protected handleFocusIn({ target }: FocusEvent, t = target as HTMLElement): void {
-    this.focusSubjectId = String(!t.matches(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId));
+    this.focusSubjectId = String(!t?.matches?.(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId));
   }
   protected handleKeyFocusIn({ target }: KeyboardEvent, t = target as HTMLElement): void {
     if ((t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId) === this.focusSubjectId) t.blur();

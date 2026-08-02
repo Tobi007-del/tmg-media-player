@@ -1,3 +1,6 @@
+.tmg-media-container.tmg-media-settings-view {
+  --tmg-media-current-global-safe-inset-top: calc(var(--tmg-media-current-unit) * 2);
+}
 .tmg-media-container.tmg-media-settings-view .tmg-media-container-content-wrapper {
   transform: rotateY(180deg);
 }

@@ -1,12 +1,12 @@
 import { DeepPartial } from "sia-reactor";
 import { CaptionsConfig } from "./types";
+import { IS_MOBILE } from "@utils/env";
 
-export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.value", "captions.font.color.value", "captions.font.opacity.value", "captions.font.weight.value", "captions.font.variant.value", "captions.background.color.value", "captions.background.opacity.value", "captions.window.color.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
+export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.value", "captions.font.color.value", "captions.font.opacity.value", "captions.font.weight.value", "captions.font.variant.value", "captions.background.color.value", "captions.background.opacity.value", "captions.window.color.value", "captions.window.opacity.value", "captions.textAlignment.value", "captions.characterEdgeStyle.value"] as const;
 export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight.value", "captions.font.variant.value", "captions.font.opacity.value", "captions.background.opacity.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
 
 export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
   multiple: false,
-  allowOverride: true,
   font: {
     family: {
       value: "",
@@ -137,6 +137,18 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
         { value: 100, display: "100%" },
       ],
     },
+    position: {
+      lockToVideo: false,
+      lockToPanel: !IS_MOBILE,
+    },
+  },
+  textAlignment: {
+    value: "start",
+    options: [
+      { value: "start", display: "Start" },
+      { value: "center", display: "Center" },
+      { value: "end", display: "End" },
+    ],
   },
   characterEdgeStyle: {
     value: "none",
@@ -148,13 +160,6 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
       { value: "outline", display: "Outline" },
     ],
   },
-  textAlignment: {
-    value: "left",
-    options: [
-      { value: "left", display: "Left" },
-      { value: "center", display: "Center" },
-      { value: "right", display: "Right" },
-    ],
-  },
+  allowMediaOverride: true,
   previewTimeout: 1500,
 };

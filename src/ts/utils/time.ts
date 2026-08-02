@@ -22,6 +22,23 @@ export function formatMediaTime({ time, format = "digital", elapsed = true, show
   return (base + msPart + (!long ? " " : "") + (!elapsed ? "left" : "")).trim();
 }
 
+export function formatMenuMs(ms?: number | boolean): string {
+  if (ms === true || ms == null || ms === 0) return ms === 0 ? "0 secs" : "Auto";
+  if (ms === false || ms === -1) return "Off";
+  if (ms < 1000 && ms > 0) return `${ms} ms`;
+  const time = ms / 1000,
+    s = Math.floor(Math.abs(time) % 60),
+    m = Math.floor(Math.abs(time) / 60) % 60,
+    h = Math.floor(Math.abs(time) / 3600) % 24,
+    d = Math.floor(Math.abs(time) / 86400);
+  let res = "";
+  if (d > 0) res += `${d} day${d > 1 ? "s" : ""} `;
+  if (h > 0) res += `${h} hr${h > 1 ? "s" : ""} `;
+  if (m > 0) res += `${m} min${m > 1 ? "s" : ""} `;
+  if (s > 0 || (ms % 1000 > 0 && !res)) res += `${s}${ms % 1000 > 0 ? `.${Math.floor((ms % 1000) / 100)}` : ""} sec${s > 1 ? "s" : ""} `;
+  return res.trim();
+}
+
 // Time Ranges
 
 export function createTimeRanges(ranges?: [number, number][] | TimeRanges | ArrayLike<any>): TimeRanges {

@@ -3,7 +3,7 @@
   z-index: 3;
 }
 .tmg-media-container:not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar .tmg-media-timeline-container,
-.tmg-media-container[data-size-tier^="xxxxx"] .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-container {
+.tmg-host-container[data-size-tier^="xxxxx"] .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-container {
   position: absolute;
   inset-block-end: 0.1px;
   inline-size: 100%;
@@ -126,6 +126,7 @@ div.tmg-media-preview {
   block-size: calc(var(--tmg-media-current-unit) * 4);
 }
 .tmg-host-container:is([data-size-tier^="xxxx"], .tmg-media-no-previews) .tmg-media-preview,
+.tmg-media-container.tmg-media-no-previews .tmg-media-thumbnail,
 .tmg-media-timeline-container.tmg-media-control-compact .tmg-media-preview {
   display: none;
 }

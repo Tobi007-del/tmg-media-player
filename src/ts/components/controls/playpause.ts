@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type PlayPauseConfig = undefined;
 
@@ -21,6 +21,7 @@ export class PlayPauseButton extends BaseComponent<PlayPauseConfig, ComponentSta
     this.media.on("status.ended", this.syncARIA, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.playPause", this.syncARIA, { signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.playPause", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -29,7 +30,7 @@ export class PlayPauseButton extends BaseComponent<PlayPauseConfig, ComponentSta
 
   public syncARIA(): void {
     this.state.label = this.media.status.ended ? "Replay" : this.media.state.paused ? "Play" : "Pause";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.playPause);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.playPause), (this.state.voiceCommand = this.settings.voice.commands.playPause));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

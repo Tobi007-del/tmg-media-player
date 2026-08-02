@@ -46,7 +46,7 @@ export class ChapterButton extends BaseComponent<ChapterConfig, ComponentState, 
   }
 
   protected syncARIA(): void {
-    this.el.title = this.state.label = "View Chapter";
+    this.el.title = this.state.label = "View Chapters";
     this.setBtnARIA();
   }
 }

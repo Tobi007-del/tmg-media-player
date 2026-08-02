@@ -4,7 +4,7 @@ import { createEl, createListRenderer } from "@utils/dom";
 import { WidgetRegistry } from "../widgets";
 import type { Controller } from "@core/controller";
 import { IconRegistry } from "@core/registries";
-import { isFunc } from "@utils/obj";
+import { isFunc, parseUIOpt, parseUIBadge } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
 
 export class MainMenuPanel extends BaseMenuPanel {
@@ -35,7 +35,7 @@ export class MainMenuPanel extends BaseMenuPanel {
   }
 
   public sync(items: SettingsMenuItem[]): void {
-    this.renderRows(items), this.isActive && this.focusFirst();
+    this.renderRows(items);
   }
   public override enter(dir?: "forward" | "backward" | "none"): void {
     super.enter(dir), this.focusFirst();
@@ -54,28 +54,55 @@ export class MainMenuPanel extends BaseMenuPanel {
       if (iconSvg) li.append(createEl("span", { className: "tmg-media-smenu-row-icon", innerHTML: iconSvg }));
     }
     if (isWidget) {
+      const badge = parseUIBadge(item.getBadge?.());
+      if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
       const widget = WidgetRegistry.create(item, this.ctlr);
       if (widget) {
-        item.inline && item.widget !== "toggle" ? (li.removeAttribute("tabindex"), li.classList.replace("tmg-media-smenu-row", "tmg-media-smenu-inline-wrapper"), li.append(widget.render()), item.widget === "range" && li.classList.add("tmg-media-smenu-row-inline-block")) : (li.append(lbl, widget.render()), li.classList.add("tmg-media-smenu-row-inline"));
+        const el = widget.render();
+        if (badge?.value) el.dataset.badge = badge.value;
+        item.inline && item.widget !== "toggle" ? (li.removeAttribute("tabindex"), li.classList.replace("tmg-media-smenu-row", "tmg-media-smenu-inline-wrapper"), li.append(el), item.widget === "range" && li.classList.add("tmg-media-smenu-row-inline-block")) : (li.append(lbl, el), li.classList.add("tmg-media-smenu-row-inline"));
         li.widget = widget;
         li.addEventListener("click", (e) => !item.getDisabled?.() && (e.target === li || e.target === lbl) && li.querySelector<HTMLElement>("input, button")?.click());
       } else li.append(lbl);
     } else {
-      const val = createEl("span", { className: "tmg-media-smenu-row-value", textContent: item.getValue() || "" });
+      const value = item.getValue?.(),
+        opts = ["select", "drag-select"].includes(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
+        badge = parseUIBadge(item.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+        val = createEl("span", { className: "tmg-media-smenu-row-value" });
+      if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
+      val.append(createEl("span", { className: "tmg-media-smenu-text", textContent: Array.isArray(value) ? value.join(", ") : value || "" }));
+      if (badge?.value) val.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
       if (item.infoText) {
-        const info = createEl("span", { className: "tmg-media-smenu-row-info", textContent: isFunc(item.infoText) ? item.infoText() : item.infoText });
+        const info = createEl("span", { className: "tmg-media-smenu-row-info" });
+        info.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isFunc(item.infoText) ? item.infoText() : item.infoText }));
         li.append(lbl, info, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       } else li.append(lbl, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       li.addEventListener("click", () => !item.getDisabled?.() && this.onItemClick?.(item));
       if (item.mediaPaths || item.configPaths || item.onWire) {
         const ac = new AbortController(),
           syncUI = () => {
-            const valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-value");
-            valNode ? (valNode.textContent = item.getValue() || "") : (li as SettingsRowElement).widget?.syncUI();
+            const value = item.getValue?.(),
+              opts = ["select", "drag-select"].includes(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
+              badge = parseUIBadge(item.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+              valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-value"),
+              lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-label");
+            if (lblNode) {
+              lblNode.querySelector(".tmg-media-control-badge")?.remove();
+              if (badge?.label) lblNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
+            }
+            if (valNode) {
+              valNode.textContent = "";
+              valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: Array.isArray(value) ? value.join(", ") : value || "" }));
+              if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
+            } else {
+              const el = (li as SettingsRowElement).widget?.element;
+              if (el) badge?.value ? (el.dataset.badge = badge.value) : delete el.dataset.badge;
+              (li as SettingsRowElement).widget?.syncUI();
+            }
             (li.inert = !!item.getDisabled?.()), li.classList.toggle("tmg-media-control-disabled", !!item.getDisabled?.());
           };
-        item.mediaPaths?.forEach((path) => this.media.on(path, syncUI, { signal: ac.signal }));
-        item.configPaths?.forEach((path) => this.ctlr.config.on(path, syncUI, { signal: ac.signal }));
+        if (item.mediaPaths) for (const path of item.mediaPaths || []) this.media.on(path, syncUI, { signal: ac.signal });
+        if (item.configPaths) for (const path of item.configPaths || []) this.ctlr.config.on(path, syncUI, { signal: ac.signal });
         item.onWire?.(syncUI, ac.signal);
         (li as any)._ac = ac;
       }

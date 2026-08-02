@@ -6,9 +6,10 @@ export const getSettingsAmbienceMenu = (plug: AmbiencePlug): SettingsMenuItem =>
   label: "Ambience",
   icon: "ambience",
   widget: "toggle",
-  getValue: () => (plug.config.active ? "On" : "Off"),
-  onChange: (val: boolean) => (plug.config.active = val),
-  configPaths: ["settings.ambience.active"],
+  feature: "ambience",
+  getValue: () => (plug.media.state.ambience ? "On" : "Off"),
+  onChange: (val: boolean) => (plug.media.intent.ambience = val),
+  mediaPaths: ["state.ambience", "features.ambience"],
 });
 
 declare module "@defs/registries" {

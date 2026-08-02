@@ -66,13 +66,13 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.config.on("max", ({ value }) => (this.el.ariaValueMax = String(value!)), { init: true, signal: this.signal });
     this.config.watch("value", this.onValue, { init: true, signal: this.signal }); // #SYNC: near native speed
     this.config.watch("previewValue", this.onPreviewValue, { init: true, signal: this.signal }); // #SYNC: near native speed
-    this.config.on("tooltip", ({ value }) => this.el.toggleAttribute("data-tooltip", !!value), { init: true, signal: this.signal });
+    this.config.on("tooltip", ({ value }) => this.el.toggleAttribute("tooltip", !!value), { init: true, signal: this.signal });
     this.config.on("readonly", ({ value }) => this.el.toggleAttribute("readonly", !!value), { init: true, signal: this.signal });
     this.config.on("disabled", ({ value }) => this.el.toggleAttribute("disabled", !!value), { init: true, signal: this.signal });
     this.config.on("divs", ({ currentTarget: { value } }) => this.syncDivs(value), { init: true, signal: this.signal });
     this.config.on("marks", ({ currentTarget: { value } }) => this.syncMarks(value), { init: true, signal: this.signal });
     // Post Wiring
-    observeResize(this.el, () => this.ctlr.throttle(`${this.config.label}Resizing`, this.handleResize, 30, false), this.signal);
+    observeResize(this.el, () => this.ctlr.throttle(`${this.config.label}Resizing`, this.handleResize, 30, false, this.signal), this.signal);
   }
   protected scrub(value: number, bypass = false): boolean {
     return this.canScrub ? (!bypass ? (this.config.value = value) : this.onValue(value), true) : false;
@@ -143,7 +143,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
         Math.abs(pos - this.lastThumbPos) < this.config.scrub.cancel.delta / dimension ? this.cancelScrubbing() : this.allowScrubbing();
       }
       this.onInput(e, pos);
-    });
+    }); // #PERK: no accidental scrub
   }
   private prevEX?: number;
   private prevEY?: number;

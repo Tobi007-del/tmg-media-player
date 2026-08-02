@@ -1,25 +1,28 @@
 import { DeepPartial } from "sia-reactor";
-import { IS_MOBILE } from "@utils/env";
+import { IS_IOS, IS_MOBILE } from "@utils/env";
 import { ModesFullscreenConfig, ModesPictureInPictureConfig, ModesMiniplayerConfig, ModesConfig, ModesTheaterConfig } from "./types";
-import { capitalize, uncamelize } from "@utils/str";
+import { supportsFullscreen } from "@utils/dom";
 
-export const ORIENTATION_OPTIONS = ["auto", "landscape", "portrait", "portrait-primary", "portrait-secondary", "landscape-primary", "landscape-secondary"] as const;
+export const RESIZE_DIRS = ["n", "ne", "e", "se", "s", "sw", "w", "nw"] as const;
+
+export const ORIENTATION_OPTS = [{ value: false, display: "Off" } as const, { value: "landscape-primary", display: "Landscape" } as const, { value: "portrait-primary", display: "Portrait" } as const, { value: "landscape-secondary", display: "Landscape Inverted" } as const, { value: "portrait-secondary", display: "Portrait Inverted" } as const];
 
 export const MODES_FULLSCREEN_BUILD: Partial<ModesFullscreenConfig> = {
   disabled: false,
-  orientationLock: {
-    value: "auto",
-    options: [{ value: false, display: "Off" }, ...ORIENTATION_OPTIONS.map((o) => ({ value: o, display: capitalize(uncamelize(o)) }))],
-  },
-  onRotate: {
-    value: 90,
-    options: [
-      { value: false, display: "Off" },
-      { value: 0, display: "0° Portrait" },
-      { value: 90, display: "90° Landscape" },
-      { value: 180, display: "180° Inverted" },
-      { value: 270, display: "270° Landscape" },
-    ],
+  pseudo: IS_IOS || !supportsFullscreen(),
+  orientation: {
+    options: [...ORIENTATION_OPTS, { value: "auto", display: "Auto" } as const],
+    allowMediaOverride: true,
+    rotationToggle: {
+      on: {
+        value: "landscape-primary",
+        options: ORIENTATION_OPTS,
+      },
+      off: {
+        value: false,
+        options: ORIENTATION_OPTS,
+      },
+    },
   },
 };
 

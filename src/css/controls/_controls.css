@@ -1,4 +1,5 @@
-.tmg-media-container .tmg-media-container-content {
+.tmg-media-container-content,
+.tmg-media-container-content button {
   color: var(--tmg-media-current-control-color);
 }
 .tmg-media-container-content svg {
@@ -24,9 +25,9 @@
 .tmg-media-vb-container.tmg-media-control-dragging > *:not(.tmg-media-vb-btn),
 .tmg-media-container:not(.tmg-media-miniplayer) :is(.tmg-media-miniplayer-remove-btn, .tmg-media-miniplayer-expand-btn),
 .tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-fullscreen) .tmg-media-theater-btn,
-.tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player) .tmg-media-apt-controls-wrapper :is(.tmg-media-prev-btn, .tmg-media-play-pause-btn, .tmg-media-next-btn),
-.tmg-media-container.tmg-media-picture-in-picture :is(.tmg-media-cover-curtain, button:has(.tmg-media-play-icon, .tmg-media-pause-icon, .tmg-media-prev-icon, .tmg-media-next-icon), .tmg-media-brightness-container, .tmg-media-buffer, .tmg-media-object-fit-btn),
-.tmg-host-container[data-size-tier^="xxxxx"] :is(.tmg-media-profile-link, .tmg-media-artist-wrapper, .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-thumb, .tmg-media-side-controls-wrapper > *:not(.tmg-media-play-pause-btn, .tmg-media-next-btn, .tmg-media-prev-btn, .tmg-media-captions-btn:not(.tmg-media-control-disabled), .tmg-media-fullscreen-btn, .tmg-media-volume-container, .tmg-media-time-btn, .tmg-media-duration-btn, .tmg-media-time-and-duration-btn)),
+.tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player) .tmg-media-apt-controls-wrapper :is(.tmg-media-previous-btn, .tmg-media-play-pause-btn, .tmg-media-next-btn),
+.tmg-media-container.tmg-media-picture-in-picture :is(.tmg-media-cover-curtain, button:has(.tmg-media-play-icon, .tmg-media-pause-icon, .tmg-media-previous-icon, .tmg-media-next-icon), .tmg-media-brightness-container, .tmg-media-buffer, .tmg-media-object-fit-btn),
+.tmg-host-container[data-size-tier^="xxxxx"] :is(.tmg-media-profile-link, .tmg-media-artist-wrapper, .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-thumb, .tmg-media-side-controls-wrapper > *:not(.tmg-media-play-pause-btn, .tmg-media-next-btn, .tmg-media-previous-btn, .tmg-media-captions-btn:not(.tmg-media-control-disabled), .tmg-media-fullscreen-btn, .tmg-media-volume-container, .tmg-media-time-btn, .tmg-media-duration-btn, .tmg-media-time-and-duration-btn, .tmg-media-settings-btn, .tmg-media-miniplayer-remove-btn, .tmg-media-miniplayer-expand-btn)),
 .tmg-media-container:has([data-notify^="playbackrate"], [data-notify^="volume"], [data-notify^="brightness"], [data-notify^="objectfit"], [data-notify="capture"], [data-notify="cast"], [data-notify="airplay"], [data-notify="timer"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
   display: none;
 }
@@ -106,4 +107,29 @@
 }
 .tmg-media-container.tmg-media-captions .tmg-media-captions-btn::after {
   transform: scale(1, 1);
+}
+[data-badge] {
+  position: relative;
+}
+[data-badge]::before {
+  content: attr(data-badge);
+  position: absolute;
+  top: 1px;
+  right: calc(var(--tmg-media-current-unit) / -3.5);
+}
+.tmg-media-control-badge,
+[data-badge]::before {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0 calc(var(--tmg-media-current-unit) / 15);
+  margin-left: calc(var(--tmg-media-current-unit) / 5);
+  color: var(--tmg-media-theme-accent-color);
+  font-size: calc(var(--tmg-media-current-unit) / 3.5);
+  font-weight: 700;
+  white-space: pre;
+  border-radius: 1px;
+  background-color: var(--tmg-media-brand-accent-color);
+  vertical-align: top;
+  z-index: 1;
+  pointer-events: none;
 }

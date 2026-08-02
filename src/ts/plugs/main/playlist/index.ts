@@ -1,16 +1,17 @@
 import { BasePlug } from "../../base";
-import type { PlaylistConfig, PlaylistItemConfig } from "./types";
+import type { PlaylistConfig, PlaylistItemConfig, PlaylistState } from "./types";
 import { PLAYLIST_BUILD, PLAYLIST_ITEM_BUILD } from "./build";
 import type { CtlrConfig } from "@defs/config";
 import { type REvent } from "sia-reactor";
 import { mergeObjs, fanout, parsePathObj } from "sia-reactor/utils";
-import { transaction } from "sia-reactor/modules";
+import { silence, transaction } from "sia-reactor/modules";
 import { isBool } from "@utils/obj";
 import { isSameURL } from "@utils/str";
 import { safeNum } from "@utils/num";
+import { smartFlatSort } from "@utils/file";
 import { Controller } from "@core/controller";
 
-export class PlaylistPlug extends BasePlug<PlaylistConfig> {
+export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   public static readonly plugName = "playlist";
   public static readonly isMain: boolean = true;
   public static readonly BUILD = PLAYLIST_BUILD;
@@ -22,76 +23,80 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig> {
   }
 
   constructor(ctlr: Controller, config = ctlr.config.playlist) {
-    super(ctlr, config, { currentIndex: 0 });
+    super(ctlr, config, { currentIndex: 0, editIndex: 0, sortOrder: "asc" });
   }
 
   public override wire(): void {
+    // State Listeners
+    this.state.on("currentIndex", this.syncFeatures, { signal: this.signal });
+    this.state.on("sortOrder", ({ value }) => (this.media.container.dataset.playlistSort = value), { init: true, signal: this.signal });
     // Ctlr Config Getters
-    this.ctlr.config.get("playlist", (v) => v ?? { content: null }, { signal: this.signal });
+    this.ctlr.config.get("playlist.content", (v) => (v?.length ? v : null), { signal: this.signal });
     // ----------- Setters
-    this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(PLAYLIST_ITEM_BUILD as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
+    this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(structuredClone(PLAYLIST_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
     // ---- Media Watchers
-    this.media.on("settings.metadata.title", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].media.settings.metadata.title = value), { init: "auto", signal: this.signal });
-    this.media.on("settings.metadata.chapterInfo", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].media.settings.metadata.chapterInfo = value), { init: "auto", signal: this.signal });
-    this.media.on("settings.metadata.links.title", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].media.settings.metadata.links.title = value), { init: "auto", signal: this.signal });
-    // ---- Config -------
-    this.ctlr.config.on("settings.time.start", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].settings.time.start = value), { init: "auto", signal: this.signal });
-    this.ctlr.config.on("settings.controlPanel.timeline.previews", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].settings.controlPanel.timeline.previews = value), { init: "auto", signal: this.signal });
-    this.ctlr.config.on("settings.controlPanel.timeline.marks", ({ value }) => this.config.content && (this.config.content[this.state.currentIndex].settings.controlPanel.timeline.marks = value), { init: "auto", signal: this.signal });
-    // ----------- Listeners
+    this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
+    for (const key of ["title", "artist", "profile", "artwork", "chapterInfo"] as const) this.media.watch(`settings.metadata.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata[key] = v as any), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
+    for (const key of ["title", "artist", "profile"] as const) this.media.watch(`settings.metadata.links.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata.links[key] = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
+    this.media.watch("state.currentTime", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.time.start = v), { signal: this.signal });
+    this.media.watch("status.duration", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.status.duration = v), { signal: this.signal });
+    // ---- Config Listeners
+    this.ctlr.config.watch("settings.time.start", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.time.start = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
+    for (const key of ["previews", "marks"] as const) this.ctlr.config.watch(`settings.controlPanel.timeline.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.controlPanel.timeline[key] = v as any), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
     this.ctlr.config.on("playlist.content", this.handleContent, { signal: this.signal, init: true, depth: 1 });
     this.ctlr.config.on("playlist.allowOverride", this.syncFeatures, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("prev", { fn: () => (this.previous(), this.ctlr.plug("settings.notifiers")?.notify("mediaprev")), keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("next", { fn: () => (this.next(), this.ctlr.plug("settings.notifiers")?.notify("medianext")), keyboard: { phase: "keydown" } });
+    this.ctlr.registerAction("previous", { fn: this.previous, keyboard: { phase: "keydown" } }), this.ctlr.registerAction("next", { fn: this.next, keyboard: { phase: "keydown" } });
     super.wire();
   }
 
   protected handleContent({ currentTarget: { value: content } }: REvent<CtlrConfig, "playlist.content", 1>): void {
     this.syncFeatures();
-    if (this.media.status.readyState < 1) return;
-    const v = content?.find((v) => (v.media.settings.metadata.id && v.media.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(v.media.intent.src, this.media.state.src));
+    const v = content?.find((v) => (v.media.settings.metadata.id && v.media.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(v.media.intent.src, this.media.intent.src));
     this.state.currentIndex = (v && content!.indexOf(v)) ?? 0;
-    v ? this.applyItem(v, false) : this.moveTo(this.state.currentIndex);
+    const pmdle = this.ctlr.plug("settings.persist")?.module,
+      apply = () => (v ? transaction(() => this.applyItem(v, false), "Playlist Update") : this.moveTo(this.state.currentIndex));
+    pmdle && !pmdle.state.hydrated ? pmdle.state.wonce("hydrated", apply, { signal: this.signal }) : apply();
   }
 
   protected applyItem(item: PlaylistItemConfig, _reset = true): void {
-    fanout(this.settings, item.settings), fanout(this.media, item.media);
+    (this.applying = true), fanout(this.settings, item.settings), fanout(this.media, item.media), (this.applying = false);
   }
+  protected applying = false;
 
   public moveTo(index: number, shouldPlay?: boolean, label = "Move"): void {
     if (!this.config.content || !this.config.content[index]) return;
     this.state.currentIndex = index;
-    transaction(() => (this.applyItem(this.config.content![index]), isBool(shouldPlay) && (this.media.intent.paused = !shouldPlay)), `Playlist ${label}`);
-  }
-
-  public remove(index: number): void {
-    if (!this.config.content) return;
-    this.config.content.splice(index, 1);
-    if (index === this.state.currentIndex && this.config.content.length > 0) this.moveTo(Math.min(index, this.config.content.length - 1));
-  }
-
-  public shuffle(): void {
-    if (!this.config.content) return;
-    const list = this.config.content;
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j], list[i]];
-    }
+    transaction(() => (this.applyItem(this.config.content![index]), isBool(shouldPlay) && silence(() => (this.media.intent.paused = !shouldPlay))), `Playlist ${label}`);
   }
 
   public previous(): void {
     if (safeNum(this.media.state.currentTime) >= 3) transaction(() => ((this.media.intent.currentTime = 0), (this.media.intent.paused = false)), "Playlist Previous (Restart)");
     else if (this.config.content && this.state.currentIndex > 0) this.moveTo(this.state.currentIndex - 1, true, "Previous");
   }
-
   public next(): void {
-    if (!this.config.content) return;
-    if (this.state.currentIndex < this.config.content.length - 1) this.moveTo(this.state.currentIndex + 1, true, "Next");
+    if (this.config.content && this.state.currentIndex < this.config.content.length - 1) this.moveTo(this.state.currentIndex + 1, true, "Next");
+  }
+
+  public sort(order: "asc" | "desc" = this.state.sortOrder === "asc" ? "desc" : "asc", list = this.config.content): void {
+    if (!list) return;
+    this.state.sortOrder = order;
+    const sorted = smartFlatSort(list, (i) => i.media.settings.metadata.title || "");
+    this.config.content = order === "desc" ? sorted.reverse() : sorted;
+  }
+  public shuffle(list = this.config.content): void {
+    if (!list) return;
+    const shuffled = [...list];
+    for (let i = shuffled.length - 1, j = Math.floor(Math.random() * (i + 1)); i > 0; i--) [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    this.config.content = shuffled;
+  }
+  public remove(index: number, list = this.config.content): void {
+    list?.splice(index, 1), index === this.state.currentIndex && list?.length && this.moveTo(Math.min(index, list.length - 1));
   }
 
   protected syncFeatures(): void {
     this.media.features.playlist = !!(this.config.content?.length || this.config.allowOverride.add);
+    (this.media.features.nextItem = !this.atLast), (this.media.features.previousItem = !this.atFirst);
   }
 }
 
@@ -110,6 +115,8 @@ declare module "@defs/config" {
 declare module "@defs/contract" {
   interface MediaExtraFeatures {
     playlist?: boolean;
+    nextItem?: boolean;
+    previousItem?: boolean;
   }
 }
 

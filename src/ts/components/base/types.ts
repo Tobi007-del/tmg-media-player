@@ -13,4 +13,6 @@ export interface ComponentState {
   active: boolean;
   hidden: boolean;
   disabled: boolean;
+  keyShortcut: string | string[];
+  voiceCommand: string | string[];
 }

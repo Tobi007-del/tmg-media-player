@@ -15,8 +15,8 @@ export abstract class BaseWidget<T = unknown> extends Controllable {
   public abstract render(): HTMLElement;
   public abstract syncUI(): void;
   protected override onSetup(): void {
-    this.item.mediaPaths?.forEach((path) => this.media.on(path, this.syncUI, { signal: this.signal }));
-    this.item.configPaths?.forEach((path) => this.ctlr.config.on(path, this.syncUI, { signal: this.signal }));
+    if (this.item.mediaPaths) for (const path of this.item.mediaPaths) this.media.on(path, this.syncUI, { signal: this.signal });
+    if (this.item.configPaths) for (const path of this.item.configPaths) this.ctlr.config.on(path, this.syncUI, { signal: this.signal });
     this.item.onWire?.(this.syncUI, this.signal);
   }
   protected override onDestroy(): void {}

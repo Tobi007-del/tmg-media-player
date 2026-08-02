@@ -4,8 +4,8 @@ import { Buffer } from "./buffer";
 import { Meta } from "./controls/meta";
 import { BigNextButton } from "./controls/bignext";
 import { BigPlayPauseButton } from "./controls/bigplaypause";
-import { BigPrevButton } from "./controls/bigprev";
-import { PrevButton } from "./controls/prev";
+import { BigPreviousButton } from "./controls/bigprevious";
+import { PreviousButton } from "./controls/previous";
 import { PlayPauseButton } from "./controls/playpause";
 import { NextButton } from "./controls/next";
 import { Forward10Button } from "./controls/forward10";
@@ -43,8 +43,8 @@ for (const Comp of [
   Meta,
   BigNextButton,
   BigPlayPauseButton,
-  BigPrevButton,
-  PrevButton,
+  BigPreviousButton,
+  PreviousButton,
   PlayPauseButton,
   NextButton,
   Forward10Button,

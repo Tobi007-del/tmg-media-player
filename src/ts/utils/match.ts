@@ -8,8 +8,10 @@
 // ===========================================================================
 // MEDIA EXTENSION MATCHERS
 // ===========================================================================
-export const AUDIO_EXTENSIONS = /\.(m4a|m4b|mp4a|mpga|mp2|mp2a|mp3|m2a|m3a|wav|weba|aac|oga|spx|flac|wma|opus|midi?)($|\?)/i;
+export const FILE_EXTENSIONS = /\.([a-z0-9]+)(?:[?#].*)?$/i;
+export const AUDIO_EXTENSIONS = /\.(m4a|m4b|mp4a|mpga|mp2|mp2a|mp3|m2a|m3a|wav|weba|aac|og[ga]|spx|flac|wma|opus|midi?)(#t=[,\d+]+)?($|\?)/i;
 export const VIDEO_EXTENSIONS = /\.(mp4|mkv|avi|mov|webm|mpg|mpeg|og[gv]|m4v|flv|wmv|3gp|3g2|ts)(#t=[,\d+]+)?($|\?)/i;
+export const MEDIA_EXTENSIONS = new RegExp(`(?:${VIDEO_EXTENSIONS.source}|${AUDIO_EXTENSIONS.source})`, "i");
 export const HLS_EXTENSIONS = /\.(m3u8)($|\?)/i;
 export const DASH_EXTENSIONS = /\.(mpd)($|\?)/i;
 
@@ -45,14 +47,14 @@ export const MATCH_URL_TIKTOK = /tiktok\.com\/(?:player\/v1\/|share\/video\/|@[^
 export const mimeTypes: Record<string, string> = {
   // Video formats
   avi: "video/x-msvideo", mp4: "video/mp4", mkv: "video/x-matroska", mov: "video/quicktime", 
-  flv: "video/x-flv", webm: "video/webm", ogg: "video/ogg", ogv: "video/ogg", wmv: "video/x-ms-wmv", 
+  flv: "video/x-flv", webm: "video/webm", ogv: "video/ogg", wmv: "video/x-ms-wmv", 
   "3gp": "video/3gpp", "3g2": "video/3gpp2", mpeg: "video/mpeg", mpg: "video/mpeg", 
   ts: "video/mp2t", m4v: "video/x-m4v", m3u8: "application/vnd.apple.mpegurl", mpd: "application/dash+xml",
   // Audio formats
-  mp3: "audio/mpeg", wav: "audio/wav", oga: "audio/ogg", flac: "audio/flac", aac: "audio/aac", 
+  mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", oga: "audio/ogg", aac: "audio/aac", 
   m4a: "audio/mp4", m4b: "audio/mp4", mp4a: "audio/mp4", wma: "audio/x-ms-wma", opus: "audio/opus", 
   mid: "audio/midi", midi: "audio/midi", mpga: "audio/mpeg", mp2: "audio/mpeg", mp2a: "audio/mpeg", 
-  m2a: "audio/mpeg", m3a: "audio/mpeg", weba: "audio/webm", spx: "audio/ogg",
+  m2a: "audio/mpeg", m3a: "audio/mpeg", weba: "audio/webm", spx: "audio/ogg", flac: "audio/flac", 
   // Image formats
   jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", 
   bmp: "image/bmp", svg: "image/svg+xml", tif: "image/tiff", tiff: "image/tiff", avif: "image/avif", 

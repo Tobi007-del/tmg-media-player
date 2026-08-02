@@ -13,4 +13,5 @@ export const ERRORS_BUILD: Partial<ErrorsConfig> = {
   2: "The media failed due to a network error.",
   3: "The media could not be decoded.",
   4: "The media source is not supported.",
+  5: "An unknown error occurred with the media :(",
 };

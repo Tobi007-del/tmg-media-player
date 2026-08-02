@@ -4,11 +4,9 @@ import { loadResource } from "@utils/dom";
 import { isIter, isObj, setHTMLConfig } from "@utils/obj";
 import { luid } from "@utils/str";
 import { CONFIG_BUILD } from "@consts/config";
-import { PLAYLIST_ITEM_BUILD } from "@plugs/main/playlist/build";
 import type { CtlrConfig } from "@defs/config";
 import { DeepPartial, Paths, PathValue } from "sia-reactor";
 import { mergeObjs, parsePathObj } from "sia-reactor/utils";
-import { MediaType } from "@defs/generics";
 
 export type BuildParam = DeepPartial<CtlrConfig> & Record<Paths<CtlrConfig>, PathValue<CtlrConfig>>;
 
@@ -54,7 +52,7 @@ export class Player {
     if (!this.active) return;
     const medium = this.controller?.destroy() ?? ({} as any);
     this.controller && Controllers.splice(Controllers.indexOf(this.controller), 1);
-    medium.classList?.remove(`tmg-${this.build.mediaType}`, "tmg-media", "tmg-host");
+    medium.classList?.remove(`tmg-${medium.tagName.toLowerCase()}`, "tmg-media", "tmg-host");
     medium.tmgcontrols = this.active = false;
     // this.controller?.fire("tmgdetach", this.controller.payload);
     return (medium.tmgPlayer = this.controller = this.medium = null), medium;
@@ -78,12 +76,10 @@ export class Player {
 
   private async deployController() {
     if (this.active || !this.medium?.isConnected) return;
-    if (this.build.playlist?.content?.[0]) this.configure(mergeObjs(structuredClone(PLAYLIST_ITEM_BUILD), parsePathObj(this.build.playlist.content[0])) as BuildParam);
     if (!(this.medium instanceof HTMLMediaElement)) return this.notice({ error: `Could not deploy custom controls on the '${(this.medium as HTMLElement).tagName}' element as it is not supported`, warning: "Only the 'VIDEO' and 'AUDIO' elements are currently supported", tip: "" });
-    this.build.mediaType = this.medium.tagName.toLowerCase() as MediaType;
     this.medium.controls = false;
     this.medium.tmgcontrols = this.active = true;
-    this.medium.classList.add(`tmg-${this.build.mediaType}`, "tmg-media", "tmg-host");
+    this.medium.classList.add(`tmg-${this.medium.tagName.toLowerCase()}`, "tmg-media", "tmg-host");
     await Promise.all([loadResource(window.TMG_MEDIA_CSS_SRC!), loadResource(window.T007_TOAST_JS_SRC!, "script", { module: true }), loadResource(window.T007_INPUT_JS_SRC!, "script")]); // await
     Controllers[Controllers.indexOf(this.build.id as any)] = this.controller = new Controller(this.medium, this._build);
   }

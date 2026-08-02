@@ -4,7 +4,7 @@ import { PersistConfig } from "./types";
 export const PERSIST_BUILD: Partial<PersistConfig> = {
   strict: !CTX.isDevEnv,
   whitelist: {
-    config: ["lightState", "settings", "actions"],
+    config: ["lightState", "playlist", "settings", "actions", "devMode", "debug"],
     media: ["state", "settings"],
   },
   blacklist: {

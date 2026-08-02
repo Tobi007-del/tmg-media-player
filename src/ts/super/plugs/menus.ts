@@ -1,4 +1,6 @@
 export * from "@plugs/menus/main/playlist";
+export * from "@plugs/menus/main/skeleton";
+export * from "@plugs/menus/settings/actions";
 export * from "@plugs/menus/settings/ambience";
 export * from "@plugs/menus/settings/auto";
 export * from "@plugs/menus/settings/brightness";
@@ -11,7 +13,6 @@ export * from "@plugs/menus/settings/keys";
 export * from "@plugs/menus/settings/locked";
 export * from "@plugs/menus/settings/metadata";
 export * from "@plugs/menus/settings/modes";
-export * from "@plugs/menus/settings/objectFit";
 export * from "@plugs/menus/settings/overlay";
 export * from "@plugs/menus/settings/persist";
 export * from "@plugs/menus/settings/playbackRate";

@@ -10,9 +10,9 @@ import { type REvent } from "sia-reactor";
 import { BaseComponent } from "@components/base";
 import { ComponentRegistry, PinRegistry } from "@core/registries";
 import { createEl, createListRenderer, observeResize } from "@utils/dom";
-import { getPanelSplitCtrls, isBool, parsePanelBottomObj } from "@utils/obj";
+import { getPanelSplitCtrls, parsePanelBottomObj } from "@utils/obj";
 import { initScrollAssist, removeScrollAssist } from "@t007/utils/hooks/vanilla";
-import { fanout } from "sia-reactor/utils";
+import { createReactorSync } from "sia-reactor/utils";
 
 export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   public static readonly plugName = "controlPanel";
@@ -67,7 +67,6 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   public override wire(): void {
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.controlPanel.timeline.thumb.value", ({ value }) => (this.media.container.dataset.timelineThumb = String(value)), { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.controlPanel.timeline", (e, comp = this.comp("timeline")) => comp && fanout(comp.config, e.currentTarget.value), { signal: this.signal }); // #STABLE: snubs unchanged writes
     this.ctlr.config.on("settings.controlPanel.progressBar", ({ value }) => this.media.container.classList.toggle("tmg-media-progress-bar", value), { init: true, signal: this.signal });
     // Utility Injection
     this.draggable?.wire();
@@ -76,20 +75,18 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   }
 
   protected handleTop({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.top">): void {
-    if (!value || isBool(value)) return;
-    const { left, center, right } = getPanelSplitCtrls(value as AnyControl[]);
+    const { left, center, right } = getPanelSplitCtrls((value ||= []) as AnyControl[]);
     this.fillWrapper(this.topWrapper, [(this.slots.top.left = this.getSlot(left, this.shells.top.left)), (this.slots.top.center = this.getSlot(center, this.shells.top.center)), (this.slots.top.right = this.getSlot(right, this.shells.top.right))]);
     this.fillSlot(this.slots.top.left, left), this.fillSlot(this.slots.top.center, center), this.fillSlot(this.slots.top.right, right), this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
   }
 
   protected handleCenter({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.center">): void {
-    value && !isBool(value) && this.fillSlot(this.slots.center, value), this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
+    this.fillSlot(this.slots.center, (value ||= [])), this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
   }
 
   protected handleBottom({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.bottom">): void {
-    if (!value || isBool(value)) return;
     for (const i of ROWS_ARR) {
-      const { left, center, right } = getPanelSplitCtrls((value as ControlPanelBottomTuple)[i]);
+      const { left, center, right } = getPanelSplitCtrls(((value ||= {}) as ControlPanelBottomTuple)[i]);
       this.fillWrapper(this.bottomWrapper.children[i - 1] as HTMLElement, [(this.slots.bottom[i].left = this.getSlot(left, this.shells.bottom[i].left)), (this.slots.bottom[i].center = this.getSlot(center, this.shells.bottom[i].center)), (this.slots.bottom[i].right = this.getSlot(right, this.shells.bottom[i].right))]);
       this.fillSlot(this.slots.bottom[i].left, left), this.fillSlot(this.slots.bottom[i].center, center), this.fillSlot(this.slots.bottom[i].right, right);
     }
@@ -104,7 +101,7 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   public initComp<K extends keyof ComponentRegistryMap>(name: K, comp?: InstanceType<ComponentRegistryMap[K]>): InstanceType<ComponentRegistryMap[K]> | undefined;
   public initComp<T extends BaseComponent = BaseComponent>(name: string, comp?: T): T | undefined;
   public initComp(name: string, comp = ComponentRegistry.init(name, this.ctlr, (this.config as any)[name])) {
-    return comp ? (this.controls.set(name, comp), comp) : undefined;
+    return comp ? (name === "timeline" && createReactorSync(comp.config, this.ctlr.config, "", "settings.controlPanel.timeline", this.signal), this.controls.set(name, comp), comp) : undefined;
   }
 
   public comp<K extends keyof ComponentRegistryMap>(name: K): InstanceType<ComponentRegistryMap[K]> | undefined;

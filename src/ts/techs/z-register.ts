@@ -9,7 +9,7 @@ import { VimeoTech } from "./vimeo";
 for (const Tech of [
   // Priority Order
   HTML5Tech,
-  // ShakaTech,
+  ShakaTech,
   HLSTech,
   DashTech,
   YouTubeTech,

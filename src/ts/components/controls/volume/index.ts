@@ -1,7 +1,7 @@
 import { BaseComponent, type ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 import { setTimeout } from "@utils/fn";
 import { VolumeSlider, type VolumeSliderConfig } from "./slider";
 
@@ -71,7 +71,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
 
   public syncARIA(): void {
     this.state.label = this.media.state.muted || this.media.state.volume === 0 ? "Unmute" : "Mute";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.mute);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.mute), (this.state.voiceCommand = this.settings.voice.commands.mute));
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }

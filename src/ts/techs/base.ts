@@ -1,7 +1,7 @@
 import { Controllable } from "@core/controllable";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures, MediaStatus } from "@defs/contract";
-import { type REvent, type Reactive, ListenerOptions } from "sia-reactor";
+import { type REvent, type Reactive, ListenerOptions, NOOP } from "sia-reactor";
 import { fanout, force } from "sia-reactor/utils";
 import { silence } from "sia-reactor/modules";
 import { getMediaStatus } from "@utils/media";
@@ -26,9 +26,9 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   public get el() {
     return this.element;
   }
+  public wired = false; // for light status checks where needed
   public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptions } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } }; // "set" -> Avengers(Resolution lineup) assemble!;
   public readonly wiredFeatures: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
-  public wired = false; // for light status checks where needed
   protected readonly pending = new Map<string, () => void>();
   protected autoChapters: boolean = false;
 
@@ -55,29 +55,30 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     (this.el as any) !== this.config.element && this.el.replaceWith(this.config.element);
   }
 
+  // --- THE WIRING ---
   public wire(): void {
     // Variables Assignments
     (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained if element was replaced in mount
     // Ctlr Media Watchers
     this.config.watch("state.currentTime", this.onCurrentTime, this.evtOpts.CONFIG);
     // --------- Listeners
-    this.config.on("intent", this.handleWrite, this.evtOpts.CONFIG); // protecting everybody
-    this.config.on("settings", this.handleWrite, this.evtOpts.CONFIG);
+    this.config.on("intent", this.handleWrite, this.evtOpts.CONFIG), this.config.on("settings", this.handleWrite, this.evtOpts.CONFIG); // protecting everybody
     // Bulk Wiring
     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
     // Post Wiring
-    !this.ctlr.payload.wired && this.ctlr.isNativeEl && fanout(this.config.status, getMediaStatus(this.el as any, undefined, undefined, true), { skipUndefined: true }); // incase of async init
-    silence(() => (fanout(this.config.intent, this.config[this.ctlr.techTruth]), fanout(this.config.settings, this.config.settings))); // // over to you, child. it go touch everybodyyyyy, no fear!
-    !this.ctlr.payload.wired && force(() => this.config.tick()); // state isn't volatile but it must touch
+    (this.ctlr.payload.wired || !this.ctlr.isNativeEl) && this.setLoadStartInfo?.();
+    !this.ctlr.payload.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl ? getMediaStatus(this.el as any, undefined, undefined, true) : {}) }, { skipUndefined: true })); // incase of async init
+    silence(() => (fanout(this.config.intent, this.config[this.ctlr.techTruth]), fanout(this.config.settings, this.config.settings))); // over to you, child. it go touch everybodyyyyy, no fear!
+    !this.ctlr.payload.wired ? force(() => this.config.tick()) : this.config.tick(); // state isn't volatile but it must touch
     this.wired = true;
   }
-  // --- THE MANDATORY CORE 5 (Media "Must Haves") ---
+  // --- THE CORE 5 (Media "Must Haves") ---
   protected abstract wireSrc(): void;
   protected abstract wireCurrentTime(): void;
   protected abstract wireDuration(): void;
   protected abstract wirePaused(): void;
   protected abstract wireEnded(): void;
-  // --- THE EXTENSIONS & WIRING ---
+  // --- THE EXTENSIONS ---
   protected wireFeatures(): void {
     this.media.on("features", this.handleFeatures, { init: true, signal: this.signal });
   }
@@ -89,6 +90,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.startTime === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
   }
+
   // --- THE HANDLERS ---
   protected handleFeatures({ type, target }: REvent<CtlrMedia, "features">): void {
     if (type === "update") this.wireFeature(target.key);
@@ -98,10 +100,19 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     if (e.type === "update" && this.config.features[e.target.key as keyof MediaFeatures] === false && e.value) return e.reject(this.name), e.stopImmediatePropagation(); // falsy values pass so that they can turn off but not on
   }
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
-    if (e.resolved) return;
-    this.when("loadedMetadata", e, (chapter = this.config.settings.metadata.chapterInfo[e.value as number]) => chapter && (this.media.intent.currentTime = chapter.startTime)); // #VALIDATED: mediated for cast conformity; no-opy // #FACADED: silenced intent actual op
+    if (e.resolved || !this.wired) return;
+    const chapter = this.config.settings.metadata.chapterInfo[e.value as number];
+    if (chapter) this.media.intent.currentTime = chapter.startTime; // #VALIDATED: mediated for cast conformity; no-opy // #FACADED: silenced intent actual op
+    this.ctlr.plug("settings.notifiers")?.notify("chapter");
     e.resolve(this.name);
   }
+
+  // --- THE HELPERS ---
+  protected setLoadStartInfo?(): void;
+  public when<Evt extends REvent<CtlrMedia>>(status: keyof MediaStatus, e?: Evt, task: () => void = NOOP, always = true, _key = status + e?.path || "", _value = (!always && this.wired) || this.config.status[status], _log = this.ctlr.config.devMode && !this.config.status[status]): void {
+    const callback = this.ctlr.guard((v: any, __: any, stalled = true) => v && (stalled && this.pending.get(_key)?.(), this.pending.delete(_key), task(), _log && this.ctlr.log(`${e?.path} stalled by ${status} executed with ${e?.value}`))); // RS(${this.ctlr.payload.readyState})
+    this.pending.get(_key)?.(), _value ? callback(_value, null, false) : this.pending.set(_key, this.config.watch(`status.${status}`, callback, { signal: this.signal }));
+  } // #PATIENT: (!`always`)
   // Dog Feeders
   protected onCurrentTime(v: number): void {
     if (!this.autoChapters) return;
@@ -109,11 +120,6 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (v >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
     this.media.state.currentChapter = -1;
   }
-  // --- THE HELPERS ---
-  public when<Evt extends REvent<CtlrMedia>>(status: keyof MediaStatus, e: Evt, task: () => void, always = true, _key = status + e.path, _value = !always && !(this.ctlr.state.readyState < 3) ? true : this.config.status[status], _log = !this.config.status[status]): void {
-    const callback = this.ctlr.guard((v: any, __: any, late = true) => v && (late && this.pending.get(_key)?.(), this.pending.delete(_key), task(), _log && console.log(`Pending task for ${status} ${e.path} executed with ${e.value}.`, this.config.status[status], this.ctlr.payload.readyState)));
-    this.pending.get(_key)?.(), _value ? callback(_value, null, false) : this.pending.set(_key, this.config.watch(`status.${status}`, callback, { signal: this.signal }));
-  } // #PATIENT: only after first play (`always`)
 }
 
 declare module "@defs/contract" {

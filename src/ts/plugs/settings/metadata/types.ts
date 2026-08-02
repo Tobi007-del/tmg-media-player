@@ -1,3 +1,3 @@
 export interface MetadataConfig {
-  autoGenerate: boolean;
+  levelBadges: Record<`${number}p`, string>;
 }

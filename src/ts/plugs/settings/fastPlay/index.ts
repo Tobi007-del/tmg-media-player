@@ -82,6 +82,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
     silence(() => (this.media.intent.paused = this.config.resetPaused ? this.wasPaused : false));
     this.ctlr.plug("settings.overlay")?.hide();
     this.ctlr.plug("settings.notifiers")?.compEl("fastplaynotifier")?.classList.remove("tmg-media-control-active", "tmg-media-rewind");
+    this.media.tick(["intent.playbackRate", "intent.paused"]);
   }
 
   protected handleSpeedPointerDown(e: PointerEvent): void {

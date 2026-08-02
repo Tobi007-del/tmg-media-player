@@ -13,10 +13,11 @@ export interface CtlrConfig {
   id: string;
   media?: MediaReport; // for startup only
   settings: Settings;
-  actions: Record<string, Action>;
-  logicPathBlacklist: string[];
+  actions: {
+    entries: Record<string, Action>;
+    logicBlacklist: string[];
+  };
   noPlugList: "*" | Array<keyof PlugRegistryMap>; // for non-core plugs
-  mediaType: MediaType;
   mediaPlayer: string; // external media player courtesy, e.g. youtube, vimeo, etc.
   debug: boolean;
   devMode: boolean;

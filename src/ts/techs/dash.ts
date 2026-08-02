@@ -21,8 +21,8 @@ export class DashTech extends HTML5Tech {
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && DASH_EXTENSIONS.test(src);
   }
-  protected strictTracks: boolean = true;
   protected hostSrc: string | null = null;
+  protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     const isVid = ctlr.media.type === "video";
     // prettier-ignore
@@ -42,13 +42,13 @@ export class DashTech extends HTML5Tech {
       // Setup & Compatibility
       this.destroyDash();
       const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
-      if (this.signal.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!DASHJS?.supportsMediaSource()) return this.ctlr.notice("DASH is not supported in this browser", "error", null);
       const base = this.config[this.ctlr.techTruth];
       this.hostSrc = src;
       this.host = DASHJS.MediaPlayer().create() as DashMediaPlayer;
       if (this.config.type === "audio") this.host.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace", video: "alwaysReplace" }, buffer: { fastSwitchEnabled: true } } }); // DASH.js to replace the audio to avoid buffer finish delays
-      if (this.config.settings.metadata.allowOverride) this.config.settings.metadata.chapterInfo = [];
+      if (this.config.settings.metadata.allowMediaOverride) this.config.settings.metadata.chapterInfo = [];
       // Status & State (Bulk Wiring)
       this.host.on(DASHJS.MediaPlayer.events.STREAM_INITIALIZED, () => {
         this.config.status.isLive = this.host!.isDynamic();
@@ -63,9 +63,9 @@ export class DashTech extends HTML5Tech {
         this.config.state[`current${capitalize<TrackType>(ev.mediaType)}Track`] = i ?? -1;
       });
       this.host.on(DASHJS.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (ev: any) => ev.mediaType === "video" && (this.config.state.currentLevel = ev.newQuality ?? ev.index)); // v4+ uses newQuality, v3 uses index
-      this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidth", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round((this.host!.getAverageThroughput("video") / 1000) * 10) / 10), 2000)); // Converted to Mbps, 1 decimal
+      this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidthing", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round(this.host!.getAverageThroughput("video") * 1000)), 2000)); // kbps to bps
       this.host.on(DASHJS.MediaPlayer.events.EVENT_MODE_ON_RECEIVE, (ev: any) => {
-        if (!this.config.settings.metadata.allowOverride) return;
+        if (!this.config.settings.metadata.allowMediaOverride) return;
         if (!ev.schemeIdUri?.includes("chapter") && !ev.schemeIdUri?.includes("title")) return;
         const chapters = this.config.settings.metadata.chapterInfo;
         if (chapters.find((c) => c.startTime === ev.presentationTime)) return;
@@ -86,6 +86,7 @@ export class DashTech extends HTML5Tech {
   // ===========================================================================
   // WIRING OVERRIDES
   // ===========================================================================
+  protected override wireMediaTracks(): void {}
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
     this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as dashjs.MediaInfo[]).findIndex((t) => t.id === term || t.lang === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHostTrackIntent(e, _type), this.evtOpts.CONFIG);
@@ -133,6 +134,7 @@ export class DashTech extends HTML5Tech {
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
+    if (!this.signal || this.signal?.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err.error ?? err.message ?? "Fatal DASH error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }

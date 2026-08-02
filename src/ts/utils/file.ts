@@ -1,26 +1,27 @@
 import { NOOP } from "sia-reactor";
 import { parseRomanNum } from "./num";
-import { mimeTypes, VIDEO_EXTENSIONS } from "./match";
+import { MEDIA_EXTENSIONS, FILE_EXTENSIONS, mimeTypes } from "./match";
 
 // File Size Formatting
 export { formatSize } from "@t007/utils";
 
 // Extension Helpers
-export function getExtension(fn: string): string {
-  return fn.slice(fn.lastIndexOf(".") + 1).toLowerCase() ?? "";
+export function getExtension(fn: string, generic = true): string {
+  const m = fn.match(!generic ? MEDIA_EXTENSIONS : FILE_EXTENSIONS);
+  return (m ? (generic ? m[1] : m[1] || m[4]) : "")?.toLowerCase() ?? ""; // AUD or VID ext
 }
 
-export function noExtension(fn: string, generic = false): string {
-  return fn.replace(!generic ? VIDEO_EXTENSIONS : /(?:\.[a-z0-9]{2,5})+$/i, "");
+export function noExtension(fn: string, generic = true): string {
+  return fn.replace(!generic ? MEDIA_EXTENSIONS : FILE_EXTENSIONS, "");
 }
 
 // MIME Type Resolution
-export function getMimeTypeFromExtension(name: string) {
-  return mimeTypes[getExtension(name)] || "application/octet-stream"; // Default to binary stream
+export function getMimeTypeFromExtension(name: string, generic = true): string {
+  return mimeTypes[getExtension(name, generic)] || "application/octet-stream"; // Default to binary stream
 }
 
 // Sorters
-export function smartFlatSort<F extends { name: string }>(files: F[], debug = false, stripExt = noExtension, log = debug ? (title: string, ...body: any[]) => console.log(`[Sorter][${title}]`, ...body) : NOOP, bCache = new Map(), kCache = new Map(), groups = new Map()) {
+export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (item: any) => item.name || "", debug = false, stripExt = noExtension, log = debug ? (title: string, ...body: any[]) => console.log(`[Sorter][${title}]`, ...body) : NOOP, bCache = new Map(), kCache = new Map(), groups = new Map()) {
   debug && console.time("[Sorter]"), log("Init", `Sorting ${files.length} items...`);
   // Extracts the main series title + optional season
   function getNamePrefix(name: string, base = stripExt(name), match = base.match(/(.*?)(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)?/i)) {
@@ -45,14 +46,14 @@ export function smartFlatSort<F extends { name: string }>(files: F[], debug = fa
     return [Infinity, Infinity]; // Hard fallback, gets sorted dead last
   }
   for (const file of files) {
-    const key = getNamePrefix(file.name);
+    const key = getNamePrefix(getName(file));
     let group = groups.get(key);
-    log("Prefix", `"${file.name}" -> "${key}"`), (group ?? (groups.set(key, (group = [])), group)).push(file);
+    log("Prefix", `"${getName(file)}" -> "${key}"`), (group ?? (groups.set(key, (group = [])), group)).push(file);
   }
   const sortedFiles = [],
     byGroup = ([a]: [string, F[]], [b]: [string, F[]], diff = a === "unknown" ? 1 : b === "unknown" ? -1 : a.localeCompare(b)) => (log("Group Compare", `[${a}] vs [${b}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}`), diff), // Sort groups alphabetically by their prefix
     getKey = (name: string, key = kCache.get(name)) => (key ? key : (kCache.set(name, (key = extractEpisodeKey(name))), key)),
-    byEpisode = (a: F, b: F, ak = getKey(a.name), bk = getKey(b.name), diff = ak[0] !== bk[0] ? ak[0] - bk[0] : ak[1] - bk[1]) => (log("Episode Compare", `[${ak}] vs [${bk}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}  ("${a.name}" / "${b.name}")`), diff), // season | episode
+    byEpisode = (a: F, b: F, ak = getKey(getName(a)), bk = getKey(getName(b)), diff = ak[0] !== bk[0] ? ak[0] - bk[0] : ak[1] - bk[1]) => (log("Episode Compare", `[${ak}] vs [${bk}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}  ("${getName(a)}" / "${getName(b)}")`), diff), // season | episode
     sortedGroups = (log("Groups", `Identified ${groups.size} group(s)`, groups), [...groups.entries()].sort(byGroup)); // Sort groups alphabetically by their prefix
   for (const [, group] of sortedGroups) group.sort(byEpisode), sortedFiles.push(...group);
   return log("Done", sortedFiles), debug && console.timeEnd("[Sorter]"), sortedFiles;

@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 import { capitalize } from "@utils/str";
 
 export type CaptionsConfig = undefined;
@@ -22,11 +22,13 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
     this.media.on("features.textVisible", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
+    // Plug Listeners
+    this.plug?.state.on("secondaryTracks", this.syncBadge, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.currentTextTrack", this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.textTracks", this.syncUI, { signal: this.signal });
+    for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.captions", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.captions", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -34,12 +36,17 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   }
 
   public syncUI(): void {
-    this[!this.plug?.canVisible ? "disable" : "enable"]();
-    this.syncARIA();
+    this[!this.plug?.canVisible ? "disable" : "enable"](), this.syncBadge(), this.syncARIA();
   }
+  protected syncBadge(): void {
+    const track = this.media.status.textTracks[this.media.state.currentTextTrack],
+      c = this.plug?.config.multiple && this.plug.state.secondaryTracks.length;
+    this.setBadge(track && this.media.state.textVisible ? `${((track.label || track.language)?.slice(0, 2) || "").toUpperCase()}${c ? `+${c}` : ""}` : "");
+  }
+
   public syncARIA(): void {
     this.state.label = capitalize(this.plug?.getTrackKind()) || "Captions";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.captions);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

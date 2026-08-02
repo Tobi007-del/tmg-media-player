@@ -46,7 +46,7 @@
 }
 [data-notify="mediaplay"] .tmg-media-play-notifier,
 [data-notify="mediapause"] .tmg-media-pause-notifier,
-[data-notify="mediaprev"] .tmg-media-prev-notifier,
+[data-notify="mediaprevious"] .tmg-media-previous-notifier,
 [data-notify="medianext"] .tmg-media-next-notifier,
 [data-notify="playbackrateup"] .tmg-media-playback-rate-up-notifier,
 [data-notify="playbackratedown"] .tmg-media-playback-rate-down-notifier,

@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { addSafeClicks, createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type CaptureConfig = undefined;
 
@@ -23,6 +23,7 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.keys.shortcuts.capture", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.capture", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -34,8 +35,8 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = "Capture frame";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.capture);
-    this.el.title = `Capture${this.state.cmd} ? DblClick?B&W (+alt)`;
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.capture), (this.state.voiceCommand = this.settings.voice.commands.capture));
+    this.el.title = `Capture${this.state.cmd} ↔ DblClick→B&W (+alt)`;
     this.setBtnARIA("Capture monochrome frame");
   }
 }

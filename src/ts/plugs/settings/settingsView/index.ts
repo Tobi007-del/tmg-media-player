@@ -24,7 +24,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
 
   public override mount(): void {
     this.closeBtn = this.ctlr.queryDOM(".tmg-media-settings-close-btn")!;
-    !this.config.menu.disabled && this.menu.mount(this.enterView);
+    !this.config.menu.disabled && this.menu.mount(this.toggleView);
   }
   public override unmount(): void {
     this.media.container.classList.remove("tmg-media-settings-view");
@@ -37,17 +37,15 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
     // Ctlr Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("settings", { fn: this.toggleView, keyboard: { phase: "keyup" }, zen: true });
+    this.ctlr.registerAction("settings", { fn: () => this.menu.toggle(), keyboard: { phase: "keyup" } });
     !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 
   public async enterView(): Promise<void> {
     if (this.ctlr.isUIActive("settings")) return;
     if (!this.viewReady) this.initView(), (this.viewReady = true);
-    this.menu.close();
-    this.wasPaused = this.media.state.paused;
-    if (this.config.autoPause) silence(() => (this.media.intent.paused = true));
-    this.media.container.classList.add("tmg-media-settings-view");
+    (this.wasPaused = this.media.state.paused), this.config.autoPause && silence(() => (this.media.intent.paused = true));
+    this.menu.close(), this.media.container.classList.add("tmg-media-settings-view");
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
@@ -58,7 +56,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
     if (!this.ctlr.isUIActive("settings")) return;
     this.media.container.classList.remove("tmg-media-settings-view");
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
-    if (this.config.autoPause) silence(() => (this.media.intent.paused = this.wasPaused));
+    this.config.autoPause && silence(() => (this.media.intent.paused = this.wasPaused));
     this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");
   } // #STANDALONE: needs scoped behavior
 
@@ -72,9 +70,9 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
     const options = [{ option: "Light Blue", value: "#3198f5" }, { option: "Hot Pink", value: "#ff69b4" }, { option: "Fiery Red", value: "#ff0033" }, { option: "Dark Turquoise", value: "#00ced1" }, { option: "Custom Hue", value: "custom" }, { option: "Video Derived", value: "auto" }],
       gcolors = options.slice(0, -2).map((opt) => opt.value),
       defs = { brand: this.settings.css.brandColor as string ?? "#e26e02", theme: this.settings.css.themeColor as string ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
-      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
+      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "Just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
       cBField = t007.field({ type: "color" }),
-      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
+      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "Also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
       cTField = t007.field({ type: "color" }),
       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
@@ -128,7 +126,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
 
   private getTipsHTML() {
     return `
-      <div style="text-align: left; font-family: inherit; color: inherit;">
+      <div style="font-family: inherit; color: inherit;">
         <div style="text-align: center; margin-bottom: 25px;">
           <h2 style="margin: 0 0 10px 0; letter-spacing: -0.5px;">🎬 Welcome to TVP</h2>
           <p style="margin: 0; opacity: 0.9; line-height: 1.5;">
@@ -166,7 +164,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
         </ul>
         <div style="text-align: center; margin-top: 30px; padding: 15px; border-radius: 8px; background: rgba(128, 128, 128, 0.1);">
           <p style="margin: 0 0 10px 0;"><strong>Enjoy the engine.</strong> We're still in active development, but we're already miles ahead. Welcome to the bleeding edge.</p>
-          <p style="margin: 0; opacity: 0.8;">🧪 <strong>Beta Tester?</strong> Check the bottom of the page to find the hidden button to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
+          <p style="margin: 0; opacity: 0.8;">🧪 <strong>beta Tester?</strong> Check the bottom of the page to find the hidden button to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
           </div>
         </div>
       `;

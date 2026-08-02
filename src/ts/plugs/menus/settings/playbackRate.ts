@@ -9,7 +9,7 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
     icon: "playbackrate",
     widget: "group",
     feature: "playbackRate",
-    tipHTML: "Configure custom playback speeds",
+    getTipHTML: () => "Configure custom playback speeds",
     getValue: () => (plug.media.state.playbackRate === 1 ? "Normal" : `${plug.media.state.playbackRate}x`),
     items: [
       {
@@ -45,20 +45,28 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
     mediaPaths: ["state.playbackRate"],
   },
   {
-    id: "limits",
-    label: "Limits",
-    icon: "configure",
+    id: "advanced",
+    label: "Advanced",
+    icon: "settings",
     widget: "group",
     getValue: () => "",
     items: [
       {
-        id: "playbackRateLimits",
-        label: "Playback speed",
-        widget: "limits",
-        configPaths: ["settings.playbackRate.min", "settings.playbackRate.max", "settings.playbackRate.skip"],
-        getValue: () => "",
-        getLimits: () => [{ name: "playbackRate", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }],
-        onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.playbackRate_min, max: val.playbackRate_max, skip: val.playbackRate_step }, { skipUndefined: true }),
+        id: "limits",
+        label: "Limits",
+        widget: "group",
+        getValue: () => "On",
+        items: [
+          {
+            id: "playbackRateLimits",
+            label: "Playback speed",
+            widget: "limits",
+            configPaths: ["settings.playbackRate.min", "settings.playbackRate.max", "settings.playbackRate.skip"],
+            getValue: () => "",
+            getLimits: () => [{ name: "playbackRate", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }],
+            onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.playbackRate_min, max: val.playbackRate_max, skip: val.playbackRate_step }, { skipUndefined: true }),
+          },
+        ],
       },
     ],
   },

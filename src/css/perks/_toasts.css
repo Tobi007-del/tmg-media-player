@@ -23,9 +23,16 @@
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-actions-wrapper {
   max-width: calc(var(--t007-toast-unit) * 3.25);
 }
-.tmg-media-container .t007-toast-action-button:is([data-action="‹"], [data-action="›"]) {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button:is([data-action="‹"], [data-action="›"]) {
   font-size: 120%;
   line-height: 1;
+}
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button > span {
+  display: contents;
+}
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button svg {
+  width: calc(var(--t007-toast-unit) * 1.25);
+  height: calc(var(--t007-toast-unit) * 1.25);
 }
 
 .tmg-media-voice-sticky-crumb {
@@ -68,6 +75,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  color: var(--tmg-media-current-control-color);
   background: var(--tmg-media-background);
   border-radius: var(--t007-toast-image-border-radius);
 }
@@ -79,7 +87,6 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  color: var(--tmg-media-control-color);
   font-size: calc(var(--t007-toast-unit) / 1.25);
   padding: calc(var(--t007-toast-unit) / 15) calc(var(--t007-toast-unit) / 5);
   margin: calc(var(--t007-toast-unit) / 5);

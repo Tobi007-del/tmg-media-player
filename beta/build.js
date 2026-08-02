@@ -13,7 +13,7 @@
     return sig.addEventListener("abort", kill, { once: true }), id;
   }
 
-  // ../sia-reactor/dist/chunk-243U74PP.js
+  // ../sia-reactor/dist/chunk-ORK3EGB6.js
   function onAllMethods(owner, callback, skipOwn = true, nested = false) {
     let proto = owner;
     while (proto && proto !== Object.prototype) {
@@ -48,16 +48,22 @@
   function createEl(tag, props, dataset, styles, el = tag ? document?.createElement(tag) : null) {
     return assignEl(el, props, dataset, styles);
   }
-  function assignEl(el, props, dataset, styles) {
+  function assignEl(el, props, dataset, styles, nodiff = true) {
     if (!el) return null;
     if (props) {
-      for (const k of Object.keys(props)) if (props[k] !== void 0) el[k] = props[k];
+      for (const k of Object.keys(props)) if (props[k] !== void 0) {
+        if (nodiff || el[k] !== props[k]) el[k] = props[k];
+      }
     }
     if (dataset) {
-      for (const k of Object.keys(dataset)) if (dataset[k] !== void 0) el.dataset[k] = String(dataset[k]);
+      for (const k of Object.keys(dataset)) if (dataset[k] !== void 0) {
+        if (nodiff || el.dataset[k] !== dataset[k]) el.dataset[k] = String(dataset[k]);
+      }
     }
     if (styles) {
-      for (const k of Object.keys(styles)) if (styles[k] !== void 0) el.style[k] = styles[k];
+      for (const k of Object.keys(styles)) if (styles[k] !== void 0) {
+        if (nodiff || el.style[k] !== styles[k]) el.style[k] = styles[k];
+      }
     }
     return el;
   }
@@ -112,7 +118,7 @@
     if (settings.disabled) return false;
     const activeEl = getActiveEl(e.target?.ownerDocument);
     if ((e.key === " " || e.key === "Enter") && activeEl?.matches("button,input[type='button'],input[type='submit']")) return false;
-    if (e.currentTarget !== activeEl && activeEl?.matches("input,textarea,[contenteditable]") && !(e.key === "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey)) return false;
+    if (e.currentTarget !== activeEl && activeEl?.matches("input,textarea,[contenteditable],[role]") && !(e.key === "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey)) return false;
     const combo = stringifyKeyEvent(e), { override, block, action, whitelisted } = getTermsForKey(combo, settings);
     if (block) return false;
     if (override) e.preventDefault();
@@ -126,7 +132,7 @@
     return (formatted && !Array.isArray(s) ? s : formatKeyForDisplay(s)).toLowerCase().replace(/[()]/g, "").replace(/\bor\b/g, " ").replace(/\w+/g, (k) => m[k] || k).replace(/\s+/g, " ").trim();
   }
 
-  // ../sia-reactor/dist/chunk-2ZYYYSZ4.js
+  // ../sia-reactor/dist/chunk-WYSENFHG.js
   var RAW = /* @__PURE__ */ Symbol.for("S.I.A_RAW");
   var INERTIA = /* @__PURE__ */ Symbol.for("S.I.A_INERTIA");
   var REJECTABLE = /* @__PURE__ */ Symbol.for("S.I.A_REJECTABLE");
@@ -140,9 +146,14 @@
   var NIL = Object.freeze({});
   var NOOP = () => {
   };
+  var isDevEnv = false;
+  try {
+    isDevEnv = true;
+  } catch (e) {
+  }
   var CTX = {
     /** Flag indicating whether the application is running in development mode. */
-    isDevEnv: "undefined" !== typeof process ? true : true,
+    isDevEnv,
     /** Flag indicating whether an operation is bypassing checks so reactors can allow all writes. */
     usingForce: false,
     /** Active `Autotracker` instance, override for automatic dependency collection on `Reactor` traps. */
@@ -161,6 +172,27 @@
       batchingFunction: RTR_BATCH
     }
   };
+  var txId = 0;
+  function startTx(label = `Tx ${txId + 1}`) {
+    const parent = CTX.meta?.tx ?? null, tx = { id: ++txId, label, parent };
+    CTX.meta ??= {};
+    return CTX.meta.tx = tx;
+  }
+  function endTx(tx) {
+    if (CTX.meta?.tx === tx) {
+      if (tx.parent) CTX.meta.tx = tx.parent;
+      else resetMeta("tx");
+    }
+    ;
+  }
+  function transaction(fn, label) {
+    const tx = startTx(label);
+    try {
+      return fn();
+    } finally {
+      endTx(tx);
+    }
+  }
   var arrRegex = /^([^\[\]]+)\[(\d+)\]$/;
   function isObj(obj, arraycheck = true) {
     return "object" === typeof obj && obj !== null && (arraycheck ? !Array.isArray(obj) : true);
@@ -182,10 +214,10 @@
       const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
-        if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return void 0;
+        if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return currObj[key3];
         currObj = currObj[key3][Number(iStr)];
       } else {
-        if (!isObj(currObj) || !(key2 in currObj)) return void 0;
+        if (!isObj(currObj) || !(key2 in currObj)) return currObj[key2];
         currObj = currObj[key2];
       }
     }
@@ -288,7 +320,7 @@
       if ((opts.atomic ?? true) && Array.isArray(news) && isPath) setPath(state2, path, news), getPath(state2, path).length = news.length;
       else walk(target, opts.merge ? mergeObjs(olds, news, opts) : news, opts.depth === true ? Infinity : opts.depth);
     };
-    force(() => transaction(func, opts.txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), isEvPd);
+    force(() => transaction(func, opts.txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), CTX.usingForce || isEvPd);
   }
   var fanoutOptsArr = ["merge", "depth", "atomic", "skipUndefined"];
   function force(task, bool = true) {
@@ -354,14 +386,14 @@
   function withMeta(props, fn) {
     CTX.meta ??= {};
     const cache = {};
-    for (const key in props) {
+    for (const key of Object.keys(props)) {
       cache[key] = CTX.meta[key];
       CTX.meta[key] = props[key];
     }
     try {
       return fn();
     } finally {
-      for (const key in cache) {
+      for (const key of Object.keys(cache)) {
         if (cache[key] === void 0) resetMeta(key);
         else CTX.meta[key] = cache[key];
       }
@@ -373,29 +405,6 @@
     for (const _ in CTX.meta) return;
     CTX.meta = null;
   }
-  var txId = 0;
-  function startTx(label = `Tx ${txId + 1}`) {
-    const parent = CTX.meta?.tx ?? null, tx = { id: ++txId, label, parent };
-    CTX.meta ??= {};
-    return CTX.meta.tx = tx;
-  }
-  function endTx(tx) {
-    if (CTX.meta?.tx === tx) {
-      if (tx.parent) CTX.meta.tx = tx.parent;
-      else resetMeta("tx");
-    }
-    ;
-  }
-  function transaction(fn, label) {
-    const tx = startTx(label);
-    try {
-      return fn();
-    } finally {
-      endTx(tx);
-    }
-  }
-
-  // ../sia-reactor/dist/chunk-OTBKVZ4L.js
   var ReactorEvent = class _ReactorEvent {
     /** No active propagation phase. */
     static NONE = 0;
@@ -554,10 +563,10 @@
       const proxy = new Proxy(target, {
         // Robust Proxy handler
         get: (object, key2, receiver) => {
-          if (key2 === RAW) return this.log(`\u{1F440} [Reactor \`get\` Trap] Peeked at ${object}`), object;
+          if (key2 === RAW) return this.log(`\u{1F440} [\`get\` Trap] Peeked at ${object}`), object;
           let value = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver);
           const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath;
-          this.log(`\u{1F50D} [Reactor \`get\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this);
+          this.log(`\u{1F50D} [\`get\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this);
           if (this.config.get) value = this.config.get(object, key2, value, receiver, paths);
           if (this.getters) {
             const wildcords = this.getters.get("*");
@@ -576,13 +585,13 @@
         set: (object, key2, value, receiver) => {
           let unchanged, safeValue, safeOldValue, terminated = false;
           const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
-          this.log(`\u270F\uFE0F [Reactor \`set\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this, true);
+          this.log(`\u270F\uFE0F [\`set\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this, true);
           if (this.config.referenceTracking || !indiffable) {
             safeOldValue = oldValue?.[RAW] || oldValue;
             safeValue = value?.[RAW] || value;
             unchanged = this.config.equalityFunction(safeValue, safeOldValue);
           }
-          if (!indiffable && unchanged && !CTX.usingForce && keyStr !== "length") return this.log(`\u{1F504} [Reactor \`set\` Trap] Unchanged for "${keyStr}" on "${paths}"`), true;
+          if (!indiffable && unchanged && !CTX.usingForce && keyStr !== "length") return this.log(`\u{1F504} [\`set\` Trap] Unchanged for "${keyStr}" on [${paths}]`), true;
           if (this.config.set) terminated = (value = this.config.set(object, key2, value, oldValue, receiver, paths)) === TERMINATOR;
           if (this.setters) {
             const wildcords = this.setters.get("*");
@@ -600,9 +609,9 @@
               if (!(terminated ||= payload.terminated)) value = result;
             }
           }
-          if (terminated) return this.log(`\u{1F6E1}\uFE0F [Reactor \`set\` Trap] Terminated for "${keyStr}" on "${paths}"`), true;
+          if (terminated) return this.log(`\u{1F6E1}\uFE0F [\`set\` Trap] Terminated for "${keyStr}" on [${paths}]`), true;
           const success = !this.config.preserveContext ? (object[key2] = value, true) : Reflect.set(object, key2, value, receiver);
-          if (!success) return this.log(`\u274C [Reactor \`set\` Trap] Failed for "${keyStr}" on "${paths}"`), false;
+          if (!success) return this.log(`\u274C [\`set\` Trap] Failed for "${keyStr}" on [${paths}]`), false;
           if (this.config.referenceTracking && !unchanged) this.config.smartCloning && this.stamp(object), this.unlink(safeOldValue, object, keyStr), this.link(safeValue, object, keyStr);
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
@@ -614,7 +623,7 @@
         deleteProperty: (object, key2) => {
           let value, receiver = this.proxyCache.get(object), terminated = false;
           const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
-          this.log(`\u{1F5D1}\uFE0F [Reactor \`deleteProperty\` Trap] Initiated for "${keyStr}" on "${paths}"`), CTX.autotracker?.track(fullPath, this, true);
+          this.log(`\u{1F5D1}\uFE0F [\`deleteProperty\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this, true);
           if (this.config.deleteProperty) terminated = (value = this.config.deleteProperty(object, key2, oldValue, receiver, paths)) === TERMINATOR;
           if (this.deleters) {
             const wildcords = this.deleters.get("*");
@@ -631,9 +640,9 @@
               if (!(terminated ||= payload.terminated)) value = result;
             }
           }
-          if (terminated) return this.log(`\u{1F6E1}\uFE0F [Reactor \`deleteProperty\` Trap] Terminated for "${keyStr}" on "${paths}"`), true;
+          if (terminated) return this.log(`\u{1F6E1}\uFE0F [\`deleteProperty\` Trap] Terminated for "${keyStr}" on [${paths}]`), true;
           const success = !this.config.preserveContext ? delete object[key2] : Reflect.deleteProperty(object, key2);
-          if (!success) return this.log(`\u274C [Reactor \`deleteProperty\` Trap] Failed for "${keyStr}" on "${paths}"`), false;
+          if (!success) return this.log(`\u274C [\`deleteProperty\` Trap] Failed for "${keyStr}" on [${paths}]`), false;
           if (this.config.referenceTracking) this.config.smartCloning && this.stamp(object), this.unlink(oldValue?.[RAW] || oldValue, object, keyStr);
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
@@ -645,21 +654,21 @@
         has: (object, key2) => {
           let has = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
           const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
-          this.log(`\u2753 [Reactor \`has\` Trap] Initiated for "${keyStr}" on "${fullPath}"`), CTX.autotracker?.track(fullPath, this);
+          this.log(`\u2753 [\`has\` Trap] Initiated for "${keyStr}" on '${fullPath}'`), CTX.autotracker?.track(fullPath, this);
           if (this.config.has) has = this.config.has(object, key2, has, this.proxyCache.get(object), fullPath);
           return has;
         },
         getOwnPropertyDescriptor: (object, key2) => {
           let descriptor = !this.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key2) : Reflect.getOwnPropertyDescriptor(object, key2);
           const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
-          this.log(`\u{1F4CB} [Reactor \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on "${fullPath}"`), CTX.autotracker?.track(fullPath, this);
+          this.log(`\u{1F4CB} [\`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on '${fullPath}'`), CTX.autotracker?.track(fullPath, this);
           if (this.config.getOwnPropertyDescriptor) descriptor = this.config.getOwnPropertyDescriptor(object, key2, descriptor, this.proxyCache.get(object), this.config.lineageTracing ? this.trace(object, keyStr) : fullPath);
           return descriptor;
         },
         ownKeys: (object) => {
           let ownKeys = Reflect.ownKeys(object);
           const safePath = path || "*";
-          this.log(`\u{1F511} [Reactor \`ownKeys\` Trap] Initiated on "${safePath}"`), CTX.autotracker?.track(safePath, this);
+          this.log(`\u{1F511} [\`ownKeys\` Trap] Initiated on "${safePath}"`), CTX.autotracker?.track(safePath, this);
           if (this.config.ownKeys) ownKeys = this.config.ownKeys(object, ownKeys, this.proxyCache.get(object), safePath);
           return ownKeys;
         }
@@ -1105,7 +1114,7 @@
     return target[RAW] || target;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-HGUYOV3P.js
+  // ../t007-tools/packages/utils/dist/chunk-ZOFWWRKV.js
   var INTERACTIVE_SELECTOR = ":is(button,[href],input:not([type='hidden']),select,textarea,details>summary,[contenteditable],iframe,audio[controls],video[controls],[tabindex]):not([disabled],[tabindex='-1'],[data-focus-guard],[inert],[inert] *)";
   var isInteractive = (target) => target instanceof HTMLElement && target.matches(INTERACTIVE_SELECTOR);
   var VIRTUAL_RESOURCE = /* @__PURE__ */ Symbol.for("T007_VIRTUAL_RESOURCE");
@@ -1125,7 +1134,7 @@
             console.warn(`Retrying ${type} load for "${src}" (${attempts - remaining + 1})...`);
           } else {
             delete win.t007._resourceCache[src];
-            reject(new Error(`${capitalize(type)} load failed for "${src}" after ${attempts - 1} attempts`));
+            reject(new Error(`${capitalize(type)} load failed for "${src}"`));
           }
         };
         const url = retryKey && remaining < attempts ? `${src}${src.includes("?") ? "&" : "?"}_${retryKey}=${Date.now()}` : src;
@@ -1195,7 +1204,7 @@
     window.T007_DIALOG_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest/dist/index.min.css`;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-ZRCBB5P4.js
+  // ../t007-tools/packages/utils/dist/chunk-DSDFIB5F.js
   function rippleHandler(e, { target, forceCenter = false, wrapperClassName = "t007-ripple-wrapper", className = "t007-ripple", holdClassName = "t007-ripple-hold", fadeClassName = "t007-ripple-fade", maxDuration = 1e3 } = NIL) {
     const el = target || e.currentTarget;
     if (!el || e.target !== e.currentTarget && isInteractive(e.target) || el.hasAttribute("disabled") || e.pointerType === "mouse" && e.button !== 0) return;
@@ -1291,7 +1300,7 @@
   }
   var removeScrollAssist = (el) => t007._scrollers.get(el)?.destroy();
 
-  // ../sia-reactor/dist/chunk-A3ZCYWWM.js
+  // ../sia-reactor/dist/chunk-EA3LQVCI.js
   var BaseReactorModule = class {
     static moduleName;
     get name() {
@@ -1308,6 +1317,7 @@
     /** The reactive configuration object for the module, manipulate to change behaviour. */
     config;
     wired = false;
+    clups = /* @__PURE__ */ new Map();
     constructor(config, rtr, state2) {
       guardAllMethods(this, this.guard);
       this.config = isObj(config) ? reactive(config) : config;
@@ -1331,10 +1341,12 @@
     }
     onAttach(_rtr, _rid) {
     }
-    attachPaths(rtr, rid, forEach = NOOP, paths = this.getPaths(rid)) {
+    attachPaths(rtr, rid, paths = this.getPaths(rid)) {
+      let clups = this.clups.get(rid);
+      if (!clups) this.clups.set(rid, clups = []);
       for (let i = 0, len = paths.length; i < len; i++) {
         const path = paths[i];
-        forEach(rtr, path), !this.config.disabled ? this.config.synchronous ? rtr.watch(path, this.handlePathSync, { signal: this.signal }) : rtr.on(path, this.handlePath, this.evtOpts) : this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath, this.evtOpts);
+        !this.config.disabled ? clups.push(this.config.synchronous ? rtr.watch(path, this.handlePathSync, { signal: this.signal }) : rtr.on(path, this.handlePath, this.evtOpts)) : this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath, this.evtOpts);
       }
     }
     /**
@@ -1363,7 +1375,7 @@
     };
     // `()=>{}`: needs to be bounded even before initialization
     handleWhitelist({ currentTarget: { value: paths } }) {
-      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid, NOOP, this.getPaths(rid, paths));
+      for (const [rid, rtr] of this.deps) this.cleanup(rid), this.attachPaths(rtr, rid, this.getPaths(rid, paths));
     }
     // child wires when ready
     handlePath(e, rid = this.rids.get(e.reactor)) {
@@ -1372,10 +1384,15 @@
     handlePathSync = (_, p) => this.handlePath(p);
     onPath(_e, _rid) {
     }
-    handleSynchronous({ oldValue }) {
-      for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid, (rtr2, path) => oldValue ? rtr2.nowatch(path, this.handlePathSync) : rtr2.off(path, this.handlePath));
+    handleSynchronous() {
+      for (const [rid, rtr] of this.deps) this.cleanup(rid), this.attachPaths(rtr, rid);
     }
     // child wires when ready
+    cleanup(rid) {
+      const clups = this.clups.get(rid);
+      if (clups) for (let i = 0, len = clups.length; i < len; i++) clups[i]();
+      clups && (clups.length = 0);
+    }
     /**
      * Path resolution utility for modules, provides automatic reactor id resolution for multi-reactor setups.
      * @param target Reactor or reactor id to resolve paths for when using per-reactor path lists`.
@@ -1901,7 +1918,7 @@
     return withMeta({ silent: true }, fn);
   }
 
-  // ../sia-reactor/dist/chunk-4S44OX5N.js
+  // ../sia-reactor/dist/chunk-OFH4X3QD.js
   var Autotracker = class {
     proxy;
     deps = /* @__PURE__ */ new Map();
@@ -1938,41 +1955,44 @@
         get: (object, key, receiver) => {
           if (key === RAW) return this.rtr.log(`\u{1F440} [AutoTracker \`get\` Trap] Peeked at ${object}`), object;
           const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
-          return this.rtr.log(`\u{1F50D} [AutoTracker \`get\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), this.proxied(!this.rtr.config.preserveContext ? object[key] : Reflect.get(object, key, receiver), fullPath);
+          return this.rtr.log(`\u{1F50D} [AutoTracker \`get\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), this.proxied(!this.rtr.config.preserveContext ? object[key] : Reflect.get(object, key, receiver), fullPath);
         },
         has: (object, key) => {
           const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
-          return this.rtr.log(`\u2753 [AutoTracker \`has\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), !this.rtr.config.preserveContext ? key in object : Reflect.has(object, key);
+          return this.rtr.log(`\u2753 [AutoTracker \`has\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), !this.rtr.config.preserveContext ? key in object : Reflect.has(object, key);
         },
         getOwnPropertyDescriptor: (object, key) => {
           const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
-          return this.rtr.log(`\u{1F4CB} [AutoTracker \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on "${path}"`), this.track(fullPath), !this.rtr.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key) : Reflect.getOwnPropertyDescriptor(object, key);
+          return this.rtr.log(`\u{1F4CB} [AutoTracker \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), !this.rtr.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key) : Reflect.getOwnPropertyDescriptor(object, key);
         },
         ownKeys: (object) => {
           const safePath = path || "*";
           return this.rtr.log(`\u{1F511} [AutoTracker \`ownKeys\` Trap] Initiated on "${safePath}"`), this.track(safePath), Reflect.ownKeys(object);
         },
         set: (_, key) => {
-          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`set\` Trap] Blocked for "${String(key)}" on "${path}"`);
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`set\` Trap] Blocked for "${String(key)}" on '${path}'`);
         },
         deleteProperty: (_, key) => {
-          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`deleteProperty\` Trap] Blocked for "${String(key)}" on "${path}"`);
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`deleteProperty\` Trap] Blocked for "${String(key)}" on '${path}'`);
         },
         defineProperty: (_, key) => {
-          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`defineProperty\` Trap] Blocked for "${String(key)}" on "${path}"`);
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`defineProperty\` Trap] Blocked for "${String(key)}" on '${path}'`);
         },
         setPrototypeOf: (_, key) => {
-          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`setPrototypeOf\` Trap] Blocked for "${String(key)}" on "${path}"`);
+          throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`setPrototypeOf\` Trap] Blocked for "${String(key)}" on '${path}'`);
         }
       });
       return this.proxyCache.set(obj, proxy), proxy;
     }
     /** Adds a path to the tracking set. */
-    track(path, rtr = this.rtr, prune = false) {
+    track(path, rtr = this.rtr, prune = false, strict = false) {
       if (!this.isTracking || !path || this.autortr && this.autortr !== rtr) return path;
       let paths = this.deps.get(rtr);
       if (!prune && !paths) paths = (this.deps.set(rtr, paths = /* @__PURE__ */ new Set()), paths);
-      if (path.startsWith(this.lastPath + ".")) paths.delete(this.lastPath);
+      if (path.startsWith(this.lastPath + ".")) {
+        const child = path.slice(this.lastPath.length + 1);
+        (strict || !child.includes("Symbol(") && child !== "length" && !/^\d+$/.test(child)) && paths.delete(this.lastPath);
+      }
       return !prune && paths.add(this.lastPath = path), path;
     }
     /** Removes a path from the tracking set. */
@@ -2072,7 +2092,7 @@
      * @param time TimeTravel module instance that owns timeline operations.
      * @param build Optional initial overlay config overrides.
      */
-    constructor(time, build = {}) {
+    constructor(time, build = { devOnly: true }) {
       this.time = time;
       this.config = reactive({ title: `Time Travel Console ${this.index = ++_TimeTravelConsole.count}`, ...build });
       this.state.open = !!this.config.startOpen;
@@ -2878,7 +2898,7 @@
       this.video[`${act}EventListener`]("durationchange", this._handleDurationChange);
       this.video[`${act}EventListener`]("ratechange", this._handlePlaybackRateChange);
       this.video[`${act}EventListener`]("volumechange", this._handleNativeVolumeChange);
-      this.video[`${act}EventListener`]("timeupdate", this._handleTimeUpdate);
+      this.video[`${act}EventListener`]("timeupdate", this._handletimeUpdate);
       this.video[`${act}EventListener`]("progress", this._handleLoadedProgress);
       this.video[`${act}EventListener`]("loadstart", this._handleLoadStart);
       this.video[`${act}EventListener`]("loadedmetadata", this._handleLoadedMetadata);
@@ -2912,8 +2932,8 @@
       this.DOM.fullscreenBtn?.addEventListener("click", this.toggleFullscreenMode);
       [this.DOM.pictureInPictureBtn, this.DOM.pictureInPictureIconWrapper].forEach((el) => el?.addEventListener("click", this.togglePictureInPictureMode));
       this.DOM.settingsBtn?.addEventListener("click", this.toggleSettingsView);
-      this.DOM.timelineContainer?.addEventListener("pointerdown", this._handleTimelinePointerDown);
-      this.DOM.timelineContainer?.addEventListener("keydown", this._handleTimelineKeyDown);
+      this.DOM.timelineContainer?.addEventListener("pointerdown", this._handletimelinePointerDown);
+      this.DOM.timelineContainer?.addEventListener("keydown", this._handletimelineKeyDown);
       this.DOM.timeline?.addEventListener("mousemove", this._handleTimelineInput);
       ["mouseleave", "touchend", "touchcancel"].forEach((e) => this.DOM.timeline?.addEventListener(e, this.stopTimePreviewing));
       this.DOM.captionsContainer.addEventListener("pointerdown", this._handleCaptionsDragStart);

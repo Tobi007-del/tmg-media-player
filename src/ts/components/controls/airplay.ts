@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type AirPlayConfig = undefined;
 
@@ -22,6 +22,7 @@ export class AirPlayButton extends BaseComponent<AirPlayConfig, ComponentState, 
     this.media.on("state.airplay", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.airplay", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.airplay", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -30,7 +31,7 @@ export class AirPlayButton extends BaseComponent<AirPlayConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.airplay ? "AirPlay Active" : "AirPlay";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.airplay);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.airplay), (this.state.voiceCommand = this.settings.voice.commands.airplay));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

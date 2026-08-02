@@ -13,8 +13,8 @@ const formatEntry = (entry: any, index: number) => {
 };
 
 export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuItem => ({
-  id: "general",
-  label: "General",
+  id: "advanced",
+  label: "Advanced",
   icon: "settings",
   widget: "group",
   getValue: () => "",
@@ -22,17 +22,19 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
     {
       id: "timeTravel",
       label: "Time travel",
+      getBadge: () => ({ label: "beta" }),
       widget: "group",
-      getValue: () => (plug.module.config.limit ? "On" : "Off"),
-      onWire: (syncUI, signal) => plug.module.config.on("limit", syncUI, { signal }),
-      tipHTML: "🌌 Step through the space-time continuum of your player's state. Rewind mistakes, replay interactions, and witness the magic of reactive architecture firsthand.",
+      getValue: () => (plug.config.module.limit ? "On" : "Off"),
+      configPaths: ["settings.timeTravel.module.limit"],
+      getTipHTML: () => "🌌 Step through the space-time continuum of your player's state. Rewind mistakes, replay interactions, and witness the magic firsthand.",
       items: [
         {
           id: "timeTravelHistory",
           label: "History",
           widget: "select",
           getValue: () => (plug.module.state.history.length ? `(${plug.module.state.currentFrame}) of ${plug.module.state.history.length}` : "Empty"),
-          getOptions: () => {
+          getDisabled: () => false,
+          getOptions() {
             const h = plug.module.state.history,
               centerIdx = Math.max(0, (plug.module.state.currentFrame ?? 0) - 1),
               startIdx = Math.max(0, centerIdx - 10);
@@ -50,43 +52,36 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
             if (match) plug.module.jumpTo(Number(match[1]));
           },
           onWire: (syncUI, signal) => {
-            const tk = "tt_" + Math.random();
-            for (const k of ["currentFrame", "tracking", "paused"]) plug.module.state.on(k as any, () => plug.ctlr.throttle(tk, () => (syncUI(), plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravelHistory")), 30, false), { signal });
+            const tk = "tt_" + Math.random(),
+              sync = () => plug.ctlr.throttle(tk, () => (syncUI(), plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravelHistory")), 30, false, plug.signal);
+            for (const k of ["currentFrame", "history", "tracking", "paused"]) plug.module.state.on(k as any, sync, { signal });
+            for (const k of ["devMode", "settings.timeTravel.module.whitelist", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, sync, { signal });
           },
-          configPaths: ["settings.timeTravel.module"],
-          actions: [
+          // configPaths: ["devMode", "settings.timeTravel.module.whitelist", "settings.timeTravel.console.disabled"],
+          actions: [{ id: "toggleConsole", getLabel: () => (plug.config.console.disabled ? "Show Console" : "Hide Console"), onClick: () => (plug.config.console.disabled = !plug.config.console.disabled), hidden: () => !plug.ctlr.config.devMode }],
+          footerActions: [
+            { id: "undo", getLabel: () => "Undo", onClick: () => plug.module.undo(), getDisabled: () => !plug.module.canUndo },
+            { id: "redo", getLabel: () => "Redo", onClick: () => plug.module.redo(), getDisabled: () => !plug.module.canRedo },
+            { id: "playPause", getLabel: () => (plug.module.state.paused ? "Play" : "Pause"), onClick: () => (plug.module.state.paused ? plug.module.play() : plug.module.pause()), getDisabled: () => !plug.module.canRedo },
+            { id: "rewind", getLabel: () => "Rewind", onClick: () => plug.module.rewind(), getDisabled: () => !plug.module.state.paused || !plug.module.state.currentFrame },
             {
               id: "toggleWhitelist",
               getLabel: () => {
-                const w = plug.module.config.whitelist as string[] | undefined;
-                return w?.[0] === "state" || w?.[0]?.[0] === "state" ? "Record Intents" : "Record States";
+                const w = plug.config.module.whitelist as string[] | undefined;
+                return w?.[0] === "state" || w?.[0]?.[0] === "state" ? "Intents" : "States";
               },
               onClick: () => {
-                const w = plug.module.config.whitelist as any,
+                const w = plug.config.module.whitelist as any,
                   isState = w?.[0] === "state" || w?.[0]?.[0] === "state";
                 plug.config.module.whitelist = Array.isArray(w) ? [isState ? "intent" : "state"] : { ...w, 0: [isState ? "intent" : "state"] };
-                plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravelHistory");
               },
+              hidden: () => !plug.ctlr.config.devMode,
             },
-          ],
-          footerActions: [
-            { id: "undo", getLabel: () => "Undo", onClick: () => plug.module.undo() },
-            { id: "redo", getLabel: () => "Redo", onClick: () => plug.module.redo() },
-            { id: "playPause", getLabel: () => (plug.module.state.paused ? "Play" : "Pause"), onClick: () => (plug.module.state.paused ? plug.module.play() : plug.module.pause()) },
-            { id: "rewind", getLabel: () => "Rewind", onClick: () => plug.module.rewind() },
             { id: "toggleTrack", getLabel: () => (plug.module.state.tracking ? "Untrack" : "Track"), onClick: () => (plug.module.state.tracking ? plug.module.untrack() : plug.module.track()) },
-            { id: "clear", getLabel: () => "Clear", onClick: () => plug.module.clear() },
+            { id: "clear", getLabel: () => "Clear", onClick: () => plug.module.clear(), getDisabled: () => !plug.module.state.history.length },
           ],
         },
-        {
-          id: "timeTravelPersist",
-          label: "Persist history",
-          widget: "toggle",
-          getValue: () => (plug.config.persist ? "On" : "Off"),
-          onChange: (val: boolean) => (plug.config.persist = val),
-          configPaths: ["settings.timeTravel.persist"],
-          title: "Save your state history across page reloads",
-        },
+        { id: "timeTravelPersist", label: "Persist history", widget: "toggle", getValue: () => (plug.config.persist ? "On" : "Off"), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" },
       ],
     },
   ],

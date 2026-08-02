@@ -2,202 +2,216 @@ import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { CaptionsPlug } from "@plugs/settings/captions";
 import { CAPTIONS_BUILD, STYLE_PATHS } from "@plugs/settings/captions/build";
 import { setPath, getPath, fanout } from "sia-reactor/utils";
-import { parseUIObj, getUIOpt, isStr, isBool } from "@utils/obj";
-import type { UISettings, UIOption } from "@defs/UIOptions";
+import { parseUIObj, getUIOpt, isStr, isBool, parseUIOpt } from "@utils/obj";
+import type { UIOption } from "@defs/UIOptions";
 import { camelize, capitalize, uncamelize } from "@utils/str";
+import { safeNum } from "@utils/num";
 
-export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] => [
-  {
-    id: "captions",
-    label: "Captions",
-    icon: "captions",
-    widget: "group",
-    mediaPaths: ["state.currentTextTrack", "status.textTracks"],
-    configPaths: ["settings.captions.multiple"],
-    onWire: (syncUI, signal) => plug.state.watch("secondaryTracks", syncUI, { signal }),
-    getValue() {
-      const isMulti = plug.config.multiple,
-        list = plug.media.status.textTracks;
-      if (!isMulti) return plug.media.state.currentTextTrack === -1 ? "Off" : list[plug.media.state.currentTextTrack]?.label || list[plug.media.state.currentTextTrack]?.language || `Track ${plug.media.state.currentTextTrack + 1}`;
-      
-      if (plug.media.state.currentTextTrack === -1) return plug.state.secondaryTracks.length ? `Off +${plug.state.secondaryTracks.length}` : "Off";
-      const track = list[plug.media.state.currentTextTrack],
-        primLabel = track?.label || track?.language || `Track ${plug.media.state.currentTextTrack + 1}`;
-      return plug.state.secondaryTracks.length ? `${primLabel} +${plug.state.secondaryTracks.length}` : primLabel;
-    },
-    actions: [
-      {
-        id: "goToStyles",
-        getLabel: () => "Styles",
-        onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("subtitleStyle"),
-      },
-    ],
-    items: [
-      {
-        id: "captionsList",
-        label: "Tracks",
-        widget: "select",
-        inline: true,
-        getMultiple: () => plug.config.multiple,
-        getValue() {
-          const isMulti = plug.config.multiple,
-            list = plug.media.status.textTracks;
-          if (!isMulti) return plug.media.state.currentTextTrack === -1 ? "Off" : list[plug.media.state.currentTextTrack]?.label || list[plug.media.state.currentTextTrack]?.language || `Track ${plug.media.state.currentTextTrack + 1}`;
-          
-          if (plug.media.state.currentTextTrack === -1 && !plug.state.secondaryTracks.length) return ["Off"];
+const getPreviewStyle = (plug: CaptionsPlug, id: string, u: any): { className?: string; style?: string } => {
+  const cssPlug = plug.ctlr.plug("settings.css");
+  if (!cssPlug) return {};
+  const { isClass, id: cssId } = cssPlug.getCSSKey(id);
+  return isClass ? { className: `${cssId}-${u.value}` } : { style: `--${cssId}: ${id.toLowerCase().includes("opacity") ? Number(u.value) / 100 : u.value};` };
+};
 
-          const vals: string[] = [];
-          if (plug.media.state.currentTextTrack > -1) vals.push(list[plug.media.state.currentTextTrack]?.label || list[plug.media.state.currentTextTrack]?.language || `Track ${plug.media.state.currentTextTrack + 1}`);
-          plug.state.secondaryTracks.forEach((idx: number) => {
-            const tr = list[idx];
-            if (tr) vals.push(tr.label || tr.language || `Track ${idx + 1}`);
-          });
-          return vals.length ? vals : ["Off"];
-        },
-        getOptions() {
-          const list = plug.media.status.textTracks;
-          const opts = !list || !list.length ? [] : Array.from(list).map((t, i) => ({ value: i, display: t.label || t.language || `Track ${i + 1}` }));
-          if (opts.length) opts.unshift({ value: -1, display: "Off" });
-          return opts.length ? opts : [{ value: -1, display: "Off" }];
-        },
-        onChange: (val: number) => {
-          if (val === -1) {
-             plug.media.intent.textVisible = false;
-             plug.media.intent.currentTextTrack = -1;
-             plug.state.secondaryTracks = [];
-          } else {
-             plug.media.intent.textVisible = true;
-             if (plug.config.multiple) {
-                const idx = plug.state.secondaryTracks.indexOf(val);
-                if (idx > -1) {
-                  const arr = [...plug.state.secondaryTracks];
-                  arr.splice(idx, 1);
-                  plug.state.secondaryTracks = arr;
-                }
-                else if (val !== plug.media.state.currentTextTrack) plug.state.secondaryTracks = [...plug.state.secondaryTracks, val];
-             } else {
-                plug.media.intent.currentTextTrack = val;
-                plug.state.secondaryTracks = [];
-             }
-          }
-        },
-        mediaPaths: ["status.textTracks", "state.currentTextTrack"],
+export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] => {
+  const mapStyle = (p: string) => {
+    const id = camelize(p.replace(".value", ""), /\./),
+      pathParts = p.replace("captions.", "").replace(".value", ""),
+      getCurr = () => getPath(plug.config as any, pathParts) as any,
+      isBoolean = isBool(getCurr()),
+      isNumber = typeof getCurr() === "number",
+      parsed = isBoolean || isNumber ? undefined : (getPath(parseUIObj(plug.config as any), pathParts as any) as { values: any[]; displays: string[] }),
+      hasNum = !!parsed?.values?.length && parsed.values.every((v) => !isBool(v) && !isNaN(Number(v))),
+      isColor = !hasNum && parsed?.values?.some((v) => String(v).startsWith("#")),
+      actMin = hasNum ? Math.min(...parsed.values.map(Number)) : 0,
+      actMax = hasNum ? Math.max(...parsed.values.map(Number)) : 100,
+      configPaths = ["settings." + p];
+    return {
+      id,
+      label: capitalize(uncamelize(pathParts.split(".").pop()!)),
+      widget: isBoolean ? "toggle" : isNumber ? "range" : hasNum || (isColor && !pathParts.includes("window")) || pathParts === "characterEdgeStyle" ? "group" : isColor && pathParts.includes("window") ? "color" : "select",
+      inline: isNumber ? true : undefined,
+      getValue: (curr = getCurr()) => (isBoolean ? (curr ? "On" : "Off") : isNumber ? `${curr}%` : capitalize(getUIOpt(curr.options.map(parseUIOpt), hasNum ? Number(curr.value) : isStr(curr.value) ? curr.value.trim() : curr.value))),
+      getOptions: () =>
+        isBoolean || isNumber
+          ? undefined
+          : getCurr().options.map((opt: any) => {
+              const u = parseUIOpt(opt),
+                preview = getPreviewStyle(plug, id, u);
+              return { ...u, className: pathParts.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style };
+            }),
+      onChange: (val: any) => (isBoolean ? setPath(plug.config as any, pathParts, val) : isNumber ? setPath(plug.config as any, pathParts, Number(val)) : (getCurr().value = val)),
+      getRange() {
+        if (isNumber) return { min: 0, max: 100, divs: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], formatTooltip: (v: number) => `${Math.round(v)}%` };
+        const curr = getCurr();
+        return { min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => `${Math.round(v)}%`, options: curr.options as UIOption<number>[] };
       },
-      {
-        id: "captionsMulti",
-        label: "Multiple Captions",
-        widget: "toggle",
-        inline: true,
-        feature: "multipleCaptions",
-        getValue: () => plug.config.multiple ? "On" : "Off",
-        onChange: (val: boolean) => {
-           plug.config.multiple = val;
-           if (!val) plug.state.secondaryTracks = [];
-           plug.ctlr.plug("settings.settingsView")?.menu.syncUI();
-        },
-      },
-      {
-        id: "subtitleStyle",
-        label: "Styles",
-        widget: "group",
-        hidden: true, // Hide from rows list but still accessible via actions
-        getValue: () => "",
-        configPaths: STYLE_PATHS.map((p) => `settings.${p}` as const),
-        items: [
-          ...STYLE_PATHS.map((p) => {
-            const id = camelize(p.replace(".value", ""), /\./),
-              pathParts = p.replace("captions.", "").replace(".value", ""),
-              getCurr = () => getPath(plug.config as any, pathParts) as UISettings<number | string>,
-              parsed = getPath(parseUIObj(plug.config as any), pathParts as any) as { values: any[]; displays: string[] },
-              hasNum = !!parsed?.values?.length && parsed.values.every((v) => !isBool(v) && !isNaN(Number(v))),
-              isColor = !hasNum && parsed?.values?.some((v) => String(v).startsWith("#")),
-              actMin = hasNum ? Math.min(...parsed.values.map(Number)) : 0,
-              actMax = hasNum ? Math.max(...parsed.values.map(Number)) : 100,
-              configPaths = ["settings." + p];
-            return {
-              id,
-              label: uncamelize(pathParts.replace(/\./g, " ")).split(" ").map(capitalize).join(" "),
-              widget: hasNum ? "group" : isColor ? "color" : "select",
-              getValue: (curr = getCurr()) => getUIOpt(curr.options, curr.value),
-              getOptions: (curr = getCurr()) => curr.options,
-              onChange: (val: number | string, curr = getCurr()) => (curr.value = val),
-              tipHTML: () => {
-                if (p.includes("font.variant")) return "Apply variants like small capitals to the text";
-                if (p.includes("window.color")) return "Change the background color of the entire caption bounding box (differs from text background)";
-                if (p.includes("window.opacity")) return "Adjust how transparent the entire caption bounding box is";
-                if (p.includes("characterEdgeStyle")) return "Add borders or shadows to the text to make it more readable";
-                return undefined;
+      getTipHTML: () => (p.includes("font.variant") ? "Apply variants like small capitals to the text" : p.includes("window.color") ? "Change the background color of the entire caption bounding box (differs from text background)" : p.includes("window.opacity") ? "Adjust how transparent the entire caption bounding box is" : p.includes("characterEdgeStyle") ? "Add borders or shadows to the text to make it more readable" : p.includes("lockToVideo") ? "Constrain captions to the actual letterboxed video boundaries rather than the player container boundaries." : p.includes("lockToPanel") ? "Push captions up when the bottom control panel is active so they don't overlap." : ""),
+      items:
+        hasNum || (isColor && !pathParts.includes("window")) || pathParts === "characterEdgeStyle"
+          ? [
+              ...(hasNum ? [{ id: `${id}Slider`, label: "Custom", widget: "range", inline: true, getValue: () => `${Number(getCurr().value)}%`, onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)), getRange: (curr = getCurr()) => ({ min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => `${Math.round(v)}%`, options: curr.options as UIOption<number>[] }), configPaths } as any] : []),
+              {
+                id: `${id}Select`,
+                label: "Presets",
+                widget: "select",
+                inline: true,
+                getOptions: () =>
+                  getCurr().options.map((opt: any) => {
+                    const u = parseUIOpt(opt),
+                      preview = getPreviewStyle(plug, id, u);
+                    return { ...u, className: pathParts.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style };
+                  }),
+                getValue: () => String(getCurr().value),
+                onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)),
+                configPaths,
               },
-              items: hasNum
-                ? [
+              ...(!hasNum && pathParts !== "characterEdgeStyle" ? [{ id: `${id}Picker`, label: "Custom", widget: "color", inline: true, getValue: () => getCurr().value, onChange: (val: string) => (getCurr().value = val), configPaths } as any] : []),
+              ...(pathParts === "characterEdgeStyle" ? [{ id: "characterEdgeStyleShadowColor", label: "Shadow color", widget: "color", inline: true, getValue: () => plug.settings.css.captionsBaseShadow as string, onChange: (val: string) => (plug.settings.css.captionsBaseShadow = val), configPaths: ["settings.css.captionsBaseShadow"] } as any] : []),
+            ]
+          : undefined,
+      configPaths,
+    } as SettingsMenuItem;
+  };
+  return [
+    {
+      id: "captions",
+      label: "Captions",
+      icon: "captions",
+      widget: "group",
+      feature: "textTracks",
+      mediaPaths: ["state.currentTextTrack", "status.textTracks"],
+      configPaths: ["settings.captions.multiple"],
+      onWire: (syncUI, signal) => plug.state.on("secondaryTracks", syncUI, { signal }),
+      getBadge: () => (plug.config.multiple && plug.state.secondaryTracks.length ? { value: `+${plug.state.secondaryTracks.length}` } : undefined),
+      getValue() {
+        const list = plug.media.status.textTracks;
+        if (!list || !list.length || plug.media.state.currentTextTrack === -1) return "Off";
+        const track = list[plug.media.state.currentTextTrack];
+        return track?.label || track?.language || `Track ${plug.media.state.currentTextTrack + 1}`;
+      },
+      actions: [{ id: "goToStyles", getLabel: () => "Styles", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("subtitleStyle") }],
+      items: [
+        {
+          id: "captionsList",
+          label: "Tracks",
+          widget: "select",
+          inline: true,
+          onWire: (syncUI, signal) => plug.state.on("secondaryTracks", syncUI, { signal }),
+          getMultiple: () => plug.config.multiple,
+          getValue() {
+            const curr = plug.media.state.currentTextTrack;
+            return !plug.config.multiple ? String(curr) : curr === -1 ? ["-1"] : [String(curr), ...plug.state.secondaryTracks.map(String)];
+          },
+          getOptions: () => [{ value: -1, display: "Off" }, ...(plug.media.status.textTracks ? Array.from(plug.media.status.textTracks, (t, i) => ({ value: i, display: t.label || t.language || `Track ${i + 1}`, badge: plug.config.multiple && plug.state.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })) : [])],
+          onChange: (val: number) => {
+            if (val === -1) (plug.media.intent.currentTextTrack = -1), (plug.state.secondaryTracks = []);
+            else if (!plug.config.multiple) (plug.media.intent.currentTextTrack = val), (plug.state.secondaryTracks = []);
+            else if (plug.media.state.currentTextTrack === -1) plug.media.intent.currentTextTrack = val;
+            else if (val !== plug.media.state.currentTextTrack) {
+              const idx = plug.state.secondaryTracks.indexOf(val);
+              idx > -1 ? plug.state.secondaryTracks.splice(idx, 1) : plug.state.secondaryTracks.push(val);
+            }
+          },
+          mediaPaths: ["status.textTracks", "state.currentTextTrack"],
+        },
+        {
+          id: "captionsMulti",
+          label: "Multiple captions",
+          widget: "toggle",
+          inline: true,
+          feature: "multipleCaptions",
+          hidden: () => plug.media.status.textTracks.length < 2,
+          getValue: () => (plug.config.multiple ? "On" : "Off"),
+          onChange: (val: boolean) => {
+            if (!(plug.config.multiple = val)) plug.state.secondaryTracks = [];
+            plug.ctlr.plug("settings.settingsView")?.menu.syncUI();
+          },
+          mediaPaths: ["status.textTracks"],
+        },
+        {
+          id: "subtitleStyle",
+          label: "Styles",
+          widget: "group",
+          hidden: true, // Hide from rows list but still accessible via actions
+          getValue: () => "",
+          items: [
+            { id: "fontGroup", label: "Font", widget: "group", getTipHTML: () => "Customize the appearance of the caption text itself", getValue: () => "", items: STYLE_PATHS.filter((p) => p.includes("font.")).map(mapStyle) },
+            { id: "backgroundGroup", label: "Background", widget: "group", getTipHTML: () => "Customize the background highlight that wraps immediately around each line of text", getValue: () => "", items: STYLE_PATHS.filter((p) => p.includes("background.")).map(mapStyle) },
+            {
+              id: "windowGroup",
+              label: "Window",
+              widget: "group",
+              getTipHTML: () => "Customize the entire bounding box that holds all the caption lines (differs from text background)",
+              getValue: () => "",
+              items: [
+                ...STYLE_PATHS.filter((p) => p.includes("window.") && !p.includes("position.")).map(mapStyle),
+                {
+                  id: "position",
+                  label: "Position",
+                  widget: "group",
+                  getValue: () => "",
+                  items: [
+                    ...["captions.window.position.lockToPanel", "captions.window.position.lockToVideo"].map(mapStyle),
                     {
-                      id: `${id}Slider`,
-                      label: "Custom",
+                      id: "captionsPosX",
+                      label: "X position",
                       widget: "range",
-                      inline: true,
-                      getValue: (curr = getCurr()) => `${Math.round(Number(curr.value))}%`,
-                      onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)),
-                      getRange: (curr = getCurr()) => ({ min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => Math.round(v) + "%", options: curr.options as UIOption<number>[] }),
-                      configPaths,
+                      getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentCaptionsX as string)), 50)}%`,
+                      getRange: () => ({ min: 0, max: 100, divs: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], formatTooltip: (v: number) => `${Math.round(v)}%` }),
+                      onChange: (val: number | string) => (plug.settings.css.currentCaptionsX = `${val}%`),
+                      configPaths: ["settings.css.currentCaptionsX"],
                     },
                     {
-                      id: `${id}Select`,
-                      label: "Presets",
-                      widget: "select",
-                      inline: true,
-                      getOptions: (curr = getCurr()) => curr.options,
-                      getValue: (curr = getCurr()) => String(curr.value),
-                      onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)),
-                      configPaths,
+                      id: "captionsPosY",
+                      label: "Y position",
+                      widget: "range",
+                      getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentCaptionsY as string)), 100)}%`,
+                      getRange: () => ({ min: 0, max: 100, divs: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], formatTooltip: (v: number) => `${Math.round(v)}%` }),
+                      onChange: (val: number | string) => (plug.settings.css.currentCaptionsY = `${val}%`),
+                      configPaths: ["settings.css.currentCaptionsY"],
                     },
-                  ]
-                : undefined,
-              configPaths,
-            } as SettingsMenuItem;
-          }),
-          {
-            id: "resetCaptions",
-            label: "Reset",
-            widget: "button",
-            getValue: () => "",
-            onChange: () => {
-              plug.config.allowOverride = CAPTIONS_BUILD.allowOverride!;
-              const cssCache = plug.media.tech.ctlr?.plug("settings.css")?._cache;
-              STYLE_PATHS.forEach((p, _, __, val = cssCache?.[camelize(p.replace(".value", ""), /\./)]) => ((val = p.includes("opacity") && val !== undefined ? Number(val) * 100 : val), setPath(plug.config as any, p.replace("captions.", ""), val ?? getPath(CAPTIONS_BUILD as any, p.replace("captions.", "")))));
+                  ],
+                },
+              ],
             },
-          },
-          {
-            id: "allowOverride",
-            label: "Allow media override",
-            widget: "toggle",
-            getValue: () => (plug.config.allowOverride ? "On" : "Off"),
-            onChange: (val: boolean) => (plug.config.allowOverride = val),
-            configPaths: ["settings.captions.allowOverride"],
-            title: "Allow media content to override your custom caption styling with its own styling (if available)",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "limits",
-    label: "Limits",
-    icon: "configure",
-    widget: "group",
-    getValue: () => "",
-    items: [
-      {
-        id: "captionSizeLimits",
-        label: "Caption size",
-        widget: "limits",
-        configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"],
-        getValue: () => "",
-        getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }],
-        onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }, { skipUndefined: true }),
-      },
-    ],
-  },
-];
+            ...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle),
+            { id: "allowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => (plug.config.allowMediaOverride ? "On" : "Off"), onChange: (val: boolean) => (plug.config.allowMediaOverride = val), configPaths: ["settings.captions.allowMediaOverride"], title: "Allow media content to override your custom caption styling with its own styling (if available)" },
+            {
+              id: "resetCaptions",
+              label: "Reset",
+              widget: "button",
+              getValue: () => "",
+              onChange: () => {
+                plug.config.allowMediaOverride = CAPTIONS_BUILD.allowMediaOverride!;
+                const sache = plug.ctlr?.plug("settings.css")?._cache;
+                if (sache) (plug.settings.css.currentCaptionsX = sache.currentCaptionsX!), (plug.settings.css.currentCaptionsY = sache.currentCaptionsY!), (plug.settings.css.captionsBaseShadow = sache.captionsBaseShadow || "");
+                STYLE_PATHS.forEach((p) => setPath(plug.config as any, p.replace("captions.", ""), getPath(CAPTIONS_BUILD as any, p.replace("captions.", ""))));
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "advanced",
+      label: "Advanced",
+      icon: "settings",
+      widget: "group",
+      getValue: () => "",
+      items: [
+        {
+          id: "limits",
+          label: "Limits",
+          widget: "group",
+          getValue: () => "On",
+          items: [{ id: "captionSizeLimits", label: "Caption size", widget: "limits", configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"], getValue: () => "", getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }], onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }, { skipUndefined: true }) }],
+        },
+      ],
+    },
+  ];
+};
 
 declare module "@defs/registries" {
   interface MenuRegistryMap {

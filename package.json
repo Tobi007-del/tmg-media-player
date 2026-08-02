@@ -1,6 +1,6 @@
 {
   "name": "tmg-media-player",
-  "version": "1.0.0",
+  "version": "0.0.12",
   "description": "A feature-rich, Web media player implementation for The Movie Garden initiative",
   "author": "Oketade Oluwatobiloba <tobioketade007@gmail.com>",
   "license": "MIT",
@@ -18,10 +18,6 @@
   "unpkg": "./dist/super.global.js",
   "jsdelivr": "./dist/super.global.js",
   "types": "./dist/index.d.ts",
-  "sideEffects": [
-    "**/*.css",
-    "**/*.scss"
-  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -91,12 +87,16 @@
     "build": "tsup",
     "build:super": "node scripts/build-super.js",
     "dev": "vite",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "change": "changeset",
+    "bump": "changeset version",
+    "release": "changeset publish"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@types/chrome": "^0.1.43",
     "@types/chromecast-caf-sender": "^1.0.11",
     "@types/node": "^25.9.1",
@@ -112,10 +112,10 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@t007/dialog": "^0.0.31",
-    "@t007/input": "^0.0.32",
-    "@t007/toast": "^0.0.32",
-    "t007/utils": "^0.0.34",
-    "sia-reactor": "^0.0.35"
+    "@t007/dialog": "^0.0.34",
+    "@t007/input": "^0.0.34",
+    "@t007/toast": "^0.0.35",
+    "@t007/utils": "^0.0.36",
+    "sia-reactor": "^0.0.37"
   }
 }

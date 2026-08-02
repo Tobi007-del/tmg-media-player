@@ -5,7 +5,6 @@ import { GroupWidget } from "../widgets/group";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { Controller } from "@core/controller";
-import { isFunc } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
 
 export class SubMenuPanel extends BaseMenuPanel {
@@ -41,12 +40,12 @@ export class SubMenuPanel extends BaseMenuPanel {
   }
 
   public override enter(dir?: "forward" | "backward" | "none") {
-    super.enter(dir), requestAnimationFrame(() => this.element.querySelector<HTMLElement>(":is([tabindex='0'], button:not([disabled]), input:not([type='checkbox'], [type='radio'], [disabled])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)")?.focus(), this.ctlr.signal);
+    super.enter(dir), requestAnimationFrame(() => this.element.querySelector<HTMLElement>(":is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)")?.focus(), this.ctlr.signal);
   }
 
   public load(item: SettingsMenuItem): void {
     this.headerLabel.textContent = item.label;
-    if (this.item?.id === item.id) return void this.widget?.syncUI();
+    if (this.item?.id === item.id) return void this.syncUI();
     if (this.widget) this.widget.element?.remove(), this.widget.destroy();
     this.item = item;
     const widget = WidgetRegistry.create(item, this.ctlr);
@@ -61,18 +60,23 @@ export class SubMenuPanel extends BaseMenuPanel {
         const label = action.getLabel(),
           btn = createEl("button", { className: "tmg-media-smenu-sub-action-btn" + (!action.icon ? " tmg-media-smenu-input-btn tmg-media-smenu-text-action" : ""), type: "button", ariaLabel: label, title: label });
         if (action.id === "delete" || action.icon === "delete") btn.classList.add("tmg-media-smenu-delete-btn");
+        if (action.id === "sort" || action.icon === "sort") btn.classList.add("tmg-media-smenu-sort-btn");
         action.icon ? (btn.innerHTML = IconRegistry.get(action.icon, true) || label) : (btn.textContent = label);
+        if (action.getDisabled) btn.disabled = action.getDisabled();
+        if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
         btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()));
         this.headerActions.append(btn);
       }
     }
     // Populate footer
     this.footerSlot.innerHTML = "";
-    if (item.tipHTML) this.footerSlot.innerHTML = isFunc(item.tipHTML) ? item.tipHTML() : item.tipHTML;
+    if (item.getTipHTML) this.footerSlot.innerHTML = item.getTipHTML();
     if (item.footerActions?.length) {
       const actionsWrap = createEl("div", { className: "tmg-media-smenu-footer-actions" });
       for (const action of item.footerActions) {
         const btn = createEl("button", { className: "tmg-media-smenu-input-btn", type: "button", textContent: action.getLabel() });
+        if (action.getDisabled) btn.disabled = action.getDisabled();
+        if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
         btn.addEventListener("click", () => action.onClick()), actionsWrap.append(btn);
       }
       this.footerSlot.append(actionsWrap);
@@ -82,16 +86,28 @@ export class SubMenuPanel extends BaseMenuPanel {
   public syncUI(): void {
     this.widget?.syncUI();
     if (this.item?.footerActions?.length) {
-      const btns = this.footerSlot.querySelectorAll("button");
-      this.item.footerActions.forEach((action, i) => btns[i] && (btns[i].textContent = action.getLabel()));
+      const btns = this.footerSlot.querySelectorAll<HTMLButtonElement>("button");
+      this.item.footerActions.forEach((action, i) => {
+        if (!btns[i]) return;
+        btns[i].textContent = action.getLabel();
+        if (action.getDisabled) btns[i].disabled = action.getDisabled();
+        if (action.hidden) btns[i].style.display = action.hidden() ? "none" : "";
+      });
     }
     if (this.item?.actions?.length) {
-      const btns = this.headerActions.querySelectorAll("button");
+      const btns = this.headerActions.querySelectorAll<HTMLButtonElement>("button");
       this.item.actions.forEach((action, i) => {
         if (!btns[i]) return;
-        const lbl = action.getLabel();
-        btns[i].innerHTML = action.icon ? IconRegistry.get(action.icon, true) || lbl : lbl;
+        btns[i].innerHTML = action.icon ? IconRegistry.get(action.icon, true) || action.getLabel() : action.getLabel();
+        if (action.getDisabled) btns[i].disabled = action.getDisabled();
+        if (action.hidden) btns[i].style.display = action.hidden() ? "none" : "";
       });
+    }
+    if (this.item?.getTipHTML) {
+      const actionsWrap = this.footerSlot.querySelector<HTMLElement>(".tmg-media-smenu-footer-actions");
+      actionsWrap?.remove();
+      this.footerSlot.innerHTML = this.item.getTipHTML();
+      if (actionsWrap) this.footerSlot.append(actionsWrap);
     }
   }
 

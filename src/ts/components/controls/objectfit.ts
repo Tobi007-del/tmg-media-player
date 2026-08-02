@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type ObjectFit = undefined;
 
@@ -26,6 +26,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
     this.media.on("state.objectFit", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.objectFit", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.objectFit", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -34,7 +35,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
   public syncARIA(): void {
     this.state.label = this.plug?.toLabel(this.plug?.nextFit) || "";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.objectFit);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.objectFit), (this.state.voiceCommand = this.settings.voice.commands.objectFit));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

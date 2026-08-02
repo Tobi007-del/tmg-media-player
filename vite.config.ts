@@ -5,7 +5,7 @@ export default defineConfig({
   server: {
     hmr: true,
     port: 7777,
-    open: "/src/index.html",
+    open: "/src/dev.html",
   },
   preview: {
     port: 7777,

@@ -1,7 +1,7 @@
 import { BasePlug } from "../../base";
-import type {  KeyMod, KeyPhase, KeysConfig, KeyShortcutMods } from "./types";
+import type { KeyMod, KeyPhase, KeysConfig, KeyShortcutMods } from "./types";
 import { KEYS_BUILD } from "./build";
-import { isArr } from "@t007/utils";
+import { getActiveEl, isArr } from "@t007/utils";
 import { keyEventAllowed as allowed } from "@utils/keys";
 import { getMediaTime } from "@utils/media";
 import { limited } from "@utils/fn";
@@ -11,7 +11,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   public static readonly plugName = "keys";
   public static readonly BUILD = KEYS_BUILD;
   public playTriggerSeq = 0;
-  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Press the spacebar to play/pause, or hold it to fast forward/rewind(+Shift). Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_keys_tut_1", maxTimes: 5 }));
+  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Press space to play/pause${this.ctlr.plug("settings.fastPlay") ? ", hold to fast play/rewind(+Shift)" : ""}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_keys_tut_1", maxTimes: 3 }));
 
   public override wire(): void {
     // Ctlr Media Listeners
@@ -22,23 +22,23 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     this.ctlr.config.on("settings.keys.disabled", this.syncEventListeners, { signal: this.signal });
     this.ctlr.config.on("disabled", this.syncEventListeners, { signal: this.signal });
     // Post Wiring
+    this.ctlr.registerAction("playPause", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" } });
     this.ctlr.registerAction(" ", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" }, private: true });
     this.ctlr.registerAction("escape", { fn: this.handleEscape, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("arrowleft", { fn: this.handleArrowLeft, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("arrowright", { fn: this.handleArrowRight, keyboard: { phase: "keydown" }, private: true });
+    this.ctlr.registerAction("arrowleft", { fn: this.handleArrowLeft, keyboard: { phase: "keydown" }, notify: "bwd", private: true });
+    this.ctlr.registerAction("arrowright", { fn: this.handleArrowRight, keyboard: { phase: "keydown" }, notify: "fwd", private: true });
     this.ctlr.registerAction("arrowup", { fn: this.handleArrowUp, keyboard: { phase: "keydown" }, private: true });
     this.ctlr.registerAction("arrowdown", { fn: this.handleArrowDown, keyboard: { phase: "keydown" }, private: true });
     this.ctlr.registerAction("home", { fn: () => (this.media.intent.currentTime = 0), keyboard: { phase: "keyup" }, private: true });
     this.ctlr.registerAction("0", { fn: () => (this.media.intent.currentTime = 0), keyboard: { phase: "keyup" }, private: true });
     this.ctlr.registerAction("end", { fn: () => (this.media.intent.currentTime = this.media.status.duration), keyboard: { phase: "keyup" }, private: true });
     for (const n of "123456789".split("")) this.ctlr.registerAction(n, { fn: () => (this.media.intent.currentTime = getMediaTime(this.media, +n / 10)), keyboard: { phase: "keyup" }, private: true });
-    this.ctlr.registerAction("playpause", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" }, private: true });
     this.ctlr.payload.wired ? this.syncEventListeners() : this.ctlr.state.wonce("readyState", this.syncEventListeners, { signal: this.signal }); // #HEAVY: waits for !lightState
     super.wire();
   }
 
   protected getHook(phase: KeyPhase, action: string): string | undefined {
-    const entry = this.ctlr.actions[action];
+    const entry = this.ctlr.actions.entries[action];
     if (!entry || !entry.keyboard) return;
     const matches = isArr(entry.keyboard.phase) ? entry.keyboard.phase.includes(phase) : entry.keyboard.phase === phase;
     return matches ? action : undefined;
@@ -50,13 +50,14 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     hook && this.ctlr.throttle("keyDown", () => this.ctlr.runAction(hook, e, mod), 30);
   }
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.settings.keys), mod = this.getMod(e)): void {
-    if (action === false) return;
-    action ? this.ctlr.plug("settings.overlay")?.show() : this.teachBasics();
+    if (action === false) return void (!getActiveEl() && this.teachBasics());
+    this.ctlr.plug("settings.overlay")?.show();
     const hook = this.getHook("keyup", action as string);
     hook && this.ctlr.runAction(hook, e, mod);
   }
 
-  protected handlePlayTriggerDown(e: KeyboardEvent): void {
+  protected handlePlayTriggerDown(e?: KeyboardEvent): void {
+    if (!e) return (this.media.intent.paused = !this.media.state.paused), this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay");
     this.playTriggerSeq++;
     this.playTriggerSeq === 1 && (e.currentTarget as Window | null)?.addEventListener("keyup", this.handlePlayTriggerUp, { signal: this.signal });
     this.playTriggerSeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.fastPlay(e.shiftKey ? "backwards" : "forwards");
@@ -64,7 +65,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
 
   protected handlePlayTriggerUp(e: KeyboardEvent, action = allowed(e, this.settings.keys)): void {
     action && this.ctlr.plug("settings.overlay")?.show();
-    if (action !== false && [" ", "playpause"].includes(action as string)) {
+    if (action !== false && [" ", "playPause"].includes(action as string)) {
       e.stopImmediatePropagation();
       if (this.playTriggerSeq === 1) this.media.intent.paused = !this.media.state.paused;
       this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay");
@@ -83,12 +84,10 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   protected handleArrowLeft(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
     this.ctlr.plug("settings.time")?.skip(-this.getModded("skip", mod, 5));
-    this.ctlr.plug("settings.notifiers")?.notify("bwd");
   }
   protected handleArrowRight(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
     this.ctlr.plug("settings.time")?.skip(this.getModded("skip", mod, 5));
-    this.ctlr.plug("settings.notifiers")?.notify("fwd");
   }
   protected handleArrowUp(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.volume")?.changeAptValue(this.getModded("volume", mod, 5));
@@ -96,15 +95,14 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   }
   protected handleArrowDown(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.volume")?.changeAptValue(-this.getModded("volume", mod, 5));
-    this.media.features.volume && this.ctlr.plug("settings.notifiers")?.notify(!this.media.state.volume ? "volumemuted" : "volumedown");
+    if (this.media.features.volume) !this.media.state.volume ? this.ctlr.plug("settings.notifiers")?.notify("volumemuted") : this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumemuted" : "volumedown"), { signal: this.signal });
   }
 
   public setEventListeners(action: "add" | "remove" = "add"): void {
     const ws = this.getWindows();
     for (const w of ws) w.removeEventListener("keydown", this.handleKeyDown), w.removeEventListener("keyup", this.handleKeyUp);
     if (action === "remove" || !this.shouldListen()) return;
-    for (const w of ws) w.addEventListener("keydown", this.handleKeyDown, { signal: this.signal });
-    for (const w of ws) w.addEventListener("keyup", this.handleKeyUp, { signal: this.signal });
+    for (const w of ws) w.addEventListener("keydown", this.handleKeyDown, { signal: this.signal }), w.addEventListener("keyup", this.handleKeyUp, { signal: this.signal });
   }
   public syncEventListeners(): void {
     this.setEventListeners(this.shouldListen() ? "add" : "remove");

@@ -1,3 +1,3 @@
 export interface SkeletonConfig {
-  autoPauseAll: boolean;
+  autoPauseOthers: boolean;
 }

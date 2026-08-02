@@ -9,7 +9,7 @@ import { isFunc } from "@t007/utils";
 // Try to use methods for most things so they can be customized when extended and also auto guarded
 export abstract class Controllable<Config = any, State = any> {
   protected readonly ac = new AbortController();
-  protected readonly signal = this.ac.signal;
+  public readonly signal = this.ac.signal;
   public readonly ctlr: Controller;
   public readonly media: Controller["media"];
   public readonly state!: State extends object ? Reactive<State> : State; // for reactivity needs of those who pass it up

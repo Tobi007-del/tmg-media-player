@@ -48,10 +48,11 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public override wire(): void {
     // ---- Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.close(), { signal: this.signal });
-    this.media.on("features", () => this.menuOpen && (this.syncMain(), this.subPanels.forEach((p) => p.syncUI())), { signal: this.signal });
+    this.media.on("features", () => this.menuOpen && this.syncUI(), { signal: this.signal });
     // ---- State --------
     this.ctlr.state.on("dimensions.container.width", () => this.menuOpen && this.reposition(this.anchorEl), { signal: this.signal });
     this.ctlr.state.on("dimensions.container.height", () => this.menuOpen && this.reposition(this.anchorEl), { signal: this.signal });
+    this.ctlr.config.on("settings.settingsView.menu.blacklist", () => this.menuOpen && this.syncUI(), { signal: this.signal });
   }
 
   public override unmount(): void {
@@ -60,11 +61,21 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
 
   private mergeItem(item: SettingsMenuItem): SettingsMenuItem {
     const existing = this.getItem(item.id);
+    if (!existing) {
+      if (item.configPaths) for (const path of item.configPaths) this.ctlr.config.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
+      if (item.mediaPaths) for (const path of item.mediaPaths) this.media.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
+    }
     if (existing) {
-      if (item.items) existing.items = [...(existing.items || []), ...item.items];
+      if (item.items) {
+        existing.items ??= [];
+        for (const subItem of item.items) {
+          const exSub = existing.items.find((i) => i.id === subItem.id);
+          exSub ? this.mergeItem(subItem) : existing.items.push(subItem);
+        }
+      }
       if (item.actions) existing.actions = [...(existing.actions || []), ...item.actions];
       if (item.footerActions) existing.footerActions = [...(existing.footerActions || []), ...item.footerActions];
-      if (item.tipHTML && !existing.tipHTML) existing.tipHTML = item.tipHTML;
+      if (item.getTipHTML && !existing.getTipHTML) existing.getTipHTML = item.getTipHTML;
       return existing;
     }
     return item;
@@ -98,24 +109,24 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public syncUI(id?: string): void {
     if (id) this.subPanels[this.navStack.indexOf(id)]?.syncUI(), this.syncMain();
     else this.syncMain(), this.subPanels.forEach((p) => p.syncUI());
+    this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
 
   private lastClosedTime = 0;
-  public toggle(anchorEl: HTMLElement): void {
-    this.menuOpen ? this.close() : this.open(anchorEl);
+  public toggle(anchorEl?: HTMLElement, preserveStack = false): void {
+    this.menuOpen ? this.close() : this.open(anchorEl, preserveStack);
   }
 
-  public open(anchorEl: HTMLElement): void {
-    if (this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
+  public open(anchorEl = this.ctlr.plug("settings.controlPanel")?.compEl("settings") ?? this.media.container, preserveStack = false): void {
+    if (!(this.anchorEl = anchorEl) || this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
     this.menuOpen = true;
-    this.anchorEl = anchorEl;
-    if (!this.config.preserveStack) this.navStack = [];
-    if (this.navStack.length === 0) this.syncMain(), this.showPanel(this.mainPanel, "none"), this.subPanels.forEach((p) => this.hidePanel(p));
-    else this.syncUI(this.navStack[this.navStack.length - 1]), this.showPanel(this.subPanels[this.navStack.length - 1], "none"), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p));
+    if (!preserveStack) this.navStack = [];
+    if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
+    else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
     this.reposition(anchorEl), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
     this.media.container.classList.add("tmg-media-settings-menu");
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(e?.target as Node) && this.close(), outOnFocusOut: !CTX.isDevEnv }), initFocusTrap(this.element, { enabled: true });
-    initArrowNavigation(this.element, { enabled: true, rovingTab: false, focusOnHover: false, grid: { x: 1 }, selector: ".tmg-media-smenu-panel :is([tabindex='0'], button:not([disabled]), input:not([type='checkbox'], [type='radio'], [disabled])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)" });
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close(), outOnFocusOut: !CTX.isDevEnv }), initFocusTrap(this.element, { enabled: true });
+    initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: ".tmg-media-smenu-panel-active :is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)" });
   }
   public close(): void {
     if (!this.menuOpen) return;
@@ -148,14 +159,13 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.navStack.push(id);
     const nextPanel = this.getSubPanel(this.navStack.length - 1);
     nextPanel.load(item);
-    this.showPanel(nextPanel, "forward"), this.hidePanel(activePanel, "backward");
+    this.hidePanel(activePanel, "backward"), this.showPanel(nextPanel, "forward");
   }
   public goBack(): void {
     if (this.navStack.length === 0) return;
     const activePanel = this.subPanels[this.navStack.length - 1];
     this.navStack.pop();
-    this.showPanel(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1], "backward");
-    this.hidePanel(activePanel, "forward");
+    this.hidePanel(activePanel, "forward"), this.showPanel(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1], "backward");
   }
 
   private showPanel(panel: BaseMenuPanel, dir: PanelDir = "forward"): void {
@@ -166,7 +176,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private syncMain(): void {
-    this.mainPanel.sync(this.registry.getAll().filter((item) => ((isFunc(item.hidden) ? item.hidden() : item.hidden) ? false : !item.feature || Boolean(this.media.features[item.feature]))));
+    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || this.media.features[item.feature] !== false)));
+    this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
   private syncHeight(panel: BaseMenuPanel, height = panel.contentHeight): void {
     requestAnimationFrame(() => this.menuOpen && height && (this.el.style.height = `${height}px`), this.signal);
@@ -177,18 +188,14 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
       cRect = container.getBoundingClientRect(),
       aRect = anchorEl ? anchorEl.getBoundingClientRect() : this.el.getBoundingClientRect();
     if (!anchorEl && !this.menuOpen) return;
-
     const y = aRect.top - cRect.top;
     const menuWidth = this.el.offsetWidth || 320;
-
     // Shift logic: align right by default, but clamp rigidly to container bounds
     let xPos = aRect.right - cRect.left - menuWidth + 10;
     const margin = 12;
     if (xPos < margin) xPos = margin;
     if (xPos + menuWidth > cRect.width - margin) xPos = cRect.width - menuWidth - margin;
-
-    this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`);
-    this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
+    this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
     this.el.classList.toggle("tmg-media-smenu-drop-down", y < cRect.height / 2);
   }
 }

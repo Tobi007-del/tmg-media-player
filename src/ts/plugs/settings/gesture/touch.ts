@@ -74,7 +74,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
       "gestureTouchMove",
       () => {
         const tc = this.config,
-          { offsetWidth: width, offsetHeight: height } = this.media.container,
+          { width, height } = this.ctlr.state.dimensions.container,
           x = te.touches[0].clientX,
           y = te.touches[0].clientY,
           deltaX = x - this.lastX,
@@ -86,7 +86,8 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
         this.applyTimeline({ percent, sign, multiplier });
       },
       30,
-      false
+      false,
+      this.signal
     );
   }
 
@@ -100,7 +101,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
       "gestureTouchMove",
       () => {
         const tc = this.config,
-          height = this.media.container.offsetHeight,
+          height = this.ctlr.state.dimensions.container.height,
           y = te.touches[0].clientY,
           deltaY = y - this.lastY,
           sign = deltaY >= 0 ? "-" : "+",
@@ -109,7 +110,8 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
         this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", percent, sign);
       },
       30,
-      false
+      false,
+      this.signal
     );
   }
 

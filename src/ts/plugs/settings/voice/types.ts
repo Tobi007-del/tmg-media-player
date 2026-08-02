@@ -1,8 +1,14 @@
 import { ToastPosition } from "@t007/toast";
+import type { Action } from "@defs/actions";
 import { UISettings } from "@defs/UIOptions";
+
+export type VoiceStage = "anytime" | "pre-route" | "post-route";
+
+export interface VoiceCommands extends Record<Action["id"], string[]> {}
 
 export interface VoiceConfig {
   active: UISettings<boolean | "passive">;
+  muted: boolean;
   wakeWord: string; // e.g., "hey player", "" means UI button only
   behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
   timeout: number; // e.g., 3000ms of silence puts it back to sleep
@@ -10,10 +16,10 @@ export interface VoiceConfig {
     direct: boolean;
     strict: UISettings<boolean | "auto">;
     accuracy: number; // e.g., 0.75 means 75% character overlap required
+    autoToggles: boolean;
+    commandsDisabled: boolean;
   };
-  commandsDisabled: boolean;
-  commands: Record<string, string[]>;
-  autoToggles: boolean;
+  commands: VoiceCommands;
   listenerPos: UISettings<ToastPosition>;
   predictorPos: UISettings<ToastPosition>;
 }
@@ -24,7 +30,9 @@ export interface VoiceState {
 }
 
 declare module "@defs/actions" {
-  interface ActionOptions {
-    voice?: { stage?: VoiceStage };
+  interface ActionLogicOptions {
+    voice?: {
+      stage?: VoiceStage;
+    };
   }
 }

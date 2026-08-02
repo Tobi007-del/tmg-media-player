@@ -19,7 +19,7 @@ export function getMediaReport(m: HTMLMediaElement, isVid = m instanceof HTMLVid
   return { state: merge(MEDIA_STATE_BUILD, report.state, opts), intent: merge(MEDIA_INTENT_BUILD, report.state, opts), status: merge(MEDIA_STATUS_BUILD, report.status, opts), settings: merge(MEDIA_SETTINGS_BUILD, report.settings, opts) } as MediaReport;
 }
 export const getMediaState = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): Partial<MediaState> => ({ src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume * 100, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: _txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? (m as HTMLVideoElement).poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) });
-export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text"), _flagsOnly = false): Partial<MediaStatus> => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? (m as HTMLVideoElement).videoWidth : 0, videoHeight: isVid ? (m as HTMLVideoElement).videoHeight : 0, textTracks: _flagsOnly ? undefined : m.textTracks, audioTracks: _flagsOnly ? undefined : (m as any).audioTracks, videoTracks: _flagsOnly ? undefined : (m as any).videoTracks, activeCue: _flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues?.[0] || null });
+export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text"), _flagsOnly = false): Partial<MediaStatus> => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? (m as HTMLVideoElement).videoWidth : 0, videoHeight: isVid ? (m as HTMLVideoElement).videoHeight : 0, textTracks: _flagsOnly ? undefined : m.textTracks, audioTracks: _flagsOnly ? undefined : (m as any).audioTracks, videoTracks: _flagsOnly ? undefined : (m as any).videoTracks, activeCues: _flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues ? Array.from(m.textTracks[_txtTrackIdx].activeCues) : null });
 export const getMediaSettings = (m: HTMLMediaElement): DeepPartial<MediaSettings> => ({ defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate, srcObject: m.srcObject });
 
 export function getMediaProgress({ state: s, status: st }: CtlrMedia, time = s.currentTime): number {
@@ -241,8 +241,8 @@ export function srtToVtt(srt: string, vttLines: string[] = ["WEBVTT", ""]): stri
 }
 
 export function parseVttText(text: string): string {
-  const state = { tag: /<(\/)?([a-z0-9.:]+)([^>]*)>/gi, o: "", l: 0, p: null as string | null, c: "" },
-    esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)),
+    state = { tag: /\<(\/)?(\d[\d:.]*|\w+)([^>]*)>/gi, o: "", l: 0, p: null as string | null, c: "", spans: [] as string[] };
   let m: RegExpExecArray | null;
   while ((m = state.tag.exec(text))) {
     const chunk = text.slice(state.l, m.index);
@@ -250,14 +250,13 @@ export function parseVttText(text: string): string {
     const [_, cls, tag_n, rest] = m,
       low = tag_n.toLowerCase();
     if (/^[0-9]/.test(tag_n)) {
-      state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}</span>` : state.c;
-      state.p = tag_n;
-      state.c = "";
-    } else if (cls) state.c += ["c", "v", "lang"].includes(low) ? "</span>" : `</${low}>`;
+      state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}${state.spans.map(() => "</span>").join("")}</span>` : state.c;
+      (state.p = tag_n), (state.c = state.spans.join(""));
+    } else if (cls) ["c", "v", "lang"].includes(low) ? ((state.c += "</span>"), state.spans.pop()) : (state.c += `</${low}>`);
     else if (["b", "i", "u", "ruby", "rt"].includes(low)) state.c += `<${low}>`;
-    else if (low === "c") state.c += `<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`;
-    else if (low === "v") state.c += `<span data-part="voice"${rest.trim() ? ` title="${esc(rest.trim())}"` : ""}>`;
-    else if (low === "lang") state.c += `<span lang="${esc(rest.trim())}">`;
+    else if (low === "c") state.c += state.spans[state.spans.push(`<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`) - 1];
+    else if (low === "v") state.c += state.spans[state.spans.push(`<span data-part="voice"${rest.trim() ? ` title="${esc(rest.trim())}"` : ""}>`) - 1];
+    else if (low === "lang") state.c += state.spans[state.spans.push(`<span lang="${esc(rest.trim())}">`) - 1];
     state.l = state.tag.lastIndex;
   }
   const lChunk = text.slice(state.l);
@@ -266,26 +265,33 @@ export function parseVttText(text: string): string {
 }
 
 export function formatVttLine(p: string, maxChars: number): string[] {
-  const state = { tokens: p.match(/<[^>]+>|\S+/g) || [], stack: [] as string[], parts: [] as string[], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false },
+  const state = { tokens: p.match(/<[^>]+>|\s+|[^<\s]+/g) || [], stack: [] as string[], parts: [] as string[], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false, pendingSpace: false },
     updateTags = () => ((state.openStr = state.stack.map((n) => `<${n}>`).join("")), (state.closeStr = state.stack.reduceRight((a, n) => a + `</${n}>`, ""))),
     flush = () => state.line && (state.parts.push(state.line + state.closeStr), (state.line = (state.timeTag || "") + state.openStr), (state.len = 0), (state.lastWasTag = true));
   for (const tok of state.tokens) {
     const tag = tok[0] === "<",
       closeTag = tag && tok[1] === "/";
     if (tag) {
-      if (state.line && !state.lastWasTag && !closeTag) state.line += " ";
       const m = tok.match(/^<\/?\s*([a-z0-9._:-]+)/i),
         n = m?.[1] || "",
         timing = /^\d/.test(n);
       if (timing) {
-        (state.timeTag = tok), (state.line += tok), (state.lastWasTag = true);
+        state.pendingSpace && ((state.line += " "), (state.len += 1));
+        (state.pendingSpace = false), (state.timeTag = tok), (state.line += tok), (state.lastWasTag = true);
         continue;
       }
+      state.pendingSpace = false;
+      if (state.line && !state.lastWasTag && !closeTag) state.line += " ";
       if (!closeTag && !tok.endsWith("/>") && n) state.stack.push(n), updateTags();
       if (closeTag && state.stack.length) state.stack.pop(), updateTags();
       (state.lastWasTag = true), (state.line += tok);
       continue;
     }
+    if (tok[0] <= " ") {
+      (state.pendingSpace = !!state.line), (state.lastWasTag = false);
+      continue;
+    }
+    state.pendingSpace = false;
     const len = stripTags(tok).length,
       needSpace = state.line && !state.lastWasTag;
     if (state.len + (needSpace ? 1 : 0) + len > maxChars) flush();

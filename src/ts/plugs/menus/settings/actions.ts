@@ -1,19 +1,15 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import { Controller } from "@core/controller";
 import { TOAST_FORM_INPUTS } from "./toasts";
-import { capitalize, camelize } from "@utils/str";
-import type { Action, ActionLogic, ActionOp } from "@defs/actions";
+import { capitalize, camelize, uncamelize } from "@utils/str";
+import type { Action, ActionLogic, ActionLogicOp } from "@defs/actions";
 import { getPaths, getPath, isLeafPath } from "sia-reactor/utils";
-import { isFunc, isStr } from "@utils/obj";
+import { isFunc, isStr, getBoolOrStr } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
+import { formatAction } from "@utils/keys";
+import { NOOP } from "sia-reactor";
 
-const fmt = (s: string) =>
-  capitalize(
-    s
-      .replace(/([A-Z])/g, " $1")
-      .replace(/[._]/g, " ")
-      .trim()
-  );
+const fmt = (s: string) => uncamelize(s).replace(/[._-]/g, " ").trim(); // .split(" ").map(capitalize).join(" ")
 const toId = (label: string) =>
   camelize(
     label
@@ -22,29 +18,20 @@ const toId = (label: string) =>
       .replace(/[^a-z0-9\s]/g, "")
       .trim()
   ) || "";
-const OPS: ActionOp[] = ["set", "increment", "decrement", "toggle"];
+const OPS: ActionLogicOp[] = ["set", "increment", "decrement", "toggle"];
 
 const confirmDelete = (label: string, ctlr: Controller) =>
-  t007.confirm(`Delete "${label}"? This cannot be undone.`, {
+  t007.confirm?.(`Delete "${label}"? This cannot be undone.`, {
     id: `${ctlr.config.id}-delete-confirm`,
     rootElement: ctlr.plug("settings.settingsView")?.menu.el ?? ctlr.media.container,
     confirmText: "Delete",
-    title: "Confirm Delete",
   });
 
 const NAV_ROOT_ID = (actionId: string, stepTag: string) => `actions-${actionId}-logic-nav-${stepTag}`;
 const NAV_NODE_ID = (actionId: string, stepTag: string, path: string) => `actions-${actionId}-logic-nav-${stepTag}-${path.replace(/\./g, "-")}`;
 
 function buildPathNavNode(actionId: string, stepTag: string, path: string, root: any, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem {
-  const label =
-      path === "__root__"
-        ? "Choose Path"
-        : capitalize(
-            path
-              .split(".")
-              .pop()!
-              .replace(/([A-Z])/g, " $1")
-          ),
+  const label = path === "__root__" ? "Choose Key" : fmt(path.split(".").pop()!),
     val = path === "__root__" ? root : getPath(root, path as any),
     isLeaf = path !== "__root__" && (Array.isArray(val) || isLeafPath(root, path as any, undefined, val));
   if (isLeaf) {
@@ -56,16 +43,9 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
       label,
       widget: "group",
       getValue: () => path,
-      tipHTML: `Path: <code>${path}</code>, current value: <code>${displayVal}</code>`,
+      getTipHTML: () => `Path: <code>${path}</code>, current value: <code>${displayVal}</code>`,
       items: [
-        {
-          id: `${NAV_NODE_ID(actionId, stepTag, path)}-op`,
-          label: "Operation",
-          widget: "select",
-          getValue: () => tempStep.op ?? "set",
-          getOptions: () => OPS.map((o) => ({ value: o, display: capitalize(o) })),
-          onChange: (v: ActionOp) => (tempStep.op = v),
-        },
+        { id: `${NAV_NODE_ID(actionId, stepTag, path)}-op`, label: "Operation", widget: "select", getValue: () => tempStep.op ?? "set", getOptions: () => OPS.map((o) => ({ value: o, display: capitalize(o) })), onChange: (v: ActionLogicOp) => (tempStep.op = v) },
         ...(type !== "boolean"
           ? [
               {
@@ -74,6 +54,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
                 widget: "input" as const,
                 inputs: [
                   {
+                    name: "value",
                     label: "Value",
                     type: type === "number" ? "number" : "text",
                     placeholder: type === "number" ? "e.g. 80" : type === "array" ? "e.g. a, b, c" : "e.g. hello",
@@ -83,8 +64,8 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
                 ],
                 getValue: () => (tempStep.value !== undefined ? String(tempStep.value) : ""),
                 onChange: (v: Record<string, string>) => {
-                  const raw = String(v["Value"] ?? "").trim();
-                  tempStep.value = raw === "" ? undefined : raw === "true" ? true : raw === "false" ? false : type === "number" || !isNaN(+raw) ? +raw : type === "array" ? raw.split(",").map((s) => s.trim()) : raw;
+                  const raw = String(v.value ?? "").trim();
+                  tempStep.value = raw === "" ? undefined : type === "number" || !isNaN(+raw) ? +raw : type === "array" ? raw.split(",").map((s) => s.trim()) : getBoolOrStr(raw);
                   ctlr.plug("settings.settingsView")?.menu.syncUI(NAV_NODE_ID(actionId, stepTag, path));
                 },
               },
@@ -92,7 +73,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
           : []),
         {
           id: `${NAV_NODE_ID(actionId, stepTag, path)}-confirm`,
-          label: "Confirm Step",
+          label: "Confirm step",
           widget: "button",
           getValue: () => "",
           onChange: () => {
@@ -112,16 +93,17 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
         ? ["media", "settings"]
         : getPaths(root, path as any, { depth: 1 })
             .filter((p) => ctlr.isLogicPath(p))
-            .sort(),
+            .sort((a, b) => a.localeCompare(b)),
     childNodes = childPaths.map((p) => buildPathNavNode(actionId, stepTag, p, root, ctlr, onConfirm, existingStep)),
     directInputId = `${path === "__root__" ? NAV_ROOT_ID(actionId, stepTag) : NAV_NODE_ID(actionId, stepTag, path)}-direct`;
   const directInput: SettingsMenuItem = {
     id: directInputId,
-    label: "Type path",
+    label: "Type key",
     widget: "input",
     inline: true,
     inputs: [
       {
+        name: "path",
         label: "Path",
         type: "text",
         placeholder: childPaths.map((p) => p.split(".").pop()).join(", "),
@@ -130,7 +112,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
     ],
     getValue: () => "",
     onChange: (v: Record<string, string>) => {
-      const typed = String(v["Path"] ?? "").trim(),
+      const typed = String(v.path ?? "").trim(),
         match = typed ? childPaths.find((p) => p.split(".").pop()?.toLowerCase() === typed.toLowerCase()) : null;
       if (match) return void requestAnimationFrame(() => ctlr.plug("settings.settingsView")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
       const fullPath = path === "__root__" ? typed : `${path}.${typed}`,
@@ -145,7 +127,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
     label,
     widget: "group",
     getValue: () => (path === "__root__" ? "Pick a path" : path),
-    tipHTML: path === "__root__" ? "<code>media</code> controls the player (volume, fullscreen, etc.). <code>settings</code> controls configuration values." : `Drilling into <code>${path}</code>, pick a sub-property or type its name above.`,
+    getTipHTML: () => (path === "__root__" ? "<code>media</code> controls the player (volume, fullscreen, etc.). <code>settings</code> controls configuration values." : `Drilling into <code>${path}</code>, pick a sub-property or type its name above.`),
     items: [...childNodes, directInput],
   };
 }
@@ -160,7 +142,7 @@ function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctl
     String(idx),
     ctlr,
     (newStep) => {
-      const a = ctlr.actions[actionId] as Action;
+      const a = ctlr.actions.entries[actionId] as Action;
       a.logic![idx] = newStep;
       logicItems[idx] = makeLogicStepView(a.logic![idx], idx, actionId, ctlr, logicItems);
       ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${actionId}`);
@@ -178,12 +160,12 @@ function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctl
 
 function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem {
   const hasLogicSupport = action.logic !== undefined || action.userCreated,
-    liveLogic = () => (ctlr.actions[action.id] as Action).logic ?? [];
+    liveLogic = () => (ctlr.actions.entries[action.id] as Action).logic ?? [];
   return {
     id: `actions-logic-${action.id}`,
-    label: "Logic Steps",
+    label: "Logic steps",
     widget: "drag-select",
-    getValue: () => {
+    getValue() {
       if (!hasLogicSupport) return "Internal";
       const len = liveLogic().length;
       return len ? `${len} step${len !== 1 ? "s" : ""}` : "None";
@@ -191,17 +173,16 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
     getDisabled: () => !hasLogicSupport,
     getOptions: () => liveLogic().map((step, i) => ({ value: String(i), display: stepLabel(step), title: step.value !== undefined ? `Value: ${step.value}` : undefined })),
     onReorder: (from: number, to: number) => {
-      const steps = [...liveLogic()];
+      const steps = liveLogic();
       steps.splice(to, 0, ...steps.splice(from, 1));
-      (ctlr.actions[action.id] as Action).logic = steps;
       logicItems.splice(0, logicItems.length, ...steps.map((s, i) => makeLogicStepView(s, i, action.id, ctlr, logicItems)));
       ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
     },
     onEdit: (i: number) => ctlr.plug("settings.settingsView")?.menu.goTo(liveLogic()[i].path ? NAV_NODE_ID(action.id, String(i), liveLogic()[i].path) : NAV_ROOT_ID(action.id, String(i))),
     onDelete: async (i: number) => {
-      if (!(await confirmDelete("this logic step", ctlr))) return;
-      const steps = [...liveLogic()];
-      steps.splice(i, 1), ((ctlr.actions[action.id] as Action).logic = steps);
+      if (!(await confirmDelete(stepLabel(liveLogic()[i]), ctlr))) return;
+      const steps = liveLogic();
+      steps.splice(i, 1);
       logicItems.splice(0, logicItems.length, ...steps.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
     },
     actions: hasLogicSupport
@@ -211,32 +192,33 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
             getLabel: () => "Add Step",
             icon: "add",
             onClick: () => {
-              const a = ctlr.actions[action.id] as Action;
+              const a = ctlr.actions.entries[action.id] as Action;
               if (!a.logic) a.logic = [];
               const tag = `new-${ctlr.config.id}-${Math.random().toString(36).slice(2, 9)}`,
                 navTree = makeLogicNavTree(action.id, tag, ctlr, (newStep) => {
-                  const act = ctlr.actions[action.id] as Action;
-                  act.logic = [...(act.logic ?? []), newStep];
+                  const act = ctlr.actions.entries[action.id] as Action;
+                  if (!act.logic) act.logic = [];
+                  act.logic.push(newStep);
                   logicItems.splice(0, logicItems.length, ...act.logic.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
                 }),
-                placeholder: SettingsMenuItem = { id: `actions-${action.id}-logic-${tag}`, label: "New Step", widget: "group", getValue: () => "New", items: [navTree] };
+                placeholder: SettingsMenuItem = { id: `actions-${action.id}-logic-${tag}`, label: "New step", widget: "group", getValue: () => "New", items: [navTree] };
               logicItems.push(placeholder), ctlr.plug("settings.settingsView")?.menu.goTo(NAV_ROOT_ID(action.id, tag));
             },
           },
         ]
       : undefined,
     items: logicItems,
-    tipHTML: hasLogicSupport ? "Logic runs top-to-bottom when triggered. Use + to add a step. Drag to reorder." : "This action runs native code. Logic steps are not supported.",
+    getTipHTML: () => (hasLogicSupport ? "Logic runs top-to-bottom when triggered. Use + to add a step. Drag to reorder." : "This action runs native code. Logic steps are not supported."),
   };
 }
 
 function makeActionContent(action: Action, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem[] {
-  const live = () => ctlr.actions[action.id] as Action,
+  const live = () => ctlr.actions.entries[action.id] as Action,
     parseBool = (v: any) => (v === "default" ? undefined : v === "yes" ? true : v === "no" ? false : !isNaN(Number(v)) && isStr(v) ? Number(v) : v);
   return [
     {
       id: `actions-key-${action.id}`,
-      label: "Keyboard Shortcut",
+      label: "Keyboard shortcut",
       widget: "input",
       inputs: [
         {
@@ -259,25 +241,20 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           value: () => (live().keyboard?.phase as string) ?? "keydown",
         },
       ],
-      getValue: () => {
-        const s = ctlr.settings.keys.shortcuts[action.id];
-        const val = Array.isArray(s) ? s.join(", ") : String(s ?? "");
-        return val ? `⌨️ ${val}` : "None";
-      },
+      getValue: () => formatAction(ctlr.settings.keys.shortcuts[action.id]) || "None",
       onChange: (val: Record<string, string>) => {
         const keys = val["Key"]
-            .split(",")
-            .map((k) => k.trim())
-            .filter(Boolean),
-          obj = ctlr.settings.keys.shortcuts;
-        if (obj) obj[action.id] = keys.length > 1 ? keys : keys[0] ?? "";
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean);
+        ctlr.settings.keys.shortcuts[action.id] = keys.length > 1 ? keys : keys[0] ?? "";
         live().keyboard = { ...live().keyboard, phase: val["Phase"] as any };
       },
       configPaths: [`settings.keys.shortcuts.${action.id}` as any],
     },
     {
       id: `actions-voice-${action.id}`,
-      label: "Voice Triggers",
+      label: "Voice triggers",
       widget: "input",
       inputs: [
         {
@@ -294,122 +271,108 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           label: "Stage",
           type: "select",
           options: [
-            { option: "Always", value: "always" },
-            { option: "Pre-Process", value: "pre-process" },
-            { option: "Post-Process", value: "post-process" },
+            { option: "Anytime", value: "anytime" },
+            { option: "Pre-Route", value: "pre-route" },
+            { option: "Post-Route", value: "post-route" },
           ],
-          value: () => live().voice?.stage ?? "post-process",
+          value: () => live().voice?.stage ?? "post-route",
         },
       ],
-      getValue: () => {
-        const t = ctlr.settings.voice.commands[action.id] ?? "";
-        const val = Array.isArray(t) && t.length > 0 ? t.join(", ") : String(t);
+      getValue() {
+        const t = ctlr.settings.voice.commands[action.id] ?? "",
+          val = Array.isArray(t) && t.length > 0 ? t.join(", ") : String(t);
         return val ? `🎙️ ${val}` : "None";
       },
       onChange: (val: Record<string, string>) => {
         const triggers = val["Phrases"]
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          obj = ctlr.settings.voice.commands;
-        if (obj) obj[action.id] = triggers.length > 0 ? triggers : [];
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        ctlr.settings.voice.commands[action.id] = triggers.length > 0 ? triggers : [];
         live().voice = { ...live().voice, stage: val["Stage"] as any };
       },
-      configPaths: [`actions.${action.id}.voice` as any, `settings.voice.commands.${action.id}` as any],
+      configPaths: [`actions.entries.${action.id}.voice` as any, `settings.voice.commands.${action.id}` as any],
     },
     makeLogicGroup(action, ctlr, logicItems),
-    {
-      id: `actions-notify-${action.id}`,
-      label: "Pop-up",
-      widget: "select",
-      getOptions: () => [{ value: "", display: "None" }, ...Array.from(new Set<string>(ctlr.plug<any>("settings.notifiers")?.state.events ?? [])).map((n) => ({ value: n, display: n }))],
-      getValue: () => live().notify || "None",
-      onChange: (val: string) => (live().notify = val || undefined),
-      configPaths: [`actions.${action.id}.notify` as any],
-    },
+
+    { id: `actions-notify-${action.id}`, label: "Pop-up", widget: "select", getOptions: () => [{ value: "", display: "None" }, ...Array.from(new Set<string>(ctlr.plug<any>("settings.notifiers")?.state.events ?? [])).map((n) => ({ value: n, display: fmt(n) }))], getValue: () => (live().notify ? fmt(live().notify!) : "None"), onChange: (val: string) => (live().notify = val || undefined), configPaths: [`actions.entries.${action.id}.notify` as any] },
     {
       id: `actions-toast-${action.id}`,
       label: "Notification",
       widget: "input",
-      getValue: () => {
+      getValue() {
         const r = live().toast?.render;
-        return r ? (typeof r === "function" ? "Dynamic text" : String(r)) : "None";
+        return r ? (isFunc(r) ? "Dynamic text" : capitalize(r)) : "None";
       },
       inputs: [
-        { label: "Message", type: "text", value: () => (isFunc(live().toast?.render) ? (live().toast!.render as Function)?.() : live().toast?.render) ?? "", placeholder: "Action triggered!", helperText: { info: "The message to display in the notification" } },
+        { name: "message", label: "Message", type: "text", value: () => (isFunc(live().toast?.render) ? (live().toast!.render as Function)?.() : live().toast?.render) ?? "", placeholder: "Action triggered!", required: true, helperText: { info: "The message to display in the notification" } },
         ...TOAST_FORM_INPUTS.map((input) => {
-          const map = {
-            Type: "type",
-            Position: "position",
-            Animation: "animation",
-            "Close Button": "closeButton",
-            "Hide Progress Bar": "hideProgressBar",
-            "Close On Click": "closeOnClick",
-            "Drag To Close": "dragToClose",
-            "Drag Direction": "dragToCloseDir",
-            "Auto Close (ms)": "autoClose",
-          } as const;
-          const key = map[input.label as keyof typeof map];
+          const key = input.name;
           return {
             ...input,
-            value:
-              key === "autoClose"
-                ? () => (live().toast?.autoClose === false ? -1 : (live().toast?.autoClose as number | undefined))
-                : () => {
-                    const val = live().toast?.[key];
-                    return val === undefined ? "default" : val === true ? "yes" : val === false ? "no" : val;
-                  },
+            value: () => {
+              const val = live().toast?.[key];
+              return key === "autoClose" ? (val === false ? -1 : val === undefined || val === true ? "" : val) : val === true ? "yes" : val === false ? "no" : val === undefined ? "" : val;
+            },
           };
         }),
       ],
       onChange: (val: any) => {
-        if (!val.Message) return void (live().toast = undefined);
-        const rawOpts = { render: val.Message, type: parseBool(val.Type), position: parseBool(val.Position), animation: parseBool(val.Animation), closeButton: parseBool(val["Close Button"]), hideProgressBar: parseBool(val["Hide Progress Bar"]), closeOnClick: parseBool(val["Close On Click"]), dragToClose: parseBool(val["Drag To Close"]), dragToCloseDir: parseBool(val["Drag Direction"]), autoClose: val["Auto Close (ms)"] === -1 ? false : val["Auto Close (ms)"] === "" ? undefined : parseBool(val["Auto Close (ms)"]) };
+        if (!val.message) return void (live().toast = undefined);
+        const rawOpts = { render: val.message, type: parseBool(val.type), position: parseBool(val.position), animation: parseBool(val.animation), closeButton: parseBool(val.closeButton), hideProgressBar: parseBool(val.hideProgressBar), closeOnClick: parseBool(val.closeOnClick), dragToClose: parseBool(val.dragToClose), dragToCloseDir: parseBool(val.dragToCloseDir), autoClose: val.autoClose === -1 ? false : val.autoClose };
         live().toast = Object.fromEntries(Object.entries(rawOpts).filter(([, v]) => v !== undefined)) as any;
       },
     },
     {
-      id: `actions-zen-${action.id}`,
-      label: "Zen",
-      widget: "toggle",
-      getValue: () => (live().zen ? "On" : "Off"),
-      onChange: (val: boolean) => (live().zen = val),
-      configPaths: [`actions.${action.id}.zen` as any],
-      title: () => `Run even while ${ctlr.zenlist.map(fmt).join(" / ")} is open`,
+      id: `actions-gates-${action.id}`,
+      label: "Gates (features)",
+      widget: "select",
+      getMultiple: () => true,
+      getOptions: () =>
+        Object.keys(ctlr.media.features)
+          .sort((a, b) => a.localeCompare(b))
+          .map((f) => ({ value: f, display: fmt(f) })),
+      getValue: () => live().gates?.map(fmt) || [],
+      onChange: (val: string) => {
+        const c = Array.isArray(live().gates) ? live().gates! : (live().gates = []);
+        const idx = c.indexOf(val as any);
+        idx > -1 ? c.splice(idx, 1) : c.push(val as any);
+        if (!c.length) live().gates = undefined;
+      },
+      configPaths: ["devMode", `actions.entries.${action.id}.gates` as any],
+      hidden: () => !ctlr.config.devMode,
     },
+    { id: `actions-zen-${action.id}`, label: "Zen (run everywhere)", widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: () => !ctlr.config.devMode, configPaths: ["devMode", `actions.entries.${action.id}.zen` as any], title: `Run even while ${ctlr.zenlist.map(fmt).join(" / ")} is open` },
   ];
 }
 
 function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () => void): SettingsMenuItem {
-  const live = () => ctlr.actions[action.id] as Action,
-    canDelete = !!action.userCreated,
+  const live = () => ctlr.actions.entries[action.id] as Action,
     logicItems: SettingsMenuItem[] = [];
   logicItems.push(...(action.logic ?? []).map((step, i) => makeLogicStepView(step, i, action.id, ctlr, logicItems)));
   return {
     id: `actions-detail-${action.id}`,
     label: action.label ?? fmt(action.id),
+    getBadge: () => (action.userCreated ? { label: "Own" } : undefined),
     widget: "group",
-    getValue: () => {
-      const s = ctlr.settings.keys.shortcuts[action.id] ?? "",
-        allKeys = Array.isArray(s) ? s.join(", ") : String(s),
-        v = ctlr.settings.voice.commands[action.id] ?? "",
-        allVoice = Array.isArray(v) && v.length > 0 ? v.join(", ") : String(v);
-      return [allKeys ? `⌨️ ${allKeys}` : "", allVoice ? `🎙️ ${allVoice}` : ""].filter(Boolean).join(" · ") || "None";
-    },
-    configPaths: [`actions.${action.id}` as any, `settings.keys.shortcuts.${action.id}` as any],
-    actions: canDelete
-      ? [
-          {
-            id: "delete",
-            getLabel: () => "Delete",
-            icon: "delete",
-            onClick: async () => {
-              if (!(await confirmDelete(live().label ?? fmt(action.id), ctlr))) return;
-              delete ctlr.actions[action.id], onDeleteAction(), ctlr.plug("settings.settingsView")?.menu.goBack();
+    getValue: () => formatAction(ctlr.settings.keys.shortcuts[action.id], ctlr.settings.voice.commands[action.id]) || "None",
+    configPaths: [`actions.entries.${action.id}` as any, `settings.keys.shortcuts.${action.id}` as any],
+    actions: [
+      { id: "run", getLabel: () => "Run", icon: "play", onClick: () => ctlr.runAction(action.id) },
+      ...(action.userCreated
+        ? [
+            {
+              id: "delete",
+              getLabel: () => "Delete",
+              icon: "delete" as const,
+              onClick: async () => {
+                if (!(await confirmDelete(live().label ?? fmt(action.id), ctlr))) return;
+                delete ctlr.actions.entries[action.id], onDeleteAction(), ctlr.plug("settings.settingsView")?.menu.goBack();
+              },
             },
-          },
-        ]
-      : undefined,
+          ]
+        : []),
+    ],
     items: makeActionContent(action, ctlr, logicItems),
   };
 }
@@ -417,39 +380,37 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
 function makeActionForm(ctlr: Controller, onAdd: () => void): SettingsMenuItem {
   return {
     id: "actions-add",
-    label: "Create Action",
+    label: "Create action",
     widget: "input",
     hidden: true,
     inputs: [
-      { label: "Label", type: "text", placeholder: "My Custom Action", required: true, helperText: { info: "Give it a name. The ID is auto-generated from it." } },
-      { label: "Keyboard Shortcut", type: "text", placeholder: "f, Shift+f", helperText: { info: "Optional, you can add or change this later." } },
-      { label: "Voice Triggers", type: "text", placeholder: "play, start playing", helperText: { info: "Optional, you can add or change this later. After creating, go add logic steps." } },
+      { name: "label", label: "Label", type: "text", placeholder: "My Custom Action", required: true, helperText: { info: "Give it a name. The ID is auto-generated from it." } },
+      { name: "keys", label: "Keyboard shortcut", type: "text", placeholder: "f, Shift+f", helperText: { info: "Optional, you can add or change this later." } },
+      { name: "voice", label: "Voice triggers", type: "text", placeholder: "play, start playing", helperText: { info: "Optional, you can add or change this later. After creating, go add logic steps." } },
     ],
     getValue: () => "",
     onChange: (vals: Record<string, string>) => {
-      const label = vals["Label"].trim(),
+      const label = (vals.label || "").trim(),
         id = toId(label);
-      if (!id || ctlr.actions[id]) return;
-      const triggers = vals["Voice Triggers"]
+      if (!id || ctlr.actions.entries[id]) return;
+      const triggers = (vals.voice || "")
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
-        keys = vals["Keyboard Shortcut"]
+        keys = (vals.keys || "")
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
-      ctlr.registerAction(id, { label, fn: () => {}, logic: [], userCreated: true });
-      const voiceObj = ctlr.settings.voice.commands,
-        keysObj = ctlr.settings.keys.shortcuts;
-      if (voiceObj && triggers.length) voiceObj[id] = triggers;
-      if (keysObj && keys.length) keysObj[id] = keys.length > 1 ? keys : keys[0];
+      ctlr.registerAction(id, { label, fn: NOOP, logic: [], userCreated: true });
+      if (triggers.length) (ctlr.settings.voice.commands as any)[id] = triggers;
+      if (keys.length) (ctlr.settings.keys.shortcuts as any)[id] = keys.length > 1 ? keys : keys[0];
       onAdd(), ctlr.plug("settings.settingsView")?.menu.goBack(), requestAnimationFrame(() => ctlr.plug("settings.settingsView")?.menu.goTo(`actions-detail-${id}`), ctlr.signal);
     },
   };
 }
 
-export const getSettingsActionsMenu = (ctlr: Controller): SettingsMenuItem => {
-  const visibleActions = () => (Object.values(ctlr.actions) as Action[]).filter((a) => !a.private).sort((a, b) => (a.label ?? a.id).localeCompare(b.label ?? b.id)),
+export const getActionsMenu = (ctlr: Controller): SettingsMenuItem => {
+  const visibleActions = () => (Object.values(ctlr.actions.entries) as Action[]).filter((a) => !a.private).sort((a, b) => (a.label ?? a.id).localeCompare(b.label ?? b.id)),
     actionItems: SettingsMenuItem[] = [],
     rebuildActionItems = () => actionItems.splice(0, actionItems.length, addForm, ...visibleActions().map((a) => makeActionDetail(a, ctlr, rebuildActionItems))),
     addForm = makeActionForm(ctlr, rebuildActionItems);
@@ -457,12 +418,12 @@ export const getSettingsActionsMenu = (ctlr: Controller): SettingsMenuItem => {
   const getSig = () =>
     visibleActions()
       .map((a) => a.id + (a.label ?? ""))
-      .join(",");
+      .join(", ");
   rebuildActionItems();
   lastSig = getSig();
   return {
-    id: "general",
-    label: "General",
+    id: "advanced",
+    label: "Advanced",
     icon: "settings",
     widget: "group",
     getValue: () => "",
@@ -470,13 +431,13 @@ export const getSettingsActionsMenu = (ctlr: Controller): SettingsMenuItem => {
       {
         id: "actions",
         label: "Actions",
-        widget: "group",
-        getValue: () => {
-          const all = visibleActions(),
-            user = all.filter((a) => a.userCreated).length;
-          return user ? `${all.length} (${user} custom)` : String(all.length);
+        getBadge: () => {
+          const user = visibleActions().filter((a) => a.userCreated).length;
+          return { label: "beta", value: user ? `${user} Own` : undefined };
         },
-        tipHTML: "Actions are player-wide commands. Use + to create your own, pair them with keyboard shortcuts, voice triggers, or chain logic steps.",
+        widget: "group",
+        getValue: () => String(visibleActions().length),
+        getTipHTML: () => "Actions are player-wide commands. Use + to create your own, pair them with keyboard shortcuts, voice triggers, or chain logic steps.",
         onWire: (syncUI, signal) =>
           ctlr.config.on(
             "actions" as any,
@@ -500,6 +461,6 @@ export const getSettingsActionsMenu = (ctlr: Controller): SettingsMenuItem => {
 
 declare module "@defs/registries" {
   interface MenuRegistryMap {
-    "settings.actions": typeof getSettingsActionsMenu;
+    actions: typeof getActionsMenu;
   }
 }

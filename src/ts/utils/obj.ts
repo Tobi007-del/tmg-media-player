@@ -1,9 +1,9 @@
 import { camelize } from "./str";
-import type { Control, ControlPanelBottomTuple } from "@plugs/settings/controlPanel/types";
+import type { AnyControl, Control, ControlPanelBottomTuple, ControlPanelConfig } from "@plugs/settings/controlPanel/types";
 import { type Paths, type PathValue } from "sia-reactor";
 import { setPath } from "sia-reactor/utils";
 import type { UIObject, UISettings, UIOption, UITuple } from "@defs/UIOptions";
-import { isObj, isArr } from "@t007/utils";
+import { isObj, isArr, isStr } from "@t007/utils";
 
 export { isArr, isObj };
 export { isDef, isSym, isBool, isNum, isStr, isPOJO, isIter, isFunc, inBoolArrOpt } from "@t007/utils";
@@ -39,14 +39,14 @@ export function getUIOpt<T = unknown>(opts: UIOption<T>[] | undefined, value: T,
   if (opts)
     for (const opt of opts) {
       const p = parseUIOpt<T>(opt);
-      if (p.value == value) return p[key] as string;
+      if (p.value === value) return p[key] as string;
     }
   return String(value);
 }
 
 export function getUniqueOpts<T>(options: UITuple<T>[]) {
   const counts: Record<string, number> = {};
-  options.forEach((opt) => (counts[opt.display] = (counts[opt.display] || 0) + 1)); // First pass: Count occurrences of each display name
+  for (const opt of options) counts[opt.display] = (counts[opt.display] || 0) + 1;
   const seen: Record<string, number> = {};
   for (let i = options.length - 1; i >= 0; i--) {
     const opt = options[i];
@@ -60,10 +60,13 @@ export function getUniqueOpts<T>(options: UITuple<T>[]) {
 }
 
 export function parseUIOpt<T = unknown>(opt: UIOption<T>): UITuple<T> {
-  return isUIOption<T>(opt) ? { value: opt.value, display: String(opt.display ?? opt.value), infoText: opt.infoText } : { value: opt as T, display: String(opt) };
+  return isUIOption<T>(opt) ? { ...opt, display: String(opt.display ?? opt.value) } : { value: opt as T, display: String(opt) };
 }
 export function parseUIOpts<T = unknown>(opts: UIOption<T>[]): T[] {
   return opts.map((opt) => parseUIOpt(opt).value);
+}
+export function parseUIBadge(badge?: string | { label?: string; value?: string } | null): { label?: string; value?: string } | undefined {
+  return isStr(badge) ? { value: badge } : badge || undefined;
 }
 
 export function parseUIObj<T extends Record<string, any>>(obj: T): UIObject<T> {
@@ -91,14 +94,14 @@ export function parsePanelBottomObj(obj: Partial<ControlPanelBottomTuple> | Cont
   return arr ? ([...third, ...second, ...first] as Control[]) : ({ 1: first, 2: second, 3: third } as ControlPanelBottomTuple);
 }
 
-export function getPanelSplitCtrls<T = any>(row: T[]): { left: T[]; center: T[]; right: T[] } {
+export function getPanelSplitCtrls<T = any>(row?: T[]): { left: T[]; center: T[]; right: T[] } {
   if (!row?.length) return { left: [], center: [], right: [] };
   const s1 = row.indexOf("spacer" as any),
     s2 = row.indexOf("spacer" as any, s1 + 1);
   return s1 === -1 ? { left: row, center: [], right: [] } : s2 === -1 ? { left: row.slice(0, s1), center: [], right: row.slice(s1 + 1) } : { left: row.slice(0, s1), center: row.slice(s1 + 1, s2), right: row.slice(s2 + 1) };
 }
 
-export function getPanelLocation(b: any, id: string) {
+export function getPanelLocation(b: ControlPanelConfig, id: AnyControl) {
   if (isArr(b.top) && b.top.includes(id)) return { path: "top", row: b.top, zone: getPanelSplitCtrls(b.top).left.includes(id) ? "left" : getPanelSplitCtrls(b.top).center.includes(id) ? "center" : "right" };
   if (isArr(b.center) && b.center.includes(id)) return { path: "center", row: b.center, zone: "zone" };
   if (b.bottom) {
@@ -108,7 +111,7 @@ export function getPanelLocation(b: any, id: string) {
   return { path: "bottom.1", row: [], zone: "left" };
 }
 
-export function insertPanelCtrl(current: any[], defaults: readonly any[], id: string): void {
+export function insertPanelCtrl(current: AnyControl[], defaults: readonly AnyControl[], id: AnyControl): void {
   let s = 0;
   for (let i = 0; i < defaults.indexOf(id); i++) if (defaults[i] === "spacer") s++;
   for (let i = defaults.indexOf(id) + 1; i < defaults.length; i++)

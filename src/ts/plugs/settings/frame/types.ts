@@ -5,3 +5,4 @@ export interface FrameConfig {
   fps: number;
   captureAutoClose: ToastOptions["autoClose"];
 }
+

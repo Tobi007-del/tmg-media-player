@@ -1,5 +1,4 @@
-.tmg-media-big-controls-wrapper-cover,
-.tmg-media-buffer {
+.tmg-host-container:not([data-size-tier^="xxxxx"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
   top: clamp(calc((var(--cmptd-big-ctrl-scale-size) / 2)), calc(100% - var(--tmg-media-current-bottom-wrapper-height) - (var(--cmptd-big-ctrl-scale-size) / 2)), 50%);
 }
 .tmg-media-big-controls-wrapper-cover {

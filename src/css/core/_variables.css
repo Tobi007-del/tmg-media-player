@@ -56,10 +56,10 @@
   --tmg-media-current-global-safe-inset-top: var(--tmg-media-inset-size);
   --tmg-media-current-global-safe-inset-bottom: var(--tmg-media-inset-size);
   --tmg-media-current-safe-inset-x: var(--tmg-media-inset-size);
-  --tmg-media-current-miniplayer-x: calc(100% - (var(--tmg-media-current-container-width) / 2) - 7.5px);
-  --tmg-media-current-miniplayer-y: calc((var(--tmg-media-current-container-height) / 2) + 7.5px);
+  --tmg-media-current-miniplayer-x: calc(100% - (var(--tmg-media-current-container-width) / 2) - 8px);
+  --tmg-media-current-miniplayer-y: calc(100% - (var(--tmg-media-current-container-height) / 2) - 8px);
   --tmg-media-current-captions-x: 50%;
-  --tmg-media-current-captions-y: calc((var(--tmg-media-current-captions-container-height) / 2) + (var(--tmg-media-current-unit) / 2));
+  --tmg-media-current-captions-y: calc(100% - ((var(--tmg-media-current-captions-container-height) / 2) + (var(--tmg-media-current-unit) / 2)));
   --tmg-media-current-captions-offset-top: 0px;
   --tmg-media-current-captions-offset-bottom: 0px;
   --tmg-media-current-preview-background-position: center;
@@ -105,7 +105,7 @@
   --tmg-media-focus-visible-color: rgb(from var(--tmg-media-brand-accent-color) r g b / 1);
   --tmg-media-focus-visible-outline: 2px solid var(--tmg-media-focus-visible-color);
   --tmg-media-disabled-color: gray;
-  --tmg-media-error-color: rgba(255, 0, 0, 0.75);
+  --tmg-media-danger-color: rgba(255, 0, 0, 0.75);
   --tmg-media-background: black;
   --tmg-media-disabled-background: rgb(55, 55, 55);
   --tmg-media-curtain-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.5);
@@ -170,18 +170,12 @@
 }
 /* captions varaibles */
 :where(:root, .tmg-host-container) {
-  --tmg-media-captions-font-family: var(--tmg-media-font-family);
-  --tmg-media-captions-font-size: 100;
-  --tmg-media-captions-font-color: white;
-  --tmg-media-captions-font-opacity: 1;
-  --tmg-media-captions-font-weight: 400;
-  --tmg-media-captions-font-variant: normal;
-  --tmg-media-captions-background-color: black;
-  --tmg-media-captions-background-opacity: 0.75;
-  --tmg-media-captions-window-color: black;
-  --tmg-media-captions-window-opacity: 0;
+  /* --tmg-media-captions-font-family: var(--tmg-media-font-family); --tmg-media-captions-font-size: 100; --tmg-media-captions-font-color: white; --tmg-media-captions-font-opacity: 1; --tmg-media-captions-font-weight: 400; --tmg-media-captions-font-variant: normal; --tmg-media-captions-background-color: black; --tmg-media-captions-background-opacity: 0.75; --tmg-media-captions-window-color: black; --tmg-media-captions-window-opacity: 0; --tmg-media-captions-text-alignment: center; */
+  --tmg-media-captions-top-shadow: rgb(204, 204, 204);
+  --tmg-media-captions-base-shadow: rgb(34, 34, 34);
+  --tmg-media-captions-shadow-base: 1px;
   --tmg-media-captions-font-size-base: calc(var(--tmg-media-current-unit) / 1.6);
-  --tmg-media-captions-doubling-factor: 4;
+  --tmg-media-captions-double-factor: 4;
 }
 /* settings variables */
 :where(:root, .tmg-host-container) {
@@ -278,7 +272,6 @@
   --cmptd-ctrl-box-min-width: calc(var(--cmptd-ctrl-size) + (var(--tmg-media-current-controls-column-gap) * 2));
   --cmptd-ctrl-box-height: calc(var(--cmptd-ctrl-size) + (var(--cmptd-ctrl-box-y-in-pad) * 2));
   --cmptd-big-ctrl-scale-size: calc(var(--tmg-media-big-controls-size) * var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale));
-  --cmptd-cue-font-factor: (1 + (var(--tmg-media-captions-font-size) - 100) / ((100 * var(--tmg-media-captions-doubling-factor)) - 100));
 }
 .tmg-host-container:is(.tmg-media-mobile, [data-size-tier^="xxxx"]) {
   --cmptd-ctrl-box-out-nudge: 0;

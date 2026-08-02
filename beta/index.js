@@ -752,7 +752,7 @@ class tmg_Video_Controller {
     this.video[`${act}EventListener`]("durationchange", this._handleDurationChange);
     this.video[`${act}EventListener`]("ratechange", this._handlePlaybackRateChange);
     this.video[`${act}EventListener`]("volumechange", this._handleNativeVolumeChange);
-    this.video[`${act}EventListener`]("timeupdate", this._handleTimeUpdate);
+    this.video[`${act}EventListener`]("timeupdate", this._handletimeUpdate);
     this.video[`${act}EventListener`]("progress", this._handleLoadedProgress);
     this.video[`${act}EventListener`]("loadstart", this._handleLoadStart);
     this.video[`${act}EventListener`]("loadedmetadata", this._handleLoadedMetadata);
@@ -787,8 +787,8 @@ class tmg_Video_Controller {
     [this.DOM.pictureInPictureBtn, this.DOM.pictureInPictureIconWrapper].forEach((el) => el?.addEventListener("click", this.togglePictureInPictureMode));
     this.DOM.settingsBtn?.addEventListener("click", this.toggleSettingsView);
     // timeline event listeners
-    this.DOM.timelineContainer?.addEventListener("pointerdown", this._handleTimelinePointerDown);
-    this.DOM.timelineContainer?.addEventListener("keydown", this._handleTimelineKeyDown);
+    this.DOM.timelineContainer?.addEventListener("pointerdown", this._handletimelinePointerDown);
+    this.DOM.timelineContainer?.addEventListener("keydown", this._handletimelineKeyDown);
     this.DOM.timeline?.addEventListener("mousemove", this._handleTimelineInput);
     ["mouseleave", "touchend", "touchcancel"].forEach((e) => this.DOM.timeline?.addEventListener(e, this.stopTimePreviewing));
     // captions container listeners
@@ -3376,5 +3376,5 @@ if (typeof window !== "undefined") {
   console.error("TMG Media Player cannot run in a terminal!"), console.warn("Consider moving to a browser environment to use the TMG Media Player");
 }
 // npx esbuild beta/index.js --bundle --outfile=beta/build.js
-// npm install sia-reactor@latest @t007/dialog@latest @t007/input@latest @t007/toast@latest @t007/utils@latest
-// npm link sia-reactor@latest @t007/dialog@latest @t007/input@latest @t007/toast@latest @t007/utils@latest
+// npm install sia-reactor@latest @t007/dialog@latest @t007/input@latest @t007/toast@latest @t007/utils@latest tmg-media-player@latest
+// npm link sia-reactor@latest @t007/dialog@latest @t007/input@latest @t007/toast@latest @t007/utils@latest tmg-media-player@latest

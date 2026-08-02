@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type FullscreenConfig = undefined;
 
@@ -22,6 +22,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
     this.media.on("state.fullscreen", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.fullscreen", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.fullscreen", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -30,7 +31,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
 
   public syncARIA(): void {
     this.state.label = this.media.state.fullscreen ? "Exit full screen" : "Full screen";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.fullscreen);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.fullscreen), (this.state.voiceCommand = this.settings.voice.commands.fullscreen));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

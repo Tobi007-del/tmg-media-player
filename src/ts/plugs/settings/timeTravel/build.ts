@@ -7,5 +7,10 @@ export const TIME_TRAVEL_BUILD: DeepPartial<TimeTravelConfig> = {
     mirrorReads: true,
     mirrorWrites: true,
   },
+  console: {
+    disabled: true,
+    devOnly: false,
+    startOpen: true,
+  },
   persist: false,
 };

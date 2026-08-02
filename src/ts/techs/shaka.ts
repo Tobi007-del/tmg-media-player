@@ -25,8 +25,8 @@ export class ShakaTech extends HTML5Tech {
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && (DASH_EXTENSIONS.test(src) || HLS_EXTENSIONS.test(src));
   }
-  protected strictTracks: boolean = true;
   protected hostSrc: string | null = null;
+  protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     const isVid = ctlr.media.type === "video";
     // prettier-ignore
@@ -43,10 +43,10 @@ export class ShakaTech extends HTML5Tech {
   // --- API Injection ---
   protected async initHost(src = "") {
     try {
-      if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load(src, this.config[this.ctlr.techTruth].currentTime);
+      if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load((this.hostSrc = src), this.config[this.ctlr.techTruth].currentTime);
       // Setup & Compatibility
       const SHAKA = (window as any).shaka ?? (await loadResource(window.TMG_SHAKA_JS_SRC!, "script"), (window as any).shaka);
-      if (this.signal.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!SHAKA.Player.isBrowserSupported()) return this.ctlr.notice("Shaka Player is not supported in this browser", "error", null);
       SHAKA.polyfill.installAll(); // Mandatory Shaka architecture step
       this.hostSrc = src;
@@ -69,7 +69,7 @@ export class ShakaTech extends HTML5Tech {
         this.config.status.videoTracks = inert(Array.from(videosMap.values()));
         if (this.config.status.hostReady) silence(() => (this.config.intent.currentVideoTrack = this.config.state.currentVideoTrack)); // #RE-TRIGGER: sync intent resolution
         this.config.status.levels = inert(Array.from(levelsMap.values()).sort((a: any, b: any) => (b.height !== a.height ? a.height - b.height : a.bandwidth - b.bandwidth))); // ascending, mimicks other libs
-        if (!this.config.settings.metadata.allowOverride) return;
+        if (!this.config.settings.metadata.allowMediaOverride) return;
         const chapters = this.host.getChapters(this.config.status.textTracks[this.config.state.currentTextTrack]?.language || this.config.status.audioTracks[this.config.state.currentAudioTrack]?.language || "en");
         this.config.settings.metadata.chapterInfo = inert(chapters?.length ? chapters.map((ch: any) => ({ title: ch.title, startTime: ch.startTime })) : []);
       });
@@ -85,6 +85,7 @@ export class ShakaTech extends HTML5Tech {
   // ===========================================================================
   // WIRING OVERRIDES
   // ===========================================================================
+  protected override wireMediaTracks(): void {}
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
     this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as shaka.extern.Track[]).findIndex((t) => t.id === term || t.language === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHostTrackIntent(e, _type), this.evtOpts.CONFIG);
@@ -118,14 +119,6 @@ export class ShakaTech extends HTML5Tech {
     });
     e.resolve(this.name);
   }
-  protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
-    if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      this.host.setTextTrackVisibility(e.value);
-      this.config.state.textVisible = e.value;
-    });
-    e.resolve(this.name);
-  }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
     this.when("hostReady", e, () => {
@@ -143,21 +136,21 @@ export class ShakaTech extends HTML5Tech {
       else {
         const variants = this.host.getVariantTracks(),
           active = variants.find((t: any) => t.active),
-          isAuto = this.config.state.autoLevel,
           match = variants.find((v: any) => {
             const matchesTgt = type === "audio" ? v.language === target.language && v.audioRoles?.join() === target.audioRoles?.join() : v.videoRoles?.join() === target.videoRoles?.join(), // 1. Match the NEW selection the user just clicked
               preservesAlt = type === "audio" ? v.videoRoles?.join() === active?.videoRoles?.join() : v.language === active?.language && v.audioRoles?.join() === active?.audioRoles?.join(), // 2. Preserve the OTHER constraint (If changing audio, lock video. If changing video, lock audio)
-              matchesRes = isAuto || v.height === active?.height; // 3. STRICTLY PRESERVE RESOLUTION (If ABR is OFF, it must match current height)
+              matchesRes = this.config.state.autoLevel || v.height === active?.height; // 3. STRICTLY PRESERVE RESOLUTION (If ABR is OFF, it must match current height)
             return matchesTgt && preservesAlt && matchesRes;
           });
         this.host.selectVariantTrack(match || target, true); // Fire the weapon safely using selectVariantTrack so Shaka doesn't guess
       }
     }); // primal behavior, this is no joke; more like a "dance".
     e.resolve(this.name);
-  } 
+  }
   // skipped override for `handleLiveIntent(e)` (`this.host.goToLive()`) so `intent.live` facade for `intent.currentTime` remains predictable
   // --- API Logic ---
   protected handleHostError(err: any): void {
+    if (!this.signal || this.signal?.aborted) return;
     this.config.status.error = { code: err.code ?? 5, message: err.message ?? `Shaka Error: Category ${err.category}`, native: err };
     this.config.status.waiting = false;
   }
@@ -167,9 +160,9 @@ export class ShakaTech extends HTML5Tech {
       idx = variants.findIndex((t: any) => t.active);
     if (idx !== -1) {
       const active = variants[idx];
-      this.config.state.currentLevel = (this.config.status.levels as any[]).findIndex((l) => l.height === active.height && l.bandwidth === active.bandwidth);
+      this.config.state.currentLevel = (this.config.status.levels as any[]).findIndex((l) => l.id === active.id || (l.height === active.height && l.bandwidth === active.bandwidth));
     }
-    this.config.status.bandwidth = Math.round((this.host.getStats().estimatedBandwidth / 1_000_000) * 10) / 10; // Grab bandwidth stats directly from Shaka's internal engine
+    this.config.status.bandwidth = Math.round(this.host.getStats().estimatedBandwidth); // Grab bandwidth stats directly from Shaka's internal engine (bps)
   }
   // --- Lifecycle ---
   protected destroyHost(): void {

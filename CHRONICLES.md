@@ -1,4 +1,3 @@
----
 # TVP CHRONICLES: State & Intent Architecture (S.I.A.)
 
 ### *The Basis of the New TVP Architecture*
@@ -376,3 +375,5 @@ There's `init: true` now as an option for all listeners so the same logic can be
 The reactor now supports this treating data as a first class citizen and avoiding the noise of nested proxies or stale updates using referencial integrity and a tracing algorithm to locate an object in it's state tree like a GPS using a map of the `object` world quite literally.
 
 ---
+
+> **Author's Note:** This chronicle has remained untouched since the construction of the original library. However, because the philosophical foundation and architectural thinking were cemented long before the first line of code was ever written, the principles laid out here remain absolute. The core was built to be timeless; meaning this document stands not just as a technical manual, but as the definitive, unyielding bible of the S.I.A. ecosystem.

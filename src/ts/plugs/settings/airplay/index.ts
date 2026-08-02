@@ -5,8 +5,9 @@ import { AIRPLAY_BUILD } from "./build";
 import { isFunc } from "@utils/obj";
 import { ComponentRegistry } from "@core/registries";
 import { AirPlayPlaceholder } from "@components/holders/airplayplaceholder";
+import { AirPlayConfig } from "./types";
 
-export class AirPlayPlug extends BasePlug {
+export class AirPlayPlug extends BasePlug<AirPlayConfig> {
   public static readonly plugName = "airplay";
   public static readonly BUILD = AIRPLAY_BUILD;
   public isAvailable = false;
@@ -28,7 +29,7 @@ export class AirPlayPlug extends BasePlug {
 
   protected handleAvailability(e: any, can = e.availability === "available"): void {
     if (can) (this.placeholder ??= ComponentRegistry.init("airplayplaceholder", this.ctlr))?.setup();
-    if (this.ctlr.isNativeEl) this.media.features.airplay = this.isAvailable = can; // e.availability returns "available" if an Apple TV/HomePod is on the network
+    (this.isAvailable = can), (this.media.features.airplay ||= this.ctlr.isNativeEl && can); // e.availability returns "available" if an Apple TV/HomePod is on the network
   }
 
   protected handleWirelessChange(): void {

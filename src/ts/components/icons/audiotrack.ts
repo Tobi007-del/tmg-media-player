@@ -1,4 +1,4 @@
-export const audiotrack = `<svg viewBox="0 0 24 24" class="tmg-media-audiotrack-icon" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path fill="none" d="M9 18V5l12-2v13"></path><circle fill="none" cx="6" cy="18" r="3"></circle><circle fill="none" cx="18" cy="16" r="3"></circle></svg>`;
+export const audiotrack = `<svg viewBox="0 0 24 24" class="tmg-media-audio-track-icon" fill="currentColor"><path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/></svg>`;
 
 declare module "@defs/registries" {
   interface IconRegistryMap {

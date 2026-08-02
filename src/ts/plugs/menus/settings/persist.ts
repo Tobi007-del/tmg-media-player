@@ -1,9 +1,10 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { PersistPlug } from "@plugs/settings/persist";
+import { formatMenuMs } from "@utils/time";
 
 export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => ({
-  id: "general",
-  label: "General",
+  id: "advanced",
+  label: "Advanced",
   icon: "settings",
   widget: "group",
   getValue: () => "",
@@ -12,36 +13,24 @@ export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => (
       id: "persist",
       label: "Persistence",
       widget: "group",
-      tipHTML: "Configure how settings and playback state are saved to local storage.",
+      getTipHTML: () => "Configure how settings and playback state are saved to local storage.",
       getValue: () => "On",
+      hidden: () => !plug.ctlr.config.devMode,
+      configPaths: ["devMode"],
       items: [
-        {
-          id: "persistThrottle",
-          label: "Save Throttle",
-          widget: "input",
-          inputs: [{ label: "ms", placeholder: "2500", helperText: { info: "How often the player saves state changes. Higher numbers = fewer writes but less accurate resumption." }, type: "number", min: "0", value: () => plug.module.config.throttle }],
-          getValue: () => `${plug.module.config.throttle}ms`,
-          onChange: (val: Record<string, any>) => (plug.config.throttle = val["ms"]),
-          configPaths: ["settings.persist.throttle"],
-        },
-        {
-          id: "persistStrict",
-          label: "Strict resume",
-          widget: "toggle",
-          getValue: () => (plug.module.config.strict ? "On" : "Off"),
-          onChange: (val: boolean) => (plug.config.strict = val),
-          configPaths: ["settings.persist.strict"],
-          title: "Force save immediately before page closes or reloads for accurate resumption, might restore cleared data.",
-        },
+        { id: "persistThrottle", label: "Save throttle", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "2500", helperText: { info: "How often the player saves state changes. Higher numbers = fewer saves but less accurate resumption." }, type: "number", min: "0", required: true, value: () => plug.module.config.throttle }], getValue: () => formatMenuMs(plug.module.config.throttle), onChange: (val: Record<string, any>) => (plug.config.throttle = val.time), configPaths: ["settings.persist.throttle"] },
+        { id: "persistStrict", label: "Strict resume", widget: "toggle", getValue: () => (plug.module.config.strict ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strict = val), configPaths: ["settings.persist.strict"], title: "Force save immediately before page closes or reloads for accurate resumption, might restore cleared data." },
         {
           id: "persistClearStorage",
-          label: "Clear Storage",
-          title: "Clear all saved player settings and preferences.",
+          label: "Clear storage",
           widget: "button",
           getValue: () => "Clear",
+          getTipHTML: () => "Permanently wipe all saved player settings and state from your storage.",
           onChange: async () => {
-            const ok = await t007.confirm("Are you sure you want to clear all your data?", { id: `${plug.ctlr.config.id}-clear-dialog`, rootElement: plug.media.container, confirmText: "Clear", title: "Clear data" });
-            if (ok) plug.module.clear(), plug.ctlr.plug("settings.toasts")?.toast?.success("Storage cleared successfully!", { tag: "tmg-persist", signal: plug.signal });
+            const ok = await t007.confirm?.("Are you sure you want to clear all saved data? This cannot be undone.", { id: `${plug.ctlr.config.id}-clear-dialog`, rootElement: plug.media.container, confirmText: "Proceed" });
+            if (!ok) return;
+            const typed = await t007.prompt("This permanently deletes all saved settings, preferences and state from your storage. It cannot be undone.", "", { id: `${plug.ctlr.config.id}-clear-prompt`, rootElement: plug.media.container, confirmText: "Clear", placeholder: "CLEAR", label: "Confirmation", pattern: "CLEAR" });
+            if (typed?.trim() === "CLEAR") plug.module.clear(), plug.ctlr.plug("settings.toasts")?.toast?.success("Storage cleared successfully!", { tag: "tmg-persist", signal: plug.signal });
           },
         },
       ],

@@ -1,7 +1,7 @@
 :where(.tmg-host) {
   display: block;
   aspect-ratio: var(--tmg-media-aspect-ratio);
-  border-radius: inherit;
+  /* border-radius: inherit; */
   width: 90dvw;
   max-width: 700px;
   max-height: 80lvh;
@@ -41,12 +41,12 @@
   max-height: unset;
 }
 .tmg-host-container.tmg-media-miniplayer .tmg-host {
-  width: auto;
-  height: auto;
-  min-height: 150px;
-  min-width: 170px;
-  max-height: 35dvh;
-  max-width: min(400px, 50dvw);
+  width: var(--tmg-media-current-miniplayer-width, auto);
+  height: var(--tmg-media-current-miniplayer-height, auto);
+  min-width: min(var(--tmg-media-current-miniplayer-width, 170px), 170px);
+  min-height: min(var(--tmg-media-current-miniplayer-height, 150px), 150px);
+  max-width: min(var(--tmg-media-current-miniplayer-width, min(400px, 50dvw)), 87.5dvw);
+  max-height: min(var(--tmg-media-current-miniplayer-height, min(400px, 35dvh)), 87.5dvh);
   aspect-ratio: var(--tmg-media-aspect-ratio);
 }
 .tmg-host-container.tmg-media-floating-player .tmg-host {

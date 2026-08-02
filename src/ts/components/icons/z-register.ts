@@ -2,7 +2,7 @@ import { IconRegistry } from "@core/registries";
 import { play } from "./play";
 import { pause } from "./pause";
 import { replay } from "./replay";
-import { prev } from "./prev";
+import { previous } from "./previous";
 import { next } from "./next";
 import { settings } from "./settings";
 import { lock } from "./lock";
@@ -55,17 +55,17 @@ import { playbackrate } from "./playbackrate";
 import { timer } from "./timer";
 import { shuffle } from "./shuffle";
 import { add } from "./add";
-import { configure } from "./configure";
 import { cast } from "./cast";
 import { airplay } from "./airplay";
 import { edit } from "./edit";
+import { sort } from "./sort";
 
 IconRegistry.registerAll({
   // Random Order
   play,
   pause,
   replay,
-  prev,
+  previous,
   next,
   settings,
   lock,
@@ -120,6 +120,6 @@ IconRegistry.registerAll({
   timer,
   shuffle,
   add,
-  configure,
   edit,
+  sort,
 });

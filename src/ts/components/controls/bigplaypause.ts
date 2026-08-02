@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type BigPlayPauseConfig = undefined;
 
@@ -29,7 +29,7 @@ export class BigPlayPauseButton extends BaseComponent<BigPlayPauseConfig, Compon
 
   public syncARIA(): void {
     this.state.label = this.media.status.ended ? "Replay" : this.media.state.paused ? "Play" : "Pause";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.playPause);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.playPause), (this.state.voiceCommand = this.settings.voice.commands.playPause));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

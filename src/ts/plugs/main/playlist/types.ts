@@ -8,9 +8,12 @@ export type PlaylistConfig = {
     add: boolean;
     delete: boolean;
     move: boolean;
+    edit: boolean;
   };
 };
 
 export interface PlaylistState {
   currentIndex: number;
+  editIndex: number;
+  sortOrder: "asc" | "desc";
 }

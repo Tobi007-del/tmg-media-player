@@ -2,7 +2,7 @@ import { BaseComponent, type ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { setTimeout } from "@utils/fn";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 import { BrightnessSlider, type BrightnessSliderConfig } from "./slider";
 
 export type BrightnessConfig = BrightnessSliderConfig;
@@ -71,7 +71,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
 
   public syncARIA(): void {
     this.state.label = this.media.state.dark || this.media.state.brightness === 0 ? "Brighten" : "Darken";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.dark);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.dark), (this.state.voiceCommand = this.settings.voice.commands.dark));
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }

@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatKeyForDisplay } from "@utils/keys";
+import { formatActionForDisplay } from "@utils/keys";
 
 export type NextConfig = undefined;
 
@@ -18,12 +18,13 @@ export class NextButton extends BaseComponent<NextConfig, ComponentState, HTMLBu
   }
 
   public override wire(): void {
+    // Features Gating
+    this.media.on("features.nextItem", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    // Plug Listeners
-    this.plug?.state.on("currentIndex", () => this[this.plug!.atLast ? "hide" : "show"](), { init: true, signal: this.signal });
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.keys.shortcuts.next", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.next", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -32,7 +33,7 @@ export class NextButton extends BaseComponent<NextConfig, ComponentState, HTMLBu
 
   public syncARIA(): void {
     this.state.label = "Next";
-    this.state.cmd = formatKeyForDisplay(this.settings.keys.shortcuts.next);
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.next), (this.state.voiceCommand = this.settings.voice.commands.next));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

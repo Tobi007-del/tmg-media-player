@@ -40,6 +40,16 @@
   --tmg-media-current-unit: var(--tmg-media-fullscreen-unit);
   --tmg-media-current-controls-column-gap: calc(var(--tmg-media-current-unit) / 1.2);
 }
+.tmg-host-container.tmg-media-fullscreen:not(:fullscreen) {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2147483647;
+}
+body:has(.tmg-host-container.tmg-media-fullscreen:not(:fullscreen)) {
+  overflow: hidden !important;
+}
 .tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) {
   --tmg-media-current-buffer-thickness: calc(var(--tmg-media-current-unit) / 11);
 }
@@ -49,9 +59,9 @@
 }
 .tmg-media-container.tmg-media-miniplayer {
   position: fixed;
-  bottom: clamp(calc(var(--tmg-media-current-container-height) / 2), var(--tmg-media-current-miniplayer-y), calc(100% - (var(--tmg-media-current-container-height) / 2)));
+  top: clamp(calc(var(--tmg-media-current-container-height) / 2), var(--tmg-media-current-miniplayer-y), calc(100% - (var(--tmg-media-current-container-height) / 2)));
   left: clamp(calc(var(--tmg-media-current-container-width) / 2), var(--tmg-media-current-miniplayer-x), calc(100% - (var(--tmg-media-current-container-width) / 2)));
-  translate: -50% 50%;
+  translate: -50% -50%;
   width: fit-content;
   height: fit-content;
   z-index: 2147483647;
@@ -134,7 +144,7 @@ body:where(:has(.tmg-media-floating-player)) {
 .tmg-host-container:has(.tmg-media-timeline-container.tmg-media-control-cancel-scrub) {
   --tmg-media-current-timeline-thumb-scale: 1;
 }
-.tmg-media-container:is([data-timeline-thumb="false"], [data-timeline-thumb="auto"]:has(.tmg-media-timeline-container:not(:hover)), :not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar) {
+.tmg-media-container:is([data-timeline-thumb="false"], [data-timeline-thumb="auto"]:has(.tmg-media-timeline-container:not(:hover, :focus-visible)), :not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar) {
   --tmg-media-current-timeline-thumb-scale: 0;
 }
 .tmg-media-container:has(.tmg-media-notifier.tmg-media-control-persist) {
@@ -154,4 +164,76 @@ body:where(:has(.tmg-media-floating-player)) {
   inset: 0;
   pointer-events: none;
   animation: tmg-voice-pulse var(--tmg-media-notifiers-animation-time) infinite alternate ease-in-out;
+}
+
+.tmg-media-miniplayer-resize-handle {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+:is(.tmg-media-miniplayer-resize-n, .tmg-media-miniplayer-resize-s) {
+  left: 4px;
+  right: 4px;
+  height: 6px;
+}
+:is(.tmg-media-miniplayer-resize-e, .tmg-media-miniplayer-resize-w) {
+  top: 4px;
+  bottom: 4px;
+  width: 6px;
+}
+.tmg-media-miniplayer-resize-n {
+  top: 0;
+}
+.tmg-media-miniplayer-resize-s {
+  bottom: 0;
+}
+.tmg-media-miniplayer-resize-e {
+  right: 0;
+}
+.tmg-media-miniplayer-resize-w {
+  left: 0;
+}
+:is(.tmg-media-miniplayer-resize-ne, .tmg-media-miniplayer-resize-nw, .tmg-media-miniplayer-resize-se, .tmg-media-miniplayer-resize-sw) {
+  width: 10px;
+  height: 10px;
+}
+.tmg-media-miniplayer-resize-ne {
+  top: 0;
+  right: 0;
+}
+.tmg-media-miniplayer-resize-nw {
+  top: 0;
+  left: 0;
+}
+.tmg-media-miniplayer-resize-se {
+  bottom: 0;
+  right: 0;
+}
+.tmg-media-miniplayer-resize-sw {
+  bottom: 0;
+  left: 0;
+}
+:is(.tmg-media-miniplayer-resize-n, body:has(.tmg-media-miniplayer-resize-n:active), body:has(.tmg-media-miniplayer-resize-n:active) *) {
+  cursor: n-resize;
+}
+:is(.tmg-media-miniplayer-resize-s, body:has(.tmg-media-miniplayer-resize-s:active), body:has(.tmg-media-miniplayer-resize-s:active) *) {
+  cursor: s-resize;
+}
+:is(.tmg-media-miniplayer-resize-e, body:has(.tmg-media-miniplayer-resize-e:active), body:has(.tmg-media-miniplayer-resize-e:active) *) {
+  cursor: e-resize;
+}
+:is(.tmg-media-miniplayer-resize-w, body:has(.tmg-media-miniplayer-resize-w:active), body:has(.tmg-media-miniplayer-resize-w:active) *) {
+  cursor: w-resize;
+}
+:is(.tmg-media-miniplayer-resize-ne, body:has(.tmg-media-miniplayer-resize-ne:active), body:has(.tmg-media-miniplayer-resize-ne:active) *) {
+  cursor: ne-resize;
+}
+:is(.tmg-media-miniplayer-resize-nw, body:has(.tmg-media-miniplayer-resize-nw:active), body:has(.tmg-media-miniplayer-resize-nw:active) *) {
+  cursor: nw-resize;
+}
+:is(.tmg-media-miniplayer-resize-se, body:has(.tmg-media-miniplayer-resize-se:active), body:has(.tmg-media-miniplayer-resize-se:active) *) {
+  cursor: se-resize;
+}
+:is(.tmg-media-miniplayer-resize-sw, body:has(.tmg-media-miniplayer-resize-sw:active), body:has(.tmg-media-miniplayer-resize-sw:active) *) {
+  cursor: sw-resize;
 }

@@ -2,9 +2,9 @@ import { BasePlug } from "../../base";
 import type { PlaybackRateConfig } from "./types";
 import { PLAYBACK_RATE_BUILD } from "./build";
 import type { REvent } from "sia-reactor";
-import { CtlrConfig } from "@defs/config";
 import type { CtlrMedia } from "@defs/contract";
 import { clamp, rotateAny } from "@utils/num";
+import { KeyMod } from "../keys";
 
 export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
   public static readonly plugName = "playbackRate";
@@ -16,31 +16,22 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     // ---- Media Listeners
     this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.playbackRate.min", this.handleMin, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.playbackRate.max", this.handleMax, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.playbackRate.min", ({ value }) => this.media.state.playbackRate < value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.playbackRate.max", ({ value }) => this.media.state.playbackRate > value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } });
+    this.ctlr.registerAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } }), this.ctlr.registerAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } });
     super.wire();
-  }
-
-  protected handleMin({ value: min }: REvent<CtlrConfig, "settings.playbackRate.min">): void {
-    if (this.media.state.playbackRate < min) this.media.intent.playbackRate = min;
-  }
-
-  protected handleMax({ value: max }: REvent<CtlrConfig, "settings.playbackRate.max">): void {
-    if (this.media.state.playbackRate > max) this.media.intent.playbackRate = max;
   }
 
   protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {
     this.media.settings.defaultPlaybackRate = value; // UX boost
   }
 
-  protected handleKeyRateUp = (): void => {
-    this.changeValue(this.ctlr.plug("settings.keys")?.getModded("playbackRate", "", this.config.skip) ?? this.config.skip);
+  protected handleKeyRateUp(_: KeyboardEvent, mod: KeyMod): void {
+    this.changeValue(this.ctlr.plug("settings.keys")?.getModded("playbackRate", mod, this.config.skip) ?? this.config.skip);
   }
-  protected handleKeyRateDown = (): void => {
-    this.changeValue(-(this.ctlr.plug("settings.keys")?.getModded("playbackRate", "", this.config.skip) ?? this.config.skip));
+  protected handleKeyRateDown(_: KeyboardEvent, mod: KeyMod): void {
+    this.changeValue(-(this.ctlr.plug("settings.keys")?.getModded("playbackRate", mod, this.config.skip) ?? this.config.skip));
   }
 
   public rotateRate(dir: "forwards" | "backwards" = "forwards"): void {
@@ -48,16 +39,17 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
   }
 
   public changeValue(value: number): void {
-    const sign = value >= 0 ? "+" : "-",
-      rate = this.media.state.playbackRate;
-    value = Math.abs(value);
+    const sign = value >= 0 ? "+" : "-";
+    value = Math.abs(Math.round(value * 100));
+    let rate = Math.round(this.media.state.playbackRate * 100);
     if (sign === "-") {
-      if (rate > this.config.min) this.media.intent.playbackRate = rate - (rate % value || value);
+      if (rate > this.config.min * 100) rate -= rate % value || value;
       this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackratedown");
     } else {
-      if (rate < this.config.max) this.media.intent.playbackRate = rate + (rate % value ? value - (rate % value) : value);
+      if (rate < this.config.max * 100) rate += rate % value ? value - (rate % value) : value;
       this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackrateup");
     }
+    this.media.intent.playbackRate = clamp(this.config.min, +(rate / 100).toFixed(2), this.config.max);
   }
 }
 

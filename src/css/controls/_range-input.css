@@ -143,7 +143,7 @@
 }
 .tmg-media-range-mark {
   position: absolute;
-  inline-size: 1px; /** default */
+  inline-size: 0.4%; /** default */
   block-size: 100%;
   opacity: 0.95;
   transform: scaleY(0.5);
@@ -180,7 +180,7 @@
   border-style: solid;
   border-color: var(--tmg-media-current-control-color) transparent transparent transparent;
 }
-.tmg-media-range-container:not([data-tooltip]) .tmg-media-range-tooltip,
+.tmg-media-range-container:not([tooltip]) .tmg-media-range-tooltip,
 .tmg-media-range-container:not(.tmg-media-control-active, :hover, :focus-visible) .tmg-media-range-tooltip {
   display: none;
 }

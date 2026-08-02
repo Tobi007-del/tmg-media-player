@@ -11,7 +11,6 @@ import { getSettingsGestureMenu } from "./settings/gesture";
 import { getSettingsKeysMenu } from "./settings/keys";
 import { getSettingsMetadataMenu } from "./settings/metadata";
 import { getSettingsModesMenu } from "./settings/modes";
-import { getSettingsObjectFitMenu } from "./settings/objectFit";
 import { getSettingsOverlayMenu } from "./settings/overlay";
 import { getSettingsPersistMenu } from "./settings/persist";
 import { getSettingsPlaybackRateMenu } from "./settings/playbackRate";
@@ -25,10 +24,11 @@ import { getSettingsVoiceMenu } from "./settings/voice";
 import { getSettingsFrameMenu } from "./settings/frame";
 import { getSettingsLockedMenu } from "./settings/locked";
 import { getSettingsSettingsViewMenu } from "./settings/settingsView";
-import { getSettingsActionsMenu } from "./settings/actions";
+import { getActionsMenu } from "./settings/actions";
 
 for (const [key, menu] of [
-  ["main.skeleton", getSkeletonGeneralMenu],
+  ["actions", getActionsMenu],
+  ["skeleton", getSkeletonGeneralMenu],
   ["playlist", getMainPlaylistMenu],
   ["settings.ambience", getSettingsAmbienceMenu],
   ["settings.auto", getSettingsAutoMenu],
@@ -40,7 +40,6 @@ for (const [key, menu] of [
   ["settings.keys", getSettingsKeysMenu],
   ["settings.metadata", getSettingsMetadataMenu],
   ["settings.modes", getSettingsModesMenu],
-  ["settings.objectFit", getSettingsObjectFitMenu],
   ["settings.overlay", getSettingsOverlayMenu],
   ["settings.persist", getSettingsPersistMenu],
   ["settings.playbackRate", getSettingsPlaybackRateMenu],
@@ -54,6 +53,5 @@ for (const [key, menu] of [
   ["settings.frame", getSettingsFrameMenu],
   ["settings.locked", getSettingsLockedMenu],
   ["settings.settingsView", getSettingsSettingsViewMenu],
-  ["settings.actions", getSettingsActionsMenu],
 ] as const)
   MenuRegistry.register(key, menu);

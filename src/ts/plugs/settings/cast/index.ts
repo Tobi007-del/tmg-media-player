@@ -21,11 +21,15 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.ctlr.payload.wired ? this.initApi() : this.ctlr.state.wonce("readyState", this.initApi, { signal: this.signal }); // #HEAVY: waits for !lightState
   }
   protected async initApi(): Promise<void> {
-    if (this.apiSetup) return;
-    if (typeof cast === "undefined") {
-      const prev = (window as any).__onGCastApiAvailable;
-      ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupApi())), await loadResource(window.TMG_CAST_SENDER_SRC!, "script");
-    } else this.setupApi();
+    try {
+      if (this.apiSetup) return;
+      if (typeof cast === "undefined") {
+        const prev = (window as any).__onGCastApiAvailable;
+        ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupApi())), await loadResource(window.TMG_CAST_SENDER_SRC!, "script");
+      } else this.setupApi();
+    } catch (err) {
+      this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
+    }
   }
 
   public override wire(): void {
@@ -49,7 +53,7 @@ export class CastPlug extends BasePlug<CastConfig> {
       this.ctlr.plug("settings.metadata")?.syncSession();
       context.requestSession().then(this.loadMediaSession).catch(this.ctlr.notice);
       this.ctlr.plug("settings.notifiers")?.notify("cast"); // #STALLING: necessary optimistic distraction
-    } else if (active) {
+    } else if (!e.value && active) {
       context.endCurrentSession(true);
       this.media.container.classList.remove("tmg-media-cast");
       this.media.state.cast = false;
@@ -91,7 +95,7 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.remoteController = new cast.framework.RemotePlayerController(this.remotePlayer);
     this.remoteController.addEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
     (this.placeholder = ComponentRegistry.init("castplaceholder", this.ctlr))?.setup();
-    this.media.features.cast = this.apiSetup = true; // Unlock the feature UI
+    (this.apiSetup = true), (this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup); // Unlock the feature UI
   }
 
   protected async loadMediaSession(): Promise<void> {
@@ -105,7 +109,7 @@ export class CastPlug extends BasePlug<CastConfig> {
     if (textEl) textEl.textContent = `Casting to ${session.getCastDevice().friendlyName || "External Display"}`;
     this.media.container.classList.add("tmg-media-cast");
     this.media.state.cast = true;
-    console.log("Media loaded to TV", this.media.state.src, this.media.state.currentTime); // dev
+    // console.log("Media loaded to TV", this.media.state.src, this.media.state.currentTime); // dev
   } // #STANDALONE: needs scoped behavior
 
   protected syncRemoteState(event: cast.framework.RemotePlayerChangedEvent): void {

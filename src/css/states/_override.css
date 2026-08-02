@@ -18,6 +18,7 @@
 .tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-curtain {
   opacity: 1;
 }
+.tmg-media-container:has(.tmg-media-top-text-notifier.tmg-media-control-active, [data-notify="chapter"] .tmg-media-chapter-notifier) :is(.tmg-media-top-controls-wrapper, .tmg-media-top-curtain),
 .tmg-media-container:is(:is(.tmg-media-miniplayer, .tmg-media-mobile):is(.tmg-media-scrubbing, :has(.tmg-media-notifier.tmg-media-control-persist)), :has(:is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) :is(.tmg-media-top-curtain, .tmg-media-bottom-curtain, .tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
 .tmg-media-container:has(.tmg-media-touch-vb-notifier.tmg-media-control-active) .tmg-media-bottom-controls-wrapper .tmg-media-timeline-container {
   opacity: 0;

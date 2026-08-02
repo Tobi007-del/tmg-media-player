@@ -15,10 +15,10 @@
 .tmg-media-smenu-overlay {
   font-size: calc(var(--tmg-media-current-unit) / 1.85);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-control-text-btn, .tmg-media-smenu-overlay) {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-control-text-btn {
   font-size: calc(var(--tmg-media-current-unit) / 1.7);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-preview-container::after {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-preview-container::after, .tmg-media-smenu-overlay) {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
 .tmg-media-vb-slider-wrapper::after {
