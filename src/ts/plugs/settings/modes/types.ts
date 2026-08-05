@@ -4,6 +4,10 @@ import { UISettings } from "@defs/UIOptions";
 
 export type ResizeDir = (typeof RESIZE_DIRS)[number];
 
+export interface ModesFullscreenState {
+  snubbingAutoFullscreenOrientationIntent: boolean;
+}
+
 export interface ModesFullscreenConfig {
   disabled: boolean;
   pseudo: boolean;
@@ -26,7 +30,7 @@ export interface ModesMiniplayerConfig {
   minWindowWidth: number;
 }
 
-export interface FloatingPlayerConfig {
+export interface ModesFloatingPlayerConfig {
   disabled: boolean;
   width: number;
   height: number;
@@ -35,7 +39,7 @@ export interface FloatingPlayerConfig {
 }
 export interface ModesPictureInPictureConfig {
   disabled: boolean;
-  floatingPlayer: FloatingPlayerConfig;
+  floatingPlayer: ModesFloatingPlayerConfig;
 }
 
 export interface ModesConfig {

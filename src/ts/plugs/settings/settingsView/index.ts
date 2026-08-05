@@ -1,7 +1,7 @@
 import { silence } from "sia-reactor/modules";
 import { BasePlug } from "../../base";
 import { SETTINGS_BUILD } from "./build";
-import type { SettingsViewConfig } from "./types";
+import type { SettingsViewConfig, SettingsViewState } from "./types";
 import { SettingsMenu } from "./menu";
 import { createEl } from "@utils/dom";
 import { mockAsync } from "@utils/fn";
@@ -9,7 +9,7 @@ import { parseCSSTime } from "@utils/str";
 
 import type { Controller } from "@core/controller";
 
-export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
+export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewState> {
   public static readonly plugName = "settingsView";
   public static readonly BUILD = SETTINGS_BUILD;
   public closeBtn!: HTMLButtonElement | null;
@@ -17,8 +17,8 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
   protected wasPaused = false;
   private viewReady = false;
 
-  constructor(ctlr: Controller, config?: SettingsViewConfig, state?: any) {
-    super(ctlr, config, state);
+  constructor(ctlr: Controller, config = ctlr.settings.settingsView) {
+    super(ctlr, config, { viewOpen: false });
     this.menu = new SettingsMenu(this.ctlr, this.config.menu);
   }
 
@@ -45,7 +45,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
     if (this.ctlr.isUIActive("settings")) return;
     if (!this.viewReady) this.initView(), (this.viewReady = true);
     (this.wasPaused = this.media.state.paused), this.config.autoPause && silence(() => (this.media.intent.paused = true));
-    this.menu.close(), this.media.container.classList.add("tmg-media-settings-view");
+    this.menu.close(), this.media.container.classList.add("tmg-media-settings-view"), (this.state.viewOpen = true);
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
@@ -54,7 +54,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig> {
 
   public async leaveView(): Promise<void> {
     if (!this.ctlr.isUIActive("settings")) return;
-    this.media.container.classList.remove("tmg-media-settings-view");
+    this.media.container.classList.remove("tmg-media-settings-view"), (this.state.viewOpen = false);
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.config.autoPause && silence(() => (this.media.intent.paused = this.wasPaused));
     this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");

@@ -17,7 +17,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   public static readonly plugName = "voice";
   public static readonly BUILD = VOICE_BUILD;
   protected recognition?: any;
-  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Follow the predictor guides at the ${uncamelize(this.config.predictorPos.value, "-")}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_voice_tut_1", maxTimes: 3 }));
+  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Follow the predictor guides at the ${uncamelize(this.config.predictorPos.value, "-")}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_voice_tut_1", maxTimes: 6, perSession: 2 }));
   protected snublist: Array<Action["id"]> = ["voiceToggleOn", "voiceToggleOff"] as const;
   protected readonly IDS = { LISTENER: "tmg-media-voice-listener" + this.ctlr.config.id, PREDICTOR: "tmg-media-voice-predictor" + this.ctlr.config.id };
   protected get root() {
@@ -124,7 +124,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const state = (await navigator.permissions?.query({ name: "microphone" }).catch(() => null))?.state ?? "prompt";
     if (state === "granted" || state === "denied") return state;
     // prettier-ignore
-    return new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.ctlr.plug("settings.toasts")?.toast?.info("We need permission to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, closeButton: true, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(() => (this.ctlr.plug("settings.toasts")?.toast?.warn("Grant permissions to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, actions: { Retry: req!, } }), ++i > 3 && res("cancelled"))) }, onClose: () => res("cancelled") }))())); // going the extra mile mustn't take a mile of logic even when 3rd time's the charm
+    return new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.ctlr.plug("settings.toasts")?.toast?.info("We need permission to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, closeButton: true, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(() => (this.ctlr.plug("settings.toasts")?.toast?.warn("Grant permissions to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, actions: { Retry: req!, } }), ++i > 3 && res("cancelled"))) }, onClose: () => res("cancelled") }))())); // #EXTRA-MILE: doing the most with the least
   }
   private asking = false;
   public async start(): Promise<void> {
@@ -132,7 +132,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (this.config.muted || (state === "granted" && !this.state.listening)) this.config.behavior.value === "persistent" ? (!this.config.muted || !t007.toast.isActive(this.IDS.LISTENER)) && this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions()) : t007.toast?.dismiss(this.IDS.LISTENER);
     try {
       (this.asking = false), state === "granted" ? !this.config.muted && this.recognition?.start() : this.handleError({ error: "not-allowed" });
-    } catch (e) {} // Silently swallows the InvalidStateError since we might call when already on due to wake word
+    } catch (e) {
+      this.ctlr.log(e, "error", true);
+    } // Silently swallows the InvalidStateError since we might call when already on due to wake word
   }
   public stop(): void {
     this.sleep(), this.recognition?.abort();
@@ -215,7 +217,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const paths = this.getValidPaths();
     if (!paths.length) return;
     const inputHtml = `<input type="text" class="tmg-media-voice-path-input") placeholder="...text"/>`;
-    this.ctlr.plug("settings.toasts")?.toast?.(`${crumbHtml}Try these:<br>${inputHtml} • ${paths.map((p) => this.linked(p.split(".").pop()!)).join(" • ")}`, this.getPredictorOptions(actions));
+    this.ctlr.plug("settings.toasts")?.toast?.(`${crumbHtml}Say these:<br>${inputHtml} • ${paths.map((p) => this.linked(p.split(".").pop()!)).join(" • ")}`, this.getPredictorOptions(actions));
   }
   protected execute(path: string, transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), isNav = false, isSubmit = false): void {
     const value = this.parse(transcript, cleaned, path, isNav);

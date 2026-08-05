@@ -24,7 +24,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     widget: "select",
     feature: "levels",
     hidden: () => plug.media.status.levels.length <= 1,
-    getTipHTML: (bw = plug.media.status.bandwidth) => `Adjust ${plug.media.type} quality or use auto (adaptive). ${bw ? `Your last known network speed is ~${formatSize(bw, 1).replace(/(?:(B|bytes))$/i, "bps")}.` : ""}`,
+    getTipHTML: (bw = plug.media.status.bandwidth) => `Adjust ${plug.media.type} quality or use auto (adaptive) <br> ${bw ? `<small>Your last known network speed was ~<b>${formatSize(bw, 1).replace(/(?:(B|bytes))$/i, "bps")}</b></small>` : ""}`,
     getValue() {
       const list = plug.media.status.levels;
       if (!list || !list.length || plug.media.state.currentLevel === -1) return "";

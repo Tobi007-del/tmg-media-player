@@ -4,7 +4,7 @@ import { capitalize } from "@utils/str";
 
 export const APT_AUTOPLAY_OPTIONS = ["in-view", "out-view", "in-view-always", "out-view-always", "in-window-always", "out-window-always"] as const;
 
-const AUTOPLAY_UI_OPTIONS = [{ value: false, display: "Off" }, ...APT_AUTOPLAY_OPTIONS.map((o) => ({ value: o, display: capitalize(o.replace("-", " ")) }))];
+const AUTOPLAY_UI_OPTIONS = [{ value: false, display: "Off" }, ...APT_AUTOPLAY_OPTIONS.map((o) => ({ value: o, display: capitalize(o.replaceAll("-", " ")) }))];
 
 export const AUTO_BUILD: DeepPartial<AutoConfig> = {
   play: {

@@ -6,7 +6,6 @@ export const SETTINGS_BUILD: DeepPartial<SettingsViewConfig> = {
   menu: {
     disabled: false,
     showView: true,
-    viewLabel: "See More",
     blacklist: [],
   },
 };

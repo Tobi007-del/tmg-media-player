@@ -46,11 +46,11 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initHost(url: string, videoId: string) {
+  protected async initHost(url: string, videoId: string, retries = 0): Promise<void> {
     try {
       const base = this.config[this.ctlr.techTruth];
-      if (isFunc(this.host?.loadVideoById)) return (this.hostSrc = url), (this.media.status.hostReady = isFunc(this.host?.getPlayerState)), (this.reInitInfo = true), this.host.loadVideoById(videoId, base.currentTime, this.config.status.levels[base.currentLevel as number] || "default");
-      else this.destroyHost();
+      if (!isFunc(this.host?.loadVideoById)) this.destroyHost();
+      else return (this.hostSrc = url), (this.reInitInfo = this.media.status.hostReady = true), this.host.loadVideoById(videoId, base.currentTime, this.config.status.levels[base.currentLevel as number] || "default");
       // Setup & Bulk Wiring
       if (!window.YT) await loadResource(window.TMG_YT_API_SRC!, "script"), await new Promise<void>((res, _, _prev = (window as any).onYouTubeIframeAPIReady) => (window.YT?.Player ? res() : ((window as any).onYouTubeIframeAPIReady = () => (_prev?.(), res()))));
       if (!this.signal || this.signal?.aborted) return;
@@ -73,7 +73,8 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         },
         events: {
           onReady: () => {
-            this.media.status.hostReady = isFunc(this.host?.getPlayerState);
+            if (!isFunc(this.host?.getPlayerState) && retries < 3) return this.initHost(url, videoId, ++retries); // pampering observed quirk where YT API is broken
+            this.media.status.hostReady = true;
             (this.element = this.host!.getIframe()), this.el.classList.add("tmg-foreign-host", "tmg-youtube-host"), this.el.toggleAttribute("data-hide-ui", !base.controls); // YT replaces el
             this.setInitInfo();
           },
@@ -185,7 +186,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.config.status.seeking = true;
       const prev = this.media.state.currentTime;
       if (e.value < min! || e.value > max!) e.reject(this.name); // Out of bounds
-      this.host!.seekTo(clamp(min, e.value, max), true), this.media.state.paused && this.host!.pauseVideo(); // pampering obseerved quirk
+      this.host!.seekTo(clamp(min, e.value, max), true), this.media.state.paused && this.host!.pauseVideo(); // pampering observed quirk
       const check = setInterval(() => (!this.config.state.paused || this.host!.getCurrentTime() !== prev) && (clearInterval(check), this.syncCurrentTime(), (this.config.status.seeking = false)), 100, this.signal); // YT has no "seeked" event, so we poll for the time shift
     });
     e.resolve(this.name);
@@ -313,7 +314,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         st.ended = st.seeking = st.waiting = s.paused = false;
         st.canPlay = st.canPlayThrough = true;
         st.duration = this.host!.getDuration();
-        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // pampering obseerved quirk
+        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // pampering observed quirk
         st.readyState = 4; // HAVE ENOUGH DATA
         st.loadedData = true;
         this.syncMetadata(), clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentTime, 100, this.signal)); // updates 10 times a sec
@@ -359,7 +360,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     // Status (Infos & Lists)
     this.config.status.readyState = 1; // HAVE METADATA
     this.config.status.duration = this.host.getDuration();
-    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // pampering obseerved quirk
+    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // pampering observed quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;
@@ -374,7 +375,6 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected destroyHost(): void {
     if (!this.host) return;
-    clearInterval(this.intervalId);
     this.host.destroy(), (this.host = null), (this.media.status.hostReady = false);
     (this.element = this.hostDiv as HTMLIFrameElement), (this.hostDiv.innerHTML = `<div class="tmg-host-content"><div></div></div>`); // Reset to placeholder
   }

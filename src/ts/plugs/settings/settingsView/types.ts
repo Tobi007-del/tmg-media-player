@@ -10,13 +10,16 @@ import type { FieldOptions } from "@t007/input";
 export interface SettingsMenuConfig {
   disabled: boolean;
   showView: boolean;
-  viewLabel: string;
   blacklist: string[];
 }
 
 export interface SettingsViewConfig {
   autoPause: boolean;
   menu: SettingsMenuConfig;
+}
+
+export interface SettingsViewState {
+  viewOpen: boolean;
 }
 
 export type MenuItemWidget = "select" | "range" | "toggle" | "color" | "group" | "button" | "playlist" | "input" | "drag-select" | "limits";

@@ -32,7 +32,7 @@ export class HLSTech extends HTML5Tech {
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initHost(src = "") {
+  protected async initHost(src = ""): Promise<void> {
     try {
       // Setup & Compatibility
       this.destroyHls();

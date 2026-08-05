@@ -41,7 +41,7 @@ export class ShakaTech extends HTML5Tech {
     this.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initHost(src = "") {
+  protected async initHost(src = ""): Promise<void> {
     try {
       if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load((this.hostSrc = src), this.config[this.ctlr.techTruth].currentTime);
       // Setup & Compatibility

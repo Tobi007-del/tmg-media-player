@@ -29,8 +29,9 @@ export class MainMenuPanel extends BaseMenuPanel {
     });
     this.content.append(list);
     if (this.menuConfig.showView) {
-      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnback")}</span><span class="tmg-media-smenu-view-label">${this.menuConfig.viewLabel}</span>` });
+      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnback")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
       this.viewBtn.addEventListener("click", () => this.onViewClick?.()), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
+      this.ctlr.plug("settings.settingsView")?.state.on("viewOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
     }
   }
 

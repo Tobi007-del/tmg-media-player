@@ -85,18 +85,22 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
   }
 
   public enterPseudoMode(): void {
+    if (this.ctlr.state.pseudoActive) return;
     (this.media.pseudoElement.id = this.media.element.id), (this.media.element.id = "");
-    this.media.pseudoElement.className += " " + this.media.element.className.replace(/tmg-media|tmg-video|tmg-audio|tmg-host/g, "");
-    this.media.pseudoContainer.className += " " + this.media.container.className.replace(/tmg-media-container|tmg-video-container|tmg-audio-container|tmg-host-container/g, "");
+    this.media.pseudoElement.className += " " + this.media.element.className.replace(/tmg-(?:media|video|audio|host)/g, "");
+    this.media.pseudoContainer.className += " " + this.media.container.className.replace(/tmg-(?:media|video|audio|host)-container/g, "");
     this.media.container.parentElement?.insertBefore(this.media.pseudoContainer, this.media.container);
     this.rootElement.append(this.media.container);
+    this.ctlr.state.pseudoActive = true;
   }
 
   public leavePseudoMode(destroy = false): void {
+    if (!this.ctlr.state.pseudoActive) return;
     (this.media.element.id = this.media.pseudoElement.id), (this.media.pseudoElement.id = "");
     this.media.pseudoElement.className = `tmg-pseudo-${this.media.type} tmg-pseudo-media tmg-host`;
     this.media.pseudoContainer.className = `tmg-pseudo-${this.media.type}-container tmg-pseudo-media-container tmg-host-container`;
     this.media.pseudoContainer.parentElement?.replaceChild(destroy ? this.media.element : this.media.container, this.media.pseudoContainer);
+    this.ctlr.state.pseudoActive = false;
   }
 
   protected registerMenu(): void {

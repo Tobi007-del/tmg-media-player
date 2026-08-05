@@ -16,7 +16,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
     const entries = Object.entries(this.config);
     this.settings.css.altImgUrl = `url(${window.TMG_MEDIA_ALT_IMG_SRC})`;
     // Blackbox Handlers
-    this.ctlr.config.get("*", (val, { target: { key, path } }: any) => (!path.startsWith("settings.css.") || banRgx.test(path) ? val : ((this._cache[key] ??= val = this.get(key)), val)), { signal: this.signal }); // #BLACKBOX: immediacy requirement
+    this.ctlr.config.get("*", (val, { target: { key, path } }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : (this._cache[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !banRgx.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     // ---- Media Watchers
     this.media.watch("status.videoWidth", this.syncAspectRatio, { init: true, signal: this.signal });

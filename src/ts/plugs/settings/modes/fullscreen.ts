@@ -11,6 +11,7 @@ import { initFocusTrap, removeFocusTrap } from "@t007/utils/hooks/vanilla";
 import { isFunc } from "@utils/obj";
 import { silence } from "sia-reactor/modules";
 import { connectOrientationManager, CtlrState, disconnectOrientationManager } from "@tools/runtime";
+import { Controller } from "@core/controller";
 
 export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig> {
   public static readonly pinName = "fullscreen";
@@ -20,6 +21,10 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
   public static readonly BUILD = MODES_FULLSCREEN_BUILD;
   public inFullscreen = false; // a quick notice flag for external deps
   protected shadowFullscreen = false;
+
+  constructor(ctlr: Controller, config = ctlr.settings.modes.fullscreen) {
+    super(ctlr, config, { snubbingAutoFullscreenOrientationIntent: false });
+  }
 
   public override wire(): void {
     // Ctlr Media Watchers
@@ -82,15 +87,15 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
   }
 
   protected handleAutoFullscreenOrientationIntent(e: REvent<CtlrMedia, "intent.autoFullscreenOrientation">): void {
-    if (e.resolved) return;
+    if ((this.state.snubbingAutoFullscreenOrientationIntent = !!e.resolved)) return;
     e.value ? connectOrientationManager() : disconnectOrientationManager();
     this.media.state.autoFullscreenOrientation = e.value;
     e.resolve(this.name);
   }
 
   protected handleScreenOrientationType({ value: type }: REvent<CtlrState, "screenOrientation.type">): void {
-    this.media.state.fullscreen ? (this.media.state.fullscreenOrientation = this.lockedScreen ? type : false) : this.onScreenOrientation(type);
-    this.media.state.autoFullscreenOrientation && this.changeScreenOrientation(type);
+    if (this.media.state.fullscreen) this.media.state.fullscreenOrientation = this.lockedScreen ? type : false;
+    this.onScreenOrientation(type), !this.state.snubbingAutoFullscreenOrientationIntent && this.media.state.autoFullscreenOrientation && this.changeScreenOrientation(type);
   }
 
   protected onDocInFullscreen(docInFs: boolean): void {

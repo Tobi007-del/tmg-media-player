@@ -47,7 +47,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initHost(url: string) {
+  protected async initHost(url: string): Promise<void> {
     try {
       this.destroyHost(); // Vimeo prefers a fresh iframe for new URLs to ensure clean state
       if (!(window as any).Vimeo) await loadResource(window.TMG_VIMEO_API_SRC!, "script");

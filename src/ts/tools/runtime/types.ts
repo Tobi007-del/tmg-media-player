@@ -25,5 +25,6 @@ export interface CtlrState {
   };
   docVisibilityState: DocumentVisibilityState;
   docInFullscreen: boolean;
+  pseudoActive: boolean;
   frameReadyPromise?: Promise<null> | null;
 }

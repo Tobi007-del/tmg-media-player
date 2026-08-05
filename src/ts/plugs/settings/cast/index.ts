@@ -21,8 +21,8 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.ctlr.payload.wired ? this.initApi() : this.ctlr.state.wonce("readyState", this.initApi, { signal: this.signal }); // #HEAVY: waits for !lightState
   }
   protected async initApi(): Promise<void> {
+    if (this.apiSetup) return;
     try {
-      if (this.apiSetup) return;
       if (typeof cast === "undefined") {
         const prev = (window as any).__onGCastApiAvailable;
         ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupApi())), await loadResource(window.TMG_CAST_SENDER_SRC!, "script");

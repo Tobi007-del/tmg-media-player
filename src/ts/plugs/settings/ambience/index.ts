@@ -20,7 +20,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   private posterSeq = 0;
 
   constructor(ctlr: Controller, config = ctlr.settings.ambience) {
-    super(ctlr, config, { snubbing: false });
+    super(ctlr, config, { snubbingAmbienceIntent: false });
   }
 
   public override mount(): void {
@@ -39,7 +39,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     // Plug Listeners
     this.ctlr.plug("settings.poster")?.state.on("visible", ({ value }) => value && this.syncGlow(true), { signal: this.signal });
     // State Listeners
-    this.state.on("snubbing", ({ value }) => this.syncDisplay(!value), { signal: this.signal });
+    this.state.on("snubbingAmbienceIntent", ({ value }) => this.syncDisplay(!value), { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // --------- Listeners
@@ -52,42 +52,45 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.ctlr.state.on("dimensions.container.width", this.syncSize, { init: true, signal: this.signal });
     this.ctlr.state.on("dimensions.container.height", this.syncSize, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.ambience.blur", this.syncFilter, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.ambience.opacity", this.syncFilter, { signal: this.signal });
+    this.ctlr.config.on("settings.ambience.opacity", this.syncFilter, { init: true, signal: this.signal });
     // Post Wiring
     super.wire();
   }
 
   protected handleAmbienceIntent(e: REvent<CtlrMedia, "intent.ambience">): void {
-    this.state.snubbing = !!e.resolved;
-    if (e.resolved) return;
+    if ((this.state.snubbingAmbienceIntent = !!e.resolved)) return;
     this.syncDisplay(e.value);
     this.media.state.ambience = e.value;
     e.resolve(this.name);
   }
 
   protected pulseGlow(): void {
-    this.canPulse && this.ctlr.throttle("ambienceGlowing", this.syncGlow, this.config.interval, false, this.signal);
+    this.canPulse && this.ctlr.throttle("ambienceGlowing", this.syncGlow, this.config.refresh.interval, false, this.signal);
   }
   protected syncGlow(usePoster = !this.canPulse || !!this.ctlr.plug("settings.poster")?.state.visible, flush = usePoster): void {
-    if (this.state.snubbing || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.context) return;
-    (this.context.globalAlpha = flush ? 1.0 : this.config.smoothness), flush && this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    if (usePoster) {
-      const seq = ++this.posterSeq,
-        i = this.posterImg && this.posterImg.src === this.media.state.poster ? this.context.drawImage(this.posterImg, 0, 0, this.canvas.width, this.canvas.height) : (this.posterImg = createEl("img", { crossOrigin: "anonymous", src: this.media.state.poster, onload: () => seq === this.posterSeq && this.context?.drawImage(i as HTMLImageElement, 0, 0, this.canvas.width, this.canvas.height) }));
-    } else if (!this.ctlr.isNativeEl || this.media.element.readyState < 1) return;
-    else this.context.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
+    if (this.state.snubbingAmbienceIntent || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.context) return;
+    (this.context.globalAlpha = flush ? 1.0 : this.config.refresh.smoothness), flush && this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    try {
+      if (usePoster) {
+        const seq = ++this.posterSeq,
+          i = this.posterImg && this.posterImg.src === this.media.state.poster ? this.context.drawImage(this.posterImg, 0, 0, this.canvas.width, this.canvas.height) : (this.posterImg = createEl("img", { crossOrigin: "anonymous", src: this.media.state.poster, onload: () => seq === this.posterSeq && this.context?.drawImage(i as HTMLImageElement, 0, 0, this.canvas.width, this.canvas.height) }));
+      } else if (!this.ctlr.isNativeEl || this.media.element.readyState < 1) return;
+      else this.context.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
+    } catch (e) {
+      this.ctlr.log(e, "error", true);
+    }
   }
   protected syncSize(): void {
-    this.canvas.width = 32; // Small resolution is heavily performant for blurs; preserve aspect ratio
-    this.canvas.height = Math.round(32 / (this.ctlr.state.dimensions.container.width / this.ctlr.state.dimensions.container.height));
+    const ar = this.ctlr.state.dimensions.container.width / this.ctlr.state.dimensions.container.height;
+    if (ar >= 1) (this.canvas.width = 4), (this.canvas.height = Math.max(2, Math.round(4 / ar)));
+    else (this.canvas.height = 4), (this.canvas.width = Math.max(2, Math.round(4 * ar)));
     this.syncGlow();
   }
   protected syncDisplay(show: boolean): void {
     (this.canvas.style.display = !show ? "none" : "block"), show && this.media.status.readyState && this.syncGlow();
   }
   protected syncFilter(): void {
-    this.canvas.style.filter = `blur(${this.config.blur}px) opacity(${this.config.opacity})`;
+    this.canvas.style.opacity = String(this.config.opacity);
   }
 
   protected syncFeatures(): void {

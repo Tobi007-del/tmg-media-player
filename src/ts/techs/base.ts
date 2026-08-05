@@ -112,7 +112,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   public when<Evt extends REvent<CtlrMedia>>(status: keyof MediaStatus, e?: Evt, task: () => void = NOOP, always = true, _key = status + e?.path || "", _value = (!always && this.wired) || this.config.status[status], _log = this.ctlr.config.devMode && !this.config.status[status]): void {
     const callback = this.ctlr.guard((v: any, __: any, stalled = true) => v && (stalled && this.pending.get(_key)?.(), this.pending.delete(_key), task(), _log && this.ctlr.log(`${e?.path} stalled by ${status} executed with ${e?.value}`))); // RS(${this.ctlr.payload.readyState})
     this.pending.get(_key)?.(), _value ? callback(_value, null, false) : this.pending.set(_key, this.config.watch(`status.${status}`, callback, { signal: this.signal }));
-  } // #PATIENT: (!`always`)
+  } // #EXTRA-MILE: doing the most with the least
   // Dog Feeders
   protected onCurrentTime(v: number): void {
     if (!this.autoChapters) return;

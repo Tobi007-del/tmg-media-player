@@ -4,7 +4,6 @@ import { ACTIONS_BUILD } from "./actions";
 
 export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
   mediaPlayer: "TMG",
-  media: { intent: { playsInline: true, textVisible: true, brightness: 100 } },
   actions: {
     entries: Object.fromEntries(Object.entries(ACTIONS_BUILD).map(([k, v]) => [k, { id: k, ...v }])) as any,
     logicBlacklist: ["media.state", "media.status", "media.tech", "media.features", "media.type", "media.element", "media.pseudoElement", "media.container", "media.pseudoContainer"],

@@ -1,10 +1,11 @@
 export interface AmbienceConfig {
-  blur: number;
   opacity: number;
-  interval: number;
-  smoothness: number;
+  refresh: {
+    interval: number;
+    smoothness: number;
+  };
 }
 
 export interface AmbienceState {
-  snubbing: boolean;
+  snubbingAmbienceIntent: boolean;
 }

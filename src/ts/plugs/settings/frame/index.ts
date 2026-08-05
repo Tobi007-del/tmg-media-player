@@ -40,15 +40,16 @@ export class FramePlug extends BasePlug<FrameConfig> {
       this.ctlr.state.frameReadyPromise = await this.ctlr.state.frameReadyPromise;
     }
     (this.exportCanvas.width = video.videoWidth || min), (this.exportCanvas.height = video.videoHeight || min);
-    this.exportContext.filter = this.settings.css.filter as string;
-    display === "monochrome" && (this.exportContext.filter = `${this.exportContext.filter} grayscale(100%)`);
+    this.exportContext.filter = `${this.settings.css.filter as string}${display === "monochrome" ? " grayscale(100%)" : ""}`;
     this.exportContext.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
     this.exportContext.filter = "none";
     if (raw === true) return { canvas: this.exportCanvas, context: this.exportContext };
     let blob: Blob | null | false | 0 = null;
     try {
       blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));
-    } catch (e) {}
+    } catch (e) {
+      this.ctlr.log(e, "error", true);
+    }
     return { blob: blob || null, url: blob ? URL.createObjectURL(blob) : "" };
   }
 
