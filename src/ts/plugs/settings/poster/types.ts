@@ -1,7 +1,9 @@
 export interface PosterConfig {
-  strict: boolean;
-  autoGenerate: boolean;
-  autoGenHash: string;
+  eager: boolean;
+  autoGen: {
+    disabled: boolean;
+    hash: string;
+  };
 }
 
 export interface PosterState {

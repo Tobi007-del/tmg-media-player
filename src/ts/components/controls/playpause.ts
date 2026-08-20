@@ -6,7 +6,7 @@ import { formatActionForDisplay } from "@utils/keys";
 export type PlayPauseConfig = undefined;
 
 export class PlayPauseButton extends BaseComponent<PlayPauseConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "playpause";
+  public static readonly componentName: string = "playPause";
   public static readonly isControl: boolean = true;
 
   public override create() {

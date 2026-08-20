@@ -39,13 +39,12 @@
   --tmg-media-current-bottom-wrapper-height: 0px;
   --tmg-media-current-captions-container-width: 0px;
   --tmg-media-current-captions-container-height: 0px;
-  --tmg-media-current-timeline-thumb-scale: 1.12;
-  --tmg-media-max-volume-ratio: 0;
-  --tmg-media-max-brightness-ratio: 0;
-  --tmg-media-volume-slider-percent: 0%;
-  --tmg-media-brightness-slider-percent: 0%;
-  --tmg-media-volume-slider-boost-percent: 0%;
-  --tmg-media-brightness-slider-boost-percent: 0%;
+  --tmg-media-current-max-volume-ratio: 0;
+  --tmg-media-current-max-brightness-ratio: 0;
+  --tmg-media-current-volume-slider-percent: 0%;
+  --tmg-media-current-brightness-slider-percent: 0%;
+  --tmg-media-current-volume-slider-boost-percent: 0%;
+  --tmg-media-current-brightness-slider-boost-percent: 0%;
   --tmg-media-current-touch-slider-height: calc(var(--tmg-media-current-unit) * 12.5);
 }
 /* position variables */
@@ -94,18 +93,19 @@
 /* theme variables */
 :where(:root, .tmg-host-container) {
   --tmg-media-text-color: var(--tmg-media-theme-accent-color);
-  --tmg-media-brand-color: #e26e02;
+  --tmg-media-brand-color: #e26e02; /* Okpala Chisom Goodnews -> Tastey */
   --tmg-media-brand-accent-color: hsl(from var(--tmg-media-brand-color) calc(h - 25) s calc(l + 12.5));
   --tmg-media-brand-inverse-color: rgb(from var(--tmg-media-brand-color) calc(255 - r) calc(255 - g) calc(255 - b));
-  --tmg-media-brand-complement-color: rgb(from var(--tmg-media-brand-color) r g b / 0.4);
+  --tmg-media-complement-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.3);
   --tmg-media-theme-color: #ffffff;
   --tmg-media-theme-accent-color: hsl(from var(--tmg-media-theme-color) h s calc(l - 5));
   --tmg-media-theme-inverse-color: rgb(from var(--tmg-media-theme-color) calc(255 - r) calc(255 - g) calc(255 - b));
   --tmg-media-theme-inverse-accent-color: hsl(from var(--tmg-media-theme-inverse-color) h s calc(l + 45));
   --tmg-media-focus-visible-color: rgb(from var(--tmg-media-brand-accent-color) r g b / 1);
   --tmg-media-focus-visible-outline: 2px solid var(--tmg-media-focus-visible-color);
+  --tmg-media-danger-color: var(--t007-input-error-color, rgba(100, 23, 23, 0.75));
   --tmg-media-disabled-color: gray;
-  --tmg-media-danger-color: rgba(255, 0, 0, 0.75);
+  --tmg-media-dragging-color: rgb(from var(--tmg-media-brand-color) r g b / 0.5);
   --tmg-media-background: black;
   --tmg-media-disabled-background: rgb(55, 55, 55);
   --tmg-media-curtain-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.5);
@@ -128,9 +128,9 @@
   --tmg-media-progress-bar-background: var(--tmg-media-theme-color);
   --tmg-media-progress-bar-opacity: 0.5;
   --tmg-media-timeline-previews-border-color: var(--tmg-media-current-control-color);
-  --tmg-media-timeline-no-previews-background: var(--tmg-media-brand-complement-color);
-  --tmg-media-timeline-no-previews-pointer-color: var(--tmg-media-brand-complement-color);
-  --tmg-media-dbc-backdrop-color: var(--tmg-media-brand-complement-color);
+  --tmg-media-timeline-no-previews-background: var(--tmg-media-notifier-color);
+  --tmg-media-timeline-no-previews-pointer-color: var(--tmg-media-notifier-color);
+  --tmg-media-dbc-backdrop-color: var(--tmg-media-notifier-color);
 }
 :root,
 .tmg-host-container {
@@ -146,9 +146,10 @@
   --tmg-media-control-active-scale: 0.9;
   --tmg-media-control-border-radius: 0px;
   --tmg-media-control-padding: 0px;
-  --tmg-media-big-control-background-color: var(--tmg-media-brand-complement-color);
+  --tmg-media-big-control-background-color: var(--tmg-media-complement-color);
   --tmg-media-buffer-color: currentColor;
   --tmg-media-buffer-base-color: var(--tmg-media-theme-inverse-accent-color);
+  --tmg-media-notifier-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.6);
 }
 :root,
 .tmg-host-container {
@@ -158,15 +159,16 @@
 :where(:root, .tmg-host-container) {
   --tmg-media-brightness: 100;
   --tmg-media-filter: brightness(var(--cmptd-brightness));
-  --tmg-media-object-fit: contain;
-  --tmg-media-bg-object-fit: contain;
-  --tmg-media-object-position: 50% 50%;
   --tmg-media-alt-img-url: "";
   --tmg-media-current-poster-url: "";
   --tmg-media-current-preview-url: "";
   --tmg-media-current-thumbnail-url: "";
-  --tmg-media-idle-filter: blur(4px) brightness(0.5);
+  --tmg-media-object-fit: contain;
+  --tmg-media-bg-object-fit: contain;
+  --tmg-media-object-position: 50% 50%;
   --tmg-media-img-background: center/cover no-repeat var(--tmg-media-alt-img-url), var(--tmg-media-background);
+  --tmg-media-overlay-filter: blur(4px);
+  --tmg-media-idle-filter: grayscale(25%) var(--tmg-media-overlay-filter);
 }
 /* captions varaibles */
 :where(:root, .tmg-host-container) {
@@ -182,10 +184,10 @@
   --tmg-media-settings-view-transition-time: var(--tmg-media-slow-transition-time);
   --tmg-media-settings-content-padding: var(--tmg-media-current-safe-inset-x);
   --tmg-media-settings-background-color: var(--tmg-media-curtain-color);
-  --tmg-media-settings-menu-background-color: var(--tmg-media-brand-complement-color);
   --tmg-media-settings-text-color: var(--tmg-media-text-color);
   --tmg-media-settings-border-color: hsl(from var(--tmg-media-theme-inverse-accent-color) h s l / 0.75);
-  --tmg-media-smenu-width: calc(var(--tmg-media-current-unit) * 13);
+  --tmg-media-settings-menu-width: calc(var(--tmg-media-current-unit) * 13);
+  --tmg-media-settings-menu-background-color: var(--tmg-media-notifier-color);
 }
 /* overrides for lib variables */
 .tmg-media-container {
@@ -264,7 +266,7 @@
 }
 /* computed variables */
 .tmg-host-container {
-  --cmptd-brightness: calc(max(calc(var(--tmg-media-current-brightness-slider-boost-position) * var(--tmg-media-max-brightness-ratio) * 20%), 20%) + ((var(--tmg-media-brightness) / 100) * 80%));
+  --cmptd-brightness: calc(max(calc(var(--tmg-media-current-brightness-slider-boost-position) * var(--tmg-media-current-max-brightness-ratio) * 20%), 20%) + ((var(--tmg-media-brightness) / 100) * 80%));
   --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) + (var(--tmg-media-control-padding) * 2));
   --cmptd-ctrl-box-x-in-pad: calc(var(--tmg-media-current-controls-column-gap) / 2);
   --cmptd-ctrl-box-y-in-pad: calc(var(--tmg-media-current-controls-row-gap) / 2);

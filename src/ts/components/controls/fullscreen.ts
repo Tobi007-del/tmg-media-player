@@ -10,7 +10,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
   public static readonly isControl: boolean = true;
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn", type: "button", innerHTML: IconRegistry.get("enterfullscreen") + IconRegistry.get("leavefullscreen") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn", type: "button", innerHTML: IconRegistry.get("enterFullscreen") + IconRegistry.get("leaveFullscreen") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

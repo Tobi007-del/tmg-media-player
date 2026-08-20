@@ -5,14 +5,14 @@ import { createEl } from "@utils/dom";
 export type ExpandMiniplayerConfig = undefined;
 
 export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "expandminiplayer";
+  public static readonly componentName: string = "expandMiniplayer";
   public static readonly isControl: boolean = true;
   protected get pin() {
     return this.ctlr.plug("settings.modes")?.miniplayer;
   }
 
   public override create(): HTMLButtonElement {
-    return (this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn", type: "button", innerHTML: IconRegistry.get("expandminiplayer") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn", type: "button", innerHTML: IconRegistry.get("expandMiniplayer") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -36,6 +36,6 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    expandminiplayer: typeof ExpandMiniplayerButton;
+    expandMiniplayer: typeof ExpandMiniplayerButton;
   }
 }

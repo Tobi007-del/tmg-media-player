@@ -3,7 +3,7 @@ import { RangeInputChunk, RangeInputConfig, RangeState } from "./types";
 import { RANGE_INPUT_BUILD } from "./build";
 import type { Controller } from "@core/controller";
 import { reactive, type Reactive } from "sia-reactor";
-import { mergeObjs } from "sia-reactor/utils";
+import { deepClone, mergeObjs } from "sia-reactor/utils";
 import { createEl, getWindow, observeResize } from "@utils/dom";
 import { clamp, stepNum } from "@utils/num";
 import { setTimeout } from "@utils/fn";
@@ -11,7 +11,7 @@ import { startTx, endTx, Transaction } from "sia-reactor/modules";
 
 export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, State extends RangeState = RangeState> extends BaseComponent<Reactive<Config>, State, HTMLDivElement> {
   public declare config: Reactive<Config> & Reactive<RangeInputConfig>;
-  public static readonly componentName: string = "rangeinput";
+  public static readonly componentName: string = "rangeInput";
   public barsWrapper!: HTMLElement;
   public marksWrapper!: HTMLElement;
   public chunks: RangeInputChunk[] = [];
@@ -28,7 +28,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   protected tx: Transaction | null = null;
 
   constructor(ctlr: Controller, config?: Partial<Config>, state?: Partial<State>) {
-    super(ctlr, reactive(mergeObjs(structuredClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, previewing: false, cancelScrub: false, ...state } as any));
+    super(ctlr, reactive(mergeObjs(deepClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, previewing: false, cancelScrub: false, ...state } as any));
   }
 
   public override create() {
@@ -53,7 +53,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.el.addEventListener("mousemove", this.handleInput, { signal: this.signal });
     for (const e of ["mouseleave", "touchend", "touchcancel"]) this.el.addEventListener(e, this.stopPreviewing, { signal: this.signal });
     // State Watchers
-    this.state.watch("scrubbing", (value) => (value ? (this.tx = startTx(`${this.config.label} Scrub`)) : this.tx && this.config.stall(() => (endTx(this.tx!), (this.tx = null)))), { signal: this.signal });
+    this.state.watch("scrubbing", (value) => (value ? (this.tx = startTx(`${this.config.label} scrub`)) : this.tx && this.config.stall(() => (endTx(this.tx!), (this.tx = null)))), { signal: this.signal });
     // ----- Listeners
     this.state.on("previewing", ({ value }) => this.el.classList.toggle("tmg-media-control-previewing", !!value), { signal: this.signal });
     this.state.on("scrubbing", ({ value }) => this.el.classList.toggle("tmg-media-control-scrubbing", !!value), { signal: this.signal });
@@ -74,11 +74,11 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     // Post Wiring
     observeResize(this.el, () => this.ctlr.throttle(`${this.config.label}Resizing`, this.handleResize, 30, false, this.signal), this.signal);
   }
-  protected scrub(value: number, bypass = false): boolean {
-    return this.canScrub ? (!bypass ? (this.config.value = value) : this.onValue(value), true) : false;
-  }
   public get canScrub(): boolean {
     return !this.config.readonly && !this.config.disabled;
+  }
+  protected scrub(value: number, bypass = false): boolean {
+    return this.canScrub ? (!bypass ? (this.config.value = value) : this.onValue(value), true) : false;
   }
 
   protected onValue(value: number): void {
@@ -89,8 +89,8 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.syncChunks("preview", value), this.config.tooltip && (this.syncElPos(this.tooltipEl, this.getValuePos(value), false, !(this.state.previewing && !this.state.scrubbing) ? "auto" : false, this.thumbEl), (this.tooltipEl.innerHTML = (this.config.formatTooltip ? String(this.config.formatTooltip(value)) : `${Math.round(value)}`) + ` ${this.getValueChunk(value)?.label || ""}`.trim()));
   }
 
-  protected handlePointerDown(e: PointerEvent): void {
-    if (this.state.scrubbing || this.config.readonly || this.config.disabled) return;
+  protected handlePointerDown(e: PointerEvent, t = e.target as HTMLElement): void {
+    if (this.state.scrubbing || this.config.readonly || this.config.disabled || t?.matches?.(".tmg-media-range-mark")) return;
     this.state.scrubbing = true;
     this.el.setPointerCapture(e.pointerId);
     const s = getWindow(this.el).getComputedStyle(this.el);
@@ -133,14 +133,12 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
       if (this.prevEX === e.clientX && this.prevEY === e.clientY) return; // #CONSERVATION: peak stays peak
       (this.prevEX = e.clientX), (this.prevEY = e.clientY);
       this.state.previewing ||= true;
-      const dimension = this.isVertical ? this.rect.height : this.rect.width,
-        progress = this.getPos(e),
-        pos = (this.currentThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1)),
-        value = this.getPosValue(pos);
-      this.config.previewValue = value;
+      const progress = this.getPos(e),
+        pos = (this.currentThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1));
+      this.config.previewValue = this.getPosValue(pos);
       if (this.state.scrubbing) {
-        !this.config.scrub.sync ? this.syncElPos(this.thumbEl, pos, false, "auto") : this.scrub(value);
-        Math.abs(pos - this.lastThumbPos) < this.config.scrub.cancel.delta / dimension ? this.cancelScrubbing() : this.allowScrubbing();
+        !this.config.scrub.sync ? this.syncElPos(this.thumbEl, pos, false, "auto") : this.scrub(this.config.previewValue);
+        Math.abs(pos - this.lastThumbPos) < this.config.scrub.cancel.delta / this.prefDim ? this.cancelScrubbing() : this.allowScrubbing();
       }
       this.onInput(e, pos);
     }); // #PERK: no accidental scrub
@@ -153,18 +151,11 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (this.config.wheel.disabled) return;
     e.preventDefault(), e.stopImmediatePropagation();
     const dimension = this.isVertical ? getWindow(this.el).innerHeight : getWindow(this.el).innerWidth,
-      pos = clamp(0, Math.abs(-e.deltaY), dimension * this.config.wheel.axisRatio) / (dimension * this.config.wheel.axisRatio),
-      value = this.config.value + (-e.deltaY >= 0 ? pos : -pos) * (this.config.max - this.config.min);
-    this.scrub(value);
+      pos = clamp(0, Math.abs(-e.deltaY), dimension * this.config.wheel.axisRatio) / (dimension * this.config.wheel.axisRatio);
+    this.scrub(this.config.value + (-e.deltaY >= 0 ? pos : -pos) * (this.config.max - this.config.min));
   }
-  protected handleKeyDown(e: KeyboardEvent): void {
-    const key = e.key?.toLowerCase();
-    if (["arrowleft", "arrowdown", "arrowright", "arrowup"].includes(key)) {
-      e.preventDefault(), e.stopImmediatePropagation();
-      const delta = e.shiftKey ? 2 : 1,
-        direction = ["arrowleft", "arrowdown"].includes(key) ? -1 : 1;
-      this.scrub(this.config.value + direction * delta * this.config.step);
-    }
+  protected handleKeyDown(e: KeyboardEvent, key = e.key?.toLowerCase()): void {
+    if (/^(arrowleft|arrowdown|arrowright|arrowup)$/.test(key)) e.preventDefault(), e.stopImmediatePropagation(), this.scrub(this.config.value + (/^(arrowleft|arrowdown)$/.test(key) ? -1 : 1) * (e.shiftKey ? 2 : 1) * (this.config.step === "any" ? 1 : this.config.step));
   }
 
   protected handleResize(): void {
@@ -189,10 +180,12 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     const p = this.isVertical ? (e.clientY - this.rect.top) / this.rect.height : (e.clientX - this.rect.left) / this.rect.width;
     return clamp(0, this.isRTL ? 1 - p : p, 1);
   }
+  public get prefDim(): number {
+    return this.isVertical ? this.rect.height : this.rect.width;
+  }
 
   public syncElPos(el: HTMLElement, pos: number, isSize = false, inBounds: boolean | "auto" = false, bounds = el): void {
-    const dim = this.isVertical ? this.rect?.height : this.rect?.width,
-      min = inBounds && dim ? (this.isVertical ? bounds.offsetHeight : bounds.offsetWidth) / 2 / dim : 0;
+    const min = inBounds ? (this.isVertical ? bounds.offsetHeight : bounds.offsetWidth) / 2 / this.prefDim : 0;
     pos = inBounds === "auto" ? min + pos * (1 - min * 2) : pos;
     const value = pos || (!isSize && pos === 0) ? `${clamp(min, pos, 1 - min) * 100}%` : ""; // onresize still for pixel accuracy, debounce won't stutter due to '%'
     if (isSize) this.isVertical ? ((el.style.blockSize = value), (el.style.inlineSize = "")) : ((el.style.inlineSize = value), (el.style.blockSize = ""));
@@ -200,15 +193,18 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     // el.style.transform = this.isVertical ? (isSize ? `scaleY(${pos})` : `translateY(-${pos * 100}%)`) : (isSize ? `scaleX(${pos})` : `translateX(${pos * 100}%)`);
   }
   protected syncChunks(key: keyof Omit<RangeInputChunk, "start" | "end" | "size" | "el" | "label">, value: number): void {
+    const pos = this.getValuePos(value),
+      minOff = !(this.state.previewing && !this.state.scrubbing) ? (this.isVertical ? this.thumbEl.offsetHeight : this.thumbEl.offsetWidth) / 2 / this.prefDim : 0,
+      offVal = this.getPosValue(minOff + pos * (1 - minOff * 2));
     for (let i = 0, len = this.chunks.length; i < len; i++) {
       const c = this.chunks[i];
-      this.syncElPos(c[key]!, clamp(0, (value - c.start) / c.size, 1) || 0, true), c[key]!.style.setProperty("--tmg-media-current-range-pos", String(this.getValuePos(value)));
+      this.syncElPos(c[key]!, clamp(0, (offVal - c.start) / c.size, 1) || 0, true);
+      c[key]!.style.setProperty("--tmg-media-current-range-pos", String(this.getValuePos(offVal)));
       c.el.classList.toggle(`tmg-media-chunk-${key}-active`, value >= c.start && value <= c.end);
     }
   }
   protected syncDivs(divs = this.config.divs): void {
-    this.barsWrapper.innerHTML = "";
-    this.chunks = [];
+    (this.barsWrapper.innerHTML = ""), (this.chunks = []);
     const range = this.config.max - this.config.min,
       stops = divs.toSorted((a, b) => a.value - b.value); // Sort divs chronologically
     if (stops.length && stops[0].value > this.config.min && stops[0].value <= this.config.min + Math.min(0.02 * range, range * 0.25)) stops[0].value = this.config.min;
@@ -232,7 +228,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (range <= 0) return;
     for (let i = 0, len = marks.length; i < len; i++) {
       const m = marks[i],
-        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${marks[i].type || "base"}-mark`, title: marks[i].label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark` }, undefined);
+        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${m.type || "base"}-mark`, title: m.label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark`, tabIndex: 0, onclick: () => this.scrub(m.start), onkeydown: (e) => (/^(Enter| )$/.test(e.key) ? this.scrub(m.start) : null) }, undefined);
       this.syncElPos(el, (m.start - this.config.min) / range, false), this.syncElPos(el, m.end ? (m.end - m.start) / range : 0, true), els.push(el);
     }
     this.marksWrapper.append(...els);
@@ -241,7 +237,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    rangeinput: typeof RangeInput;
+    rangeInput: typeof RangeInput;
   }
 }
 

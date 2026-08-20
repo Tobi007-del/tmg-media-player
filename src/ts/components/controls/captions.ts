@@ -2,8 +2,7 @@ import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatActionForDisplay } from "@utils/keys";
-import { capitalize } from "@utils/str";
-
+import { getTrackKind, getTrackLang } from "@utils/media";
 export type CaptionsConfig = undefined;
 
 export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState, HTMLButtonElement> {
@@ -41,11 +40,11 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   protected syncBadge(): void {
     const track = this.media.status.textTracks[this.media.state.currentTextTrack],
       c = this.plug?.config.multiple && this.plug.state.secondaryTracks.length;
-    this.setBadge(track && this.media.state.textVisible ? `${((track.label || track.language)?.slice(0, 2) || "").toUpperCase()}${c ? `+${c}` : ""}` : "");
+    this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase()}${c ? `+${c}` : ""}` : "");
   }
 
   public syncARIA(): void {
-    this.state.label = capitalize(this.plug?.getTrackKind()) || "Captions";
+    this.state.label = getTrackKind(this.media.status.textTracks[this.media.state.currentTextTrack], true);
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();

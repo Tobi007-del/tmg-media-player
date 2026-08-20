@@ -38,5 +38,6 @@ export interface ControlPanelConfig {
     thumb: UISettings<boolean | "auto">;
   };
   progressBar: boolean;
+  bigVisible: boolean;
   draggable: ControlPanelDraggable;
 }

@@ -1,12 +1,12 @@
 import { UITuple } from "@defs/UIOptions";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
-import { parseUIOpt } from "@utils/obj";
+import { isFunc, parseUIOpt } from "@utils/obj";
+import { IconRegistry } from "@core/registries";
 
 export class SelectWidget<T = unknown> extends BaseWidget<T> {
   private renderRows!: ReturnType<typeof createListRenderer<UITuple<T>>>;
   private currentValue: string | string[] = "";
-
 
   public override render(): HTMLElement {
     this.element = createEl("ul", { className: "tmg-media-smenu-select-list", role: "listbox" });
@@ -15,11 +15,12 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
       getKey: (opt) => opt.value as string,
       createNode: (opt) => {
         const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display }),
-          check = createEl("span", { className: "tmg-media-smenu-select-check", ariaHidden: "true" }),
-          label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display });
+          check = createEl("span", { className: "tmg-media-smenu-select-check", ariaHidden: "true" });
+        check.innerHTML = IconRegistry.get("check", true) || "✓";
+        const label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display });
         if (opt.style) label.setAttribute("style", opt.style);
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
-        li.append(check, label), opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: opt.infoText }));
+        li.append(check, label), opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
         li.addEventListener("click", () => {
           const isMulti = this.item.getMultiple?.();
           if (!isMulti && (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue)) return void setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
@@ -38,7 +39,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         opt.title ? (node.title = opt.title) : node.removeAttribute("title");
         const infoNode = node.querySelector<HTMLElement>(".tmg-media-smenu-select-info");
-        opt.infoText ? (infoNode ? (infoNode.textContent = opt.infoText) : node.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: opt.infoText }))) : infoNode?.remove();
+        opt.infoText ? (infoNode ? (infoNode.textContent = isFunc(opt.infoText) ? opt.infoText() : opt.infoText) : node.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }))) : infoNode?.remove();
         node.dataset.optVal = opt.value as string;
         node.dataset.optDisplay = opt.display;
         const isMulti = this.item.getMultiple?.(),
@@ -50,7 +51,10 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
   }
 
   public override syncUI(): void {
-    this.currentValue = this.item.getValue() || (this.item.getMultiple?.() ? [] : "");
+    if (!this.renderRows) return;
+    const isMulti = this.item.getMultiple?.();
+    this.currentValue = this.item.getValue() || (isMulti ? [] : "");
+    isMulti ? this.element.setAttribute("aria-multiselectable", "true") : this.element.removeAttribute("aria-multiselectable");
     this.renderRows((this.item.getOptions?.() ?? []).map((o) => parseUIOpt(o)));
     this.syncActive();
   }

@@ -42,13 +42,10 @@
 :is(.tmg-media-voice-path-input, .tmg-media-voice-exact-input):is(:focus-visible, #o#o#o#o#o) {
   outline-offset: calc(var(--tmg-media-current-unit) / -13);
 }
-.tmg-media-container[data-size-tier="xxxxs"] .tmg-media-profile-link {
-  --tmg-media-current-unit: 20px;
-}
 .tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, .tmg-media-big-controls-wrapper > *, .tmg-media-next-preview-wrapper > button):focus-visible, #o#o#o#o#o) {
   outline-offset: 0px;
 }
-.tmg-host-container :is(.tmg-media-range-container:focus-visible, #o#o#o#o#o) {
+.tmg-host-container :is(:is(.tmg-media-range-container, .tmg-media-range-mark):focus-visible, #o#o#o#o#o) {
   outline: none;
 }
 .tmg-media-side-controls-wrapper-cover,
@@ -68,16 +65,13 @@
   display: none;
 }
 :is(.tmg-media-settings-content, .tmg-media-smenu-overlay) *,
-.tmg-media-top-controls-wrapper,
-.tmg-media-bottom-controls-wrapper,
-.tmg-media-screen-locked-wrapper,
+:is(.tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-screen-locked-wrapper, .tmg-media-placeholder),
 .tmg-media-touch-vb-notifier,
-.tmg-media-placeholder p,
 .tmg-media-control-badge,
-[data-badge]::before {
+.tmg-host-container [data-badge]::before {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
-:is(.tmg-media-settings-content, .tmg-media-smenu-overlay, .tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-touch-vb-notifier) svg,
+:is(.tmg-media-settings-content, .tmg-media-smenu-overlay, .tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-touch-vb-notifier) svg,
 .tmg-media-placeholder [class$="icon-content"] {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
@@ -91,14 +85,14 @@
   height: var(--tmg-media-current-unit);
 }
 :is(.tmg-media-big-controls-wrapper > *, :where(button[class^="tmg-media-big-"])) > svg {
-  --size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale));
-  width: var(--size);
-  height: var(--size);
+  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale));
+  width: var(--cmptd-ctrl-size);
+  height: var(--cmptd-ctrl-size);
 }
 .tmg-media-big-play-pause-btn > svg {
-  --size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale));
-  width: var(--size);
-  height: var(--size);
+  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale));
+  width: var(--cmptd-ctrl-size);
+  height: var(--cmptd-ctrl-size);
 }
 .tmg-host-container svg:where(:not(.no-css-fill)) {
   color: currentColor;
@@ -147,13 +141,16 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   translate: -50% -50%;
 }
 .tmg-media-placeholder,
+.tmg-media-placeholder::before,
+.tmg-media-placeholder::after,
 .tmg-media-next-preview-wrapper > button {
   position: absolute;
   inset: 0;
   margin: auto;
 }
 .tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-container-content,
-.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-container-content {
+.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-container-content,
+.tmg-media-container-content:has(:modal) {
   cursor: auto;
 }
 .tmg-media-container.tmg-media-miniplayer :is(.tmg-media-container-content, .tmg-media-settings),

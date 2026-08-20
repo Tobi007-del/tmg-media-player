@@ -2,7 +2,7 @@ import { clamp } from "sia-reactor/utils";
 import { GesturePlug } from ".";
 import { safeNum } from "@utils/num";
 import { BasePin } from "../../base";
-import { getMediaMin, getMediaMax, getMediaTime } from "@utils/media";
+import { getMediaMin, getMediaMax, getMediaTime } from "@utils/time";
 
 export class GestureBasePin<Config> extends BasePin<GesturePlug, Config> {
   public static readonly plugName = "gesture";
@@ -14,7 +14,7 @@ export class GestureBasePin<Config> extends BasePin<GesturePlug, Config> {
     const curr = safeNum(this.media.state.currentTime),
       change = safeNum(getMediaTime(this.media, percent)) * multiplier,
       next = curr + (sign === "+" ? change : -change),
-      textEl = this.ctlr.plug("settings.notifiers")?.compEl("touchtimelinenotifier"),
+      textEl = this.ctlr.plug("settings.notifiers")?.compEl("touchTimelineNotifier"),
       toText = this.ctlr.plug("settings.time")?.toTimeText;
     this.nextTime = clamp(getMediaMin(this.media), next, getMediaMax(this.media));
     if (textEl) textEl.textContent = `${sign}${toText?.(Math.abs(this.nextTime - curr))} (${toText?.(this.nextTime, true)}) ${multiplier < 1 ? `x${multiplier}` : ""}`;

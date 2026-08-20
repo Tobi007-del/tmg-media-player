@@ -18,9 +18,10 @@ import { PlaybackRatePlug } from "./settings/playbackRate";
 import { ObjectFitPlug } from "./settings/objectFit";
 import { CaptionsPlug } from "./settings/captions";
 import { GesturePlug } from "./settings/gesture";
-import { FastPlayPlug } from "./settings/fastPlay";
 import { ModesPlug } from "./settings/modes";
 import { KeysPlug } from "./settings/keys";
+import { VoicePlug } from "./settings/voice";
+import { FastPlayPlug } from "./settings/fastPlay";
 import { ToastsPlug } from "./settings/toasts";
 import { LockedPlug } from "./settings/locked";
 import { FramePlug } from "./settings/frame";
@@ -38,7 +39,6 @@ import { ModesPictureInPicturePin } from "./settings/modes/pictureInPicture";
 import { ModesMiniplayerPin } from "./settings/modes/miniplayer";
 import { GestureWheelPin } from "./settings/gesture/wheel";
 import { GestureTouchPin } from "./settings/gesture/touch";
-import { VoicePlug } from "./settings/voice";
 
 for (const Plug of [
   // Priority Order
@@ -62,9 +62,10 @@ for (const Plug of [
   PlaybackRatePlug,
   CaptionsPlug,
   GesturePlug,
-  FastPlayPlug,
   ModesPlug,
   KeysPlug,
+  VoicePlug,
+  FastPlayPlug,
   ToastsPlug,
   LockedPlug,
   FramePlug,
@@ -73,7 +74,6 @@ for (const Plug of [
   AmbiencePlug,
   AirPlayPlug,
   SleepTimerPlug,
-  VoicePlug,
   SettingsViewPlug,
 ])
   PlugRegistry.register(Plug);

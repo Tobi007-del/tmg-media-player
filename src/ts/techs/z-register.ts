@@ -1,6 +1,6 @@
 import { TechRegistry } from "@core/registries";
 import { HTML5Tech } from "./html5";
-import { ShakaTech } from "./shaka";
+import ShakaTech from "./shaka";
 import { DashTech } from "./dash";
 import { HLSTech } from "./hls";
 import { YouTubeTech } from "./youtube";

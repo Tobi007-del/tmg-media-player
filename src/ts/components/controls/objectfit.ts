@@ -6,7 +6,7 @@ import { formatActionForDisplay } from "@utils/keys";
 export type ObjectFit = undefined;
 
 export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "objectfit";
+  public static readonly componentName: string = "objectFit";
   public static readonly isControl: boolean = true;
 
   protected get plug() {
@@ -14,7 +14,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-object-fit-btn", type: "button", innerHTML: IconRegistry.get("objectfitcontain") + IconRegistry.get("objectfitcover") + IconRegistry.get("objectfitfill") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-object-fit-btn", type: "button", innerHTML: IconRegistry.get("objectFitContain") + IconRegistry.get("objectFitCover") + IconRegistry.get("objectFitFill") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -43,6 +43,6 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    objectfit: typeof ObjectFitButton;
+    objectFit: typeof ObjectFitButton;
   }
 }

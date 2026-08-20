@@ -47,7 +47,7 @@
     opacity: 0;
   }
 }
-@keyframes tmg-stay-shown {
+@keyframes tmg-stay-visible {
   from,
   to {
     opacity: 1;

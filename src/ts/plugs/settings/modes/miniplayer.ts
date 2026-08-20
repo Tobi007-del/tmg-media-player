@@ -23,7 +23,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("dimensions.window.width", () => !this.ctlr.isUIActive("fullscreen") && this.toggle(), { signal: this.signal });
+    this.ctlr.state.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
     this.ctlr.state.watch("dimensions.container.width", (w, { target: { object } }) => this.handleResize(w, object.height), { signal: this.signal });
     this.ctlr.state.watch("dimensions.container.height", (h, { target: { object } }) => this.handleResize(object.width, h), { signal: this.signal });
     // ---- Media Listeners
@@ -78,7 +78,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   }
   public shouldEnter(): boolean {
     const modes = this.ctlr.plug("settings.modes");
-    return !this.ctlr.isUIActive("pictureInPicture") && !modes?.pictureInPicture?.inFloatingPlayer && !modes?.fullscreen?.inFullscreen && !this.ctlr.state.mediaParentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;
+    return !this.media.state.pictureInPicture && !modes?.fullscreen?.inFullscreen && !this.ctlr.state.mediaParentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;
   }
   public shouldExit(): boolean {
     return this.ctlr.state.mediaParentIntersecting || getWindow(this.media.container).innerWidth < this.config.minWindowWidth;

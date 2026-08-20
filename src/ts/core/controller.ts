@@ -2,23 +2,24 @@ import type { CtlrConfig } from "@defs/config";
 import type { CtlrMedia } from "@defs/contract";
 import type { Action } from "@defs/actions";
 import { TechRegistry, PlugRegistry } from "./registries";
-import { AUDIO_CONTEXT, type CtlrState } from "@tools/runtime";
+import { type CtlrState } from "@tools/runtime";
 import { HTML5Tech } from "@techs/html5";
 import type { TechConstructor } from "@techs/base";
 import { PlugConstructor as PC, type BasePlug as Plug } from "@plugs/base";
 import { guardAllMethods, guardMethod } from "@utils/methd";
 import { setTimeout, throttle, cancelRAFLoop, RAFLoop, mockAsync, debounce } from "@utils/fn";
-import { getWindow, queryFullscreen } from "@utils/dom";
+import { getWindow } from "@utils/dom";
 import { createEl, observeIntersection, observeResize } from "@utils/dom";
 import { uncamelize } from "@utils/str";
 import { cloneMedia, getMediaReport, isSameSources, getSizeTier } from "@utils/media";
 import { type Volatile, reactive, type Reactive, inert, intent, volatile, getRaw } from "sia-reactor";
-import { fanout, getPath, mergeObjs as merge, nuke, setPath } from "sia-reactor/utils";
+import { fanout, getPath, mergeObjs, nuke, setPath } from "sia-reactor/utils";
 import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
 import { isFunc, isStr } from "@utils/obj";
 import { silence, transaction } from "sia-reactor/modules";
 import { AUDIO_EXTENSIONS } from "@utils/match";
 import { MediaType } from "@defs/generics";
+import { STATE_BUILD } from "@consts/config";
 
 // --- CONTROLLER (The Orchestrator) ---
 export class Controller {
@@ -36,6 +37,7 @@ export class Controller {
   public get actions() {
     return this.config.actions; // for easy reach
   }
+  public zenlist: string[] = ["settings"]; // #DEFAULT: build privilege; block actions while UI is active
   // --- MEMORY ---
   public payload: { readyState: number; initialized: boolean; wired: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any;
   public _build: CtlrConfig; // Build Cache
@@ -45,16 +47,15 @@ export class Controller {
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
     guardAllMethods(this, this.guard);
-    const defs = merge(getMediaReport(medium), build.media); // returns defaults and initials
-    this.config = reactive(volatile(build), { referenceTracking: true, smartCloning: true, debug: false }); // `lineageTracing: false` so clone before reassigning "already in state" objects
-    this.state = reactive<CtlrState>({ readyState: 0, audioContextReady: !!AUDIO_CONTEXT, mediaIntersecting: true, mediaParentIntersecting: true, dimensions: { container: { width: 0, height: 0, tier: "x" }, pseudoContainer: { width: 0, height: 0, tier: "x" }, window: { width: window.innerWidth, height: window.innerHeight }, object: { width: 0, height: 0, top: 0, left: 0 } }, screenOrientation: { type: screen.orientation?.type ?? "", angle: screen.orientation?.angle ?? 0 }, docVisibilityState: document.visibilityState, docInFullscreen: queryFullscreen(), pseudoActive: false }, { debug: false });
+    const defs = mergeObjs(getMediaReport(medium), build.media); // returns defaults and initials
+    this.config = reactive(volatile(build), { referenceTracking: true, smartCloning: true }); // `lineageTracing: false` so clone before reassigning "already in state" objects
+    this.state = reactive<CtlrState>(STATE_BUILD());
     this.state.watch("readyState", (v) => ((this.payload.readyState = v), (this.payload.initialized = v > 0), (this.payload.wired = v > 1), (this.payload.destroyed = v < 0)), { signal: this.signal });
-    this.media = reactive({ intent: volatile(intent(defs.intent)), state: defs.state, status: defs.status, settings: volatile(intent(defs.settings)), type: medium.tagName.toLowerCase() as MediaType, tech: inert({}), features: {}, element: medium, pseudoElement: createEl(medium.tagName.toLowerCase()), container: createEl("div"), pseudoContainer: createEl("div") }, { debug: false, crossRealms: true }) as any;
+    this.media = reactive({ intent: volatile(intent(defs.intent)), state: defs.state, status: defs.status, settings: volatile(intent(defs.settings)), type: medium.tagName.toLowerCase() as MediaType, tech: inert({}), features: {}, element: medium, pseudoElement: createEl(medium.tagName.toLowerCase()), container: createEl("div"), pseudoContainer: createEl("div") }, { crossRealms: true }) as any;
     this.media.set("tech", (t) => inert(t!), { signal: this.signal });
     this.log((this._build = this.config.snapshot())), delete this.config.media; // clone for resets and fast subsequents
     this.setReadyState(0), this.boot();
   }
-
   private async boot(): Promise<void> {
     this.connectPlugs(), this.wireTechHandler(), this.wireStateHandler();
     await mockAsync(0), this.setReadyState(1); // wiring the machinery
@@ -119,7 +120,6 @@ export class Controller {
     observeResize(this.media.container, () => fanout(this.state.dimensions.container, getSizeTier(this.media.container)), this.signal);
     observeResize(this.media.pseudoContainer, () => fanout(this.state.dimensions.pseudoContainer, getSizeTier(this.media.pseudoContainer)), this.signal);
   }
-
   public setReadyState(state?: number): void {
     this.state.readyState = !this.state ? 0 : state ?? this.state.readyState + 1;
     const rS = this.state.readyState; // incase of blocked sets, e.g. lightState
@@ -130,43 +130,13 @@ export class Controller {
   public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null, swallow = true): void {
     this.log(mssg, type, swallow), toast !== false && (type === "log" || (type === "error" && swallow && !this.config.devMode) ? this.plug("settings.toasts")?.toast : this.plug("settings.toasts")?.toast?.[type])?.(toast === null || this.config.devMode ? mssg : isStr(toast) ? toast : "Something went wrong", { tag: "tmg-stwr" });
   }
-
   public log(mssg: any, type: "error" | "warn" | "log" = "log", swallow = false): void {
     if (!this.config.debug) return;
     if (type === "error") return swallow && !this.config.devMode ? console.warn(`[TMG Controller] Error swallowed:`, mssg) : console.error(`[TMG Controller] Error occurred:`, mssg);
     else type === "warn" ? console.warn(`[TMG Controller] Warning:`, mssg) : console.log(`[TMG Controller] Log:`, mssg);
   }
-
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
-  }
-
-  public zenlist: string[] = ["settings"]; // plugs append here to block actions while their UI is active
-  public registerAction(key: string, action: Omit<Action, "id">): void {
-    const existing = this.actions.entries[key] ?? {};
-    this.actions.entries[key] = { ...action, ...existing, id: key as any, fn: action.fn }; // fn always comes from the registering plug (runtime source of truth), persisted fields (label, logic, notify) survive from existing entry
-    this.config.on(`actions.entries.${key}` as any, () => this.actions.entries[key] && this.actions.entries[key].fn !== action.fn && (this.actions.entries[key].fn = action.fn), { signal: this.signal });
-  }
-  public unregisterAction(key: string): void {
-    delete this.actions.entries[key];
-  }
-  public runAction(id: string, ...args: any[]): void {
-    const action = this.actions.entries[id];
-    if (!action || (!action.zen && this.zenlist.some(this.isUIActive))) return;
-    transaction(() => {
-      if (action.logic?.length) {
-        const root = { media: this.media, settings: this.config.settings } as any;
-        for (const step of action.logic) {
-          const cur = getPath(root, step.path as any);
-          step.op === "toggle" ? setPath(root, step.path as any, !cur) : step.op === "increment" ? setPath(root, step.path as any, (cur as number) + (step.value ?? 1)) : step.op === "decrement" ? setPath(root, step.path as any, (cur as number) - (step.value ?? 1)) : setPath(root, step.path as any, step.value);
-        }
-      }
-      const can = !action.gates?.some((g) => this.media.features[g] === false);
-      can && action.notify && this.plug("settings.notifiers")?.notify(action.notify), action.fn?.(...args), can && action.toast && this.plug("settings.toasts")?.toast?.((isFunc(action.toast.render) ? action.toast.render() : action.toast.render) || `Executed ${action.label ?? action.id}`, action.toast);
-    }, action.label ?? action.id);
-  }
-  public isLogicPath(path: string): boolean {
-    return this.config.actions.logicBlacklist.some((b) => path === b || path.startsWith(b + ".")) || (path.startsWith("media.intent.") && (this.media.features as any)[path.split(".").pop()!] === false) ? false : true;
   }
 
   public throttle(key: string, fn: Function, delay = 30, strict: ((fn: Function) => number) | boolean = true, signal = this.signal) {
@@ -205,15 +175,34 @@ export class Controller {
   public setImgFallback<Ev extends Partial<Pick<Event, "target">>>({ target: img }: Ev): void {
     img instanceof HTMLImageElement && img.src !== window.TMG_MEDIA_ALT_IMG_SRC && (img.src = window.TMG_MEDIA_ALT_IMG_SRC!);
   }
-  private altImg?: HTMLImageElement;
   public setCanvasFallback(canvas: HTMLCanvasElement, context?: CanvasRenderingContext2D | null, _callback = (img = this.altImg) => context?.drawImage((this.altImg = img)!, 0, 0, canvas.width, canvas.height)): void {
     const _img = canvas && (this.altImg && this.altImg.src === window.TMG_MEDIA_ALT_IMG_SRC ? _callback() : createEl("img", { src: window.TMG_MEDIA_ALT_IMG_SRC, onload: () => _callback(_img as HTMLImageElement) }));
+  }
+  private altImg?: HTMLImageElement;
+
+  public addAction(key: string, action: Omit<Action, "id">, signal = this.signal, existing = this.actions.entries[key] ?? {}): void {
+    this.actions.entries[key] = { ...action, ...existing, id: key as any, fn: action.fn }; // fn must comes from the registering plug (runtime source of truth), persisted fields (label, logic, notify) survive from existing entry
+    this.config.on(`actions.entries.${key}` as any, () => this.actions.entries[key] && this.actions.entries[key].fn !== action.fn && (this.actions.entries[key].fn = action.fn), { signal });
+  }
+  public getActions() {
+    return (Object.values(this.actions.entries) as Action[]).filter((a) => !a.system || this.config.devMode).sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+  }
+  public perform(id: string, ...args: any[]): void {
+    const action = this.actions.entries[id];
+    if (!action || action.disabled || (!action.zen && this.zenlist.some(this.isUIActive))) return;
+    transaction((can = !action.gates?.some((g) => this.media.features[g] === false), root = action.logic?.length ? ({ media: this.media, settings: this.config.settings } as any) : undefined) => {
+      if (action.logic?.length) for (const step of action.logic) step.op === "toggle" ? setPath(root, step.path, !getPath(root, step.path)) : step.op === "increment" ? setPath(root, step.path, getPath(root, step.path) + (step.value ?? 1)) : step.op === "decrement" ? setPath(root, step.path, getPath(root, step.path) - (step.value ?? 1)) : setPath(root, step.path, step.value);
+      can && action.notify && this.plug("settings.notifiers")?.notify(action.notify), action.fn?.(...args), can && action.toast && this.plug("settings.toasts")?.toast?.((isFunc(action.toast.render) ? action.toast.render() : action.toast.render) || `Executed ${action.label ?? action.id}`, action.toast);
+    }, action.label ?? action.id);
+  }
+  public isLogical(path: string): boolean {
+    return this.config.actions.logicBlacklist.some((b) => path === b || path.startsWith(b + ".")) || (path.startsWith("media.intent.") && (this.media.features as any)[path.split(".").pop()!] === false) ? false : true;
   }
 
   public destroy() {
     this.mutatingDOMM = true; // destruction will mutate, flag external watchers
     this.setReadyState(-1);
-    this.ac.abort("[TMG Controller] Instance is being destroyed"), this.cancelAllLoops();
+    this.ac.abort("[TMG Controller] Instance annihilation"), this.cancelAllLoops();
     this.disconnectPlugs(), this.media.tech.destroy();
     const el = this.config.cloneOnDetach ? cloneMedia(this.media.element) : this.media.element;
     this.state.destroy(), this.config.destroy(), this.media.destroy();

@@ -2,11 +2,12 @@ import { Controllable } from "@core/controllable";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures, MediaStatus } from "@defs/contract";
 import { type REvent, type Reactive, ListenerOptions, NOOP } from "sia-reactor";
-import { fanout, force } from "sia-reactor/utils";
+import { deepClone, fanout, force } from "sia-reactor/utils";
 import { silence } from "sia-reactor/modules";
 import { getMediaStatus } from "@utils/media";
 import { capitalize } from "@utils/str";
 import { isNum } from "@utils/obj";
+import { MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
 
 export interface TechConstructor<T extends BaseTech = BaseTech> {
   new (ctlr: Controller, features?: MediaFeatures): T;
@@ -34,7 +35,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
 
   constructor(ctlr: Controller, features: MediaFeatures = {}) {
     ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`);
-    super(ctlr, ctlr.media);
+    super(ctlr, ctlr.media); // Odekunle Olasubomi Abimbola Cornelius Adisun was here; Aug 14th 2026
     ctlr.config.mediaPlayer = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
     this.element = ctlr.media.element as any; // must reassign if not using original
     for (const key of Object.keys(ctlr.media.features)) ctlr.media.features[key as keyof MediaFeatures] = false;
@@ -66,8 +67,8 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     // Bulk Wiring
     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
     // Post Wiring
-    (this.ctlr.payload.wired || !this.ctlr.isNativeEl) && this.setLoadStartInfo?.();
-    !this.ctlr.payload.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl ? getMediaStatus(this.el as any, undefined, undefined, true) : {}) }, { skipUndefined: true })); // incase of async init
+    (this.ctlr.payload.wired || !this.ctlr.isNativeEl) && this.resetLoadInfo();
+    !this.ctlr.payload.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl ? getMediaStatus(this.el as any, undefined, undefined, true) : {}) }, { skipUndef: true })); // incase of async init
     silence(() => (fanout(this.config.intent, this.config[this.ctlr.techTruth]), fanout(this.config.settings, this.config.settings))); // over to you, child. it go touch everybodyyyyy, no fear!
     !this.ctlr.payload.wired ? force(() => this.config.tick()) : this.config.tick(); // state isn't volatile but it must touch
     this.wired = true;
@@ -97,7 +98,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     else if (type === "init") for (const feature of Object.keys(target.value)) this.wireFeature(feature as keyof MediaFeatures);
   }
   protected handleWrite(e: REvent<CtlrMedia, "intent" | "settings">): void {
-    if (e.type === "update" && this.config.features[e.target.key as keyof MediaFeatures] === false && e.value) return e.reject(this.name), e.stopImmediatePropagation(); // falsy values pass so that they can turn off but not on
+    if (e.type === "update" && this.config.features[e.target.key as keyof MediaFeatures] === false && (e.value || !this.ctlr.payload.wired)) return e.reject(this.name), e.stopImmediatePropagation(); // falsy values pass during runtime so they can turn off
   }
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
     if (e.resolved || !this.wired) return;
@@ -108,9 +109,12 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   }
 
   // --- THE HELPERS ---
-  protected setLoadStartInfo?(): void;
+  protected resetLoadInfo(): void {
+    for (const path of this.config.settings.resetPaths.status) this.config.status[path] = deepClone(MEDIA_STATUS_BUILD[path]) as never;
+    for (const path of this.config.settings.resetPaths.state) this.config.state[path] = deepClone(MEDIA_STATE_BUILD[path]) as never;
+  }
   public when<Evt extends REvent<CtlrMedia>>(status: keyof MediaStatus, e?: Evt, task: () => void = NOOP, always = true, _key = status + e?.path || "", _value = (!always && this.wired) || this.config.status[status], _log = this.ctlr.config.devMode && !this.config.status[status]): void {
-    const callback = this.ctlr.guard((v: any, __: any, stalled = true) => v && (stalled && this.pending.get(_key)?.(), this.pending.delete(_key), task(), _log && this.ctlr.log(`${e?.path} stalled by ${status} executed with ${e?.value}`))); // RS(${this.ctlr.payload.readyState})
+    const callback = this.ctlr.guard((v: any, __: any, stalled = true) => v && (stalled && this.pending.get(_key)?.(), this.pending.delete(_key), _log && this.ctlr.log(`${e?.path} stalled by ${status} executing with ${e?.value}`), task())); // RS(${this.ctlr.payload.readyState})
     this.pending.get(_key)?.(), _value ? callback(_value, null, false) : this.pending.set(_key, this.config.watch(`status.${status}`, callback, { signal: this.signal }));
   } // #EXTRA-MILE: doing the most with the least
   // Dog Feeders

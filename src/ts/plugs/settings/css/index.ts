@@ -3,7 +3,7 @@ import type { CssConfig } from "./types";
 import { CSS_BUILD } from "./build";
 import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
-import { uncamelize } from "@utils/str";
+import { camelize, capitalize, uncamelize } from "@utils/str";
 
 export class CSSPlug extends BasePlug<CssConfig> {
   public static readonly plugName = "css";
@@ -19,28 +19,25 @@ export class CSSPlug extends BasePlug<CssConfig> {
     this.ctlr.config.get("*", (val, { target: { key, path } }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : (this._cache[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !banRgx.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     // ---- Media Watchers
-    this.media.watch("status.videoWidth", this.syncAspectRatio, { init: true, signal: this.signal });
-    this.media.watch("status.videoHeight", this.syncAspectRatio, { signal: this.signal });
+    for (const p of ["videoWidth", "videoHeight"] as const) this.media.watch(`status.${p}`, this.syncAspectRatio, { init: p === "videoWidth", signal: this.signal });
     // ---- State --------
-    this.ctlr.state.watch("dimensions.container.width", (w) => (this.settings.css.currentContainerWidth = `${w || 0}px`), { signal: this.signal });
-    this.ctlr.state.watch("dimensions.container.height", (h) => (this.settings.css.currentContainerHeight = `${h || 0}px`), { signal: this.signal });
-    this.ctlr.state.watch("dimensions.object.width", (w) => (this.settings.css.currentObjectWidth = `${w || 0}px`), { signal: this.signal });
-    this.ctlr.state.watch("dimensions.object.height", (h) => (this.settings.css.currentObjectHeight = `${h || 0}px`), { signal: this.signal });
-    this.ctlr.state.watch("dimensions.object.top", (t) => (this.settings.css.currentObjectTop = `${t || 0}px`), { signal: this.signal });
-    this.ctlr.state.watch("dimensions.object.left", (l) => (this.settings.css.currentObjectLeft = `${l || 0}px`), { signal: this.signal });
+    for (const p of ["container.width", "container.height", "object.width", "object.height", "object.top", "object.left", "poster.width", "poster.height", "poster.top", "poster.left"] as const) {
+      const cammed = capitalize(camelize(p, /\./));
+      this.ctlr.state.watch(`dimensions.${p}`, (v) => (this.config[`current${cammed}`] = `${v || 0}px`), { signal: this.signal });
+    }
     // ---- Media Listeners
     this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State ----------
-    this.ctlr.state.on("dimensions.container.tier", ({ value: tier }) => (this.media.container.dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
-    this.ctlr.state.on("dimensions.pseudoContainer.tier", ({ value: tier }) => (this.media.pseudoContainer.dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
+    for (const p of ["container", "pseudoContainer"] as const) this.ctlr.state.on(`dimensions.${p}.tier`, ({ value: tier }) => (this.media[p].dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
     // Post Wiring
-    for (const [k, v] of entries) k !== "syncWithMedia" && ((this._cache[k] ??= this.config[k]), this.set(k, v));
+    for (const [k, v] of entries) k !== "syncWithMedia" && ((this._cache[k] ??= this.ctlr._build.settings.css[k]), this.set(k, v));
     super.wire();
   }
 
   protected async handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): Promise<void> {
-    const color = value && (await this.ctlr.plug("settings.frame")?.getMainColor());
-    for (const k of Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k])) this.settings.css[k] = String((value ? color : null) ?? this._cache[k]);
+    if (!value) return;
+    const color = await this.ctlr.plug("settings.frame")?.getMainColor();
+    for (const k of Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k])) this.settings.css[k] = String(color ?? this._cache[k]);
   }
 
   public getCSSKey(key: string): { isClass: boolean; id: string } {

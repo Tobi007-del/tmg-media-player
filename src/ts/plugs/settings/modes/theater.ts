@@ -12,7 +12,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     return ModesPlug;
   }
   public static readonly BUILD = MODES_THEATER_BUILD;
-  public snublist: string[] = ["fullscreen", "miniplayer", "floatingPlayer"]; // #DEFAULT: build privilege
+  public UISnublist: string[] = ["fullscreen", "miniplayer", "floatingPlayer"]; // #DEFAULT: build privilege
 
   public override wire(): void {
     // Ctlr Media Watchers
@@ -22,7 +22,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     // ---- Config ---------
     this.ctlr.config.on("settings.modes.theater.disabled", this.handleDisabled, { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("theater", { keyboard: { phase: "keyup" } });
+    this.ctlr.addAction("theater", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.theater.disabled">): void {
@@ -32,8 +32,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
 
   protected handleTheaterIntent(e: REvent<CtlrMedia, "intent.theater">): void {
     if (e.resolved) return;
-    const snub = this.snublist.some(this.ctlr.isUIActive);
-    if (e.value && snub) return void (snub && e.stopImmediatePropagation());
+    if (e.value && this.UISnublist.some(this.ctlr.isUIActive)) return e.stopImmediatePropagation();
     this.media.container.classList.toggle("tmg-media-theater", e.value);
     this.media.state.theater = e.value;
     e.resolve(this.name);

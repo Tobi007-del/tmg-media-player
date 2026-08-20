@@ -24,9 +24,13 @@ export const MATCH_URL_MUX = /stream\.mux\.com\/(?!\w+\.m3u8)(\w+)/;
 
 /** Matches YouTube watch, embed, shorts, live, and nocookie URLs */
 export const MATCH_URL_YOUTUBE = /(?:youtu\.be\/|youtube(?:-nocookie|education)?\.com\/(?:embed\/|v\/|watch\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))((\w|-){11})|youtube\.com\/playlist\?list=|youtube\.com\/user\//;
+/** Matches YouTube video IDs, find in `[1]` of `url.match(MATCH_ID_YOUTUBE)` return value if defined */
+export const MATCH_ID_YOUTUBE = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|shorts\/|live\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i; // [1] = videoId
 
 /** Matches Vimeo URLs, explicitly ignoring their progressive redirect links */
 export const MATCH_URL_VIMEO = /vimeo\.com\/(?!progressive_redirect).+/;
+/** Matches Vimeo video IDs, find in `[1]` of `url.match(MATCH_ID_VIMEO)` return value if defined; find the hash param in `[2]` */
+export const MATCH_ID_VIMEO = /vimeo\.com\/(?:video\/)?(\d+)(?:\/([\w-]+))?/i;
 
 /** Matches Wistia embeds and medias */
 export const MATCH_URL_WISTIA = /(?:wistia\.(?:com|net)|wi\.st)\/(?:medias|embed)\/(?:iframe\/)?([^?]+)/;

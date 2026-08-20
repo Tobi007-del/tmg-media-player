@@ -1,7 +1,7 @@
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl } from "@utils/dom";
 import { ComponentRegistry } from "@core/registries";
-import type { RangeInput } from "@components/rangeinput";
+import type { RangeInput } from "@components/rangeInput";
 import { parseUIOpts } from "@utils/obj";
 import { SettingsMenuRangeConfig } from "../../types";
 import { fanout } from "sia-reactor/utils";
@@ -12,7 +12,7 @@ export class RangeWidget extends BaseWidget {
   private lastRange!: SettingsMenuRangeConfig;
 
   public override render(): HTMLElement {
-    const comp = ComponentRegistry.init("rangeinput", this.ctlr, this.getConfig());
+    const comp = ComponentRegistry.init("rangeInput", this.ctlr, this.getConfig());
     this.element = createEl("div", { className: "tmg-media-smenu-range-wrapper" });
     this.valueLabel = createEl("span", { className: "tmg-media-smenu-range-value" });
     if (comp) {

@@ -1,11 +1,11 @@
-import { RangeInput, RangeInputDiv, type RangeState } from "@components/rangeinput";
+import { RangeInput, RangeInputDiv, type RangeState } from "@components/rangeInput";
 import type { TimelineConfig } from "./types";
 import type { Controller } from "@core/controller";
 import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { formatMediaTime } from "@utils/time";
 import { IS_MOBILE } from "@utils/env";
-import { getMediaMax, getMediaProgress, getMediaTime } from "@utils/media";
+import { getMediaMax, getMediaProgress, getMediaTime } from "@utils/time";
 import { createEl } from "@utils/dom";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
 import { safeNum } from "@utils/num";
@@ -28,9 +28,6 @@ export class Timeline extends RangeInput<TimelineConfig> {
   protected scrubbingId = -1;
   protected get plug() {
     return this.ctlr.plug("settings.time");
-  }
-  protected getProgress(time: number) {
-    return getMediaProgress(this.media, time);
   }
   protected getTime(percent: number) {
     return getMediaTime(this.media, percent);
@@ -69,7 +66,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     // State Listeners
     this.state.on("scrubbing", this.handleScrubbing, { signal: this.signal });
     this.state.on("previewing", ({ value }) => (value ? (this.media.container.classList.add("tmg-media-previewing"), this.clearCanvasPreviews()) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
-    this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelscrubnotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
+    this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelScrubNotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
     // Config --------
     this.config.on("previewValue", this.syncPreviewText, { init: true, signal: this.signal });
     this.config.on("previews", this.syncPreviews, { init: true, signal: this.signal });
@@ -90,8 +87,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.media.on("status.canSeekLive", ({ value }) => (this.config.readonly = !value && !!this.media.status.isLive), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("settings.metadata.chapterInfo", this.handleMetadataChapterInfoSetting, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("dimensions.object.width", ({ value }) => (this.thumbnailCanvas.width = value), { init: true, signal: this.signal });
-    this.ctlr.state.on("dimensions.object.height", ({ value }) => (this.thumbnailCanvas.height = value), { init: true, signal: this.signal });
+    for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.object.${p}`, ({ value }) => (this.thumbnailCanvas[p] = value), { init: true, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncPreviewText, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.mode", this.syncPreviewText, { signal: this.signal });
@@ -102,7 +98,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
 
   protected handleCurrentTime({ target, rejectable, resolved }: REvent<CtlrMedia, "state.currentTime" | "intent.currentTime">): void {
     if (this.state.scrubbing || (rejectable && !resolved)) return; // shouldn't mind `.scrubbing`; it's binded to `intent.currentTime` but base class `.value` just renders faster
-    if (this.media.state.paused) this.syncValue(false, target.value);
+    this.media.state.paused && this.syncValue(false, target.value);
     this.el.ariaValueText = `${formatMediaTime({ time: target.value, format: "human-long" })} of ${formatMediaTime({ time: this.media.status.duration, format: "human-long" })}`;
   } // !(a full embodiment) for near native range perf but close enough
 
@@ -112,24 +108,15 @@ export class Timeline extends RangeInput<TimelineConfig> {
   }
 
   public syncValue(auto = true, value = this.media.state.currentTime): void {
-    if (auto && !this.ctlr.state.mediaIntersecting) return;
-    if (!this.state.scrubbing) this.config.value = safeNum(this.getProgress(value)) * 100; // (value / safeNum(this.media.status.duration, 60))
+    if ((!auto || this.ctlr.state.mediaIntersecting) && !this.state.scrubbing) this.config.value = safeNum(getMediaProgress(this.media, value)) * 100; // (value / safeNum(this.media.status.duration, 60))
   }
 
   protected handleScrubbing({ value }: REvent<RangeState, "scrubbing">): void {
     this.media.container.classList.toggle("tmg-media-scrubbing", value);
-    if (!value) {
-      this.config.autopause && silence(() => (this.media.intent.paused = this.wasPaused));
-      cancelAnimationFrame(this.scrubbingId);
-      this.ctlr.plug("settings.notifiers")?.comp("scrubnotifier")?.inactive();
-    } else {
-      this.wasPaused = this.media.state.paused;
-      this.scrubbingId = requestAnimationFrame(() => {
-        this.config.autopause && silence(() => (this.media.intent.paused = true));
-        IS_MOBILE && this.ctlr.plug("settings.notifiers")?.comp("scrubnotifier")?.active();
-      }, this.signal);
-      this.clearCanvasPreviews();
-    }
+    if (!value) return this.config.autopause && silence(() => (this.media.intent.paused = this.wasPaused)), cancelAnimationFrame(this.scrubbingId), this.ctlr.plug("settings.notifiers")?.comp("scrubNotifier")?.inactive();
+    this.wasPaused = this.media.state.paused;
+    this.scrubbingId = requestAnimationFrame(() => (this.config.autopause && silence(() => (this.media.intent.paused = true)), IS_MOBILE && this.ctlr.plug("settings.notifiers")?.comp("scrubNotifier")?.active()), this.signal);
+    this.clearCanvasPreviews();
   }
 
   protected handleMetadataChapterInfoSetting({ currentTarget: { value } }: REvent<CtlrMedia, "settings.metadata.chapterInfo">): void {
@@ -212,8 +199,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
   protected override syncMarks(marks = this.config.marks, extras = false): void {
     if (extras && !this.ctlr.payload.wired) return;
     const agg = [...marks],
-      buf = this.media.status.buffered,
-      ply = this.media.status.played,
+      { buffered: buf, played: ply } = this.media.status,
       max = getMediaMax(this.media) || 1;
     if (this.config.bufferMarks)
       for (let i = 0, len = buf.length; i < len; i++) {

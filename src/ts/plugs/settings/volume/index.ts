@@ -5,14 +5,13 @@ import type { Controller } from "@core/controller";
 import { REvent, TERMINATOR } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { clamp } from "@utils/num";
-import { AUDIO_CONTEXT, connectToAudioManager } from "@tools/runtime";
+import { AUDIO_CONTEXT, connectToAudioManager, disconnectFromAudioManager } from "@tools/runtime";
 import { KeyMod } from "../keys";
 
 export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   public static readonly plugName = "volume";
   public static readonly BUILD = VOLUME_BUILD;
   protected shadowVolume?: number;
-  protected audioSetup = false;
   protected gainNode?: GainNode | null;
   protected get ctime(): number {
     return AUDIO_CONTEXT?.currentTime ?? 0;
@@ -22,7 +21,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   }
 
   constructor(ctlr: Controller, config = ctlr.settings.volume) {
-    super(ctlr, config, { aptValue: 0 });
+    super(ctlr, config, { aptValue: 0, audioSetup: false });
     // this.sliderAptValue = 5; // old yt mime
   }
 
@@ -34,7 +33,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     // Variables Assignment
     const volume = this.media.intent.volume ?? this.media.state.volume;
     this.state.aptValue = clamp(this.config.min, volume, this.config.max);
-    this.shouldToggle = this.shouldSetAptValue = this.media.state.muted ?? false;
+    this.shouldToggle = this.useAptValue = this.media.state.muted ?? false;
     this.media.intent.volume = this.shouldToggle ? 0 : this.state.aptValue;
     // Event Listeners
     this.media.element.addEventListener("volumechange", this.handleNativeVolumeChange, { capture: true, signal: this.signal }), this.handleNativeVolumeChange();
@@ -51,9 +50,9 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     this.ctlr.config.on("settings.volume.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.volume.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("mute", { fn: this.handleKeyMute, keyboard: { phase: "keyup" } });
-    this.ctlr.registerAction("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("volumeDown", { fn: this.handleKeyVolumeDown, keyboard: { phase: "keydown" } });
+    this.ctlr.addAction("mute", { fn: this.handleKeyMute, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.addAction("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.addAction("volumeDown", { fn: this.handleKeyVolumeDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -78,14 +77,14 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
 
   protected handleKeyMute(): void {
     this.toggle("auto");
-    this.media.features.volume && this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumemuted" : "volumedown"), { signal: this.signal });
+    this.media.features.volume && this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
   }
   protected handleKeyVolumeUp(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip);
   }
   protected handleKeyVolumeDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip));
-    if (this.media.features.volume) !this.media.state.volume ? this.ctlr.plug("settings.notifiers")?.notify("volumemuted") : this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumemuted" : "volumedown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.volume) !this.media.state.volume ? this.ctlr.plug("settings.notifiers")?.notify("volumeMuted") : this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
   }
 
   protected handleNativeVolumeChange(): void {
@@ -93,17 +92,18 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   }
 
   protected connectAudio(): void {
-    if (this.audioSetup || connectToAudioManager(this.media.element) === "unavailable") return;
+    if (this.state.audioSetup || connectToAudioManager(this.media.element) === "unavailable") return;
     this.gainNode = this.media.element._tmgGainNode;
     const DCN = this.media.element._tmgDynamicsCompressorNode;
     if (DCN) (DCN.threshold.value = -30), (DCN.knee.value = 20), (DCN.ratio.value = 12), (DCN.attack.value = 0.003), (DCN.release.value = 0.25);
-    this.audioSetup = true;
-    if (this.ctlr.isNativeEl) this.gainNode?.gain.setTargetAtTime((this.media.state.volume / 100) * 2, this.ctime, 0.05);
+    this.state.audioSetup = true;
+    this.ctlr.isNativeEl && this.gainNode?.gain.setTargetAtTime((this.media.state.volume / 100) * 2, this.ctime, 0.05);
   }
   protected disconnectAudio(): void {
-    this.media.element.volume = clamp(0, ((this.gainNode?.gain?.value ?? 2) / 2) * 100, 1);
-    this.media.element.mediaElementSourceNode?.disconnect(), this.gainNode?.disconnect();
-    this.audioSetup = false;
+    if (!this.state.audioSetup) return;
+    this.media.element.volume = clamp(0, (this.gainNode?.gain?.value ?? 2) / 2, 1);
+    disconnectFromAudioManager(this.media.element);
+    this.state.audioSetup = false;
   }
 
   protected override onDestroy(): void {

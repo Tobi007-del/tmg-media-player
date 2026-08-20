@@ -24,6 +24,7 @@ const bbStore = {
     },
   },
 };
+
 class Boombox {
   get settings() {
     return this.store.audio.settings;
@@ -35,14 +36,13 @@ class Boombox {
     return this.bbSens.overflow * this.store.transform.translate.z; // Since OffsetWidth doesn't  with transform, we have to account for it
   }
   constructor() {
-    tmg.bindAllMethods(this);
-    // tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
-    tmg.loadResource("/sia-reactor/src/css/time-travel-console.css");
-    this.store = window.bbStore = tmg.reactive(structuredClone(bbStore));
-    window.TTM = new tmg.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
-    window.PMP = new tmg.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new tmg.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150, blacklist: ["audio.intent", "audio.state.paused"] }).attach(TTM.state, "timeTravel.state");
+    tmg.utils.bindAllMethods(this);
+    tmg.utils.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
+    this.store = window.bbStore = sia.reactive(structuredClone(bbStore));
+    window.TTM = new sia.modules.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
+    window.PMP = new sia.modules.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new sia.modules.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150, blacklist: ["audio.intent", "audio.state.paused"] }).attach(TTM.state, "timeTravel.state");
     this.store.use(PMP, "app"), PMP.state.once("hydrated", () => this.store.use(TTM));
-    window.TTC = new tmg.TimeTravelConsole(window.TTM, { title: `NINO's Boombox Tape` });
+    window.TTC = new sia.adapters.vanilla.TimeTravelConsole(window.TTM, { title: `NINO's Boombox Tape` });
     this.media = new Audio("/tmg-media-player/assets/media/Subway-Surfers-Theme-Sound-Effect.mp3");
     this.media.loop = true;
     this.bbSens = { translate: 1.2, rotate: 0.6, zoom: 2.4, overflow: 70 }; // S.I.A. configuration
@@ -81,7 +81,7 @@ class Boombox {
     this.store.on("transform", this.handleTransform, { init: true });
     this.store.set("transform.x", this.setTransformX); // UI Guard: prevents out of bounds behaviour with respect to overflow
     this.store.set("transform.y", this.setTransformY); // UI Guard: ---------------------------------------------------------
-    this.store.set("transform.z", (v) => tmg.clamp(0.1, v, 2)); // UI Guard: We clamp it at 0.1 so it can never pass through the listener's head.
+    this.store.set("transform.z", (v) => tmg.utils.clamp(0.1, v, 2)); // UI Guard: We clamp it at 0.1 so it can never pass through the listener's head.
     // DOM Listeners
     this.media.addEventListener("play", () => (this.store.audio.state.paused = false)); // dummy cuz real system handles this elsewhere, S.I.A solved state sync wars after all
     this.media.addEventListener("pause", () => (this.store.audio.state.paused = true)); // dummy
@@ -155,7 +155,7 @@ class Boombox {
     this.panner.connect(this.stereoPanner);
     this.stereoPanner.connect(this.analyser);
     // We connect back to TVP's limiter so we don't blow out the user's speakers
-    this.analyser.connect(tmg._limiter);
+    this.analyser.connect(tmg.AUDIO_LIMITER);
   }
   handleColor(color) {
     document.documentElement.style.setProperty("--brand", (window.TTC.config.color = color.toLowerCase()));
@@ -170,7 +170,7 @@ class Boombox {
   }
   onVolume(value) {
     this.gainer?.gain.setTargetAtTime((value / 100) * 2, this.ctime, 0.02); // dummy: doubling for dat anroid feel btw, real one does it too
-    tmg.silence(() => (this.settings.volume.muted = value === 0));
+    sia.inert(() => (this.settings.volume.muted = value === 0));
     // this.ctlr.media.intent.volume = value; // real
   }
   handleVolume({ value }) {
@@ -187,8 +187,8 @@ class Boombox {
   onMuted(muted) {
     if (muted) {
       this.lastVolume = this.settings.volume.value;
-      tmg.silence(() => (this.settings.volume.value = 0));
-    } else if (tmg.isValidNum(this.lastVolume)) tmg.silence(() => (this.settings.volume.value = this.lastVolume)); // dummy
+      sia.inert(() => (this.settings.volume.value = 0));
+    } else if (tmg.utils.isSafeNum(this.lastVolume)) sia.inert(() => (this.settings.volume.value = this.lastVolume)); // dummy
     // this.ctlr.media.intent.muted = muted; // real
   }
   handleMuted({ value: muted }) {
@@ -201,8 +201,8 @@ class Boombox {
   handleBoost({ value: boost }) {
     if (!boost) {
       this.lastMax = this.settings.volume.max;
-      tmg.silence(() => (this.settings.volume.max = tmg.clamp(this.settings.volume.min, this.settings.volume.max, boost ? Infinity : 100)));
-    } else if (tmg.isValidNum(this.lastMax)) tmg.silence(() => (this.settings.volume.max = this.lastMax)); // dummy
+      sia.inert(() => (this.settings.volume.max = tmg.utils.clamp(this.settings.volume.min, this.settings.volume.max, boost ? Infinity : 100)));
+    } else if (tmg.utils.isValidNum(this.lastMax)) sia.inert(() => (this.settings.volume.max = this.lastMax)); // dummy
     // no real yet but likely same
     this.boostBtn.classList.toggle("activated", boost);
   }
@@ -253,7 +253,7 @@ class Boombox {
       growth = (r.width * this.store.transform.translate.z - r.width) / 2,
       limLeft = Math.max(0, ((r.left - b.left - growth) / r.width) * 100) + this.bbOverflow,
       limRight = Math.max(0, ((b.right - r.right - growth) / r.width) * 100) + this.bbOverflow;
-    return tmg.clamp(-limLeft, v, limRight);
+    return tmg.utils.clamp(-limLeft, v, limRight);
   }
   setTransformY(v) {
     if (!this.bbEl) return v;
@@ -261,12 +261,12 @@ class Boombox {
       growth = (r.height * this.store.transform.translate.z - r.height) / 2,
       limUp = Math.max(0, ((r.top - b.top - growth) / r.height) * 100) + this.bbOverflow,
       limDown = Math.max(0, ((b.bottom - r.bottom - growth) / r.height) * 100) + this.bbOverflow;
-    return tmg.clamp(-limUp, v, limDown);
+    return tmg.utils.clamp(-limUp, v, limDown);
   }
   resetPos(e) {
     this.bbBody.style.transition = "transform 0.8s cubic-bezier(0.1, 0, 0, 1)"; // Adds a snnapy transition for the reset
     this.bbBody.ontransitionend = () => this.bbBody.style.removeProperty("transition");
-    tmg.fanout(this.store.transform, bbStore.transform); // Smoothly reset the state to the defaults
+    sia.utils.fanout(this.store.transform, bbStore.transform); // Smoothly reset the state to the defaults
     this.eS = { lastX: 0, lastY: 0, isZSliding: false, auxDown: false }; // Reset the event store to prevent jumps
   }
   startVibing() {

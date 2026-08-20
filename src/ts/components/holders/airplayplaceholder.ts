@@ -6,12 +6,12 @@ import { formatActionForDisplay } from "@utils/keys";
 export type AirPlayPlaceholderConfig = undefined;
 
 export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "airplayplaceholder";
+  public static readonly componentName = "airplayPlaceholder";
   protected iconBtn!: HTMLButtonElement;
 
   public override create() {
     this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-airplay-placeholder", innerHTML: `<p>Streaming to AirPlay Display</p>` });
-    this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-airplay-icon-btn", innerHTML: IconRegistry.get("airplayplaceholder") });
+    this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-airplay-icon-btn", innerHTML: IconRegistry.get("airplayPlaceholder") });
     return this.el.prepend(this.iconBtn), this.el;
   }
 
@@ -25,6 +25,7 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
     this.iconBtn.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.keys.shortcuts.airplay", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.airplay", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -33,7 +34,7 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.airplay ? "Stop airplaying" : "AirPlay to Display";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.airplay));
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.airplay), (this.state.voiceCommand = this.settings.voice.commands.airplay));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }
@@ -41,6 +42,6 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    airplayplaceholder: typeof AirPlayPlaceholder;
+    airplayPlaceholder: typeof AirPlayPlaceholder;
   }
 }

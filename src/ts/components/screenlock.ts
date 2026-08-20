@@ -5,7 +5,7 @@ import { createEl } from "@utils/dom";
 export type ScreenLockConfig = undefined;
 
 export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "screenlock";
+  public static readonly componentName: string = "screenLock";
   protected get plug() {
     return this.ctlr.plug("settings.locked");
   }
@@ -46,6 +46,6 @@ export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentS
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    screenlock: typeof ScreenLockButton;
+    screenLock: typeof ScreenLockButton;
   }
 }

@@ -16,7 +16,7 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   public container!: HTMLDivElement;
 
   constructor(ctlr: Controller, config = ctlr.settings.notifiers) {
-    super(ctlr, config, { events: [] }); // ["mediaplay", "mediapause", "mediaprevious", "medianext", "playbackrateup", "playbackratedown", "volumeup", "volumedown", "volumemuted", "brightnessup", "brightnessdown", "brightnessdark", "objectfitcontain", "objectfitcover", "objectfitfill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd", "chapter", "timer"]
+    super(ctlr, config, { events: [] }); // ["mediaPlay", "mediaPause", "mediaPrevious", "mediaNext", "playbackRateUp", "playbackRateDown", "volumeUp", "volumeDown", "volumeMuted", "brightnessUp", "brightnessDown", "brightnessDark", "objectFitContain", "objectFitCover", "objectFitFill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd", "chapter", "timer"]
   }
 
   public override mount(): void {

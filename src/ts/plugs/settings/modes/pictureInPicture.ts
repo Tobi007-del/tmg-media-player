@@ -10,7 +10,7 @@ import { createEl, loadResource, observeMutation, supportsPictureInPicture } fro
 import { mockAsync, breath } from "@utils/fn";
 import { isStr } from "@utils/obj";
 import { isSameURL } from "@utils/str";
-import { PiPPlaceholder } from "@components/holders/pipplaceholder";
+import { PiPPlaceholder } from "@components/holders/pipPlaceholder";
 import { ComponentRegistry } from "@core/registries";
 import { silence } from "sia-reactor/modules";
 
@@ -24,13 +24,13 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
   public floatingWindow: (Window & typeof globalThis) | null = null;
   protected placeholder: PiPPlaceholder | null = null;
   protected pseudoPlaceholder: PiPPlaceholder | null = null;
-  public whitelist: string[] = [];
-  public blacklist: string[] = [];
+  public whitelist = { url: [] as string[], token: [":root", "tmg", "t007", "sia"] }; // #DEFAULT: build privilege
+  public blacklist = { url: [] as string[], token: [] as string[] };
 
   public override mount(): void {
     // Utility Injection
-    this.placeholder = ComponentRegistry.init("pipplaceholder", this.ctlr);
-    if ((window as any).documentPictureInPicture) this.pseudoPlaceholder = ComponentRegistry.init("pipplaceholder", this.ctlr);
+    this.placeholder = ComponentRegistry.init("pipPlaceholder", this.ctlr);
+    if ((window as any).documentPictureInPicture) this.pseudoPlaceholder = ComponentRegistry.init("pipPlaceholder", this.ctlr);
     this.placeholder?.mount(), this.pseudoPlaceholder && this.media.pseudoContainer.prepend(this.pseudoPlaceholder.el);
   }
 
@@ -45,7 +45,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.ctlr.config.on("settings.modes.pictureInPicture.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.modes.pictureInPicture.floatingPlayer.disabled", this.handleDisabled, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("pictureInPicture", { keyboard: { phase: "keyup" } });
+    this.ctlr.addAction("pictureInPicture", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.pictureInPicture.disabled" | "settings.modes.pictureInPicture.floatingPlayer.disabled">): void {
@@ -88,18 +88,16 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.floatingWindow!.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
     await breath(this.floatingWindow!); // rendering style to keep UI visible during heavy lifting
     const cssTexts = [],
-      parse = (src: any) => (isStr(src) ? src : null),
-      whitelist = this.whitelist.concat([parse(window.TMG_MEDIA_CSS_SRC), parse(window.T007_TOAST_CSS_SRC), parse(window.T007_INPUT_CSS_SRC), parse(window.T007_DIALOG_CSS_SRC)].filter(Boolean) as string[]); // CSS too experimental; needs a link (href) :)
-    for (const sheet of document.styleSheets) {
+      hreflist = this.whitelist.url.concat([window.TMG_MEDIA_CSS_SRC, window.T007_TOAST_CSS_SRC, window.T007_INPUT_CSS_SRC, window.T007_DIALOG_CSS_SRC].filter((src) => (isStr(src) ? src : false)) as string[]); // CSS too experimental; needs a link (href) :)
+    for (const sht of document.styleSheets) {
       try {
-        const nope = (src: string) => isSameURL(src, sheet.href);
-        if (!whitelist.some(nope) && !this.blacklist.some(nope)) for (const cssRule of sheet.cssRules) if ((cssRule as CSSStyleRule).selectorText?.includes(":root") || cssRule.cssText.includes("tmg") || cssRule.cssText.includes("t007")) cssTexts.push(cssRule.cssText);
+        if (!hreflist.some((s = "") => isSameURL(s, sht.href)) && !this.blacklist.url.some((s = "") => isSameURL(s, sht.href))) for (const { cssText: txt } of sht.cssRules) this.whitelist.token.some((t) => txt.includes(t)) && !this.blacklist.token.some((t) => txt.includes(t)) && cssTexts.push(txt);
       } catch {
         continue;
       }
     }
     this.floatingWindow!.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
-    await Promise.all(whitelist.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
+    await Promise.all(hreflist.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
     this.ctlr.plug("skeleton")?.enterPseudoMode();
     this.media.container.classList.add("tmg-media-floating-player", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-in-floating-player");
     this.floatingWindow!.document.body.append(this.media.container);

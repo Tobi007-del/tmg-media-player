@@ -31,8 +31,7 @@ export function getBigRamSimilarity(target: string, spoken: string): number {
   for (let i = 0; i < target.length - 1; i++) {
     const bigram = target.substring(i, i + 2);
     if (spoken.includes(bigram)) matches++;
-  }
-  // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${matches} / ${target.length - 1} = ${matches / (target.length - 1)}`);
+  } // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${matches} / ${target.length - 1} = ${matches / (target.length - 1)}`);
   return matches / (target.length - 1); // Returns a score from 0.0 to 1.0 (e.g., 0.85 = 85% match)
 }
 
@@ -48,8 +47,7 @@ export function getLevenshteinSimilarity(target: string, spoken: string): number
       curr[j + 1] = Math.min(curr[j] + 1, prev[j + 1] + 1, prev[j] + (target[i] === spoken[j] ? 0 : 1));
     }
     prev = curr;
-  }
-  // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${prev[sLen]} / ${Math.max(tLen, sLen)} = ${1 - prev[sLen] / Math.max(tLen, sLen)}`);
+  } // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${prev[sLen]} / ${Math.max(tLen, sLen)} = ${1 - prev[sLen] / Math.max(tLen, sLen)}`);
   return 1 - prev[sLen] / Math.max(tLen, sLen);
 }
 

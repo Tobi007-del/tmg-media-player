@@ -3,8 +3,8 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class PlayPauseNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "playpausenotifier";
-  public static readonly triggers = ["mediaplay", "mediapause"];
+  public static readonly componentName = "playPauseNotifier";
+  public static readonly triggers = ["mediaPlay", "mediaPause"];
   public playDiv!: HTMLDivElement;
   public pauseDiv!: HTMLDivElement;
 
@@ -17,6 +17,6 @@ export class PlayPauseNotifier extends BaseNotifier<undefined, ComponentState, H
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    playpausenotifier: typeof PlayPauseNotifier;
+    playPauseNotifier: typeof PlayPauseNotifier;
   }
 }

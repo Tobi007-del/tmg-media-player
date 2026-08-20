@@ -1,4 +1,5 @@
 import { BaseMenuPanel } from ".";
+import { SettingsMenu } from "../";
 import type { SettingsMenuItem, SettingsMenuConfig, SettingsRowElement } from "../../types";
 import { createEl, createListRenderer } from "@utils/dom";
 import { WidgetRegistry } from "../widgets";
@@ -18,6 +19,9 @@ export class MainMenuPanel extends BaseMenuPanel {
   }
 
   protected override onSetup() {}
+  protected override onDestroy() {
+    this.renderRows?.([]);
+  }
 
   public build(): void {
     const list = createEl("ul", { className: "tmg-media-smenu-main-list", role: "menu" });
@@ -29,7 +33,7 @@ export class MainMenuPanel extends BaseMenuPanel {
     });
     this.content.append(list);
     if (this.menuConfig.showView) {
-      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnback")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
+      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
       this.viewBtn.addEventListener("click", () => this.onViewClick?.()), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
       this.ctlr.plug("settings.settingsView")?.state.on("viewOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
     }
@@ -42,7 +46,7 @@ export class MainMenuPanel extends BaseMenuPanel {
     super.enter(dir), this.focusFirst();
   }
   private focusFirst(): void {
-    requestAnimationFrame(() => this.element.querySelector<HTMLElement>(".tmg-media-smenu-row[tabindex='0']")?.focus(), this.ctlr.signal);
+    requestAnimationFrame(() => this.element.querySelector<HTMLElement>(SettingsMenu.focusSelector)?.focus(), this.ctlr.signal);
   }
 
   private buildRow(item: SettingsMenuItem): HTMLElement {
@@ -67,8 +71,8 @@ export class MainMenuPanel extends BaseMenuPanel {
       } else li.append(lbl);
     } else {
       const value = item.getValue?.(),
-        opts = ["select", "drag-select"].includes(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
-        badge = parseUIBadge(item.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+        opts = /^(select|drag-select)$/.test(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
+        badge = parseUIBadge(item.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
         val = createEl("span", { className: "tmg-media-smenu-row-value" });
       if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
       val.append(createEl("span", { className: "tmg-media-smenu-text", textContent: Array.isArray(value) ? value.join(", ") : value || "" }));
@@ -83,8 +87,8 @@ export class MainMenuPanel extends BaseMenuPanel {
         const ac = new AbortController(),
           syncUI = () => {
             const value = item.getValue?.(),
-              opts = ["select", "drag-select"].includes(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
-              badge = parseUIBadge(item.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+              opts = /^(select|drag-select)$/.test(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
+              badge = parseUIBadge(item.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
               valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-value"),
               lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-label");
             if (lblNode) {

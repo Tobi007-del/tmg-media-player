@@ -16,11 +16,11 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   public static readonly plugName = "auto";
   public static readonly BUILD = AUTO_BUILD;
   protected nextPreview: HTMLVideoElement | null = null;
-  protected canAutoMovePlaylist = true;
+  protected canMovePlaylist = true;
 
   public override wire(): void {
     // Plug Watchers
-    this.ctlr.plug("playlist")?.state.watch("currentIndex", () => (this.canAutoMovePlaylist = true), { signal: this.signal });
+    this.ctlr.plug("playlist")?.state.watch("currentIndex", () => ((this.canMovePlaylist = true), this.nextClup?.()), { signal: this.signal });
     // Ctlr Config Watchers
     this.ctlr.config.watch("settings.auto.play.value", (value) => silence(() => (this.media.intent.autoplay = value === true)), { init: "auto", signal: this.signal });
     // ---- Media Listeners
@@ -73,8 +73,8 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   }
 
   protected autonextMedia(): void {
-    if (!this.canAutoMovePlaylist || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.value < 0 || this.ctlr.plug("playlist")!.state.currentIndex >= this.ctlr.config.playlist.content.length - 1 || this.media.state.paused || this.media.status.waiting) return;
-    this.canAutoMovePlaylist = false;
+    if (!this.canMovePlaylist || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.value < 0 || this.ctlr.plug("playlist")!.state.currentIndex >= this.ctlr.config.playlist.content.length - 1 || this.media.state.paused || this.media.status.waiting) return;
+    this.canMovePlaylist = false;
     const count = clamp(1, Math.round(safeNum(this.settings.time.end ?? this.media.status.duration) - safeNum(this.media.state.currentTime)), this.config.next.value / 1000),
       m = this.ctlr.config.playlist.content[this.ctlr.plug("playlist")!.state.currentIndex + 1].media,
       type = m.intent.src && AUDIO_EXTENSIONS.test(m.intent.src) ? "audio" : "video";
@@ -93,17 +93,19 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       tag: "tmg-anvi",
       signal: this.signal,
     });
-    const cleanUp = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextPreview = null), (this.canAutoMovePlaylist = !permanent)),
-      strictCleanUp = () => !this.media.status.ended && cleanUp(),
-      autoCleanUp = () => Math.floor(safeNum((this.settings.time.end ?? this.media.status.duration) - this.media.state.currentTime)) > this.config.next.value / 1000 && cleanUp(),
-      removeListeners = () => this.autonextPaths.forEach((e) => this.media.off(e, e === this.autonextPaths[0] ? autoCleanUp : strictCleanUp));
-    for (const e of this.autonextPaths) this.media.on(e, e === this.autonextPaths[0] ? autoCleanUp : strictCleanUp, { signal: this.signal });
+    const clup = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextClup = this.nextPreview = null), (this.canMovePlaylist = !permanent)),
+      autoClup = () => Math.floor(safeNum((this.settings.time.end ?? this.media.status.duration) - this.media.state.currentTime)) > this.config.next.value / 1000 && clup();
+    this.nextClup = () => !this.media.status.ended && clup();
+    const removeListeners = () => this.autonextPaths.forEach((e) => this.media.off(e, e.endsWith("Time") ? autoClup : this.nextClup!));
+    for (const e of this.autonextPaths) this.media.on(e, e.endsWith("Time") ? autoClup : this.nextClup, { signal: this.signal });
     const nVP = type === "video" ? (this.nextPreview = this.ctlr.queryDOM<HTMLVideoElement>(".tmg-media-next-preview"))! : null;
     if (nVP && m.intent.sources?.length) addSources(m.intent.sources, nVP);
-    for (const e of ["loadedmetadata", "loaded", "durationchange"] as const) nVP?.addEventListener(e, ({ target: p }) => ((p as HTMLVideoElement).nextElementSibling!.textContent = this.ctlr.plug("settings.time")?.toTimeText((p as HTMLVideoElement).duration) ?? "-:--"), { signal: this.signal });
+    if (nVP && m.status.duration) nVP.nextElementSibling!.textContent = this.ctlr.plug("settings.time")?.toTimeText(m.status.duration) ?? "-:--";
+    else for (const e of ["loadedmetadata", "durationchange"] as const) nVP?.addEventListener(e, ({ target: p }) => ((p as HTMLElement).nextElementSibling!.textContent = this.ctlr.plug("settings.time")?.toTimeText((p as HTMLVideoElement).duration) ?? "-:--"), { signal: this.signal });
+    nVP?.previousElementSibling!.addEventListener("click", () => (clup(true), this.ctlr.plug("playlist")?.next()), { capture: true, signal: this.signal });
     this.config.next.preview.usePoster = this.config.next.preview.usePoster; // force update
-    nVP?.previousElementSibling?.addEventListener("click", () => (cleanUp(true), this.ctlr.plug("playlist")?.next()), { capture: true, signal: this.signal });
   }
+  private nextClup?: (() => void) | null;
   private autonextPaths = ["state.currentTime", "state.paused", "status.waiting"] as const;
   private get usingPreviewPoster(): boolean {
     return !!this.nextPreview?.poster && !isSameURL(this.nextPreview.poster, window.TMG_MEDIA_ALT_IMG_SRC);

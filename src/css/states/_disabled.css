@@ -15,42 +15,25 @@
   opacity: 0.75;
   cursor: default;
 }
-.tmg-media-container:is(.tmg-media-inactive, .tmg-media-disabled, #o#o#o#o#o) {
+.tmg-host-container:is(.tmg-media-inactive, .tmg-media-disabled, #o#o#o#o#o) {
   --tmg-media-control-color: var(--tmg-media-disabled-color); /* --tmg-media-text-color: var(--tmg-media-disabled-color); */
 }
-.tmg-media-container:is(.tmg-media-disabled, .tmg-media-locked, #o#o#o#o#o) {
+.tmg-host-container:is(.tmg-media-disabled, .tmg-media-locked, #o#o#o#o#o) {
   overflow: hidden;
 }
-.tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) {
+.tmg-host-container:is(.tmg-media-disabled, #o#o#o#o#o) {
   cursor: not-allowed;
 }
-.tmg-media-container.tmg-media-disabled *,
-.tmg-media-container:is(.tmg-media-locked, #o#o#o#o#o) > *:not(.tmg-media-screen-locked-wrapper, [class$="toast-container"]) {
+.tmg-host-container.tmg-media-disabled *,
+.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) > *:not(.tmg-media-screen-locked-wrapper, [class$="toast-container"]) {
   pointer-events: none !important;
 }
-.tmg-media-container.tmg-media-disabled * {
+.tmg-host-container.tmg-media-disabled * {
   animation: none !important;
 }
-.tmg-media-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
+.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
   display: none;
 }
-.tmg-media-container:is(.tmg-media-disabled, #o#o#o#o#o) :is(.tmg-media, .tmg-media-filtered) {
+.tmg-host-container:is(.tmg-media-disabled, #o#o#o#o#o) :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-filter) grayscale(100%);
-}
-.tmg-media-container:is(.tmg-media-inactive, #o#o#o#o#o) .tmg-media-container-content::after {
-  content: attr(data-message);
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: var(--tmg-media-danger-color);
-  font-size: calc(var(--tmg-media-current-unit) / 1.15);
-  font-weight: 500;
-  text-align: center;
-  opacity: 0.95;
-  padding: calc(var(--tmg-media-current-unit) / 2);
-  background: var(--tmg-media-disabled-background);
-  pointer-events: none;
 }

@@ -39,6 +39,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                 return opts.find((o) => o.value === (plug.media.state.autoFullscreenOrientation ? "auto" : plug.media.state.fullscreenOrientation))?.display || "";
               },
               mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
+              onWire: (syncUI, signal) => plug.ctlr.state.on("screenOrientation.type", syncUI, { signal }),
               items: [
                 {
                   id: "modesFullscreenOrientationSelect",
@@ -48,13 +49,14 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   inline: true,
                   getValue: () => (plug.media.state.autoFullscreenOrientation ? "auto" : String(plug.media.state.fullscreenOrientation)),
                   getOptions: () =>
-                    plug.config.fullscreen.orientation.options!.map((o, _, __, opt = parseUIOpt(o)) => {
-                      if (opt.value !== "auto" || !plug.media.state.autoFullscreenOrientation) return opt;
-                      const curr = plug.config.fullscreen.orientation.options!.map(parseUIOpt).find((o) => o.value === plug.media.state.fullscreenOrientation)?.display || "";
-                      return { ...opt, display: `Auto${curr ? ` (${curr})` : ""}` };
+                    plug.config.fullscreen.orientation.options!.map((o, _, __, opt = parseUIOpt(o), d = "") => {
+                      if (opt.value === "auto" && plug.media.state.autoFullscreenOrientation) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.media.state.fullscreenOrientation && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                      if (opt.value === false) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.ctlr.state.screenOrientation.type && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                      return opt;
                     }),
                   onChange: (val: string) => (val === "auto" ? (plug.media.intent.autoFullscreenOrientation = true) : (plug.media.intent.fullscreenOrientation = val as typeof plug.media.intent.fullscreenOrientation)),
                   mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
+                  onWire: (syncUI, signal) => plug.ctlr.state.on("screenOrientation.type", syncUI, { signal }),
                   getTipHTML: () => "Lock the device orientation to a specific layout when entering fullscreen",
                 },
                 {
@@ -127,7 +129,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   getValue: () => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener ? "On" : "Off"),
                   onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener = val),
                   configPaths: ["settings.modes.pictureInPicture.floatingPlayer.disallowReturnToOpener"],
-                  title: "Hide the 'Back to Tab' button in the floating window",
+                  title: "Hide the 'Back to tab' button in the floating window on next open",
                 },
                 {
                   id: "modesPipFloatingPreferInitial",
@@ -136,7 +138,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   getValue: () => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement ? "On" : "Off"),
                   onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement = val),
                   configPaths: ["settings.modes.pictureInPicture.floatingPlayer.preferInitialWindowPlacement"],
-                  title: "Try to open the floating window in the same screen position it was previously closed",
+                  title: "Don't open the floating window in the same screen position & size it was previously closed",
                 },
                 {
                   id: "modesPipFloatingWidth",

@@ -1,6 +1,11 @@
 .tmg-media-timeline-container {
   inline-size: calc(100% - var(--tmg-media-current-safe-inset-x));
   z-index: 3;
+  --cmptd-bars-scale: 1.5;
+  --cmptd-thumb-scale: 1.12;
+}
+.tmg-media-mobile .tmg-media-timeline-container {
+  --cmptd-thumb-scale: 1.3;
 }
 .tmg-media-container:not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar .tmg-media-timeline-container,
 .tmg-host-container[data-size-tier^="xxxxx"] .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-container {
@@ -44,7 +49,9 @@
 }
 .tmg-media-timeline-thumb {
   background: var(--tmg-media-timeline-thumb-background);
-  transform: scale(var(--tmg-media-current-timeline-thumb-scale));
+}
+.tmg-media-container:is([data-timeline-thumb="false"], [data-timeline-thumb="auto"]:has(.tmg-media-timeline-container:not(:hover, :focus-visible)), :not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar) .tmg-media-timeline-thumb {
+  transform: scale(0);
 }
 .tmg-media-range-buffered-mark {
   background: var(--tmg-media-timeline-buffered-mark-background);

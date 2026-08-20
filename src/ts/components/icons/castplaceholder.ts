@@ -1,4 +1,4 @@
-export const castplaceholder = `<svg class="tmg-media-cast-placeholder-icon" viewBox="0 0 73 73">
+export const castPlaceholder = `<svg class="tmg-media-cast-placeholder-icon" viewBox="0 0 73 73">
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
     <g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-media-cast-icon-background">
       <rect x="-1" y="-1" width="71" height="71" rx="14" />
@@ -17,6 +17,6 @@ export const castplaceholder = `<svg class="tmg-media-cast-placeholder-icon" vie
 
 declare module "@defs/registries" {
   interface IconRegistryMap {
-    castplaceholder: typeof castplaceholder;
+    castPlaceholder: typeof castPlaceholder;
   }
 }

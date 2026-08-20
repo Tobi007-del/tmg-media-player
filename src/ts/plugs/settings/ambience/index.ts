@@ -20,7 +20,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   private posterSeq = 0;
 
   constructor(ctlr: Controller, config = ctlr.settings.ambience) {
-    super(ctlr, config, { snubbingAmbienceIntent: false });
+    super(ctlr, config, { snubbingAmbience: false });
   }
 
   public override mount(): void {
@@ -39,7 +39,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     // Plug Listeners
     this.ctlr.plug("settings.poster")?.state.on("visible", ({ value }) => value && this.syncGlow(true), { signal: this.signal });
     // State Listeners
-    this.state.on("snubbingAmbienceIntent", ({ value }) => this.syncDisplay(!value), { signal: this.signal });
+    this.state.on("snubbingAmbience", ({ value }) => this.syncDisplay(!value), { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // --------- Listeners
@@ -49,8 +49,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.media.on("state.currentTime", this.pulseGlow, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("state.poster", this.syncFeatures, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State ---------
-    this.ctlr.state.on("dimensions.container.width", this.syncSize, { init: true, signal: this.signal });
-    this.ctlr.state.on("dimensions.container.height", this.syncSize, { signal: this.signal });
+    for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSize, { init: p === "width", signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.ambience.opacity", this.syncFilter, { init: true, signal: this.signal });
     // Post Wiring
@@ -58,7 +57,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   }
 
   protected handleAmbienceIntent(e: REvent<CtlrMedia, "intent.ambience">): void {
-    if ((this.state.snubbingAmbienceIntent = !!e.resolved)) return;
+    if ((this.state.snubbingAmbience = !!e.resolved)) return;
     this.syncDisplay(e.value);
     this.media.state.ambience = e.value;
     e.resolve(this.name);
@@ -68,7 +67,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.canPulse && this.ctlr.throttle("ambienceGlowing", this.syncGlow, this.config.refresh.interval, false, this.signal);
   }
   protected syncGlow(usePoster = !this.canPulse || !!this.ctlr.plug("settings.poster")?.state.visible, flush = usePoster): void {
-    if (this.state.snubbingAmbienceIntent || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.context) return;
+    if (this.state.snubbingAmbience || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.context) return;
     (this.context.globalAlpha = flush ? 1.0 : this.config.refresh.smoothness), flush && this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     try {
       if (usePoster) {

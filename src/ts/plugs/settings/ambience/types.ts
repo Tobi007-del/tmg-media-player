@@ -7,5 +7,5 @@ export interface AmbienceConfig {
 }
 
 export interface AmbienceState {
-  snubbingAmbienceIntent: boolean;
+  snubbingAmbience: boolean;
 }

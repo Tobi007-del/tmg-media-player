@@ -3,7 +3,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class TimerNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "timernotifier";
+  public static readonly componentName = "timerNotifier";
   public static readonly triggers = ["timer"];
 
   public override create() {
@@ -14,6 +14,6 @@ export class TimerNotifier extends BaseNotifier<undefined, ComponentState, HTMLD
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    timernotifier: typeof TimerNotifier;
+    timerNotifier: typeof TimerNotifier;
   }
 }

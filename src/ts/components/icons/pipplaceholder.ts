@@ -1,4 +1,4 @@
-export const pipplaceholder = `<svg class="tmg-media-pip-placeholder-icon" viewBox="0 0 73 73">
+export const pipPlaceholder = `<svg class="tmg-media-pip-placeholder-icon" viewBox="0 0 73 73">
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
     <g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-media-pip-icon-background">
       <rect x="-1" y="-1" width="71" height="71" rx="14" />
@@ -25,6 +25,6 @@ export const pipplaceholder = `<svg class="tmg-media-pip-placeholder-icon" viewB
 
 declare module "@defs/registries" {
   interface IconRegistryMap {
-    pipplaceholder: typeof pipplaceholder;
+    pipPlaceholder: typeof pipPlaceholder;
   }
 }

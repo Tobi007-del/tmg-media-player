@@ -3,7 +3,6 @@ import type { KeyMod, KeyPhase, KeysConfig, KeyShortcutMods } from "./types";
 import { KEYS_BUILD } from "./build";
 import { getActiveEl, isArr } from "@t007/utils";
 import { keyEventAllowed as allowed } from "@utils/keys";
-import { getMediaTime } from "@utils/media";
 import { limited } from "@utils/fn";
 import { tutorialOpts } from "../toasts";
 
@@ -22,18 +21,11 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     this.ctlr.config.on("settings.keys.disabled", this.syncEventListeners, { signal: this.signal });
     this.ctlr.config.on("disabled", this.syncEventListeners, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("playPause", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction(" ", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("escape", { fn: this.handleEscape, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("arrowleft", { fn: this.handleArrowLeft, keyboard: { phase: "keydown" }, notify: "bwd", private: true });
-    this.ctlr.registerAction("arrowright", { fn: this.handleArrowRight, keyboard: { phase: "keydown" }, notify: "fwd", private: true });
-    this.ctlr.registerAction("arrowup", { fn: this.handleArrowUp, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("arrowdown", { fn: this.handleArrowDown, keyboard: { phase: "keydown" }, private: true });
-    this.ctlr.registerAction("home", { fn: () => (this.media.intent.currentTime = 0), keyboard: { phase: "keyup" }, private: true });
-    this.ctlr.registerAction("0", { fn: () => (this.media.intent.currentTime = 0), keyboard: { phase: "keyup" }, private: true });
-    this.ctlr.registerAction("end", { fn: () => (this.media.intent.currentTime = this.media.status.duration), keyboard: { phase: "keyup" }, private: true });
-    for (const n of "123456789".split("")) this.ctlr.registerAction(n, { fn: () => (this.media.intent.currentTime = getMediaTime(this.media, +n / 10)), keyboard: { phase: "keyup" }, private: true });
     this.ctlr.payload.wired ? this.syncEventListeners() : this.ctlr.state.wonce("readyState", this.syncEventListeners, { signal: this.signal }); // #HEAVY: waits for !lightState
+    this.ctlr.addAction("playPause", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.addAction(" ", { fn: this.handlePlayTriggerDown, keyboard: { phase: "keydown" }, system: true, label: "Playback: Play or Pause" }, this.signal);
+    this.ctlr.addAction("arrowleft", { fn: this.handleArrowLeft, keyboard: { phase: "keydown" }, notify: "bwd", system: true, label: "Time: Skip backward" }, this.signal);
+    this.ctlr.addAction("arrowright", { fn: this.handleArrowRight, keyboard: { phase: "keydown" }, notify: "fwd", system: true, label: "Time: Skip forward" }, this.signal);
     super.wire();
   }
 
@@ -47,17 +39,17 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     if (action === false) return;
     action && this.ctlr.plug("settings.overlay")?.show();
     const hook = this.getHook("keydown", action as string);
-    hook && this.ctlr.throttle("keyDown", () => this.ctlr.runAction(hook, e, mod), 30);
+    hook && this.ctlr.throttle("keyDown", () => this.ctlr.perform(hook, e, mod), 30);
   }
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.settings.keys), mod = this.getMod(e)): void {
     if (action === false) return void (!getActiveEl() && this.teachBasics());
     this.ctlr.plug("settings.overlay")?.show();
     const hook = this.getHook("keyup", action as string);
-    hook && this.ctlr.runAction(hook, e, mod);
+    hook && this.ctlr.perform(hook, e, mod);
   }
 
   protected handlePlayTriggerDown(e?: KeyboardEvent): void {
-    if (!e) return (this.media.intent.paused = !this.media.state.paused), this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay");
+    if (!e) return (this.media.intent.paused = !this.media.state.paused), this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
     this.playTriggerSeq++;
     this.playTriggerSeq === 1 && (e.currentTarget as Window | null)?.addEventListener("keyup", this.handlePlayTriggerUp, { signal: this.signal });
     this.playTriggerSeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.fastPlay(e.shiftKey ? "backwards" : "forwards");
@@ -65,37 +57,24 @@ export class KeysPlug extends BasePlug<KeysConfig> {
 
   protected handlePlayTriggerUp(e: KeyboardEvent, action = allowed(e, this.settings.keys)): void {
     action && this.ctlr.plug("settings.overlay")?.show();
-    if (action !== false && [" ", "playPause"].includes(action as string)) {
+    if (action !== false && /^( |playPause)$/.test(action as string)) {
       e.stopImmediatePropagation();
       if (this.playTriggerSeq === 1) this.media.intent.paused = !this.media.state.paused;
-      this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay");
+      this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
     }
     const fastPlug = this.ctlr.plug("settings.fastPlay");
-    if (fastPlug?.speedCheck && this.playTriggerSeq > 1 && !fastPlug?.speedPtrCheck) fastPlug.slowDown();
+    if (fastPlug?.state.speedCheck && this.playTriggerSeq > 1 && !fastPlug?.state.speedPtrCheck) fastPlug.slowDown();
     this.playTriggerSeq = 0;
     (e.currentTarget as Window | null)?.removeEventListener("keyup", this.handlePlayTriggerUp);
   }
 
-  protected handleEscape(): void {
-    this.ctlr.isUIActive("miniplayer") && (this.media.intent.miniplayer = false);
-    (this.ctlr.isUIActive("pictureInPicture") || this.ctlr.isUIActive("floatingPlayer")) && (this.media.intent.pictureInPicture = false);
-  }
-
   protected handleArrowLeft(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.ctlr.plug("settings.time")?.skip(-this.getModded("skip", mod, 5));
+    this.ctlr.plug("settings.time")?.skip(-this.getModded("timeSkip", mod, 5));
   }
   protected handleArrowRight(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.ctlr.plug("settings.time")?.skip(this.getModded("skip", mod, 5));
-  }
-  protected handleArrowUp(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug("settings.volume")?.changeAptValue(this.getModded("volume", mod, 5));
-    this.media.features.volume && this.ctlr.plug("settings.notifiers")?.notify("volumeup");
-  }
-  protected handleArrowDown(_: KeyboardEvent, mod: KeyMod): void {
-    this.ctlr.plug("settings.volume")?.changeAptValue(-this.getModded("volume", mod, 5));
-    if (this.media.features.volume) !this.media.state.volume ? this.ctlr.plug("settings.notifiers")?.notify("volumemuted") : this.media.wonce("state.volume", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "volumemuted" : "volumedown"), { signal: this.signal });
+    this.ctlr.plug("settings.time")?.skip(this.getModded("timeSkip", mod, 5));
   }
 
   public setEventListeners(action: "add" | "remove" = "add"): void {

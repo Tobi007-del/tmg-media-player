@@ -7,10 +7,7 @@ const win = "undefined" !== typeof window ? window : undefined;
 
 // --- GLOBAL STATE ---
 const flagMutationSet = new WeakSet<HTMLElement>(); // weak set for true magic
-let flagMutationId: number | undefined,
-  orientated = false,
-  orientating = false,
-  prevScreenAng = -1;
+let flagMutationId: number | undefined;
 // --- EXPORTS ---
 export let AUDIO_CONTEXT: AudioContext | null = null;
 export let AUDIO_LIMITER: DynamicsCompressorNode | null = null;
@@ -35,14 +32,9 @@ export function init(): void {
     document.addEventListener(e, (_, inFs = queryFullscreen()) => {
       for (const c of Controllers) if (c.state) c.state.docInFullscreen = inFs;
     });
-  if (win?.screen?.orientation)
-    win.screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => {
-      if (!orientating) for (const c of Controllers) if (c.state) (c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle);
-    });
-  else
-    win?.addEventListener("orientationchange", () => {
-      if (!orientating) for (const c of Controllers) if (c.state) c.state.screenOrientation.angle = (win as any).orientation || 0;
-    });
+  win?.screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => {
+    for (const c of Controllers) if (c.state && !c.state.screenOrientation.locked) (c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle);
+  });
 }
 
 export function handleMediaMutation(mutations: MutationRecord[]): void {
@@ -113,21 +105,28 @@ export function startAudioManager(): void {
   if (!AUDIO_CONTEXT && IS_DOC_TRANSIENT) {
     AUDIO_CONTEXT = new (win!.AudioContext || (win as any).webkitAudioContext)() as AudioContext;
     const L = (AUDIO_LIMITER = AUDIO_CONTEXT!.createDynamicsCompressor());
-    (L.threshold.value = -1.0), (L.knee.value = 0.0), (L.ratio.value = 20), (L.attack.value = 0.001), (L.release.value = 0.05); // peak logic for peak sound
+    (L.threshold.value = -1.0), (L.knee.value = 0.0), (L.ratio.value = 20), (L.attack.value = 0.001), (L.release.value = 0.05); // peak logic = peak sound
     for (const c of Controllers) if (c.state) c.state.audioContextReady = true;
   } else if (AUDIO_CONTEXT?.state === "suspended") AUDIO_CONTEXT.resume();
 }
 export function connectToAudioManager(medium: HTMLMediaElement) {
   if (!AUDIO_CONTEXT) return "unavailable";
+  medium.mediaElementSourceNode?.disconnect();
   medium.mediaElementSourceNode ??= AUDIO_CONTEXT.createMediaElementSource(medium);
   medium._tmgGainNode ??= AUDIO_CONTEXT.createGain();
   medium._tmgDynamicsCompressorNode ??= AUDIO_CONTEXT.createDynamicsCompressor();
   medium.mediaElementSourceNode.connect(medium._tmgDynamicsCompressorNode);
   medium._tmgDynamicsCompressorNode.connect(medium._tmgGainNode);
-  medium._tmgGainNode.connect(AUDIO_LIMITER!);
-  AUDIO_LIMITER!.connect(AUDIO_CONTEXT!.destination);
+  medium._tmgGainNode.connect(AUDIO_LIMITER!), AUDIO_LIMITER!.connect(AUDIO_CONTEXT!.destination);
 }
+export function disconnectFromAudioManager(medium: HTMLMediaElement) {
+  if (!AUDIO_CONTEXT) return "unavailable";
+  medium._tmgGainNode?.disconnect(), medium._tmgDynamicsCompressorNode?.disconnect();
+  medium.mediaElementSourceNode?.disconnect(), medium.mediaElementSourceNode?.connect(AUDIO_CONTEXT.destination);
+} // reroutes sourceNode -> destination so audio keeps flowing
 
+let orientated = false,
+  prevScreenType: OrientationType | undefined;
 export function connectOrientationManager(): void {
   if (orientated) return;
   orientated = true;
@@ -135,7 +134,7 @@ export function connectOrientationManager(): void {
 }
 export function disconnectOrientationManager(): void {
   if (!orientated) return;
-  orientated = orientating = false;
+  orientated = false;
   win!.removeEventListener("deviceorientation", handleOrientation);
 }
 export function handleOrientation({ beta: b, gamma: g }: DeviceOrientationEvent): void {
@@ -143,12 +142,11 @@ export function handleOrientation({ beta: b, gamma: g }: DeviceOrientationEvent)
   const aG = Math.abs(g),
     aB = Math.abs(b);
   if ((aB < 20 && aG < 20) || (aB > 85 && aB < 95)) return; // Guard against flat tables (< 20) AND Gimbal Lock inversions in bed (85-95)
-  let ang = prevScreenAng;
-  aG > 50 && aB < 35 ? (ang = g > 0 ? 270 : 90) : aB > 50 && aG < 35 && (ang = b > 0 ? 0 : 180); // uses hysteresis to avoid jittering
-  if (ang === prevScreenAng || ang === -1) return;
-  (prevScreenAng = ang), (orientating = true);
-  const type: OrientationType = ang === 90 ? "landscape-primary" : ang === 270 ? "landscape-secondary" : ang === 0 ? "portrait-primary" : "portrait-secondary";
-  for (const c of Controllers) if (c.state) (c.state.screenOrientation.angle = ang), (c.state.screenOrientation.type = type);
+  let type = prevScreenType;
+  aG > 50 && aB < 35 ? (type = g > 0 ? "landscape-secondary" : "landscape-primary") : aB > 50 && aG < 35 && (type = b > 0 ? "portrait-primary" : "portrait-secondary");
+  if (type === prevScreenType || !type) return;
+  prevScreenType = type;
+  for (const c of Controllers) if (c.media) c.media.state.fullscreenOrientation = type;
 }
 
 export * from "./types";

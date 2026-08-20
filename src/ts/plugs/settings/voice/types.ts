@@ -10,7 +10,6 @@ export interface VoiceConfig {
   active: UISettings<boolean | "passive">;
   muted: boolean;
   wakeWord: string; // e.g., "hey player", "" means UI button only
-  behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
   timeout: number; // e.g., 3000ms of silence puts it back to sleep
   inputs: {
     direct: boolean;
@@ -20,8 +19,11 @@ export interface VoiceConfig {
     commandsDisabled: boolean;
   };
   commands: VoiceCommands;
-  listenerPos: UISettings<ToastPosition>;
-  predictorPos: UISettings<ToastPosition>;
+  toasts: {
+    behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
+    listenerPos: UISettings<ToastPosition>;
+    predictorPos: UISettings<ToastPosition>;
+  };
 }
 
 export interface VoiceState {

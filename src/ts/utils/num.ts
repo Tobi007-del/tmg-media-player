@@ -31,12 +31,13 @@ export function parseRomanNum(roman: string, valid = /^[IVXLCDM]+$/i.test(roman)
 }
 
 // Helpers
+const stepsCache = new Map<string, number[]>();
+
 export function stepNum<T extends AptRange>(v = 0, { min, max, step }: T): number {
-  const s = step ? Math.round((safeNum(v) - (min || 0)) / step) * step + (min || 0) : safeNum(v);
+  const s = step && step !== "any" ? Math.round((safeNum(v) - (min || 0)) / step) * step + (min || 0) : safeNum(v);
   return clamp(min, +s.toFixed(10), max); // no gymnastics, for sliders only; to reach near native speed
 }
 
-const _stepsCache = new Map<string, number[]>();
 export function rotateAny<T>(cur: T, steps: T[] | readonly T[], dir?: "forwards" | "backwards", wrap?: boolean): T;
 export function rotateAny(cur: number, steps: AptRange, dir?: "forwards" | "backwards", wrap?: boolean): number;
 export function rotateAny(cur: any, steps: any, dir: "forwards" | "backwards" = "forwards", wrap = true): any {
@@ -44,8 +45,8 @@ export function rotateAny(cur: any, steps: any, dir: "forwards" | "backwards" = 
   if (Array.isArray(steps)) list = steps;
   else {
     const key = `${steps.min}|${steps.max}|${steps.step}`; // Generate cache key from min|max|step
-    if (_stepsCache.has(key)) list = _stepsCache.get(key)!;
-    else _stepsCache.set(key, (list = Array.from({ length: Math.floor((steps.max - steps.min) / steps.step) + 1 }, (_, i) => steps.min + i * steps.step)));
+    if (stepsCache.has(key)) list = stepsCache.get(key)!;
+    else stepsCache.set(key, (list = Array.from({ length: Math.floor((steps.max - steps.min) / steps.step) + 1 }, (_, i) => steps.min + i * steps.step)));
   }
   let idx = isNum(cur) ? list.reduce((p, c, x) => (Math.abs(c - cur) < Math.abs(list[p] - cur) ? x : p), 0) : list.indexOf(cur);
   idx = idx + (dir === "forwards" ? 1 : -1);

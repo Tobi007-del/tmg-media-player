@@ -6,8 +6,8 @@ import type { CtlrMedia } from "@defs/contract";
 import type { BrightnessPlug, BrightnessState } from "@plugs/settings/brightness";
 
 export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "touchbrightnessnotifier";
-  public static readonly triggers = ["brightnessup", "brightnessdown", "brightnessdark"];
+  public static readonly componentName = "touchBrightnessNotifier";
+  public static readonly triggers = ["brightnessUp", "brightnessDown", "brightnessDark"];
   public content!: HTMLSpanElement;
   public slider!: HTMLDivElement;
   public upSpan!: HTMLSpanElement;
@@ -17,9 +17,9 @@ export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentSt
   public override create() {
     this.content = createEl("span", { className: "tmg-media-touch-brightness-content tmg-media-touch-vb-content", textContent: "0" });
     this.slider = createEl("div", { className: "tmg-media-touch-brightness-slider tmg-media-touch-vb-slider" });
-    this.upSpan = createEl("span", { innerHTML: IconRegistry.get("brightnesshigh") });
-    this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("brightnesslow") });
-    this.darkSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessdark") });
+    this.upSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessHigh") });
+    this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessLow") });
+    this.darkSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessDark") });
     const spanWrapper = createEl("span")
     this.element = createEl("div", { className: "tmg-media-touch-brightness-notifier tmg-media-touch-vb-notifier" });
     this.el.append(this.content, this.slider, (spanWrapper.append(this.upSpan, this.lowSpan, this.darkSpan), spanWrapper));
@@ -41,6 +41,6 @@ export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentSt
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    touchbrightnessnotifier: typeof TouchBrightnessNotifier;
+    touchBrightnessNotifier: typeof TouchBrightnessNotifier;
   }
 }

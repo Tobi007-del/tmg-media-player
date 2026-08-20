@@ -13,6 +13,9 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   protected get plug() {
     return this.ctlr.plug("settings.settingsView");
   }
+  protected get menu() {
+    return this.plug?.menu;
+  }
 
   public override create() {
     return (this.element = createEl("button", { className: "tmg-media-settings-btn", type: "button", innerHTML: IconRegistry.get("settings") }, { draggableControl: "", controlId: this.name }));
@@ -29,16 +32,14 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   }
 
   protected handleClick(): void {
-    const menu = this.plug?.menu;
-    menu ? menu.toggle(this.el, false) : this.plug?.toggleView();
+    this.menu ? this.menu.toggle(this.el, false) : this.plug?.toggleView();
   }
   protected handleDblClick(): void {
-    const menu = this.plug?.menu;
-    menu ? menu.toggle(this.el, true) : this.plug?.toggleView();
+    this.menu ? this.menu.toggle(this.el, true) : this.plug?.toggleView();
   }
 
   protected syncBadge(): void {
-    const item = this.plug?.menu?.getItem("quality");
+    const item = this.menu?.getItem("quality");
     if (!item) return void this.setBadge("");
     const options = item.getOptions?.() as UITuple<number>[];
     this.setBadge((this.ctlr.media.state.autoLevel ? options?.at(-1) : options?.find((o) => o.value === this.ctlr.media.state.currentLevel))?.badge || "");

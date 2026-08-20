@@ -1,7 +1,7 @@
 :where(.tmg-host) {
   display: block;
   aspect-ratio: var(--tmg-media-aspect-ratio);
-  /* border-radius: inherit; */
+  border-radius: inherit;
   width: 90dvw;
   max-width: 700px;
   max-height: 80lvh;
@@ -81,6 +81,7 @@
 .tmg-foreign-host {
   width: 100%;
   height: 100%;
+  border: none;
 }
 .tmg-foreign-host[data-hide-ui] {
   height: 1000%;

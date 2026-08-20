@@ -13,14 +13,6 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   },
   muted: false,
   wakeWord: "player",
-  behavior: {
-    value: "persistent",
-    options: [
-      { value: "persistent", display: "Persistent" },
-      { value: "auto", display: "Auto (Show on speech)" },
-      { value: "strict", display: "Strict (Show after wake)" },
-    ],
-  },
   timeout: 15000,
   inputs: {
     direct: true,
@@ -49,12 +41,22 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     voiceToggleOn: ["on", "yes", "true", "enable", "start"],
     voiceToggleOff: ["off", "no", "false", "disable", "stop"],
   },
-  listenerPos: {
-    value: "top-center",
-    options: TOAST_UI_POSITIONS,
-  },
-  predictorPos: {
-    value: "bottom-left",
-    options: TOAST_UI_POSITIONS,
+  toasts: {
+    behavior: {
+      value: "persistent",
+      options: [
+        { value: "persistent", display: "Persistent" },
+        { value: "auto", display: "Auto (Show on speech)" },
+        { value: "strict", display: "Strict (Show after wake)" },
+      ],
+    },
+    listenerPos: {
+      value: "top-center",
+      options: TOAST_UI_POSITIONS,
+    },
+    predictorPos: {
+      value: "bottom-left",
+      options: TOAST_UI_POSITIONS,
+    },
   },
 };

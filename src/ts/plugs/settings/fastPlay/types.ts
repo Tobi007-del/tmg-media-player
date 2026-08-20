@@ -13,5 +13,7 @@ export interface FastPlayConfig {
 }
 
 export interface FastPlayState {
+  speedCheck: boolean;
+  speedPtrCheck: boolean;
   isRewinding: boolean;
 }

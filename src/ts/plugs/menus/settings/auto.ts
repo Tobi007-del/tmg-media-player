@@ -1,7 +1,7 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { AutoPlug } from "@plugs/settings/auto";
 import { getUIOpt } from "@utils/obj";
-import { formatMenuMs } from "@utils/time";
+import { formatUITime } from "@utils/time";
 
 export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
   id: "autoplay",
@@ -13,7 +13,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
   configPaths: ["settings.auto.play.value"],
   items: [
     {
-      id: "autoPlay",
+      id: "autoplay",
       label: "Autoplay",
       widget: "select",
       getMultiple: () => true,
@@ -50,19 +50,19 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
       id: "autoNext",
       label: "Auto-next",
       widget: "group",
-      getValue: () => formatMenuMs(plug.config.next.value),
+      getValue: () => formatUITime(plug.config.next.value),
       configPaths: ["settings.auto.next.value"],
       items: [
-        { id: "autoNextTime", label: "Countdown time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "20000", helperText: { info: "Time in ms to wait before automatically playing the next item in the playlist. Set to -1 to disable." }, type: "number", min: "-1", required: true, value: () => plug.config.next.value }], getValue: () => formatMenuMs(plug.config.next.value), onChange: (val: Record<string, any>) => (plug.config.next.value = val.time), configPaths: ["settings.auto.next.value"] },
+        { id: "autoNextTime", label: "Countdown time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "20000", helperText: { info: "Time in ms to wait before automatically playing the next item in the playlist. Set to -1 to disable." }, type: "number", min: "-1", required: true, value: () => plug.config.next.value }], getValue: () => formatUITime(plug.config.next.value), onChange: (val: Record<string, any>) => (plug.config.next.value = val.time), configPaths: ["settings.auto.next.value"] },
         {
           id: "autoNextPreview",
           label: "Preview",
           widget: "group",
           getValue: () => "",
           items: [
-            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], getTipHTML: () => "Display the next video's poster during the countdown." },
-            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], getTipHTML: () => "Play a short silent preview of the next when no poster is present." },
-            { id: "autoNextPreviewTime", label: "Preview time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "4000", helperText: { info: "The poster fallback preview time in ms in the next video, where the tease ends." }, type: "number", min: "0", value: () => plug.config.next.preview.time * 1000 }], getValue: () => formatMenuMs(plug.config.next.preview.time * 1000), onChange: (val: Record<string, any>) => (plug.config.next.preview.time = val.time / 1000), configPaths: ["settings.auto.next.preview.time"] },
+            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], getTipHTML: () => "Display the next video's poster during the countdown" },
+            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], getTipHTML: () => "Play a short silent preview of the next when no poster is present" },
+            { id: "autoNextPreviewTime", label: "Preview time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "4000", helperText: { info: "The poster fallback preview time in ms in the next video, where the tease ends" }, type: "number", min: "0", value: () => plug.config.next.preview.time * 1000 }], getValue: () => formatUITime(plug.config.next.preview.time * 1000), onChange: (val: Record<string, any>) => (plug.config.next.preview.time = val.time / 1000), configPaths: ["settings.auto.next.preview.time"] },
           ],
         },
       ],

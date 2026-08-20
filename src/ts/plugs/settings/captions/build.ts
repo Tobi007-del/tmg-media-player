@@ -1,6 +1,5 @@
 import { DeepPartial } from "sia-reactor";
 import { CaptionsConfig } from "./types";
-import { IS_MOBILE } from "@utils/env";
 
 export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.value", "captions.font.color.value", "captions.font.opacity.value", "captions.font.weight.value", "captions.font.variant.value", "captions.background.color.value", "captions.background.opacity.value", "captions.window.color.value", "captions.window.opacity.value", "captions.textAlignment.value", "captions.characterEdgeStyle.value"] as const;
 export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight.value", "captions.font.variant.value", "captions.font.opacity.value", "captions.background.opacity.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
@@ -139,7 +138,7 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
     },
     position: {
       lockToVideo: false,
-      lockToPanel: !IS_MOBILE,
+      lockToPanel: true,
     },
   },
   textAlignment: {

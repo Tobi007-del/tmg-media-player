@@ -5,12 +5,12 @@ import { IS_MOBILE } from "@utils/env";
 import { setTimeout } from "@utils/fn";
 import { parseIfPercent, clamp, safeNum } from "@utils/num";
 import { parseCSSTime } from "@utils/str";
-import { formatMediaTime } from "@utils/time";
+import { formatMediaTime, formatUITime } from "@utils/time";
 import { type REvent } from "sia-reactor";
 import { CtlrMedia } from "@defs/contract";
 import type { Controller } from "@core/controller";
-import { silence } from "sia-reactor/modules";
-import { getMediaMax, getMediaMin } from "@utils/media";
+import { silence, transaction } from "sia-reactor/modules";
+import { getMediaMax, getMediaMin, getMediaTime } from "@utils/time";
 import { KeyMod } from "../keys";
 
 export class TimePlug extends BasePlug<TimeConfig, TimeState> {
@@ -37,14 +37,17 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     // ---- Config Watchers
     this.ctlr.config.watch("settings.time.start", (v) => !this.writing && (this.actualStart = +v!), { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("status.loadedData", this.handleLoadedDataStatus, { signal: this.signal });
+    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { signal: this.signal });
     this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.waiting", this.handleWaitingStatus, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("skipFwd", { fn: this.handleKeySkipFwd, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("skipBwd", { fn: this.handleKeySkipBwd, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("timeMode", { fn: this.toggleMode, keyboard: { phase: "keyup" } });
-    this.ctlr.registerAction("timeFormat", { fn: this.rotateFormat, keyboard: { phase: "keyup" } });
+    this.ctlr.addAction("timeSkipFwd", { fn: this.handleKeySkipFwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.addAction("timeSkipBwd", { fn: this.handleKeySkipBwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.addAction("timeStart", { keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.addAction("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.addAction("timeMode", { fn: this.toggleMode, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.addAction("timeFormat", { fn: this.rotateFormat, keyboard: { phase: "keyup" } }, this.signal);
+    for (const n of "123456789".split("")) this.ctlr.addAction(n, { fn: () => (this.media.intent.currentTime = getMediaTime(this.media, +n / 10)), keyboard: { phase: "keyup" }, system: true, label: `Time: Move to ${n}0%` }, this.signal);
     super.wire();
   }
 
@@ -52,7 +55,7 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     for (const path of paths) this.ctlr.config.get(path, this.toTime, { signal: this.signal });
   }
 
-  protected handleLoadedDataStatus({ value }: REvent<CtlrMedia, "status.loadedData">): void {
+  protected handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): void {
     if (value && this.config.start != null && this.media.state.currentTime !== this.actualStart) this.media.intent.currentTime = this.actualStart;
   }
 
@@ -89,30 +92,20 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     this.config.format = this.nextFormat;
   }
 
-  public skip(duration: number): void {
+  public skip(duration: number, min = getMediaMin(this.media), max = getMediaMax(this.media), time = this.media.state.currentTime): void {
     const overlay = this.ctlr.plug("settings.overlay"),
-      notifier = this.ctlr.plug("settings.notifiers")?.comp("fwdbwdnotifier")?.[duration > 0 ? "fwdDiv" : "bwdDiv"],
-      [min, max, time] = [getMediaMin(this.media), getMediaMax(this.media), this.media.state.currentTime];
+      notifier = this.ctlr.plug("settings.notifiers")?.comp("fwdBwdNotifier")?.[duration > 0 ? "fwdDiv" : "bwdDiv"];
     duration = min >= max ? 0 : safeNum(duration > 0 ? (max - time > duration ? duration : max - time) : duration < 0 ? (time - min > Math.abs(duration) ? duration : -(time - min)) : 0);
-    if (min < max) this.media.intent.currentTime = time + duration; // Apprentice Slider syncs, no CSS hack
-    // this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = safeNum(this.media.intent.currentTime / this.media.status.duration);
+    duration && min < max && transaction(() => (this.media.intent.currentTime = time + duration), `Time skip of ${formatUITime(duration * 1000)}`); // Apprentice Slider syncs, no CSS hack
     const plug = this.ctlr.plug("settings.gesture");
     if (plug?.state.skipPersist) {
-      if (this.skipNotifier && notifier !== this.skipNotifier) {
-        this.skipDuration = 0;
-        this.skipNotifier.classList.remove("tmg-media-control-persist");
-      }
-      overlay?.show();
-      this.skipNotifier = notifier;
-      notifier?.classList.add("tmg-media-control-persist");
-      this.skipDuration += duration;
-      clearTimeout(this.skipDurationId);
+      if (this.skipNotifier && notifier !== this.skipNotifier) (this.skipDuration = 0), this.skipNotifier.classList.remove("tmg-media-control-persist");
+      overlay?.show(), (this.skipNotifier = notifier)?.classList.add("tmg-media-control-persist");
+      (this.skipDuration += duration), clearTimeout(this.skipDurationId);
       this.skipDurationId = setTimeout(
         () => {
-          plug.stopSkipPersist();
-          notifier?.classList.remove("tmg-media-control-persist");
-          this.skipDuration = 0;
-          this.skipNotifier = null;
+          plug.stopSkipPersist(), notifier?.classList.remove("tmg-media-control-persist");
+          (this.skipDuration = 0), (this.skipNotifier = null);
           !this.media.state.paused ? overlay?.hide() : overlay?.show();
         },
         parseCSSTime(this.settings.css.notifiersAnimationTime),
@@ -125,12 +118,12 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
 
   protected handleKeySkipFwd(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.skip(this.ctlr.plug("settings.keys")?.getModded("skip", mod, this.config.skip) ?? this.config.skip);
+    this.skip(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip);
   }
 
   protected handleKeySkipBwd(_: KeyboardEvent, mod: KeyMod): void {
     this.ctlr.plug("settings.gesture")?.stopSkipPersist();
-    this.skip(-(this.ctlr.plug("settings.keys")?.getModded("skip", mod, this.config.skip) ?? this.config.skip));
+    this.skip(-(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip));
   }
 }
 

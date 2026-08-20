@@ -68,6 +68,7 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.controlPanel.timeline.thumb.value", ({ value }) => (this.media.container.dataset.timelineThumb = String(value)), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.controlPanel.progressBar", ({ value }) => this.media.container.classList.toggle("tmg-media-progress-bar", value), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.controlPanel.bigVisible", ({ value }) => this.media.container.classList.toggle("tmg-media-big-visible", value), { init: true, signal: this.signal });
     // Utility Injection
     this.draggable?.wire();
     // Post Wiring
@@ -188,9 +189,9 @@ declare module "@defs/registries" {
     "settings.controlPanel": typeof ControlPanelPlug;
   }
   interface ControllerDOMMap {
-    topControlsWrapper?: HTMLDivElement;
-    bigControlsWrapper?: HTMLDivElement;
-    bottomControlsWrapper?: HTMLDivElement;
+    topControlsWrapper?: HTMLDivElement | null;
+    bigControlsWrapper?: HTMLDivElement | null;
+    bottomControlsWrapper?: HTMLDivElement | null;
   }
 }
 

@@ -4,8 +4,8 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class PrevNextNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "prevnextnotifier";
-  public static readonly triggers = ["mediaprevious", "medianext"];
+  public static readonly componentName = "prevNextNotifier";
+  public static readonly triggers = ["mediaPrevious", "mediaNext"];
   public prevDiv!: HTMLDivElement;
   public nextDiv!: HTMLDivElement;
 
@@ -18,6 +18,6 @@ export class PrevNextNotifier extends BaseNotifier<undefined, ComponentState, HT
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    prevnextnotifier: typeof PrevNextNotifier;
+    prevNextNotifier: typeof PrevNextNotifier;
   }
 }

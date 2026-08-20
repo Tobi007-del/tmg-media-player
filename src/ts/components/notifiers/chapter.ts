@@ -4,7 +4,7 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 
 export class ChapterNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "chapternotifier";
+  public static readonly componentName = "chapterNotifier";
   public static readonly triggers = ["chapter"];
 
   public override create() {
@@ -25,6 +25,6 @@ export class ChapterNotifier extends BaseNotifier<undefined, ComponentState, HTM
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    chapternotifier: typeof ChapterNotifier;
+    chapterNotifier: typeof ChapterNotifier;
   }
 }

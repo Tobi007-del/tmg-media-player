@@ -14,6 +14,5 @@ export type PlaylistConfig = {
 
 export interface PlaylistState {
   currentIndex: number;
-  editIndex: number;
   sortOrder: "asc" | "desc";
 }

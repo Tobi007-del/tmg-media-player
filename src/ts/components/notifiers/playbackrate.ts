@@ -5,16 +5,16 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 
 export class PlaybackRateNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "playbackratenotifier";
-  public static readonly triggers = ["playbackrateup", "playbackratedown"];
+  public static readonly componentName = "playbackRateNotifier";
+  public static readonly triggers = ["playbackRateUp", "playbackRateDown"];
   public content!: HTMLDivElement;
   public upDiv!: HTMLDivElement;
   public downDiv!: HTMLDivElement;
 
   public override create() {
     this.content = createEl("div", { className: "tmg-media-playback-rate-notifier-content tmg-media-notifier-content" });
-    this.upDiv = createEl("div", { className: "tmg-media-playback-rate-up-notifier", innerHTML: IconRegistry.get("doubletriangleright") });
-    this.downDiv = createEl("div", { className: "tmg-media-playback-rate-down-notifier", innerHTML: IconRegistry.get("doubletriangleleft") });
+    this.upDiv = createEl("div", { className: "tmg-media-playback-rate-up-notifier", innerHTML: IconRegistry.get("doubleTriangleRight") });
+    this.downDiv = createEl("div", { className: "tmg-media-playback-rate-down-notifier", innerHTML: IconRegistry.get("doubleTriangleLeft") });
     return this.bindNodes([this.content, this.upDiv, this.downDiv]);
   }
 
@@ -31,6 +31,6 @@ export class PlaybackRateNotifier extends BaseNotifier<undefined, ComponentState
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    playbackratenotifier: typeof PlaybackRateNotifier;
+    playbackRateNotifier: typeof PlaybackRateNotifier;
   }
 }

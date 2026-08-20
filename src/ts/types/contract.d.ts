@@ -1,13 +1,13 @@
 import type { Controller } from "./controller";
 import type { Inert, Intent, State, Volatile } from "sia-reactor";
-import { MediaType, Sources, Src, SrcObject, Tracks, Metadata } from "./generics";
+import { MediaType, Sources, SrcObject, Tracks, Metadata } from "./generics";
 import type { ObjectFit } from "@plugs/settings/objectFit/types";
 import type { CueLike } from "@plugs/settings/captions/types";
 import type { BaseTech } from "@techs/base";
 
 export interface MediaContract {
   // "Must Haves" to be considered media
-  src: Src;
+  src: string;
   currentTime: number;
   duration: number;
   paused: boolean;
@@ -135,13 +135,16 @@ export interface MediaSettings {
   defaultPlaybackRate: number;
   // --- Stream Sources ---
   srcObject: SrcObject; // HTML courtesy
-  idleWaiting: boolean;
   // --- Metadata ---
   metadata: Metadata;
   protection: Record<string, { serverURL: string }> | null; // { "com.widevine.alpha": { serverURL: "https://..." } }
   // --- Live Content ---
   liveTolerance: number; // seconds
   minDVRWindow: number; // seconds
+  // --- Lifecycles ---
+  idleWaiting: boolean;
+  timeUpdateInterval: number; // time shift polling, e.g. in YT tech
+  resetPaths: { status: (keyof MediaStatus)[]; state: (keyof MediaState)[] };
 }
 
 export interface MediaExtraFeatures {} // for external but custom usecases

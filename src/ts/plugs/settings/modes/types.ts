@@ -5,7 +5,7 @@ import { UISettings } from "@defs/UIOptions";
 export type ResizeDir = (typeof RESIZE_DIRS)[number];
 
 export interface ModesFullscreenState {
-  snubbingAutoFullscreenOrientationIntent: boolean;
+  snubbingAutoFullscreenOrientation: boolean;
 }
 
 export interface ModesFullscreenConfig {

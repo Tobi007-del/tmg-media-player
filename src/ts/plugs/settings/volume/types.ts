@@ -3,4 +3,6 @@ import { SliderState } from "@plugs/base/slider";
 
 export interface VolumeConfig extends OptRange {}
 
-export interface VolumeState extends SliderState {}
+export interface VolumeState extends SliderState {
+  audioSetup: boolean;
+}

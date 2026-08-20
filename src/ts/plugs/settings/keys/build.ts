@@ -4,7 +4,7 @@ import { KEYS_BLOCKS } from "@t007/utils";
 
 export const KEYS_WHITELIST = ["Space", "Enter", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-export const KEY_SHORTCUT_MOD_ACTIONS = ["skip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
+export const KEY_SHORTCUT_MOD_ACTIONS = ["timeSkip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
 
 export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   disabled: false,
@@ -16,16 +16,18 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     playPause: "k",
     mute: "m",
     dark: "d",
-    skipBwd: "j",
-    skipFwd: "l",
-    stepFwd: ".",
-    stepBwd: ",",
+    timeSkipBwd: "j",
+    timeSkipFwd: "l",
+    timeStart: ["Home", "0"],
+    timeEnd: ["End"],
     volumeUp: "ArrowUp",
     volumeDown: "ArrowDown",
     brightnessUp: "y",
     brightnessDown: "h",
     playbackRateUp: ">",
     playbackRateDown: "<",
+    timeStepFwd: ".",
+    timeStepBwd: ",",
     timeFormat: "z",
     timeMode: "q",
     capture: "s",
@@ -47,12 +49,13 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     settings: "?",
     cast: "Shift+r",
     airplay: "Shift+r",
+    escape: "Escape",
   },
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
   mods: {
     disabled: false,
-    skip: {
+    timeSkip: {
       ctrl: 60,
       shift: 10,
     },

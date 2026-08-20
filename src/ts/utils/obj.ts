@@ -1,6 +1,6 @@
 import { camelize } from "./str";
 import type { AnyControl, Control, ControlPanelBottomTuple, ControlPanelConfig } from "@plugs/settings/controlPanel/types";
-import { type Paths, type PathValue } from "sia-reactor";
+import { type Paths } from "sia-reactor";
 import { setPath } from "sia-reactor/utils";
 import type { UIObject, UISettings, UIOption, UITuple } from "@defs/UIOptions";
 import { isObj, isArr, isStr } from "@t007/utils";
@@ -19,16 +19,9 @@ export function isUIOption<T>(opt: UIOption<T>): opt is UITuple<T> {
 // Assignment & Derivation
 export function setHTMLConfig<T extends object>(target: T, attr: `tmg--${Paths<T, "--">}`, value: string): void {
   value = value.trim();
-  const path = attr.replace("tmg--", "") as Paths<T, "--">;
-  const parsedValue = (() => {
-    if (value.includes(",")) return value.split(",")?.map((v: string) => v.trim());
-    if (value === "true") return true;
-    if (value === "false") return false;
-    if (value === "null") return null;
-    if (/^\d+$/.test(value)) return Number(value);
-    return value;
-  })() as PathValue<T, typeof path, "--">;
-  setPath<T, "--">(target, path, parsedValue, "--", (p) => camelize(p));
+  const path = attr.replace("tmg--", "") as any,
+    parsed = (() => (value.includes(",") ? value.split(",")?.map((v: string) => v.trim()) : value === "true" ? true : value === "false" ? false : value === "null" ? null : /^\d+$/.test(value) ? Number(value) : value))() as any;
+  setPath(target, path, parsed, "--", (p) => camelize(p));
 }
 
 export function getBoolOrStr(value: string | boolean): string | boolean {
@@ -53,7 +46,7 @@ export function getUniqueOpts<T>(options: UITuple<T>[]) {
     if (counts[opt.display] > 1) {
       seen[opt.display] = (seen[opt.display] || 0) + 1;
       const num = counts[opt.display] - seen[opt.display] + 1;
-      opt.display = `${opt.display} (${num})`;
+      opt.display = `${opt.display} ${num}`;
     }
   } // Second pass: Add numbers to duplicates, tracking our current index from the back
   return options;
@@ -75,11 +68,7 @@ export function parseUIObj<T extends Record<string, any>>(obj: T): UIObject<T> {
   for (let i = 0; i < keys.length; i++) {
     const entry = obj[keys[i]];
     if (!isObj(entry)) continue;
-    if (isUISetting(entry))
-      result[keys[i]] = {
-        values: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).value),
-        displays: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).display),
-      };
+    if (isUISetting(entry)) result[keys[i]] = { values: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).value), displays: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).display) };
     else result[keys[i]] = parseUIObj(entry); // recurse on sub-branch
   }
   return result;
@@ -102,8 +91,10 @@ export function getPanelSplitCtrls<T = any>(row?: T[]): { left: T[]; center: T[]
 }
 
 export function getPanelLocation(b: ControlPanelConfig, id: AnyControl) {
-  if (isArr(b.top) && b.top.includes(id)) return { path: "top", row: b.top, zone: getPanelSplitCtrls(b.top).left.includes(id) ? "left" : getPanelSplitCtrls(b.top).center.includes(id) ? "center" : "right" };
-  if (isArr(b.center) && b.center.includes(id)) return { path: "center", row: b.center, zone: "zone" };
+  if (isArr(b.top) && b.top.includes(id)) {
+    const split = getPanelSplitCtrls(b.top);
+    return { path: "top", row: b.top, zone: split.left.includes(id) ? "left" : split.center.includes(id) ? "center" : "right" };
+  } else if (isArr(b.center) && b.center.includes(id)) return { path: "center", row: b.center, zone: "zone" };
   if (b.bottom) {
     const dB = parsePanelBottomObj(b.bottom);
     if (dB) for (const k in dB) if ((dB as any)[k]?.includes(id)) return { path: `bottom.${k}`, row: (dB as any)[k], zone: getPanelSplitCtrls((dB as any)[k]).left.includes(id) ? "left" : getPanelSplitCtrls((dB as any)[k]).center.includes(id) ? "center" : "right" };
@@ -111,10 +102,19 @@ export function getPanelLocation(b: ControlPanelConfig, id: AnyControl) {
   return { path: "bottom.1", row: [], zone: "left" };
 }
 
-export function insertPanelCtrl(current: AnyControl[], defaults: readonly AnyControl[], id: AnyControl): void {
+export function inPanel(b: ControlPanelConfig, id: AnyControl): boolean {
+  if ((isArr(b.top) && b.top.includes(id)) || (isArr(b.center) && b.center.includes(id))) return true;
+  if (b.bottom) {
+    const dB = parsePanelBottomObj(b.bottom);
+    if (dB) for (const k in dB) if ((dB as any)[k]?.includes(id)) return true;
+  }
+  return false;
+}
+
+export function insertPanelCtrl(current: AnyControl[], defaults: readonly AnyControl[], id: AnyControl, _didx = defaults.indexOf(id)): void {
   let s = 0;
-  for (let i = 0; i < defaults.indexOf(id); i++) if (defaults[i] === "spacer") s++;
-  for (let i = defaults.indexOf(id) + 1; i < defaults.length; i++)
+  for (let i = 0; i < _didx; i++) if (defaults[i] === "spacer") s++;
+  for (let i = _didx + 1; i < defaults.length; i++)
     if (defaults[i] === "spacer") {
       let c = 0;
       for (let j = 0; j < current.length; j++) if (current[j] === "spacer" && ++c === s + 1) return void current.splice(j, 0, id);

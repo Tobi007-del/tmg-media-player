@@ -6,8 +6,8 @@ import type { CtlrMedia } from "@defs/contract";
 import type { VolumePlug, VolumeState } from "@plugs/settings/volume";
 
 export class TouchVolumeNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "touchvolumenotifier";
-  public static readonly triggers = ["volumeup", "volumedown", "volumemuted"];
+  public static readonly componentName = "touchVolumeNotifier";
+  public static readonly triggers = ["volumeUp", "volumeDown", "volumeMuted"];
   public content!: HTMLSpanElement;
   public slider!: HTMLDivElement;
   public upSpan!: HTMLSpanElement;
@@ -17,9 +17,9 @@ export class TouchVolumeNotifier extends BaseNotifier<undefined, ComponentState,
   public override create() {
     this.content = createEl("span", { className: "tmg-media-touch-volume-content tmg-media-touch-vb-content", textContent: "0" });
     this.slider = createEl("div", { className: "tmg-media-touch-volume-slider tmg-media-touch-vb-slider" });
-    this.upSpan = createEl("span", { innerHTML: IconRegistry.get("volumehigh") });
-    this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("volumelow") });
-    this.mutedSpan = createEl("span", { innerHTML: IconRegistry.get("volumemuted") });
+    this.upSpan = createEl("span", { innerHTML: IconRegistry.get("volumeHigh") });
+    this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("volumeLow") });
+    this.mutedSpan = createEl("span", { innerHTML: IconRegistry.get("volumeMuted") });
     const spanWrapper = createEl("span");
     this.element = createEl("div", { className: "tmg-media-touch-volume-notifier tmg-media-touch-vb-notifier" });
     this.el.append(this.content, this.slider, (spanWrapper.append(this.upSpan, this.lowSpan, this.mutedSpan), spanWrapper));
@@ -41,6 +41,6 @@ export class TouchVolumeNotifier extends BaseNotifier<undefined, ComponentState,
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    touchvolumenotifier: typeof TouchVolumeNotifier;
+    touchVolumeNotifier: typeof TouchVolumeNotifier;
   }
 }

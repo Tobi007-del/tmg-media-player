@@ -13,8 +13,8 @@ export type CaptionsViewConfig = {
 };
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
-  public static readonly componentName: string = "captionsview";
-  protected prevCue: CueLike | null = null;
+  public static readonly componentName: string = "captionsView";
+  protected prevCues: CueLike[] | null = null;
   protected karaokeNodes: KaraokeNode[] | null = null;
   protected lastPreview = "";
   protected timeoutId = -1;
@@ -63,7 +63,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     const text = isStr(cue) ? cue : cue.text || "",
       should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
     should && this.media.container.classList.add("tmg-media-captions-preview");
-    this.render(should ? [isObj(cue) ? cue : { text: cue }] : this.prevCue ? [this.prevCue] : null);
+    this.render(should ? [isObj(cue) ? cue : { text: cue }] : this.prevCues);
     clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout((flush = this.isPreviewing(text)) => (this.media.container.classList.remove("tmg-media-captions-preview"), flush && (this.el.innerHTML = "")), this.settings.captions.previewTimeout, this.signal);
     this.lastPreview = text;
@@ -81,7 +81,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       allowOverride = this.settings.captions.allowMediaOverride || !this.config.isMain,
       wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2; // Padding allowance
     if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
-    (wrapper.innerHTML = ""), (this.prevCue = cues[cues.length - 1]);
+    (wrapper.innerHTML = ""), (this.prevCues = cues);
     for (const cue of cues) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
       const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
@@ -168,9 +168,10 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     this.el.removeEventListener("pointerup", this.handleDragEnd);
   }
 
-  public override onDestroy(): void {
+  protected override onDestroy(): void {
     if (this.config.isMain) this.settings.css.currentCaptionsContainerHeight = this.settings.css.currentCaptionsContainerWidth = "0px";
     if (this.ctlr.DOM.captionsContainer === this.el) this.ctlr.DOM.captionsContainer = null;
+    super.onDestroy();
   }
 }
 
@@ -181,6 +182,6 @@ type KaraokeNode = {
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    captionsview: typeof CaptionsView;
+    captionsView: typeof CaptionsView;
   }
 }

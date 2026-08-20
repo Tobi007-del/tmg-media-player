@@ -6,8 +6,8 @@ import type { CtlrMedia } from "@defs/contract";
 import type { BrightnessPlug, BrightnessState } from "@plugs/settings/brightness";
 
 export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "brightnessnotifier";
-  public static readonly triggers = ["brightnessup", "brightnessdown", "brightnessdark"];
+  public static readonly componentName = "brightnessNotifier";
+  public static readonly triggers = ["brightnessUp", "brightnessDown", "brightnessDark"];
   public content!: HTMLDivElement;
   public upDiv!: HTMLDivElement;
   public downDiv!: HTMLDivElement;
@@ -15,9 +15,9 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
 
   public override create() {
     this.content = createEl("div", { className: "tmg-media-brightness-notifier-content tmg-media-notifier-content" });
-    this.upDiv = createEl("div", { className: "tmg-media-brightness-up-notifier", innerHTML: IconRegistry.get("brightnesshigh", true) });
-    this.downDiv = createEl("div", { className: "tmg-media-brightness-down-notifier", innerHTML: IconRegistry.get("brightnesslow", true) });
-    this.darkDiv = createEl("div", { className: "tmg-media-brightness-dark-notifier", innerHTML: IconRegistry.get("brightnessdark", true) });
+    this.upDiv = createEl("div", { className: "tmg-media-brightness-up-notifier", innerHTML: IconRegistry.get("brightnessHigh", true) });
+    this.downDiv = createEl("div", { className: "tmg-media-brightness-down-notifier", innerHTML: IconRegistry.get("brightnessLow", true) });
+    this.darkDiv = createEl("div", { className: "tmg-media-brightness-dark-notifier", innerHTML: IconRegistry.get("brightnessDark", true) });
     return this.bindNodes([this.content, this.upDiv, this.downDiv, this.darkDiv]);
   }
 
@@ -36,6 +36,6 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    brightnessnotifier: typeof BrightnessNotifier;
+    brightnessNotifier: typeof BrightnessNotifier;
   }
 }

@@ -7,51 +7,52 @@ import { next } from "./next";
 import { settings } from "./settings";
 import { lock } from "./lock";
 import { unlock } from "./unlock";
-import { enterfullscreen } from "./enterfullscreen";
-import { leavefullscreen } from "./leavefullscreen";
-import { enterpip } from "./enterpip";
-import { leavepip } from "./leavepip";
-import { pipplaceholder } from "./pipplaceholder";
-import { expandminiplayer } from "./expandminiplayer";
-import { removeminiplayer } from "./removeminiplayer";
+import { enterFullscreen } from "./enterFullscreen";
+import { leaveFullscreen } from "./leaveFullscreen";
+import { enterPip } from "./enterPip";
+import { leavePip } from "./leavePip";
+import { pipPlaceholder } from "./pipPlaceholder";
+import { expandMiniplayer } from "./expandMiniplayer";
+import { removeMiniplayer } from "./removeMiniplayer";
 import { capture } from "./capture";
-import { objectfitcontain } from "./objectfitcontain";
-import { objectfitcover } from "./objectfitcover";
-import { objectfitfill } from "./objectfitfill";
-import { volumehigh } from "./volumehigh";
-import { volumelow } from "./volumelow";
-import { volumemuted } from "./volumemuted";
-import { brightnesshigh } from "./brightnesshigh";
-import { brightnesslow } from "./brightnesslow";
-import { brightnessdark } from "./brightnessdark";
-import { entertheater } from "./entertheater";
-import { leavetheater } from "./leavetheater";
-import { fullscreenorientation } from "./fullscreenorientation";
-import { returnback } from "./returnback";
+import { objectFitContain } from "./objectFitContain";
+import { objectFitCover } from "./objectFitCover";
+import { objectFitFill } from "./objectFitFill";
+import { volumeHigh } from "./volumeHigh";
+import { volumeLow } from "./volumeLow";
+import { volumeMuted } from "./volumeMuted";
+import { brightnessHigh } from "./brightnessHigh";
+import { brightnessLow } from "./brightnessLow";
+import { brightnessDark } from "./brightnessDark";
+import { enterTheater } from "./enterTheater";
+import { leaveTheater } from "./leaveTheater";
+import { fullscreenOrientation } from "./fullscreenOrientation";
+import { returnBack } from "./returnBack";
 import { subtitles } from "./subtitles";
 import { captions } from "./captions";
-import { triangleleft } from "./triangleleft";
-import { doubletriangleleft } from "./doubletriangleleft";
-import { doubletriangleright } from "./doubletriangleright";
-import { tripletriangleleft } from "./tripletriangleleft";
-import { tripletriangleright } from "./tripletriangleright";
+import { triangleLeft } from "./triangleLeft";
+import { doubleTriangleLeft } from "./doubleTriangleLeft";
+import { doubleTriangleRight } from "./doubleTriangleRight";
+import { tripleTriangleLeft } from "./tripleTriangleLeft";
+import { tripleTriangleRight } from "./tripleTriangleRight";
 import { fwd } from "./fwd";
 import { bwd } from "./bwd";
 import { forward10 } from "./forward10";
 import { backward10 } from "./backward10";
-import { castplaceholder } from "./castplaceholder";
-import { airplayplaceholder } from "./airplayplaceholder";
-import { dragindicator } from "./dragindicator";
-import { deleteicon } from "./deleteicon";
+import { castPlaceholder } from "./castPlaceholder";
+import { airplayPlaceholder } from "./airplayPlaceholder";
+import { errorPlaceholder } from "./errorPlaceholder";
+import { dragIndicator } from "./dragIndicator";
+import { bin } from "./bin";
 import { playlist } from "./playlist";
 import { autoplay } from "./autoplay";
 import { loop } from "./loop";
 import { quality } from "./quality";
-import { audiotrack } from "./audiotrack";
-import { videotrack } from "./videotrack";
+import { audioTrack } from "./audioTrack";
+import { videoTrack } from "./videoTrack";
 import { chapters } from "./chapters";
 import { ambience } from "./ambience";
-import { playbackrate } from "./playbackrate";
+import { playbackRate } from "./playbackRate";
 import { timer } from "./timer";
 import { shuffle } from "./shuffle";
 import { add } from "./add";
@@ -59,6 +60,8 @@ import { cast } from "./cast";
 import { airplay } from "./airplay";
 import { edit } from "./edit";
 import { sort } from "./sort";
+import { check } from "./check";
+import { goBack } from "./goBack";
 
 IconRegistry.registerAll({
   // Random Order
@@ -70,56 +73,59 @@ IconRegistry.registerAll({
   settings,
   lock,
   unlock,
-  enterfullscreen,
-  leavefullscreen,
-  enterpip,
-  leavepip,
-  expandminiplayer,
-  removeminiplayer,
+  enterFullscreen,
+  leaveFullscreen,
+  enterPip,
+  leavePip,
+  expandMiniplayer,
+  removeMiniplayer,
   capture,
   cast,
   airplay,
-  objectfitcontain,
-  objectfitcover,
-  objectfitfill,
-  volumehigh,
-  volumelow,
-  volumemuted,
-  brightnesshigh,
-  brightnesslow,
-  brightnessdark,
+  objectFitContain,
+  objectFitCover,
+  objectFitFill,
+  volumeHigh,
+  volumeLow,
+  volumeMuted,
+  brightnessHigh,
+  brightnessLow,
+  brightnessDark,
   subtitles,
   captions,
-  entertheater,
-  leavetheater,
-  fullscreenorientation,
-  returnback,
-  triangleleft,
-  doubletriangleleft,
-  doubletriangleright,
-  tripletriangleleft,
-  tripletriangleright,
+  enterTheater,
+  leaveTheater,
+  fullscreenOrientation,
+  returnBack,
+  triangleLeft,
+  doubleTriangleLeft,
+  doubleTriangleRight,
+  tripleTriangleLeft,
+  tripleTriangleRight,
   fwd,
   bwd,
   forward10,
   backward10,
-  pipplaceholder,
-  castplaceholder,
-  airplayplaceholder,
-  dragindicator,
-  delete: deleteicon,
+  pipPlaceholder,
+  castPlaceholder,
+  airplayPlaceholder,
+  errorPlaceholder,
+  dragIndicator,
+  bin,
   playlist,
   autoplay,
   loop,
   quality,
-  audiotrack,
-  videotrack,
+  audioTrack,
+  videoTrack,
   chapters,
   ambience,
-  playbackrate,
+  playbackRate,
   timer,
   shuffle,
   add,
   edit,
   sort,
+  check,
+  goBack,
 });

@@ -1,4 +1,5 @@
 import { BaseMenuPanel } from ".";
+import { SettingsMenu } from "../";
 import type { SettingsMenuItem } from "../../types";
 import { BaseWidget, WidgetRegistry } from "../widgets";
 import { GroupWidget } from "../widgets/group";
@@ -26,9 +27,13 @@ export class SubMenuPanel extends BaseMenuPanel {
     this.buildShell();
   }
 
+  protected override onDestroy(): void {
+    this.widget?.destroy();
+  }
+
   private buildShell(): void {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
-    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", innerHTML: `<span class="tmg-media-smenu-back-arrow">&#8249;</span>`, tabIndex: 0 });
+    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
     this.backBtn.addEventListener("click", (e) => (e.stopPropagation(), this.onBack?.()));
     header.addEventListener("click", () => this.onBack?.());
@@ -40,7 +45,7 @@ export class SubMenuPanel extends BaseMenuPanel {
   }
 
   public override enter(dir?: "forward" | "backward" | "none") {
-    super.enter(dir), requestAnimationFrame(() => this.element.querySelector<HTMLElement>(":is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)")?.focus(), this.ctlr.signal);
+    super.enter(dir), requestAnimationFrame(() => this.element.querySelector<HTMLElement>(SettingsMenu.focusSelector)?.focus(), this.ctlr.signal);
   }
 
   public load(item: SettingsMenuItem): void {
@@ -59,8 +64,7 @@ export class SubMenuPanel extends BaseMenuPanel {
       for (const action of item.actions) {
         const label = action.getLabel(),
           btn = createEl("button", { className: "tmg-media-smenu-sub-action-btn" + (!action.icon ? " tmg-media-smenu-input-btn tmg-media-smenu-text-action" : ""), type: "button", ariaLabel: label, title: label });
-        if (action.id === "delete" || action.icon === "delete") btn.classList.add("tmg-media-smenu-delete-btn");
-        if (action.id === "sort" || action.icon === "sort") btn.classList.add("tmg-media-smenu-sort-btn");
+        if (action.id) btn.classList.add(`tmg-media-smenu-${action.id}-btn`);
         action.icon ? (btn.innerHTML = IconRegistry.get(action.icon, true) || label) : (btn.textContent = label);
         if (action.getDisabled) btn.disabled = action.getDisabled();
         if (action.hidden) btn.style.display = action.hidden() ? "none" : "";

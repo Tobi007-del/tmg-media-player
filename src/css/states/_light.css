@@ -1,7 +1,7 @@
 .tmg-media-container.tmg-media-light .tmg-media-container-content {
   cursor: pointer;
 }
-.tmg-media-container.tmg-media-light :is(.tmg-media-placeholder, .tmg-media-apt-controls-wrapper, .tmg-media-big-controls-wrapper-cover),
+.tmg-media-container.tmg-media-light :is(.tmg-media-apt-controls-wrapper, .tmg-media-big-controls-wrapper-cover),
 .tmg-media-container.tmg-media-stall .tmg-media-big-play-pause-btn {
   pointer-events: auto;
   opacity: 1;
@@ -12,12 +12,12 @@
 }
 .tmg-media-container.tmg-media-light :is([data-control-id]:not([data-light-control="true"]), .tmg-media-cover-curtain, .tmg-media-captions-container),
 .tmg-media-container.tmg-media-light:not(.tmg-media-settings-view) .tmg-media-settings,
-.tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-play-notifier, .tmg-media-pause-notifier, .tmg-media-buffer, .tmg-media-big-play-pause-btn svg),
+.tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-buffer, .tmg-media-play-notifier, .tmg-media-pause-notifier, .tmg-media-big-play-pause-btn svg),
 .tmg-media-container.tmg-media-stall .tmg-media-big-controls-wrapper > * {
   display: none;
 }
 .tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-big-play-pause-btn .tmg-media-play-icon),
-.tmg-media-container.tmg-media-light [data-light-control="true"],
+.tmg-media-container.tmg-media-light [data-control-id][data-light-control="true"],
 .tmg-media-container.tmg-media-stall .tmg-media-big-play-pause-btn {
   display: flex;
 }

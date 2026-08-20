@@ -50,14 +50,14 @@
         overflow: hidden;
       }
       :is(:root, .tmg-media-container) {
-        --tmg-video-relative-unit: clamp(10px, 1.7vw, 37px);
-        --tmg-video-brand-color: var(--brand);
+        --tmg-media-relative-unit: clamp(10px, 1.7vw, 37px);
+        --tmg-media-brand-color: var(--brand);
       }
       .container.tmg-media-container .t007-input-field {
         --t007-input-color: var(--brand);
         --t007-input-unit: 14px;
         --t007-input-height: 39px;
-        max-width: calc(var(--tmg-video-current-unit) * 30.77);
+        max-width: calc(var(--tmg-media-current-unit) * 30.77);
         margin-bottom: 8px;
       }
       .container.tmg-media-container {
@@ -75,14 +75,14 @@
       }
       .container.tmg-media-container > p {
         text-align: center;
-        font-size: calc(0.62 * var(--tmg-video-current-unit));
+        font-size: calc(0.62 * var(--tmg-media-current-unit));
         opacity: 0.4;
       }
       .container.tmg-media-container > p:last-of-type {
         margin-bottom: 0.5em;
       }
       .dual-field-wrapper {
-        width: calc(var(--tmg-video-current-unit) * 30.77);
+        width: calc(var(--tmg-media-current-unit) * 30.77);
         display: flex;
         gap: 16px;
       }
@@ -93,15 +93,10 @@
         box-shadow: 0 0 12px rgb(from var(--brand) r g b / 1);
       }
     </style>
-    <link rel="stylesheet" href="/tmg-media-player/beta/index-video.css" />
     <link rel="stylesheet" href="index.css" />
-    <script src="/tmg-media-player/beta/build.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@t007/input@latest" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@t007/toast@latest" defer></script>
-    <script src="index.js" defer></script>
   </head>
   <body>
-    <div class="container tmg-media-container tmg-video-container">
+    <div class="container tmg-host-container tmg-media-container">
       <h2>🎧 NINO's Boombox 🎵</h2>
       <p>Move the boombox around by dragging, two fingers or mouse wheel pressed moves backwards, toggle 3d too!</p>
       <p>Use the tape controls to travel through your actions in linear time, Play or Rewind to relive it! It persists locally.</p>
@@ -141,7 +136,10 @@
         </div>
       </div>
     </div>
-    <script defer>
+    <script src="https://cdn.jsdelivr.net/npm/sia-reactor@latest/dist/super.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tmg-media-player@latest"></script>
+    <script src="index.js"></script>
+    <script>
       window.addEventListener("load", () => {
         const bbInst = window.NinoBoombox,
           fileInput = field({ type: "file", label: "Load Your Own Audio", helperText: { info: "Press Play to start listening or make the experience yours if you wish!" }, accept: "audio/*", multiple: false });

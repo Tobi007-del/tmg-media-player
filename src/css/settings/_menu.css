@@ -3,15 +3,15 @@
   position: absolute;
   top: var(--tmg-smenu-anchor-y);
   left: var(--tmg-smenu-anchor-x);
-  width: var(--tmg-media-smenu-width);
+  width: var(--tmg-media-settings-menu-width);
   max-height: min(calc(100% - (var(--tmg-media-current-top-wrapper-height) + var(--tmg-media-current-bottom-wrapper-height))), calc(var(--tmg-media-current-unit) * 13));
   background-color: var(--tmg-media-settings-menu-background-color);
   border-radius: calc(var(--tmg-media-current-unit) / 2);
   color: var(--tmg-media-settings-text-color);
-  overflow: hidden;
-  box-shadow: inset 0 0 var(--tmg-media-smenu-width) rgba(0, 0, 0, 0.1), 0 calc(var(--tmg-media-current-unit) / 6.5) calc(var(--tmg-media-current-unit) / 1.3) rgba(0, 0, 0, 0.5);
   opacity: 0;
+  overflow: hidden;
   pointer-events: none;
+  box-shadow: inset 0 0 var(--tmg-media-settings-menu-width) rgba(0, 0, 0, 0.1), 0 calc(var(--tmg-media-current-unit) / 6.5) calc(var(--tmg-media-current-unit) / 1.3) rgba(0, 0, 0, 0.5);
   transform: scale(0.985) translate(0, calc(-100% - var(--tmg-media-current-unit)));
   transition: height var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), width var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), opacity var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing), transform var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
 }
@@ -26,13 +26,20 @@
 .tmg-media-smenu-overlay-open.tmg-media-smenu-drop-down {
   transform: translate(0, calc(var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / 5));
 }
+
 .tmg-media-smenu-overlay svg {
   width: calc(var(--tmg-media-current-unit) / 1.3);
   height: calc(var(--tmg-media-current-unit) / 1.3);
 }
-
+.tmg-media-smenu-row-icon svg {
+  width: calc(var(--tmg-media-current-unit) / 1.1);
+  height: calc(var(--tmg-media-current-unit) / 1.1);
+}
 .tmg-host-container[data-playlist-sort="desc"] .tmg-media-smenu-sort-btn svg {
   transform: scaleY(-1);
+}
+.tmg-media-smenu-redo-btn svg {
+  transform: scaleX(-1);
 }
 
 /* Panel */
@@ -93,7 +100,9 @@
   text-align: center;
 }
 .tmg-media-smenu-sub-action-btn {
+  min-width: calc(var(--tmg-media-current-unit) * 1.1);
   padding: calc(var(--tmg-media-current-unit) / 6);
+  font-size: unset;
   border-radius: calc(var(--tmg-media-current-unit) / 6.5);
 }
 .tmg-media-smenu-sub-action-btn.tmg-media-smenu-text-action {
@@ -117,18 +126,22 @@
 
 /* Lists */
 .tmg-media-smenu-main-list,
-.tmg-media-smenu-select-list,
-.tmg-media-smenu-group-list,
-.tmg-media-smenu-playlist-list {
+.tmg-media-smenu-select-list:not(:empty),
+.tmg-media-smenu-group-list {
   list-style: none;
   padding: calc(var(--tmg-media-current-unit) / 4) 0;
+}
+:is(.tmg-media-smenu-group-list, .tmg-media-smenu-select-list):empty::after {
+  content: "None";
+  display: block;
+  padding: calc(var(--tmg-media-current-unit) / 2.5) calc(var(--tmg-media-current-unit) / 1.75);
+  text-align: center;
 }
 
 /* Rows */
 .tmg-media-smenu-row,
 .tmg-media-smenu-select-option,
 .tmg-media-smenu-group-row,
-.tmg-media-smenu-playlist-item,
 .tmg-media-smenu-view-btn {
   display: flex;
   align-items: center;
@@ -137,7 +150,7 @@
   position: relative;
   cursor: pointer;
 }
-:where(.tmg-media-smenu-row, .tmg-media-smenu-select-option, .tmg-media-smenu-group-row, .tmg-media-smenu-playlist-item, .tmg-media-smenu-view-btn, .tmg-media-smenu-color-swatch, .tmg-media-smenu-input-btn, .tmg-media-smenu-limits-btn, .tmg-media-smenu-sub-action-btn):is(:hover, :focus-visible) {
+:where(.tmg-media-smenu-row, .tmg-media-smenu-select-option, .tmg-media-smenu-group-row, .tmg-media-smenu-view-btn, .tmg-media-smenu-color-swatch, .tmg-media-smenu-input-btn, .tmg-media-smenu-limits-btn, .tmg-media-smenu-sub-action-btn):is(:hover, :focus-visible) {
   background-color: rgb(from currentColor r g b / 0.1);
 }
 .tmg-media-smenu-view-btn {
@@ -164,15 +177,14 @@
 }
 
 /* Row Anatomy */
-:is(.tmg-media-smenu-row-label, .tmg-media-smenu-group-label, .tmg-media-smenu-select-label, .tmg-media-smenu-playlist-label, .tmg-media-smenu-row-info, .tmg-media-smenu-group-info, .tmg-media-smenu-select-info, .tmg-media-smenu-group-value, .tmg-media-smenu-text) {
+:is(.tmg-media-smenu-row-label, .tmg-media-smenu-group-label, .tmg-media-smenu-select-label, .tmg-media-smenu-row-info, .tmg-media-smenu-group-info, .tmg-media-smenu-select-info, .tmg-media-smenu-group-value, .tmg-media-smenu-text) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .tmg-media-smenu-row-label,
 .tmg-media-smenu-group-label,
-.tmg-media-smenu-select-label,
-.tmg-media-smenu-playlist-label {
+.tmg-media-smenu-select-label {
   flex-grow: 1;
   max-width: 80%;
   margin-right: auto;
@@ -232,10 +244,7 @@
   width: calc(var(--tmg-media-current-unit) / 1.3);
   opacity: 0;
 }
-.tmg-media-smenu-select-check::before {
-  content: "✓";
-  color: currentColor;
-}
+
 .tmg-media-smenu-option-active .tmg-media-smenu-select-check {
   opacity: 1;
 }
@@ -347,9 +356,9 @@
   z-index: 999 !important;
   border-top: 1px solid rgb(from currentColor r g b / 0.2);
   border-bottom: 1px solid rgb(from currentColor r g b / 0.2);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  background: rgb(from currentColor r g b / 0.4);
+  -webkit-backdrop-filter: var(--tmg-media-overlay-filter);
+  backdrop-filter: var(--tmg-media-overlay-filter);
+  background-color: rgb(from currentColor r g b / 0.4);
 }
 .tmg-media-smenu-drag-placeholder {
   background-color: rgb(from currentColor r g b / 0.05);
@@ -357,16 +366,16 @@
 .tmg-media-smenu-drag-placeholder:not(:last-child) {
   border-bottom: 1px solid rgb(from currentColor r g b / 0.1);
 }
-.tmg-media-smenu-playlist-drag {
+.tmg-media-smenu-drag-handle {
+  display: flex;
   margin-right: calc(var(--tmg-media-current-unit) / 3);
   touch-action: none;
   cursor: grab;
 }
-.tmg-media-smenu-playlist-drag:active {
+.tmg-media-smenu-drag-handle:active {
   cursor: grabbing;
 }
-.tmg-media-smenu-delete-btn,
-.tmg-media-smenu-edit-btn {
+.tmg-media-smenu-select-option :is(.tmg-media-smenu-delete-btn, .tmg-media-smenu-edit-btn) {
   margin-left: calc(var(--tmg-media-current-unit) / 3);
 }
 .tmg-media-smenu-delete-btn {

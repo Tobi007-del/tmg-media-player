@@ -44,41 +44,27 @@
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-text-notifier {
   min-height: calc(var(--tmg-media-current-unit) * 1.25);
 }
-[data-notify="mediaplay"] .tmg-media-play-notifier,
-[data-notify="mediapause"] .tmg-media-pause-notifier,
-[data-notify="mediaprevious"] .tmg-media-previous-notifier,
-[data-notify="medianext"] .tmg-media-next-notifier,
-[data-notify="playbackrateup"] .tmg-media-playback-rate-up-notifier,
-[data-notify="playbackratedown"] .tmg-media-playback-rate-down-notifier,
-[data-notify="volumeup"] .tmg-media-volume-up-notifier,
-[data-notify="volumedown"] .tmg-media-volume-down-notifier,
-[data-notify="volumemuted"] .tmg-media-volume-muted-notifier,
-[data-notify="brightnessup"] .tmg-media-brightness-up-notifier,
-[data-notify="brightnessdown"] .tmg-media-brightness-down-notifier,
-[data-notify="brightnessdark"] .tmg-media-brightness-dark-notifier,
-[data-notify="objectfitcontain"] .tmg-media-object-fit-contain-notifier,
-[data-notify="objectfitcover"] .tmg-media-object-fit-cover-notifier,
-[data-notify="objectfitfill"] .tmg-media-object-fit-fill-notifier,
+:is([data-notify="mediaPlay"] .tmg-media-play-notifier, [data-notify="mediaPause"] .tmg-media-pause-notifier, [data-notify="mediaPrevious"] .tmg-media-previous-notifier, [data-notify="mediaNext"] .tmg-media-next-notifier),
+:is([data-notify="volumeUp"] .tmg-media-volume-up-notifier, [data-notify="volumeDown"] .tmg-media-volume-down-notifier, [data-notify="volumeMuted"] .tmg-media-volume-muted-notifier),
+:is([data-notify="brightnessUp"] .tmg-media-brightness-up-notifier, [data-notify="brightnessDown"] .tmg-media-brightness-down-notifier, [data-notify="brightnessDark"] .tmg-media-brightness-dark-notifier),
+:is([data-notify="playbackRateUp"] .tmg-media-playback-rate-up-notifier, [data-notify="playbackRateDown"] .tmg-media-playback-rate-down-notifier),
+:is([data-notify="objectFitContain"] .tmg-media-object-fit-contain-notifier, [data-notify="objectFitCover"] .tmg-media-object-fit-cover-notifier, [data-notify="objectFitFill"] .tmg-media-object-fit-fill-notifier),
+:is([data-notify="cast"] .tmg-media-cast-notifier, [data-notify="airplay"] .tmg-media-airplay-notifier),
 [data-notify="capture"] .tmg-media-capture-notifier,
 [data-notify="captions"] .tmg-media-captions-notifier,
-[data-notify="theater"] .tmg-media-theater-notifier,
-[data-notify="fullscreen"] .tmg-media-fullscreen-notifier,
-[data-notify="cast"] .tmg-media-cast-notifier,
-[data-notify="airplay"] .tmg-media-airplay-notifier,
 [data-notify="timer"] .tmg-media-timer-notifier {
   animation-name: tmg-show, tmg-scale-up;
 }
-:is([data-notify="playbackrateup"], [data-notify="playbackratedown"]) .tmg-media-playback-rate-notifier-content,
-:is([data-notify="volumeup"], [data-notify="volumedown"]) .tmg-media-volume-notifier-content,
-:is([data-notify="brightnessup"], [data-notify="brightnessdown"]) .tmg-media-brightness-notifier-content,
-[data-notify^="objectfit"] .tmg-media-object-fit-notifier-content {
+:is([data-notify="playbackRateUp"], [data-notify="playbackRateDown"]) .tmg-media-playback-rate-notifier-content,
+:is([data-notify="volumeUp"], [data-notify="volumeDown"]) .tmg-media-volume-notifier-content,
+:is([data-notify="brightnessUp"], [data-notify="brightnessDown"]) .tmg-media-brightness-notifier-content,
+[data-notify^="objectFit"] .tmg-media-object-fit-notifier-content {
   animation-name: tmg-show-alt;
 }
-[data-notify="fwd"] .tmg-media-fwd-notifier,
-[data-notify="bwd"] .tmg-media-bwd-notifier,
+:is([data-notify="fwd"] .tmg-media-fwd-notifier, [data-notify="bwd"] .tmg-media-bwd-notifier),
 [data-notify="chapter"] .tmg-media-chapter-notifier,
 .tmg-media-notifier.tmg-media-control-persist {
-  animation-name: tmg-stay-shown;
+  animation-name: tmg-stay-visible;
 }
 .tmg-media-notifiers-container :is(.tmg-media-text-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active {
   opacity: 1;

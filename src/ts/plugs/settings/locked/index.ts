@@ -2,7 +2,7 @@ import { BasePlug } from "../../base";
 import type { LockedConfig, LockedState } from "./types";
 import { LOCKED_BUILD } from "./build";
 import type { Controller } from "@core/controller";
-import type { ScreenLockButton } from "@components/screenlock";
+import type { ScreenLockButton } from "@components/screenLock";
 import type { REvent } from "sia-reactor";
 import { ComponentRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
@@ -25,7 +25,7 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   public override mount(): void {
     // Variables Assignment
     this.wrapper = createEl("div", { className: "tmg-media-screen-locked-wrapper", innerHTML: `<p>Screen Locked</p><p>Tap to Unlock</p>` });
-    this.control = ComponentRegistry.init("screenlock", this.ctlr);
+    this.control = ComponentRegistry.init("screenLock", this.ctlr);
     // DOM Injection
     this.ctlr.DOM.containerContentWrapper?.append(this.wrapper);
   }
@@ -61,7 +61,8 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   protected enter(): void {
     this.ctlr.plug("settings.settingsView")?.leaveView();
     setTimeout(this.showOverlay, 0, this.signal);
-    this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar");
+    this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-locked"); // #TWINING
+    this.media.state.locked = true;
     // this.ctlr.plug("settings.overlay")?.hide("force"), this.ctlr.plug("settings.keys")?.setEventListeners("remove");
   } // #STANDALONE: suitable partner courtesy
 
@@ -69,7 +70,8 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
     this.removeOverlay();
     await mockAsync(parseCSSTime(this.settings.css.switchTransitionTime));
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
-    this.media.container.classList.remove("tmg-media-locked");
+    this.media.container.classList.remove("tmg-media-locked"), this.media.pseudoContainer.classList.remove("tmg-media-locked"); // #TWINING
+    this.media.state.locked = false;
     // this.ctlr.plug("settings.overlay")?.show(), this.ctlr.plug("settings.keys")?.setEventListeners();
   } // #STANDALONE: needs scoped behavior
 

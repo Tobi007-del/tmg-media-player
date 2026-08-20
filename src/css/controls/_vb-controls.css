@@ -39,15 +39,15 @@
   background: linear-gradient(var(--tmg-media-current-slider-gradient-dir), var(--tmg-media-range-track-color) calc(var(--tmg-media-current-slider-position) * (var(--tmg-media-range-track-percent) * 1%)), var(--tmg-media-range-track-boost-color) calc(var(--tmg-media-range-track-boost-percent) * 1%), var(--tmg-media-range-track-boost-color) calc((var(--tmg-media-range-track-boost-percent) * 1%) + (var(--tmg-media-current-slider-boost-position) * (100% - (var(--tmg-media-range-track-boost-percent) * 1%)))), transparent 0%), linear-gradient(var(--tmg-media-current-slider-gradient-dir), var(--tmg-media-range-track-base-color) calc(var(--tmg-media-range-track-percent) * 1%), var(--tmg-media-range-track-base-boost-color) 0%);
 }
 .tmg-media-touch-volume-slider {
-  --tmg-media-range-track-percent: var(--tmg-media-volume-slider-percent);
+  --tmg-media-range-track-percent: var(--tmg-media-current-volume-slider-percent);
   --tmg-media-current-slider-position: var(--tmg-media-current-volume-slider-position);
-  --tmg-media-range-track-boost-percent: var(--tmg-media-volume-slider-boost-percent);
+  --tmg-media-range-track-boost-percent: var(--tmg-media-current-volume-slider-boost-percent);
   --tmg-media-current-slider-boost-position: var(--tmg-media-current-volume-slider-boost-position);
 }
 .tmg-media-touch-brightness-slider {
-  --tmg-media-range-track-percent: var(--tmg-media-brightness-slider-percent);
+  --tmg-media-range-track-percent: var(--tmg-media-current-brightness-slider-percent);
   --tmg-media-current-slider-position: var(--tmg-media-current-brightness-slider-position);
-  --tmg-media-range-track-boost-percent: var(--tmg-media-brightness-slider-boost-percent);
+  --tmg-media-range-track-boost-percent: var(--tmg-media-current-brightness-slider-boost-percent);
   --tmg-media-current-slider-boost-position: var(--tmg-media-current-brightness-slider-boost-position);
 }
 .tmg-media-container.tmg-media-volume-boost .tmg-media-vb-slider-wrapper .tmg-media-range-chunk:last-child .tmg-media-range-value-bar,

@@ -22,7 +22,7 @@ export class GroupWidget extends BaseWidget {
   protected override onSetup(): void {
     super.onSetup();
     const cPaths = new Set<string>(), mPaths = new Set<string>();
-    for (const sub of this.item.items ?? []) {
+    for (const sub of this.item?.items ?? []) {
       if (sub.configPaths) for (const p of sub.configPaths) cPaths.add(p as string);
       if (sub.mediaPaths) for (const p of sub.mediaPaths) mPaths.add(p as string);
     }
@@ -31,6 +31,7 @@ export class GroupWidget extends BaseWidget {
   }
 
   public override syncUI(): void {
+    if (!this.renderRows || !this.item) return;
     const active = (this.item.items ?? []).filter((sub) => {
       if (this.settings.settingsView.menu.blacklist.includes(sub.id)) return false;
       if (isFunc(sub.hidden) ? sub.hidden() : sub.hidden) return false;
@@ -41,8 +42,8 @@ export class GroupWidget extends BaseWidget {
       const li = this.element.querySelector<SettingsRowElement>(`.tmg-media-smenu-group-row[data-sub-id="${sub.id}"]`);
       if (li) {
         const value = sub.getValue?.(),
-          opts = ["select", "drag-select"].includes(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
-          badge = parseUIBadge(sub.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge);
+          opts = /^(select|drag-select)$/.test(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
+          badge = parseUIBadge(sub.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge);
         const valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-group-value");
         const lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-group-label");
         if (lblNode) {
@@ -63,7 +64,7 @@ export class GroupWidget extends BaseWidget {
 
   private buildRow(sub: SettingsMenuItem): HTMLElement {
     const isWidget = sub.widget === "toggle" || sub.inline,
-      disabled = sub.getDisabled?.() ?? (["select", "drag-select"].includes(sub.widget as string) && sub.getOptions?.()?.length === 0),
+      disabled = sub.getDisabled?.() ?? (/^(select|drag-select)$/.test(sub.widget as string) && sub.getOptions?.()?.length === 0),
       li = createEl("li", { className: "tmg-media-smenu-group-row" + (disabled ? " tmg-media-control-disabled" : ""), tabIndex: 0, inert: disabled || undefined }, { subId: sub.id }) as SettingsRowElement,
       lbl = createEl("span", { className: "tmg-media-smenu-group-label", textContent: sub.label });
     if (sub.title) li.title = isFunc(sub.title) ? sub.title() : sub.title;
@@ -84,8 +85,8 @@ export class GroupWidget extends BaseWidget {
       } else li.append(lbl);
     } else {
       const value = sub.getValue?.(),
-        opts = ["select", "drag-select"].includes(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
-        badge = parseUIBadge(sub.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+        opts = /^(select|drag-select)$/.test(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
+        badge = parseUIBadge(sub.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
         val = createEl("span", { className: "tmg-media-smenu-group-value", textContent: Array.isArray(value) ? value.join(", ") : value || "" });
 
       if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
@@ -97,8 +98,8 @@ export class GroupWidget extends BaseWidget {
         const ac = new AbortController(),
           syncUI = () => {
             const value = sub.getValue?.(),
-              opts = ["select", "drag-select"].includes(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
-              badge = parseUIBadge(sub.getBadge?.() || opts?.map(parseUIOpt).find((o) => o.display === value || o.value === value)?.badge),
+              opts = /^(select|drag-select)$/.test(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
+              badge = parseUIBadge(sub.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
               valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-group-value");
             const lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-group-label");
             if (lblNode) {

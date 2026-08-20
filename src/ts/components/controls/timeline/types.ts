@@ -1,6 +1,6 @@
-import { RangeInputConfig } from "../../rangeinput";
+import { RangeInputConfig } from "../../rangeInput";
 
-declare module "../../rangeinput/types" {
+declare module "../../rangeInput/types" {
   interface RangeInputChunk {
     buffer?: HTMLElement;
   }

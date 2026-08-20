@@ -71,13 +71,13 @@ export class LightStatePlug extends BasePlug<LightStateConfig> {
   }
   protected remove(): void {
     this.config.disabled = true;
-    this.isLight("bigplaypause") && this.stall();
+    this.isLight("bigPlayPause") && this.stall();
     this.media.intent.paused = false;
   }
 
   protected stall(): void {
     this.ctlr.plug("settings.overlay")?.show();
-    const bigPlayBtn = this.ctlr.plug("settings.controlPanel")?.compEl("bigplaypause");
+    const bigPlayBtn = this.ctlr.plug("settings.controlPanel")?.compEl("bigPlayPause");
     bigPlayBtn && this.media.container.classList.add("tmg-media-stall");
     bigPlayBtn?.addEventListener("animationend", () => this.media.container.classList.remove("tmg-media-stall"), { once: true, signal: this.signal });
   }

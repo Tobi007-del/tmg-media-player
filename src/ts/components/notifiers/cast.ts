@@ -3,7 +3,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class CastNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "castnotifier";
+  public static readonly componentName = "castNotifier";
   public static readonly triggers = ["cast"];
 
   public override create() {
@@ -13,6 +13,6 @@ export class CastNotifier extends BaseNotifier<undefined, ComponentState, HTMLDi
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    castnotifier: typeof CastNotifier;
+    castNotifier: typeof CastNotifier;
   }
 }

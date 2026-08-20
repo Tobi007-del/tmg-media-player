@@ -25,8 +25,7 @@ export class BaseRegistry<T> {
     return this.items.find((i) => i.name === name)?.value;
   }
   public getAll(order?: string[]): T[] {
-    if (!order) return this.items.map((i) => i.value);
-    return this.items.sort((a, b, ai = order.indexOf(a.name), bi = order.indexOf(b.name)) => (ai === -1 && bi === -1 ? 0 : ai === -1 ? 1 : bi === -1 ? -1 : ai - bi)).map((i) => i.value);
+    return (!order ? this.items : this.items.toSorted((a, b, ai = order.indexOf(a.name), bi = order.indexOf(b.name)) => (ai === -1 && bi === -1 ? 0 : ai === -1 ? 1 : bi === -1 ? -1 : ai - bi))).map((i) => i.value);
   }
   public clear() {
     return (this.items = []), this;
@@ -147,7 +146,7 @@ export class ComponentRegistry extends BaseRegistry<ComponentConstructor> {
     this.instance.register(Comp.componentName, Comp);
   }
   public static unregister(name: keyof ComponentRegistryMap): void {
-    this.instance.unregister(name);
+    this.instance.unregister(name as string);
   }
   public static init<K extends keyof ComponentRegistryMap>(name: K, ctlr: Controller, config?: any): InstanceType<ComponentRegistryMap[K]> | null;
   public static init<T extends BaseComponent = BaseComponent>(name: string, ctlr: any, config?: any): T | null;
@@ -174,10 +173,10 @@ export class IconRegistry extends BaseRegistry<string> {
     this.instance.register(name, svg);
   }
   public static unregister(name: keyof IconRegistryMap): void {
-    this.instance.unregister(name);
+    this.instance.unregister(name as string);
   }
   // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
   public static registerAll(icons: Record<keyof IconRegistryMap, IconRegistryMap[keyof IconRegistryMap]>): void {
-    for (const k of Object.keys(icons)) this.instance.register(k as keyof IconRegistryMap, icons[k as keyof IconRegistryMap]);
+    for (const k of Object.keys(icons)) this.instance.register(k, icons[k as keyof IconRegistryMap]);
   }
 }

@@ -4,7 +4,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class FwdBwdNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "fwdbwdnotifier";
+  public static readonly componentName = "fwdBwdNotifier";
   public static readonly triggers = ["fwd", "bwd"];
   public fwdDiv!: HTMLDivElement;
   public bwdDiv!: HTMLDivElement;
@@ -18,6 +18,6 @@ export class FwdBwdNotifier extends BaseNotifier<undefined, ComponentState, HTML
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    fwdbwdnotifier: typeof FwdBwdNotifier;
+    fwdBwdNotifier: typeof FwdBwdNotifier;
   }
 }

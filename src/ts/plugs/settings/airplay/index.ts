@@ -4,7 +4,7 @@ import type { CtlrMedia } from "@defs/contract";
 import { AIRPLAY_BUILD } from "./build";
 import { isFunc } from "@utils/obj";
 import { ComponentRegistry } from "@core/registries";
-import { AirPlayPlaceholder } from "@components/holders/airplayplaceholder";
+import { AirPlayPlaceholder } from "@components/holders/airplayPlaceholder";
 import { AirPlayConfig } from "./types";
 
 export class AirPlayPlug extends BasePlug<AirPlayConfig> {
@@ -24,11 +24,11 @@ export class AirPlayPlug extends BasePlug<AirPlayConfig> {
     // --------- Listeners
     this.media.on("intent.airplay", this.handleAirPlayIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("airplay", { keyboard: { phase: "keyup" } }), super.wire();
+    this.ctlr.addAction("airplay", { keyboard: { phase: "keyup" } }, this.signal), super.wire();
   }
 
   protected handleAvailability(e: any, can = e.availability === "available"): void {
-    if (can) (this.placeholder ??= ComponentRegistry.init("airplayplaceholder", this.ctlr))?.setup();
+    if (can) this.placeholder ??= ComponentRegistry.init("airplayPlaceholder", this.ctlr);
     (this.isAvailable = can), (this.media.features.airplay ||= this.ctlr.isNativeEl && can); // e.availability returns "available" if an Apple TV/HomePod is on the network
   }
 

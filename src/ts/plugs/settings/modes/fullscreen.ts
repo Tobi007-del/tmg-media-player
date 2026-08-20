@@ -23,31 +23,30 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
   protected shadowFullscreen = false;
 
   constructor(ctlr: Controller, config = ctlr.settings.modes.fullscreen) {
-    super(ctlr, config, { snubbingAutoFullscreenOrientationIntent: false });
+    super(ctlr, config, { snubbingAutoFullscreenOrientation: false });
   }
 
   public override wire(): void {
-    // Ctlr Media Watchers
-    this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
-    // ---- State --------
-    this.ctlr.state.watch("docInFullscreen", this.onDocInFullscreen, { signal: this.signal });
-    // ---- State Listeners
-    this.ctlr.state.on("screenOrientation.type", this.handleScreenOrientationType, { signal: this.signal });
-    // ---- Media Setters
+    // Ctlr Media Setters
     this.media.set("state.fullscreen", (v) => (v !== this.shadowFullscreen && !IS_IOS ? TERMINATOR : v), { signal: this.signal }); // #DICTATOR: reliable authority
     // ---------- Watchers
+    this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     this.media.watch("state.fullscreenOrientation", this.onScreenOrientation, { signal: this.signal });
+    // ---- State --------
+    this.ctlr.state.watch("docInFullscreen", this.onDocInFullscreen, { signal: this.signal });
     // ---------- Listeners
     this.media.on("intent.fullscreen", this.handleFullscreenIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.fullscreenOrientation", this.handleFullscreenOrientationIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.autoFullscreenOrientation", this.handleAutoFullscreenOrientationIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.fullscreen", this.syncFeatures, { signal: this.signal });
+    // ---- State ---------
+    this.ctlr.state.on("screenOrientation.type", this.handleScreenOrientationType, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.modes.fullscreen.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.modes.fullscreen.pseudo", this.handlePseudo, { signal: this.signal });
     this.ctlr.config.on("settings.modes.fullscreen.orientation.allowMediaOverride", ({ value }) => value && this.media.state.fullscreen && (this.media.intent.fullscreenOrientation = this.preferredOrientation), { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("fullscreen", { keyboard: { phase: "keyup" } });
+    this.ctlr.addAction("fullscreen", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.fullscreen.disabled">): void {
@@ -60,12 +59,12 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
   }
 
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
-    if (e.resolved || (IS_IOS && !this.config.pseudo)) return e.reject(this.name); // over to u, native tech!
+    if (e.resolved || (IS_IOS && !this.config.pseudo)) return void (!e.resolved && e.reject(this.name)); // over to u, native tech!
     if (e.value && !this.inFullscreen) {
       const fW = this.ctlr.plug("settings.modes")?.pictureInPicture?.floatingWindow;
       if (this.ctlr.isUIActive("floatingPlayer")) return fW?.addEventListener("pagehide", this.enter, { signal: this.signal }), fW?.close(), e.resolve(this.name);
-      if (this.ctlr.isUIActive("pictureInPicture")) silence(() => (this.media.intent.pictureInPicture = false));
-      if (this.ctlr.isUIActive("miniplayer")) silence(() => (this.media.intent.miniplayer = false));
+      if (this.media.state.pictureInPicture) silence(() => (this.media.intent.pictureInPicture = false));
+      if (this.media.state.miniplayer) silence(() => (this.media.intent.miniplayer = false));
       this.enter();
     } else if (!e.value && this.inFullscreen) {
       !this.media.container.matches(":fullscreen") ? this.onDocInFullscreen(false) : exitFullscreen(this.media.container);
@@ -80,22 +79,24 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
 
   protected handleFullscreenOrientationIntent(e: REvent<CtlrMedia, "intent.fullscreenOrientation">): void {
     if (e.resolved) return;
-    this.changeScreenOrientation(e.value);
+    this.useAutoFullScreenOrientation(), this.changeScreenOrientation(e.value); // #BULLET-PROOF: must comes clutch
     this.media.state.fullscreenOrientation = e.value; // UX boost
-    this.media.state.autoFullscreenOrientation = false;
     e.resolve(this.name);
   }
 
   protected handleAutoFullscreenOrientationIntent(e: REvent<CtlrMedia, "intent.autoFullscreenOrientation">): void {
-    if ((this.state.snubbingAutoFullscreenOrientationIntent = !!e.resolved)) return;
-    e.value ? connectOrientationManager() : disconnectOrientationManager();
-    this.media.state.autoFullscreenOrientation = e.value;
+    if ((this.state.snubbingAutoFullscreenOrientation = !!e.resolved)) return;
+    this.useAutoFullScreenOrientation(e.value);
     e.resolve(this.name);
+  }
+  protected useAutoFullScreenOrientation(value = false): void {
+    value ? connectOrientationManager() : disconnectOrientationManager();
+    this.media.state.autoFullscreenOrientation = value;
   }
 
   protected handleScreenOrientationType({ value: type }: REvent<CtlrState, "screenOrientation.type">): void {
-    if (this.media.state.fullscreen) this.media.state.fullscreenOrientation = this.lockedScreen ? type : false;
-    this.onScreenOrientation(type), !this.state.snubbingAutoFullscreenOrientationIntent && this.media.state.autoFullscreenOrientation && this.changeScreenOrientation(type);
+    if (this.media.state.fullscreen) this.media.state.fullscreenOrientation = this.ctlr.state.screenOrientation.locked ? type : false;
+    !this.ctlr.state.screenOrientation.locked && this.onScreenOrientation(type);
   }
 
   protected onDocInFullscreen(docInFs: boolean): void {
@@ -106,26 +107,25 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
       this.config.pseudo && initFocusTrap(this.media.container, { enabled: true });
     } else if (this.ctlr.isUIActive("fullscreen")) {
       this.media.container.classList.toggle("tmg-media-fullscreen", (this.inFullscreen = false));
-      silence(() => (this.media.intent.locked = false));
-      this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
-      this.lockedScreen = this.media.state.fullscreen = this.shadowFullscreen = false;
-      removeFocusTrap(this.media.container);
+      silence(() => (this.media.intent.locked = false)), disconnectOrientationManager();
+      this.ctlr.state.screenOrientation.locked = this.media.state.fullscreen = this.shadowFullscreen = false;
+      removeFocusTrap(this.media.container), this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
     }
   }
 
   protected onScreenOrientation(type: OrientationType | false): void {
-    if ((!this.media.state.fullscreen && (this.ctlr.state.readyState < 3 || !this.ctlr.state.mediaParentIntersecting)) || this.ctlr.isUIActive("miniplayer")) return; // #PATIENT: only after first play
+    !this.state.snubbingAutoFullscreenOrientation && this.media.state.autoFullscreenOrientation && this.changeScreenOrientation(type);
+    if ((!this.media.state.fullscreen && (this.ctlr.state.readyState < 3 || !this.ctlr.state.mediaParentIntersecting)) || this.media.state.miniplayer) return; // #PATIENT: only after first play
     const target = !this.media.state.fullscreen ? this.config.orientation.rotationToggle.on.value : this.config.orientation.rotationToggle.off.value;
     if (target && type === target) this.media.intent.fullscreen = !this.media.state.fullscreen;
   }
 
   public get preferredOrientation() {
-    return this.config.orientation.allowMediaOverride ? (this.media.status.videoHeight > this.media.status.videoWidth ? "portrait-primary" : "landscape-primary") : this.media.state.fullscreenOrientation;
+    return this.config.orientation.allowMediaOverride && this.media.status.videoWidth ? (this.media.status.videoHeight > this.media.status.videoWidth ? "portrait-primary" : "landscape-primary") : this.media.state.fullscreenOrientation;
   }
   public async changeScreenOrientation(option: OrientationType | false): Promise<void> {
-    if (this.media.state.fullscreen) (this.lockedScreen = !!option), option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option)?.catch(NOOP);
+    if (this.media.state.fullscreen) (this.ctlr.state.screenOrientation.locked = !!option), option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option)?.catch(NOOP);
   }
-  private lockedScreen = false;
 
   public syncFeatures(): void {
     if (this.config.disabled) return void (this.media.features.autoFullscreenOrientation = this.media.features.fullscreenOrientation = this.media.features.fullscreen = false);

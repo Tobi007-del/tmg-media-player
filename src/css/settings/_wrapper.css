@@ -46,8 +46,8 @@
   z-index: 1;
   background-color: var(--tmg-media-settings-background-color);
   transform: rotateY(180deg);
-  -webkit-backdrop-filter: blur(3.5px);
-  backdrop-filter: blur(3.5px);
+  -webkit-backdrop-filter: var(--tmg-media-overlay-filter);
+  backdrop-filter: var(--tmg-media-overlay-filter);
   backface-visibility: hidden;
 }
 .tmg-media-settings-content {

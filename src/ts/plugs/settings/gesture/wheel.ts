@@ -26,7 +26,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.speedCheck && (this.ctlr.isUIActive("fullscreen") || this.ctlr.isUIActive("floatingPlayer"));
+    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.speedCheck && (this.media.state.fullscreen || this.ctlr.isUIActive("floatingPlayer"));
   }
 
   protected handleWheel(e: WheelEvent): void {
@@ -57,7 +57,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
     if (deltaX || shiftKey) {
       if (!wc.timeline || this.yCheck) return this.handleStop();
       this.xCheck = true;
-      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.active();
+      this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
       this.applyTimeline({ percent: xPercent, sign: xSign, multiplier: this.timeMultiplier });
       if (shiftKey) return;
     }
@@ -72,7 +72,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
       if (cancel || currentXZone !== this.zone?.x) return this.handleStop();
       this.yCheck = true;
       // prettier-ignore
-      this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
+      this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchVolumeNotifier" : "touchBrightnessNotifier")?.active();
       const ySign = -deltaY >= 0 ? "+" : "-",
         yPercent = clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
       this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", yPercent, ySign);
@@ -84,11 +84,11 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
     if (this.yCheck) {
       this.yCheck = false;
       this.ctlr.plug("settings.overlay")?.hide();
-      this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive();
+      this.ctlr.plug("settings.notifiers")?.comp("touchVolumeNotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchBrightnessNotifier")?.inactive();
     }
     if (this.xCheck) {
       this.xCheck = false;
-      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.inactive();
+      this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.inactive();
       this.media.intent.currentTime = this.nextTime;
     }
   }

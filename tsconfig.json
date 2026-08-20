@@ -26,5 +26,6 @@
       "@components/*": ["./src/ts/components/*"],
       "@styles/*": ["./src/css/*"]
     }
-  }
+  },
+  "include": ["src/**/*", "tool-box/boombox/**/*"]
 }

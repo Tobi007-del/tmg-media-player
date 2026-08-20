@@ -26,9 +26,9 @@ export const getSettingsTimeMenu = (plug: TimePlug): SettingsMenuItem => ({
           getValue: () => "",
           getLimits: () => [
             { name: "time", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip },
-            { name: "time", label: "Start & End", start: plug.config.start ?? 0, end: plug.config.end },
+            { name: "time", label: "Start and end", start: plug.config.start ?? 0, end: plug.config.end },
           ],
-          onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.time_min, max: val.time_max, skip: val.time_step, start: val.time_start, end: val.time_end }, { skipUndefined: true }),
+          onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.time_min, max: val.time_max, skip: val.time_step, start: val.time_start, end: val.time_end }, { skipUndef: true }),
         },
       ],
     },

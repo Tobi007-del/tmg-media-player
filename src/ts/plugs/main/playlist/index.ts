@@ -3,7 +3,7 @@ import type { PlaylistConfig, PlaylistItemConfig, PlaylistState } from "./types"
 import { PLAYLIST_BUILD, PLAYLIST_ITEM_BUILD } from "./build";
 import type { CtlrConfig } from "@defs/config";
 import { type REvent } from "sia-reactor";
-import { mergeObjs, fanout, parsePathObj } from "sia-reactor/utils";
+import { mergeObjs, fanout, parsePathObj, deepClone } from "sia-reactor/utils";
 import { silence, transaction } from "sia-reactor/modules";
 import { isBool } from "@utils/obj";
 import { isSameURL } from "@utils/str";
@@ -23,7 +23,7 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   }
 
   constructor(ctlr: Controller, config = ctlr.config.playlist) {
-    super(ctlr, config, { currentIndex: 0, editIndex: 0, sortOrder: "asc" });
+    super(ctlr, config, { currentIndex: 0, sortOrder: "asc" });
   }
 
   public override wire(): void {
@@ -33,12 +33,11 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     // Ctlr Config Getters
     this.ctlr.config.get("playlist.content", (v) => (v?.length ? v : null), { signal: this.signal });
     // ----------- Setters
-    this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(structuredClone(PLAYLIST_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
+    this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(deepClone(PLAYLIST_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
     // ---- Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     for (const key of ["title", "artist", "profile", "artwork", "chapterInfo"] as const) this.media.watch(`settings.metadata.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata[key] = v as any), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
     for (const key of ["title", "artist", "profile"] as const) this.media.watch(`settings.metadata.links.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata.links[key] = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
-    this.media.watch("state.currentTime", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.time.start = v), { signal: this.signal });
     this.media.watch("status.duration", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.status.duration = v), { signal: this.signal });
     // ---- Config Listeners
     this.ctlr.config.watch("settings.time.start", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.time.start = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
@@ -46,36 +45,37 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     this.ctlr.config.on("playlist.content", this.handleContent, { signal: this.signal, init: true, depth: 1 });
     this.ctlr.config.on("playlist.allowOverride", this.syncFeatures, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("previous", { fn: this.previous, keyboard: { phase: "keydown" } }), this.ctlr.registerAction("next", { fn: this.next, keyboard: { phase: "keydown" } });
+    this.ctlr.addAction("previous", { fn: this.previous, keyboard: { phase: "keydown" } }, this.signal), this.ctlr.addAction("next", { fn: this.next, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
   protected handleContent({ currentTarget: { value: content } }: REvent<CtlrConfig, "playlist.content", 1>): void {
     this.syncFeatures();
-    const v = content?.find((v) => (v.media.settings.metadata.id && v.media.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(v.media.intent.src, this.media.intent.src));
-    this.state.currentIndex = (v && content!.indexOf(v)) ?? 0;
+    const idx = content?.findIndex((v) => (v.media.settings.metadata.id && v.media.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(v.media.intent.src, this.media.intent.src)) ?? -1;
+    this.state.currentIndex = idx === -1 ? 0 : idx;
     const pmdle = this.ctlr.plug("settings.persist")?.module,
-      apply = () => (v ? transaction(() => this.applyItem(v, false), "Playlist Update") : this.moveTo(this.state.currentIndex));
+      apply = () => (content?.[idx] ? this.applyItem(content[idx], false, "Playlist update") : this.moveTo(this.state.currentIndex));
     pmdle && !pmdle.state.hydrated ? pmdle.state.wonce("hydrated", apply, { signal: this.signal }) : apply();
   }
 
-  protected applyItem(item: PlaylistItemConfig, _reset = true): void {
-    (this.applying = true), fanout(this.settings, item.settings), fanout(this.media, item.media), (this.applying = false);
+  protected applyItem(item: PlaylistItemConfig, _reset = true, txLabel?: string): void {
+    (this.applying = true), fanout(this.settings, item.settings, { cloneSets: true, txLabel }), fanout(this.media, item.media, { cloneSets: true, txLabel }), (this.applying = false);
   }
   protected applying = false;
 
-  public moveTo(index: number, shouldPlay?: boolean, label = "Move"): void {
-    if (!this.config.content || !this.config.content[index]) return;
-    this.state.currentIndex = index;
-    transaction(() => (this.applyItem(this.config.content![index]), isBool(shouldPlay) && silence(() => (this.media.intent.paused = !shouldPlay))), `Playlist ${label}`);
+  public moveTo(i: number, play?: boolean, label = `move to ${i} of ${this.config.content?.length}`): void {
+    if (!this.config.content || !this.config.content[i]) return;
+    this.state.currentIndex = i;
+    this.applyItem(this.config.content![i], true, `Playlist ${label}`);
+    isBool(play) && silence(() => (this.media.intent.paused = !play));
   }
 
   public previous(): void {
-    if (safeNum(this.media.state.currentTime) >= 3) transaction(() => ((this.media.intent.currentTime = 0), (this.media.intent.paused = false)), "Playlist Previous (Restart)");
-    else if (this.config.content && this.state.currentIndex > 0) this.moveTo(this.state.currentIndex - 1, true, "Previous");
+    if (safeNum(this.media.state.currentTime) >= 3) transaction(() => ((this.media.intent.currentTime = 0), (this.media.intent.paused = false)), "Playlist previous (Restart)");
+    else if (this.config.content && this.state.currentIndex > 0) this.moveTo(this.state.currentIndex - 1, true, "previous");
   }
   public next(): void {
-    if (this.config.content && this.state.currentIndex < this.config.content.length - 1) this.moveTo(this.state.currentIndex + 1, true, "Next");
+    if (this.config.content && this.state.currentIndex < this.config.content.length - 1) this.moveTo(this.state.currentIndex + 1, true, "next");
   }
 
   public sort(order: "asc" | "desc" = this.state.sortOrder === "asc" ? "desc" : "asc", list = this.config.content): void {

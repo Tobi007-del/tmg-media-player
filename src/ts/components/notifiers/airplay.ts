@@ -3,7 +3,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class AirPlayNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "airplaynotifier";
+  public static readonly componentName = "airplayNotifier";
   public static readonly triggers = ["airplay"];
 
   public override create() {
@@ -13,6 +13,6 @@ export class AirPlayNotifier extends BaseNotifier<undefined, ComponentState, HTM
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    airplaynotifier: typeof AirPlayNotifier;
+    airplayNotifier: typeof AirPlayNotifier;
   }
 }

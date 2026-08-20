@@ -1,12 +1,12 @@
 import type { RangeInputConfig } from "./types";
 
 export const RANGE_INPUT_BUILD: RangeInputConfig = {
-  label: "Range Slider",
+  label: "Range slider",
   min: 0,
   max: 100,
+  step: 1,
   value: 0,
   previewValue: 50,
-  step: 1,
   scrub: {
     sync: true,
     relative: true,

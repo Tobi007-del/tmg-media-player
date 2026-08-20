@@ -6,14 +6,14 @@ import { luid } from "@utils/str";
 import { CONFIG_BUILD } from "@consts/config";
 import type { CtlrConfig } from "@defs/config";
 import { DeepPartial, Paths, PathValue } from "sia-reactor";
-import { mergeObjs, parsePathObj } from "sia-reactor/utils";
+import { deepClone, mergeObjs, parsePathObj } from "sia-reactor/utils";
 
 export type BuildParam = DeepPartial<CtlrConfig> & Record<Paths<CtlrConfig>, PathValue<CtlrConfig>>;
 
 export class Player {
   private medium: HTMLMediaElement | null = null;
   private active: boolean = false;
-  private _build: CtlrConfig = structuredClone(CONFIG_BUILD) as CtlrConfig;
+  private _build: CtlrConfig = deepClone(CONFIG_BUILD) as any;
   private controller: Controller | null = null;
   public get Controller() {
     return this.controller;
@@ -25,7 +25,7 @@ export class Player {
     this.configure(build);
   }
 
-  constructor(build: BuildParam = {} as BuildParam) {
+  constructor(build: BuildParam = {} as any) {
     this.configure({ ...build, id: build.id ?? `${luid()}_Controller_${Controllers.length + 1}` });
   }
 
@@ -68,9 +68,9 @@ export class Player {
         })
         .then((json) => this.configure(json))
         .catch(({ message }) => this.notice({ error: message, tip: "A valid JSON file is required for parsing your build configuration" }));
-    const build = {} as BuildParam,
+    const build = {} as any,
       attributes = this.medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
-    for (const attr of attributes) setHTMLConfig<BuildParam>(build, attr as any, this.medium!.getAttribute(attr)!);
+    for (const attr of attributes) setHTMLConfig(build, attr as any, this.medium!.getAttribute(attr)!);
     this.configure(build);
   }
 

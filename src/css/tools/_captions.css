@@ -1,18 +1,16 @@
 :is(.tmg-media-container, .tmg-media-captions-text) {
   --cmptd-cue-font-factor: (1 + (var(--tmg-media-captions-font-size) - 100) / ((100 * var(--tmg-media-captions-double-factor)) - 100));
   --cmptd-cue-font-size: calc(var(--tmg-media-captions-font-size-base) * var(--f-f));
+  --s-b: var(--tmg-media-captions-shadow-base, 1px); /* shadow base */
   --f-f: var(--cmptd-cue-font-factor, 1); /* font factor */
 }
-.tmg-media-container {
+.tmg-media-captions-container {
   --cmptd-cue-box-width: var(--tmg-media-current-captions-container-width);
   --cmptd-cue-box-height: var(--tmg-media-current-captions-container-height);
   --cmptd-cue-box-floor: calc(var(--tmg-media-current-captions-offset-top) + (var(--cmptd-cue-box-height) / 2));
   --cmptd-cue-box-ceil: calc(100% - (var(--tmg-media-current-captions-offset-bottom) + (var(--cmptd-cue-box-height) / 2)));
   --cmptd-cue-box-x-min: calc(var(--cmptd-cue-box-width) / 2);
   --cmptd-cue-box-x-max: calc(100% - (var(--cmptd-cue-box-width) / 2));
-  --s-b: var(--tmg-media-captions-shadow-base, 1px); /* shadow base */
-}
-.tmg-media-captions-container {
   display: none;
   position: absolute;
   top: clamp(var(--cmptd-cue-box-floor), var(--tmg-media-current-captions-y), var(--cmptd-cue-box-ceil)); /* offset edgecase handling, old: bottom needed min() first value; clamp:- min-priority */

@@ -13,6 +13,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   public static readonly BUILD = TIME_TRAVEL_BUILD;
   public module!: TimeTravelModule<any>;
   public console?: TimeTravelConsole | undefined;
+  public docklist: string[] = ["state.fullscreen", "state.pictureInPicture"]; // #DEFAULT: build privilege
 
   public override mount(): void {
     // Variables Assignment
@@ -25,7 +26,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
 
   public override wire(): void {
     // ---- Media Listeners
-    this.media.on("state.fullscreen", ({ value }) => this.console && !this.ctlr._build.settings.timeTravel.console.container && (this.console.config.container = value ? this.media.container : undefined), { signal: this.signal }); // if dev didn't hardcode
+    for (const p of this.docklist) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
     // ----------- Listeners
     createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     this.ctlr.config.on("settings.timeTravel.console.disabled", this.handleConsoleDisabled, { init: true, signal: this.signal });
@@ -33,7 +34,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
     this.ctlr.config.on("settings.timeTravel.console", (e) => this.console && fanout(this.console.config, e.currentTarget.value), { signal: this.signal }); // #FLEX: needs no standard stress
     this.ctlr.config.on("settings.css.brandColor", ({ value }) => this.console && (this.console.config.color = value as string), { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("timeTravelUndo", { fn: () => this.module.undo() }), this.ctlr.registerAction("timeTravelRedo", { fn: () => this.module.redo() });
+    this.ctlr.addAction("timeTravelUndo", { fn: () => this.module.undo() }, this.signal), this.ctlr.addAction("timeTravelRedo", { fn: () => this.module.redo() }, this.signal);
     super.wire();
   }
 
@@ -45,6 +46,10 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   protected handlePersist(e: REvent<CtlrConfig, "settings.timeTravel.persist">, pmdle = this.ctlr.plug("settings.persist")?.module): void {
     if (pmdle?.config) Array.isArray(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : !pmdle.config.whitelist && (pmdle.config.whitelist = {} as any);
     if (pmdle?.config) (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
+  }
+
+  public redock(scoped = false) {
+    if (this.console && !this.ctlr._build.settings.timeTravel.console.container) this.console.config.container = scoped ? this.media.container : undefined;
   }
 
   protected override onDestroy(): void {

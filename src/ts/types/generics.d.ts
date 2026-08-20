@@ -51,7 +51,7 @@ export interface PosterPreview {
 export interface AptRange {
   min: number;
   max: number;
-  step: number;
+  step: number | "any";
 }
 
 export interface OptRange {

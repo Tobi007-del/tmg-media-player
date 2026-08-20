@@ -18,7 +18,8 @@ export interface Action extends ActionLogicOptions {
   fn?: (...args: any[]) => void; // transient; undefined when serialized, re-filled by plug on boot
   notify?: string; // notifier key to fire after execution
   toast?: ToastOptions; // A toast to show when triggered
-  private?: boolean; // hidden from the Actions menu (raw key internals etc.)
+  system?: boolean; // hidden from the Actions menu (raw key internals etc.)
   zen?: boolean; // both keys and voice respect this, only runs in settings-open / zen mode
   userCreated?: boolean; // true when created via the settings UI, unlocks edit/delete
+  disabled?: boolean; // when true, the action will not run
 }

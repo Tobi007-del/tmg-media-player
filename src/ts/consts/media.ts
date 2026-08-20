@@ -79,9 +79,9 @@ export const MEDIA_STATUS_BUILD: Partial<MediaStatus> = {
   waiting: false,
   stalled: false,
   seeking: false,
-  buffered: createTimeRanges(),
-  played: createTimeRanges(),
-  seekable: createTimeRanges(),
+  buffered: createTimeRanges([]),
+  played: createTimeRanges([]),
+  seekable: createTimeRanges([]),
   duration: NaN, // HTML5 Standard for "Unknown"
   ended: false,
   // Dimensions
@@ -113,7 +113,6 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
   defaultPlaybackRate: 1,
   // Streams
   srcObject: null,
-  idleWaiting: false,
   // Metadata
   metadata: {
     title: "",
@@ -133,4 +132,11 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
   // Live Content
   liveTolerance: 6,
   minDVRWindow: 60,
+  // Lifecycles
+  idleWaiting: false,
+  timeUpdateInterval: 250, // 4 times a second
+  resetPaths: {
+    status: ["error", "activeCues", "duration", "waiting", "buffered", "seekable", "readyState", "ended", "stalled", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough"],
+    state: ["currentTime"],
+  },
 };

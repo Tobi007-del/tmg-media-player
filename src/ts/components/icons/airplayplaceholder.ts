@@ -1,4 +1,4 @@
-export const airplayplaceholder = `<svg class="tmg-media-airplay-placeholder-icon" viewBox="0 0 73 73">
+export const airplayPlaceholder = `<svg class="tmg-media-airplay-placeholder-icon" viewBox="0 0 73 73">
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
     <g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-media-airplay-icon-background">
       <rect x="-1" y="-1" width="71" height="71" rx="14" />
@@ -14,6 +14,6 @@ export const airplayplaceholder = `<svg class="tmg-media-airplay-placeholder-ico
 
 declare module "@defs/registries" {
   interface IconRegistryMap {
-    airplayplaceholder: typeof airplayplaceholder;
+    airplayPlaceholder: typeof airplayPlaceholder;
   }
 }

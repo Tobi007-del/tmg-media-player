@@ -46,14 +46,14 @@ export class HLSTech extends HTML5Tech {
       // Status & State (Bulk Wiring)
       this.host.on(HLS.Events.MEDIA_ATTACHED, () => this.host!.loadSource(src));
       this.host.on(HLS.Events.MANIFEST_PARSED, (_, data) => {
-        this.config.state.currentTextTrack = this.host!.subtitleTrack;
-        this.config.state.currentAudioTrack = this.host!.audioTrack;
-        this.config.state.currentLevel = this.host!.currentLevel;
         this.config.state.autoLevel = this.host!.autoLevelEnabled;
         this.config.status.textTracks = inert(data.subtitleTracks);
         this.config.status.audioTracks = inert(data.audioTracks);
         this.config.status.levels = inert(data.levels);
-        this.media.status.hostReady = true;
+        this.config.state.currentTextTrack = this.host!.subtitleTrack;
+        this.config.state.currentAudioTrack = this.host!.audioTrack;
+        this.config.state.currentLevel = this.host!.currentLevel;
+        this.config.status.hostReady = true;
       });
       this.host.on(HLS.Events.SUBTITLE_TRACK_SWITCH, (_, data) => (this.config.state.currentTextTrack = data.id));
       this.host.on(HLS.Events.AUDIO_TRACK_SWITCHED, (_, data) => (this.config.state.currentAudioTrack = data.id));
@@ -69,14 +69,7 @@ export class HLSTech extends HTML5Tech {
       this.host.on(HLS.Events.FRAG_LOADED, () => this.ctlr.throttle("hlsBandwidthing", () => (this.config.status.bandwidth = Math.round(this.host!.bandwidthEstimate)), 2000));
       this.host.on(HLS.Events.ERROR, (_, data) => {
         if (!data.fatal) return;
-        switch (data.type) {
-          case HLS.ErrorTypes.NETWORK_ERROR:
-            return this.host!.startLoad();
-          case HLS.ErrorTypes.MEDIA_ERROR:
-            return this.host!.recoverMediaError();
-          default:
-            this.handleHostError(data);
-        }
+        return data.type === HLS.ErrorTypes.NETWORK_ERROR ? this.host!.startLoad() : data.type === HLS.ErrorTypes.MEDIA_ERROR ? this.host!.recoverMediaError() : this.handleHostError(data);
       });
       this.host.attachMedia(this.el);
     } catch (err) {
@@ -109,32 +102,28 @@ export class HLSTech extends HTML5Tech {
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      if ((e.value as number) < this.config.status.levels.length) {
-        this.host!.currentLevel = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
-        this.config.state.autoLevel = false;
-      }
-    });
+    this.when("hostReady", e, () => (e.value as number) <= this.config.status.levels.length && (this.useAutoLevel(), (this.host!.currentLevel = e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      this.host!.currentLevel = e.value ? -1 : this.host!.currentLevel; // -1 hands control back to hls.js ABR, otherwise pin to whatever is currently playing
-      this.config.state.autoLevel = e.value;
-    });
+    this.when("hostReady", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
+  }
+  protected useAutoLevel(value = false): void {
+    this.host!.currentLevel = value ? -1 : this.host!.currentLevel; // -1 hands control back to hls.js ABR, otherwise pin to whatever is currently playing
+    this.config.state.autoLevel = value;
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${Exclude<TrackType, "Video">}Track`>, type: Lowercase<Exclude<TrackType, "Video">>): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      if ((e.value as number) < this.config.status[`${type}Tracks`].length) this.host![`${type === "text" ? "subtitle" : type}Track`] = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
+    this.when("hostReady", e, (list = this.config.status[`${type}Tracks`]) => {
+      if ((e.value as number) < list.length) this.host![`${type === "text" ? "subtitle" : type}Track`] = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
     });
     e.resolve(this.name);
   }
   protected override handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => e.value && (this.host!.liveSyncPosition ? (this.media.intent.currentTime = this.host!.liveSyncPosition) : super.handleLiveIntent(e))); // #FACADED: silenced intent actual op
+    this.when("hostReady", e, () => e.value && (this.host!.liveSyncPosition ? (this.config.intent.currentTime = this.host!.liveSyncPosition) : super.handleLiveIntent(e))); // #FACADED: silenced intent actual op
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
@@ -144,7 +133,7 @@ export class HLSTech extends HTML5Tech {
   }
   // --- Lifecycle ---
   protected destroyHls(): void {
-    this.host?.destroy(), (this.host = null), (this.media.status.hostReady = false);
+    this.host?.destroy(), (this.host = null), (this.config.status.hostReady = false);
   }
   protected override onDestroy(): void {
     this.destroyHls(), super.onDestroy();

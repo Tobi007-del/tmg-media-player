@@ -22,7 +22,7 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
     // Variables Assignment
     const brightness = this.media.intent.brightness ?? this.media.state.brightness ?? this.settings.css.brightness;
     this.state.aptValue = clamp(this.config.min, brightness, this.config.max);
-    this.shouldToggle = this.shouldSetAptValue = this.media.intent.dark ?? false;
+    this.shouldToggle = this.useAptValue = this.media.intent.dark ?? false;
     this.media.intent.brightness = this.shouldToggle ? 0 : this.state.aptValue;
     // Ctlr Media Setters
     this.media.set("intent.brightness", (v) => clamp(this.shouldToggle ? 0 : this.config.min, v, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
@@ -36,9 +36,9 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
     this.ctlr.config.on("settings.brightness.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.brightness.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("dark", { fn: this.handleKeyDark, keyboard: { phase: "keyup" } });
-    this.ctlr.registerAction("brightnessUp", { fn: this.handleKeyBrightnessUp, keyboard: { phase: "keydown" } });
-    this.ctlr.registerAction("brightnessDown", { fn: this.handleKeyBrightnessDown, keyboard: { phase: "keydown" } });
+    this.ctlr.addAction("dark", { fn: this.handleKeyDark, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.addAction("brightnessUp", { fn: this.handleKeyBrightnessUp, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.addAction("brightnessDown", { fn: this.handleKeyBrightnessDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -61,14 +61,14 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
 
   protected handleKeyDark(): void {
     this.toggle("auto");
-    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessdark" : "brightnessup"), { signal: this.signal });
+    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessUp"), { signal: this.signal });
   }
   protected handleKeyBrightnessUp(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip);
   }
   protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
-    if (this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessmuted") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessdark" : "brightnessdown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessMuted") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
   }
 }
 

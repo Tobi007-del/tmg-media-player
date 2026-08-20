@@ -4,7 +4,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 
 export class CaptureNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "capturenotifier";
+  public static readonly componentName = "captureNotifier";
   public static readonly triggers = ["capture"];
 
   public override create() {
@@ -14,6 +14,6 @@ export class CaptureNotifier extends BaseNotifier<undefined, ComponentState, HTM
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    capturenotifier: typeof CaptureNotifier;
+    captureNotifier: typeof CaptureNotifier;
   }
 }

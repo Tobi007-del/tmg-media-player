@@ -44,7 +44,7 @@ export class DashTech extends HTML5Tech {
       const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
       if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!DASHJS?.supportsMediaSource()) return this.ctlr.notice("DASH is not supported in this browser", "error", null);
-      const base = this.config[this.ctlr.techTruth];
+      const truth = this.config[this.ctlr.techTruth];
       this.hostSrc = src;
       this.host = DASHJS.MediaPlayer().create() as DashMediaPlayer;
       if (this.config.type === "audio") this.host.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace", video: "alwaysReplace" }, buffer: { fastSwitchEnabled: true } } }); // DASH.js to replace the audio to avoid buffer finish delays
@@ -56,7 +56,7 @@ export class DashTech extends HTML5Tech {
         this.config.state.autoLevel = typeof autoSwitch === "boolean" ? autoSwitch : autoSwitch?.video ?? true; // Fallback logic for v3 vs v4+ API shapes
         for (const t of ["text", "audio", "video"] as const) this.config.status[`${t}Tracks`] = inert(this.host!.getTracksFor(t));
         this.config.status.levels = inert(this.host!.getBitrateInfoListFor("video"));
-        this.media.status.hostReady = true;
+        this.config.status.hostReady = true;
       });
       this.host.on(DASHJS.MediaPlayer.events.TRACK_CHANGE_RENDERED, (ev: any) => {
         const i = this.host?.getTracksFor(ev.mediaType)?.findIndex((t) => t.id === ev.newMediaInfo?.id || t.index === ev.newMediaInfo?.index);
@@ -74,11 +74,10 @@ export class DashTech extends HTML5Tech {
       });
       this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
         if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`);
-        if (ev.error !== "mediasource") return;
-        this.handleHostError(ev);
+        ev.error === "mediasource" && this.handleHostError(ev);
       });
       this.config.settings.protection && this.host.setProtectionData(this.config.settings.protection);
-      this.host.initialize(this.el, src, base.autoplay || !base.paused, base.currentTime);
+      this.host.initialize(this.el, src, truth.autoplay || !truth.paused, truth.currentTime);
     } catch (err) {
       this.handleHostError(err);
     }
@@ -108,29 +107,21 @@ export class DashTech extends HTML5Tech {
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      this.host!.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } });
-      if ((e.value as number) > -1 && (e.value as number) < this.config.status.levels.length) {
-        this.host!.setQualityFor("video", e.value as number); // #VALIDATED: mediated for cast conformity; no-opy
-        this.config.state.autoLevel = false;
-      }
-    });
+    this.when("hostReady", e, () => (e.value as number) > -1 && (e.value as number) < this.config.status.levels.length && (this.useAutoLevel(), this.host!.setQualityFor("video", e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      this.host!.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: e.value } } } });
-      this.config.state.autoLevel = e.value as boolean;
-    });
+    this.when("hostReady", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
+  }
+  protected useAutoLevel(value = false): void {
+    this.host!.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: value } } } });
+    this.config.state.autoLevel = value;
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: Lowercase<TrackType>): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
-      const track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined; // #VALIDATED: mediated for cast conformity; no-opy
-      if (track) this.host!.setCurrentTrack(track);
-    });
+    this.when("hostReady", e, (track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined) => track && this.host!.setCurrentTrack(track)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
@@ -140,7 +131,7 @@ export class DashTech extends HTML5Tech {
   }
   // --- Lifecycle ---
   protected destroyDash(): void {
-    this.host?.reset(), (this.host = null), (this.media.status.hostReady = false);
+    this.host?.reset(), (this.host = null), (this.config.status.hostReady = false);
   }
   protected override onDestroy(): void {
     this.destroyDash(), super.onDestroy();

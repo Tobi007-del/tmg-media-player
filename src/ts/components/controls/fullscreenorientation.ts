@@ -5,14 +5,14 @@ import { createEl } from "@utils/dom";
 export type FullscreenOrientationConfig = undefined;
 
 export class FullscreenOrientationButton extends BaseComponent<FullscreenOrientationConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "fullscreenorientation";
+  public static readonly componentName: string = "fullscreenOrientation";
   public static readonly isControl: boolean = true;
   protected get pin() {
     return this.ctlr.plug("settings.modes")?.fullscreen;
   }
 
   public override create() {
-    this.element = createEl("button", { className: "tmg-media-fullscreen-orientation-btn", type: "button", innerHTML: IconRegistry.get("fullscreenorientation") }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { className: "tmg-media-fullscreen-orientation-btn", type: "button", innerHTML: IconRegistry.get("fullscreenOrientation") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 
@@ -44,6 +44,6 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    fullscreenorientation: typeof FullscreenOrientationButton;
+    fullscreenOrientation: typeof FullscreenOrientationButton;
   }
 }

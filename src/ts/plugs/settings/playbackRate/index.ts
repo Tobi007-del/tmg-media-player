@@ -19,7 +19,7 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     this.ctlr.config.on("settings.playbackRate.min", ({ value }) => this.media.state.playbackRate < value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.playbackRate.max", ({ value }) => this.media.state.playbackRate > value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } }), this.ctlr.registerAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } });
+    this.ctlr.addAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } }, this.signal), this.ctlr.addAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -44,10 +44,10 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     let rate = Math.round(this.media.state.playbackRate * 100);
     if (sign === "-") {
       if (rate > this.config.min * 100) rate -= rate % value || value;
-      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackratedown");
+      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackRateDown");
     } else {
       if (rate < this.config.max * 100) rate += rate % value ? value - (rate % value) : value;
-      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackrateup");
+      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackRateUp");
     }
     this.media.intent.playbackRate = clamp(this.config.min, +(rate / 100).toFixed(2), this.config.max);
   }

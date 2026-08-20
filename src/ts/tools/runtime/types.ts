@@ -7,21 +7,16 @@ export interface CtlrState {
   mediaIntersecting: boolean;
   mediaParentIntersecting: boolean;
   dimensions: {
-    container: Dimensions & {
-      tier: string;
-    };
-    pseudoContainer: Dimensions & {
-      tier: string;
-    };
+    container: Dimensions & { tier: string };
+    pseudoContainer: Dimensions & { tier: string };
     window: Dimensions;
-    object: Dimensions & {
-      top: number;
-      left: number;
-    };
+    object: Dimensions & { top: number; left: number };
+    poster: Dimensions & { top: number; left: number };
   };
   screenOrientation: {
     type: OrientationType;
     angle: number;
+    locked: boolean;
   };
   docVisibilityState: DocumentVisibilityState;
   docInFullscreen: boolean;

@@ -5,31 +5,41 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { silence } from "sia-reactor/modules";
 import { TechConstructor } from "@techs/base";
+import { Controller } from "@core/controller";
+import { ErrorPlaceholder } from "@components/holders/errorPlaceholder";
+import { ComponentRegistry } from "@core/registries";
 
 export class ErrorsPlug extends BasePlug<ErrorsConfig> {
   public static readonly plugName = "errors";
   public static readonly BUILD = ERRORS_BUILD;
+  protected placeholder: ErrorPlaceholder | null = null;
+
+  constructor(ctlr: Controller, config = ctlr.config.settings.errors) {
+    super(ctlr, config, { message: "" });
+  }
 
   public override wire(): void {
     // Ctlr Media Listeners
     this.media.on("status.error", this.handleErrorStatus, { init: this.ctlr.payload.wired, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("reload", { fn: this.reloadTech }), super.wire();
+    this.ctlr.addAction("reload", { fn: this.reloadTech }, this.signal), super.wire();
   }
 
   protected async handleErrorStatus({ value }: REvent<CtlrMedia, "status.error">): Promise<void> {
-    if (!value) return this.ctlr.plug("disabled")?.reactivate(); // In case it was a transient error that got resolved, we can try reactivating the UI
+    if (!value) return (this.state.code = this.state.message = null), this.ctlr.plug("disabled")?.reactivate();
     this.ctlr.log(value, "error"); // no `.notice` since that's our job, no "swallow" since we breaking the player anyways
     let { code = 5, message = "" } = value;
-    code = code > 5 ? (!message.includes(`${code}`) || this.config[code] ? code : 5) : code;
-    message = this.config[code]?.replaceAll("media", this.media.type) || message || "";
-    if (this.ctlr.state.readyState < 3) return this.ctlr.plug("disabled")?.deactivate(message); // #PATIENT: only after first play
+    code = this.state.code = code > 5 ? (!message.includes(`${code}`) || this.config[code] ? code : 5) : code;
+    message = this.state.message = this.config[code]?.replace(/media/g, this.media.type) || message || "";
+    this.placeholder ??= ComponentRegistry.init("errorPlaceholder", this.ctlr);
+    if (this.ctlr.state.readyState < 3) return this.ctlr.plug("disabled")?.deactivate(); // #PATIENT: only after first play
     const id = `${this.ctlr.config.id}-error-dialog`;
-    if (!t007.dialog?.isActive(id)) (await t007.confirm?.(message, { id, rootElement: this.ctlr.DOM.containerContent, confirmText: "Try Again", cancelText: "Dismiss" })) ? this.reloadTech() : this.ctlr.plug("disabled")?.deactivate(message);
+    if (!t007.dialog?.isActive(id)) (await t007.confirm?.(message, { id, rootElement: this.ctlr.DOM.containerContent, confirmText: "Try Again", cancelText: "Dismiss" })) ? this.reloadTech() : this.ctlr.plug("disabled")?.deactivate();
   }
 
   public reloadTech(): void {
-    this.ctlr.useTech(this.media.tech.constructor as TechConstructor, true), silence(() => (this.media.intent.paused = false));
+    const time = this.media.state.currentTime;
+    this.ctlr.useTech(this.media.tech.constructor as TechConstructor, true), silence(() => ((this.media.intent.currentTime = time), (this.media.intent.paused = false)));
   }
 }
 

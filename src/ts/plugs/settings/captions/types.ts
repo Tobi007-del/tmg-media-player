@@ -2,20 +2,7 @@ import { DeepPartial } from "sia-reactor";
 import { OptRange } from "@defs/generics";
 import { UISettings, UIOption } from "@defs/UIOptions";
 
-export type CueLike = (TextTrackCue | { text: string }) &
-  DeepPartial<{
-    id: string;
-    text: string;
-    align: string;
-    region: { id: string; width: number; lines: number; viewportAnchorX: number; viewportAnchorY: number; scroll: string };
-    position: number | "auto";
-    positionAlign: string;
-    line: number | string;
-    lineAlign: string;
-    snapToLines: boolean;
-    size: number;
-    vertical: "" | "lr" | "rl";
-  }>;
+export type CueLike = (TextTrackCue | { text: string }) & DeepPartial<{ id: string; text: string; align: string; region: { id: string; width: number; lines: number; viewportAnchorX: number; viewportAnchorY: number; scroll: string }; position: number | "auto"; positionAlign: string; line: number | string; lineAlign: string; snapToLines: boolean; size: number; vertical: "" | "lr" | "rl" }>;
 
 export interface CaptionsConfig {
   multiple: boolean;
@@ -50,4 +37,5 @@ export interface CaptionsConfig {
 
 export interface CaptionsState {
   secondaryTracks: number[];
+  snubbingCurrentTextTrack: boolean;
 }

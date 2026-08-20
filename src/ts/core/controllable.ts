@@ -33,7 +33,7 @@ export abstract class Controllable<Config = any, State = any> {
   protected abstract onSetup(): void;
 
   public destroy(): void {
-    !this.signal.aborted && this.ac.abort(`[TMG Controllable] Instance is being destroyed`); // incase controller already aborted, kills all listeners and timers before proper destruction below
+    !this.signal.aborted && this.ac.abort(`[TMG Controllable] Instance annihilation`); // incase controller already aborted, kills all listeners and timers before proper destruction below
     this.onDestroy(), (this.state as any)?.destroy?.(), this.config !== this.media && isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
     nuke(this);
   }

@@ -5,7 +5,7 @@ import { createEl } from "@utils/dom";
 export type FullscreenLockConfig = undefined;
 
 export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "fullscreenlock";
+  public static readonly componentName: string = "fullscreenLock";
   public static readonly isControl: boolean = true;
 
   public override create() {
@@ -41,6 +41,6 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    fullscreenlock: typeof FullscreenLockButton;
+    fullscreenLock: typeof FullscreenLockButton;
   }
 }

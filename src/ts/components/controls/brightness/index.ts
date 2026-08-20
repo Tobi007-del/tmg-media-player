@@ -22,7 +22,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
     // Variables Assignments
     this.slider = new BrightnessSlider(this.ctlr, this.config);
     this.element = createEl("div", { className: "tmg-media-brightness-container tmg-media-vb-container" }, { draggableControl: "", controlId: this.name });
-    this.button = createEl("button", { className: "tmg-media-dark-btn tmg-media-vb-btn", type: "button", innerHTML: IconRegistry.get("brightnesshigh") + IconRegistry.get("brightnesslow") + IconRegistry.get("brightnessdark") });
+    this.button = createEl("button", { className: "tmg-media-dark-btn tmg-media-vb-btn", type: "button", innerHTML: IconRegistry.get("brightnessHigh") + IconRegistry.get("brightnessLow") + IconRegistry.get("brightnessDark") });
     this.sliderWrapper = createEl("span", { className: "tmg-media-brightness-slider-wrapper tmg-media-vb-slider-wrapper" });
     const sliderEl = this.slider.create();
     // DOM Injection

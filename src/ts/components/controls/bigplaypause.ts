@@ -6,7 +6,7 @@ import { formatActionForDisplay } from "@utils/keys";
 export type BigPlayPauseConfig = undefined;
 
 export class BigPlayPauseButton extends BaseComponent<BigPlayPauseConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "bigplaypause";
+  public static readonly componentName: string = "bigPlayPause";
   public static readonly isControl: boolean = true;
 
   public override create() {
@@ -37,6 +37,6 @@ export class BigPlayPauseButton extends BaseComponent<BigPlayPauseConfig, Compon
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    bigplaypause: typeof BigPlayPauseButton;
+    bigPlayPause: typeof BigPlayPauseButton;
   }
 }

@@ -37,7 +37,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
     // Ctlr Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("settings", { fn: () => this.menu.toggle(), keyboard: { phase: "keyup" } });
+    this.ctlr.addAction("settings", { fn: () => this.menu.toggle(undefined, true), keyboard: { phase: "keyup" } }, this.signal);
     !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 
@@ -134,7 +134,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
             <br><strong>Here is your official flight manual to unlock its full power:</strong>
           </p>
         </div>
-        <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🎛️ The Smart Canvas (Touch & Mouse)</h3>
+        <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🎛️ The Smart Canvas (Mouse & Touch)</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
           <li><strong>Hyper-Speed on Demand:</strong> Click and hold the right side of the video screen or the play key (<strong>Spacebar</strong>) to fast-forward, left side or <strong>Shift</strong> + play key rewinds.</li>
           <li><strong>Smart Scrubbing:</strong> Don't hunt for the tiny progress bar. Just scroll horizontally across the middle of the screen to scrub smoothly through time.</li>

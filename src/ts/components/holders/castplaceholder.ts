@@ -6,12 +6,12 @@ import { formatActionForDisplay } from "@utils/keys";
 export type CastPlaceholderConfig = undefined;
 
 export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "castplaceholder";
+  public static readonly componentName = "castPlaceholder";
   protected iconBtn!: HTMLButtonElement;
 
   public override create() {
     this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-cast-placeholder", innerHTML: `<p>Casting to External Display</p>` });
-    this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-cast-icon-btn", innerHTML: IconRegistry.get("castplaceholder") });
+    this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-cast-icon-btn", innerHTML: IconRegistry.get("castPlaceholder") });
     return this.el.prepend(this.iconBtn), this.el;
   }
 
@@ -25,6 +25,7 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
     this.iconBtn.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
     this.ctlr.config.on("settings.keys.shortcuts.cast", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.voice.commands.cast", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -33,7 +34,7 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
 
   public syncARIA(): void {
     this.state.label = this.media.state.cast ? "Stop casting" : "Cast to Display";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.cast));
+    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.cast), (this.state.voiceCommand = this.settings.voice.commands.cast));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }
@@ -41,6 +42,6 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    castplaceholder: typeof CastPlaceholder;
+    castPlaceholder: typeof CastPlaceholder;
   }
 }

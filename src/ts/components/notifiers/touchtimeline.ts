@@ -2,7 +2,7 @@ import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 
 export class TouchTimelineNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "touchtimelinenotifier";
+  public static readonly componentName = "touchTimelineNotifier";
 
   public override create() {
     return (this.element = createEl("div", { className: "tmg-media-touch-timeline-notifier tmg-media-text-notifier", innerHTML: "Current Time" }));
@@ -11,7 +11,7 @@ export class TouchTimelineNotifier extends BaseNotifier<undefined, ComponentStat
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    touchtimelinenotifier: typeof TouchTimelineNotifier;
+    touchTimelineNotifier: typeof TouchTimelineNotifier;
   }
 }
 

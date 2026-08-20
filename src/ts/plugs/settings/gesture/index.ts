@@ -60,9 +60,9 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
 
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return;
-    if (this.ctlr.plug("settings.fastPlay")?.speedCheck && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 1) < 1) return;
-    if (IS_MOBILE && !this.ctlr.isUIActive("pictureInPicture") && !this.media.status.waiting && !this.media.status.ended && (!this.ctlr.plug("settings.time")?.skipNotifier || !this.ctlr.isUIActive("overlay"))) !/hidden|persistent/.test(this.settings.overlay.behavior.value) && this.media.container.classList.toggle("tmg-media-overlay");
-    if (!this.ctlr.isUIActive("miniplayer") && this.config.click) (this.media.intent[this.config.click] = !this.media.state[this.config.click] as never), this.config.click === "paused" && this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay");
+    if (this.ctlr.plug("settings.fastPlay")?.state.speedCheck && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 1) < 1) return;
+    if (IS_MOBILE && !this.media.state.pictureInPicture && !this.media.status.waiting && !this.media.status.ended && (!this.ctlr.plug("settings.time")?.skipNotifier || !this.ctlr.isUIActive("overlay"))) !/hidden|persistent/.test(this.settings.overlay.behavior.value) && this.media.container.classList.toggle("tmg-media-overlay");
+    if (!this.media.state.miniplayer && this.config.click) (this.media.intent[this.config.click] = !this.media.state[this.config.click] as never), this.config.click === "paused" && this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
   }
 
   protected handleDblClick(e: MouseEvent): void {
@@ -74,7 +74,7 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
       this.stopSkipPersist();
       if (detail === 1) return;
     }
-    if (pos === "center" && this.config.dblClick) return void ((this.media.intent[this.config.dblClick] = !this.media.state[this.config.dblClick] as never), this.config.dblClick === "paused" && this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediapause" : "mediaplay"));
+    if (pos === "center" && this.config.dblClick) return void ((this.media.intent[this.config.dblClick] = !this.media.state[this.config.dblClick] as never), this.config.dblClick === "paused" && this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay"));
     if (this.state.skipPersist && detail === 2) return;
     if (!this.state.skipPersist) this.startSkipPersist(pos as "left" | "right");
     this.ctlr.plug("settings.time")?.skip(pos === "right" ? this.settings.time.skip : -this.settings.time.skip);

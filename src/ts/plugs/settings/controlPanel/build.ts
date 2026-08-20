@@ -4,7 +4,7 @@ import { IS_MOBILE } from "@utils/env";
 
 export const ROWS_ARR = [1, 2, 3] as const;
 
-export const CONTROLS = ["bigprevious", "bigplaypause", "bignext", "expandminiplayer", "removeminiplayer", "meta", "timeline", "capture", "fullscreenorientation", "fullscreenlock", "backward10", "previous", "playpause", "next", "forward10", "brightness", "volume", "time", "duration", "timeandduration", "spacer", "captions", "settings", "objectfit", "pictureinpicture", "theater", "fullscreen", "cast", "airplay", "chapter"] as const;
+export const CONTROLS = ["bigPrevious", "bigPlayPause", "bigNext", "expandMiniplayer", "removeMiniplayer", "meta", "timeline", "capture", "fullscreenOrientation", "fullscreenLock", "backward10", "previous", "playPause", "next", "forward10", "brightness", "volume", "time", "duration", "timeAndDuration", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen", "cast", "airplay", "chapter"] as const;
 
 export const CONTROL_PANEL_DRAGGABLE_BUILD: ControlPanelDraggable = ["", "big", "wrapper"];
 
@@ -12,12 +12,12 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
   profile: true,
   title: true,
   artist: true,
-  top: ["expandminiplayer", "spacer", "meta", "spacer", "capture", "fullscreenlock", "airplay", "cast", "fullscreenorientation", "removeminiplayer"],
-  center: ["bigprevious", "bigplaypause", "bignext"],
+  top: ["expandMiniplayer", "spacer", "meta", "spacer", "capture", "fullscreenLock", "airplay", "cast", "fullscreenOrientation", "removeMiniplayer"],
+  center: ["bigPrevious", "bigPlayPause", "bigNext"],
   bottom: {
     1: [],
     2: ["spacer", "timeline", "spacer"],
-    3: [...(!IS_MOBILE ? (["previous", "playpause", "next"] as const) : []), "brightness", "volume", "timeandduration", "chapter", "spacer", "captions", "settings", "objectfit", "pictureinpicture", "theater", "fullscreen"] as const,
+    3: [...(!IS_MOBILE ? (["previous", "playPause", "next"] as const) : []), "brightness", "volume", "timeAndDuration", "chapter", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen"] as const,
   },
   buffer: {
     value: "eclipse",
@@ -28,6 +28,7 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
     ],
   },
   timeline: {
+    step: "any",
     thumb: {
       value: true,
       options: [
@@ -36,7 +37,6 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
         { value: false, display: "Off" },
       ],
     },
-    previews: false,
     scrub: {
       sync: false,
       relative: !IS_MOBILE,
@@ -45,13 +45,16 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
         timeout: 2000,
       },
     },
-    label: "Media Timeline",
-    tooltip: false,
-    autopause: true,
+    label: "Media timeline",
     compact: IS_MOBILE,
+    tooltip: false,
+    previews: false,
+    autopause: true,
     bufferMarks: false,
     playedMarks: false,
+    formatTooltip: (v: number) => `${Math.round(v)}%`,
   },
   progressBar: IS_MOBILE,
+  bigVisible: IS_MOBILE,
   // draggable: CONTROL_PANEL_DRAGGABLE_BUILD,
 };

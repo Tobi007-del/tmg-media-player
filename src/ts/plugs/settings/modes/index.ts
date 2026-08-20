@@ -34,7 +34,12 @@ export class ModesPlug extends BasePlug<ModesConfig> {
     // Utility Injection
     this.fullscreen?.wire(), this.theater?.wire(), this.pictureInPicture?.wire(), this.miniplayer?.wire();
     // Post Wiring
-    super.wire();
+    this.ctlr.addAction("escape", { fn: this.closePopUps, keyboard: { phase: "keydown" } }, this.signal), super.wire();
+  }
+
+  public closePopUps(): void {
+    if (this.media.state.miniplayer) this.media.intent.miniplayer = false;
+    if (this.media.state.pictureInPicture) this.media.intent.pictureInPicture = false;
   }
 
   protected override onDestroy(): void {

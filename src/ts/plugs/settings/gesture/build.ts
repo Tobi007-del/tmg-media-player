@@ -7,9 +7,9 @@ export const GESTURE_TOUCH_BUILD: Partial<GestureTouchConfig> = {
   brightness: true,
   timeline: true,
   threshold: 200,
-  axesRatio: 3,
   inset: 20,
   sliderTimeout: 1000,
+  axesRatio: 3,
   xRatio: 1,
   yRatio: 1,
 };

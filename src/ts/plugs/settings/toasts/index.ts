@@ -34,7 +34,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig, ToastsState> {
 
   public get toast() {
     if (!this.config || this.config.disabled || !t007.toaster) return null; // after the nuke, ctlr might need me for errors but one of use is the wiser
-    return t007.toaster({ groupId: this.ctlr.config.id, rootElement: this.container || this.media.container, signal: this.signal, ...this.config });
+    return t007.toaster({ groupId: this.ctlr.config.id, rootElement: this.container, signal: this.signal, ...this.config });
   }
 
   public addReminder(opts: Omit<ToastReminder, "id" | "timeoutId">): void {
@@ -53,9 +53,9 @@ export class ToastsPlug extends BasePlug<ToastsConfig, ToastsState> {
     const r = temp || this.state.reminders.find((x) => x.id === id);
     if (!r) return;
     this.removeReminder(id);
-    if (r.actionId) this.ctlr.runAction(r.actionId);
+    if (r.actionId) this.ctlr.perform(r.actionId);
     const { id: _i, message: _m, delay: _d, actionId: _a, timeoutId: _t, autoClose, ...opts } = r as any;
-    this.toast?.(r.message, { ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) }), this.ctlr.plug("settings.settingsView")?.menu.syncUI();
+    this.toast?.(r.message, { ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) });
   }
 }
 

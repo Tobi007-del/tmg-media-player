@@ -6,7 +6,7 @@ import { formatActionForDisplay } from "@utils/keys";
 export type BigNextConfig = undefined;
 
 export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "bignext";
+  public static readonly componentName: string = "bigNext";
   public static readonly isControl: boolean = true;
   protected get plug() {
     return this.ctlr.plug("playlist");
@@ -45,6 +45,6 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    bignext: typeof BigNextButton;
+    bigNext: typeof BigNextButton;
   }
 }

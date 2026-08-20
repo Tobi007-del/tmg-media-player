@@ -6,7 +6,7 @@ import { silence } from "sia-reactor/modules";
 export type TimeAndDurationConfig = undefined;
 
 export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "timeandduration";
+  public static readonly componentName: string = "timeAndDuration";
   public static readonly isControl: boolean = true;
   protected time!: HTMLElement;
   protected bridge!: HTMLElement;
@@ -51,7 +51,7 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
   }
 
   public syncUI(): void {
-    this.bridge.textContent = { digital: "/", human: "of", "human-long": "out of" }[this.settings.time.format] || "/";
+    this.bridge.textContent = this.settings.time.format !== "digital" ? "of" : "/";
     this.syncTime(), this.syncDuration();
   }
   public syncTime(): void {
@@ -70,6 +70,6 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    timeandduration: typeof TimeAndDurationButton;
+    timeAndDuration: typeof TimeAndDurationButton;
   }
 }

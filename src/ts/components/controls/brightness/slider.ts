@@ -1,5 +1,5 @@
 import { CtlrConfig } from "@defs/config";
-import { RangeInput, type RangeInputConfig, type RangeState } from "../../rangeinput";
+import { RangeInput, type RangeInputConfig, type RangeState } from "../../rangeInput";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
@@ -12,7 +12,7 @@ export class BrightnessSlider extends RangeInput<RangeInputConfig, RangeState> {
   }
 
   constructor(ctlr: Controller, config?: BrightnessSliderConfig) {
-    super(ctlr, { label: "Brightness Slider", ...config });
+    super(ctlr, { label: "Brightness slider", ...config });
   }
 
   public override wire(): void {

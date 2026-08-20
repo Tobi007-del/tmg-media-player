@@ -6,7 +6,7 @@ import { CastConfig } from "./types";
 import { CAST_BUILD } from "./build";
 import { ComponentRegistry } from "@core/registries";
 import { silence } from "sia-reactor/modules";
-import { CastPlaceholder } from "@components/holders/castplaceholder";
+import { CastPlaceholder } from "@components/holders/castPlaceholder";
 import { getMimeTypeFromExtension } from "@utils/file";
 
 export class CastPlug extends BasePlug<CastConfig> {
@@ -42,7 +42,7 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.muted", this.handleMutedIntent, { capture: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("cast", { fn: () => (this.media.intent.cast = !this.media.state.cast), keyboard: { phase: "keyup" } }), super.wire();
+    this.ctlr.addAction("cast", { fn: () => (this.media.intent.cast = !this.media.state.cast), keyboard: { phase: "keyup" } }, this.signal), super.wire();
   }
 
   protected handleCastIntent(e: REvent<CtlrMedia, "intent.cast">): void {
@@ -94,7 +94,7 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.remotePlayer = new cast.framework.RemotePlayer();
     this.remoteController = new cast.framework.RemotePlayerController(this.remotePlayer);
     this.remoteController.addEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
-    (this.placeholder = ComponentRegistry.init("castplaceholder", this.ctlr))?.setup();
+    this.placeholder ??= ComponentRegistry.init("castPlaceholder", this.ctlr);
     (this.apiSetup = true), (this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup); // Unlock the feature UI
   }
 

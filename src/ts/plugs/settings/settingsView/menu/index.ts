@@ -1,5 +1,4 @@
 import { BaseComponent, type ComponentState } from "@components/base";
-import { CTX } from "sia-reactor";
 import type { SettingsMenuItem, SettingsMenuConfig } from "../types";
 import { MainMenuPanel } from "./panel/main";
 import { SubMenuPanel } from "./panel/sub";
@@ -7,7 +6,7 @@ import type { BaseMenuPanel, PanelDir } from "./panel";
 import { createEl } from "@utils/dom";
 import { getActiveEl, isFunc } from "@t007/utils";
 import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
-import { requestAnimationFrame } from "@utils/fn";
+import { requestAnimationFrame, setInterval } from "@utils/fn";
 import { OrderedRegistry } from "@core/registries";
 // Side-effect imports so all widgets self-register
 import "./widgets/select";
@@ -18,12 +17,12 @@ import "./widgets/group";
 
 export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentState, HTMLElement> {
   public static readonly componentName = "SettingsMenu";
+  public static readonly focusSelector = ":is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)";
   private registry = new OrderedRegistry<SettingsMenuItem>();
   private mainPanel!: MainMenuPanel;
   private subPanels: SubMenuPanel[] = [];
   public navStack: string[] = [];
   private menuOpen = false;
-  private anchorEl?: HTMLElement;
 
   public override create(): HTMLElement {
     this.element = createEl("div", { className: "tmg-media-smenu-overlay", inert: true });
@@ -50,13 +49,19 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.media.on("state.paused", ({ value }) => !value && this.close(), { signal: this.signal });
     this.media.on("features", () => this.menuOpen && this.syncUI(), { signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("dimensions.container.width", () => this.menuOpen && this.reposition(this.anchorEl), { signal: this.signal });
-    this.ctlr.state.on("dimensions.container.height", () => this.menuOpen && this.reposition(this.anchorEl), { signal: this.signal });
+    for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${p}`, () => this.menuOpen && this.syncUI(), { signal: this.signal });
     this.ctlr.config.on("settings.settingsView.menu.blacklist", () => this.menuOpen && this.syncUI(), { signal: this.signal });
   }
 
   public override unmount(): void {
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element), super.unmount();
+  }
+
+  protected override onDestroy(): void {
+    this.mainPanel?.destroy();
+    for (const panel of this.subPanels) panel.destroy();
+    this.subPanels.length = this.navStack.length = 0;
+    this.registry.clear();
   }
 
   private mergeItem(item: SettingsMenuItem): SettingsMenuItem {
@@ -123,15 +128,17 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (!preserveStack) this.navStack = [];
     if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
+    this.anchorIntervalId = setInterval(() => this.reposition(this.anchorEl), 250, this.signal);
     this.reposition(anchorEl), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
     this.media.container.classList.add("tmg-media-settings-menu");
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close(), outOnFocusOut: !CTX.isDevEnv }), initFocusTrap(this.element, { enabled: true });
-    initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: ".tmg-media-smenu-panel-active :is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)" });
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: SettingsMenu.focusSelector });
+    initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: `.tmg-media-smenu-panel-active ${SettingsMenu.focusSelector}` });
   }
   public close(): void {
     if (!this.menuOpen) return;
     this.menuOpen = false;
     this.lastClosedTime = performance.now();
+    clearInterval(this.anchorIntervalId);
     this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-overlay-open", "tmg-media-smenu-drop-down"), this.media.container.classList.remove("tmg-media-settings-menu");
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element);
     this.anchorEl?.focus(), (this.anchorEl = undefined);
@@ -184,20 +191,25 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private reposition(anchorEl?: HTMLElement): void {
-    const container = this.media.container,
-      cRect = container.getBoundingClientRect(),
-      aRect = anchorEl ? anchorEl.getBoundingClientRect() : this.el.getBoundingClientRect();
     if (!anchorEl && !this.menuOpen) return;
-    const y = aRect.top - cRect.top;
-    const menuWidth = this.el.offsetWidth || 320;
-    // Shift logic: align right by default, but clamp rigidly to container bounds
-    let xPos = aRect.right - cRect.left - menuWidth + 10;
-    const margin = 12;
-    if (xPos < margin) xPos = margin;
-    if (xPos + menuWidth > cRect.width - margin) xPos = cRect.width - menuWidth - margin;
-    this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
-    this.el.classList.toggle("tmg-media-smenu-drop-down", y < cRect.height / 2);
+    const { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
+      { top: aTop, right: aRight } = anchorEl ? anchorEl.getBoundingClientRect() : this.el.getBoundingClientRect(),
+      y = aTop - cTop,
+      menuWidth = this.el.offsetWidth || 320;
+    let xPos = aRight - cLeft - menuWidth + 10; // Shift logic: align right by default, but clamp rigidly to container bounds
+    if (xPos < this.safeMargin) xPos = this.safeMargin;
+    if (xPos + menuWidth > cWidth - this.safeMargin) xPos = cWidth - menuWidth - this.safeMargin;
+    if (this.lastAnchorX !== xPos || this.lastAnchorY !== y) {
+      (this.lastAnchorX = xPos), (this.lastAnchorY = y);
+      this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
+      this.el.classList.toggle("tmg-media-smenu-drop-down", y < cHeight / 2);
+    }
   }
+  public safeMargin = 12;
+  private anchorEl?: HTMLElement;
+  private lastAnchorX = 0;
+  private lastAnchorY = 0;
+  private anchorIntervalId = -1;
 }
 
 export type * from "../types";

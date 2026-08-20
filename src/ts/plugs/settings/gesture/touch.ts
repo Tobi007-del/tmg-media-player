@@ -26,7 +26,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   }
 
   protected canHandle(e: TouchEvent): boolean {
-    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.speedCheck;
+    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.speedCheck;
   }
 
   protected handleStart(e: TouchEvent): void {
@@ -41,7 +41,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
 
   protected handleInit(e: Event): void {
     const te = e as TouchEvent;
-    if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.speedCheck) return;
+    if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.state.speedCheck) return;
     te.preventDefault();
     const tc = this.config,
       rect = this.media.container.getBoundingClientRect(),
@@ -69,7 +69,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
     const te = e as TouchEvent;
     if (this.canCancel) return this.handleEnd();
     te.preventDefault();
-    this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.active();
+    this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
@@ -93,10 +93,10 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
 
   protected handleYMove(e: Event): void {
     const te = e as TouchEvent;
-    if (this.canCancel && !this.ctlr.isUIActive("fullscreen")) return this.handleEnd();
+    if (this.canCancel && !this.media.state.fullscreen) return this.handleEnd();
     te.preventDefault();
     // prettier-ignore
-    this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchvolumenotifier" : "touchbrightnessnotifier")?.active();
+    this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchVolumeNotifier" : "touchBrightnessNotifier")?.active();
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
@@ -119,14 +119,14 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
     if (this.xCheck) {
       this.xCheck = false;
       this.media.container.removeEventListener("touchmove", this.handleXMove);
-      this.ctlr.plug("settings.notifiers")?.comp("touchtimelinenotifier")?.inactive();
+      this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.inactive();
       if (!this.canCancel) this.media.intent.currentTime = this.nextTime;
     }
     if (this.yCheck) {
       this.yCheck = false;
       this.media.container.removeEventListener("touchmove", this.handleYMove);
       clearTimeout(this.sliderTimeoutId);
-      this.sliderTimeoutId = setTimeout(() => (this.ctlr.plug("settings.notifiers")?.comp("touchvolumenotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchbrightnessnotifier")?.inactive()), this.config.sliderTimeout, this.signal);
+      this.sliderTimeoutId = setTimeout(() => (this.ctlr.plug("settings.notifiers")?.comp("touchVolumeNotifier")?.inactive(), this.ctlr.plug("settings.notifiers")?.comp("touchBrightnessNotifier")?.inactive()), this.config.sliderTimeout, this.signal);
       if (!this.canCancel) this.ctlr.plug("settings.overlay")?.hide();
     }
     clearTimeout(this.cancelTimeoutId);

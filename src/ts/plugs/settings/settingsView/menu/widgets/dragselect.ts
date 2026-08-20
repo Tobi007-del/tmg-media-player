@@ -1,6 +1,6 @@
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer, getElSiblingAt } from "@utils/dom";
-import { parseUIOpt } from "@utils/obj";
+import { isFunc, parseUIOpt } from "@utils/obj";
 import { clamp } from "@utils/num";
 import { initVScrollerator } from "@t007/utils/hooks/vanilla";
 import { IconRegistry } from "@core/registries";
@@ -19,15 +19,15 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
       getKey: (opt) => opt.value as string,
       createNode: (opt) => {
         const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display }),
-          dragHandle = this.item.onReorder ? createEl("span", { className: "tmg-media-smenu-playlist-drag", innerHTML: IconRegistry.get("dragindicator", true) || "☰" }) : null,
+          dragHandle = this.item.onReorder ? createEl("span", { className: "tmg-media-smenu-drag-handle", innerHTML: IconRegistry.get("dragIndicator", true) || "☰" }) : null,
           label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display }),
           editBtn = this.item.onEdit ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-edit-btn", innerHTML: IconRegistry.get("edit", true) || "✎", type: "button", title: "Edit" }) : null,
-          deleteBtn = this.item.onDelete ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-delete-btn", innerHTML: IconRegistry.get("delete", true) || "✕", type: "button", title: "Delete" }) : null;
+          deleteBtn = this.item.onDelete ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-delete-btn", innerHTML: IconRegistry.get("bin", true) || "✕", type: "button", title: "Delete" }) : null;
         if (opt.style) label.setAttribute("style", opt.style);
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         dragHandle ? li.append(dragHandle, label) : li.append(label);
         if ((opt as any).progress > 0) li.append(createEl("div", { className: "tmg-media-smenu-select-progress" }, {}, { width: `${(opt as any).progress}%` }));
-        opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: opt.infoText }));
+        opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
         if (editBtn) {
           editBtn.onclick = (e) => {
             e.stopPropagation();
@@ -98,7 +98,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         opt.title ? (node.title = opt.title) : node.removeAttribute("title");
         const infoNode = node.querySelector<HTMLElement>(".tmg-media-smenu-select-info");
-        opt.infoText ? (infoNode ? (infoNode.textContent = opt.infoText) : node.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: opt.infoText }))) : infoNode?.remove();
+        opt.infoText ? (infoNode ? (infoNode.textContent = isFunc(opt.infoText) ? opt.infoText() : opt.infoText) : node.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }))) : infoNode?.remove();
         const progressEl = node.querySelector<HTMLElement>(".tmg-media-smenu-select-progress");
         if (typeof opt.progress === "number") progressEl ? (progressEl.style.width = `${opt.progress}%`) : node.append(createEl("div", { className: "tmg-media-smenu-select-progress" }, {}, { width: `${opt.progress}%` }));
         else progressEl?.remove();
@@ -111,6 +111,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
   }
 
   public override syncUI(): void {
+    if (!this.renderRows) return;
     const val = this.item.getValue() || "";
     this.currentValue = Array.isArray(val) ? val.join(", ") : String(val);
     this.renderRows((this.item.getOptions?.() ?? []).map(parseUIOpt));

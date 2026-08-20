@@ -8,7 +8,7 @@ export interface ToastReminder extends ToastOptions {
   id: string;
   message: string;
   delay: number;
-  actionId?: string; // action id to run via ctlr.runAction when reminder fires
+  actionId?: string; // action id to run via ctlr.execute when reminder fires
   timeoutId?: number;
 }
 

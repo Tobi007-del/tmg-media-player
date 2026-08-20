@@ -15,17 +15,18 @@
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-body {
   max-height: calc(var(--t007-toast-max-height) - var(--t007-toast-padding));
   overflow-y: auto;
-  scrollbar-color: currentColor transparent;
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-body-text {
   display: block;
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-actions-wrapper {
+.tmg-media-voice-listening .t007-toast[id^="tmg-media-voice-"] .t007-toast-actions-wrapper {
   max-width: calc(var(--t007-toast-unit) * 3.25);
+}
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button {
+  line-height: 1;
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button:is([data-action="‹"], [data-action="›"]) {
   font-size: 120%;
-  line-height: 1;
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button > span {
   display: contents;
@@ -97,7 +98,7 @@
   width: var(--t007-toast-unit);
   height: var(--t007-toast-unit);
   padding-inline: calc(var(--t007-toast-unit) / 5);
-  background-color: var(--tmg-media-brand-complement-color);
+  background-color: var(--tmg-media-complement-color);
   border-radius: 50%;
   z-index: 1;
   transition: transform var(--tmg-media-slow-transition-time) ease;

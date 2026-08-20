@@ -27,21 +27,21 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
   }
 
   protected handleMetadataLinksSetting({ target: { key, value } }: REvent<CtlrMedia, "settings.metadata.links.title" | "settings.metadata.links.artist" | "settings.metadata.links.profile">): void {
-    const el = key !== "profile" ? (this.ctlr.DOM[`media${capitalize(key)}`] as HTMLAnchorElement) : (this.ctlr.DOM.mediaProfile as HTMLImageElement)?.parentElement;
+    const el = key !== "profile" ? (this.ctlr.DOM[`meta${capitalize(key)}`] as HTMLAnchorElement) : (this.ctlr.DOM.metaProfile as HTMLImageElement)?.parentElement;
     if (el) for (const [attr, val] of Object.entries({ href: value, "tab-index": value ? "0" : null, target: value ? "_blank" : null, rel: value ? "noopener noreferrer" : null })) val ? el.setAttribute(attr, val) : el.removeAttribute(attr);
   }
 
   public syncSession(): void {
-    if (!navigator.mediaSession || (queryPictureInPicture() && !this.ctlr.isUIActive("pictureInPicture"))) return;
+    if (!navigator.mediaSession || (queryPictureInPicture() && !this.media.state.pictureInPicture)) return;
     navigator.mediaSession.metadata = new MediaMetadata(this.media.settings.metadata as MediaMetadataInit);
     const set = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args),
-      [timePlug, listPlug, content] = [this.ctlr.plug("settings.time"), this.ctlr.plug("playlist"), this.ctlr.config.playlist.content];
+      list = this.ctlr.config.playlist.content;
     set("play", () => (this.media.intent.paused = false));
     set("pause", () => (this.media.intent.paused = true));
-    set("seekbackward", timePlug ? () => timePlug.skip(-this.settings.time.skip) : null);
-    set("seekforward", timePlug ? () => timePlug.skip(this.settings.time.skip) : null);
-    set("previoustrack", content && (listPlug?.state.currentIndex ?? 0) > 0 && listPlug ? listPlug.previous : null);
-    set("nexttrack", content && (listPlug?.state.currentIndex ?? 0) < (content?.length ?? 0) - 1 && listPlug ? listPlug.next : null);
+    set("seekbackward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(-this.settings.time.skip) : null);
+    set("seekforward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(this.settings.time.skip) : null);
+    set("previoustrack", list && (this.ctlr.plug("playlist")?.state.currentIndex ?? 0) > 0 ? this.ctlr.plug("playlist")!.previous : null);
+    set("nexttrack", list && (this.ctlr.plug("playlist")?.state.currentIndex ?? 0) < list.length - 1 ? this.ctlr.plug("playlist")!.next : null);
   }
 }
 

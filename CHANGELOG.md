@@ -1,5 +1,23 @@
 # tmg-media-player
 
+## 0.0.16
+
+### Patch Changes
+
+- Bug fixes and Performance optimzations
+
+## 0.0.15
+
+### Patch Changes
+
+- Better fullscreen orienation handling
+
+## 0.0.14
+
+### Patch Changes
+
+- Locked screen inset and bug fixes
+
 ## 0.0.13
 
 ### Patch Changes

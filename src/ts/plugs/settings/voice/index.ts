@@ -4,7 +4,7 @@ import { force, getPath, getPaths, isLeafPath, setPath } from "sia-reactor/utils
 import { limited } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
-import { capitalize, fuzzyMatch as match, getLevenshteinSimilarity, uncamelize } from "@utils/str";
+import { capitalize, uncamelize, fuzzyMatch as match, getLevenshteinSimilarity } from "@utils/str";
 import { formatActionForDisplay } from "@utils/keys";
 import { type ToastOptions } from "@t007/toast";
 import { REvent } from "sia-reactor";
@@ -17,7 +17,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   public static readonly plugName = "voice";
   public static readonly BUILD = VOICE_BUILD;
   protected recognition?: any;
-  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Follow the predictor guides at the ${uncamelize(this.config.predictorPos.value, "-")}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_voice_tut_1", maxTimes: 6, perSession: 2 }));
+  protected teachBasics = limited((_id?: string) => ((_id = this.ctlr.plug("settings.toasts")?.toast?.(`Follow the predictor guides at the ${this.config.toasts.predictorPos.value.replace("-", "")}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(_id))), signal: this.signal })), { key: "tmg_voice_tut_1", maxTimes: 6, perSession: 2 }));
   protected snublist: Array<Action["id"]> = ["voiceToggleOn", "voiceToggleOff"] as const;
   protected readonly IDS = { LISTENER: "tmg-media-voice-listener" + this.ctlr.config.id, PREDICTOR: "tmg-media-voice-predictor" + this.ctlr.config.id };
   protected get root() {
@@ -56,22 +56,22 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.ctlr.state.on("mediaIntersecting", () => this.ctlr.debounce("syncingIntersectingVoiceListeners", this.syncListeners, 300, false, this.signal), { signal: this.signal });
     // ---- Config -------
     this.ctlr.config.on("settings.voice.active", this.handleActive, { signal: this.signal });
-    this.ctlr.config.on("settings.voice.muted", ({ value }, { type, actions, autoClose } = this.getListenerOptions()) => this.config.active.value && (value ? this.recognition?.abort() : this.start(), this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, this.asking ? { type, actions, autoClose, render: this.getListenerSpeech() } : { type, actions })), { signal: this.signal });
+    this.ctlr.config.on("settings.voice.muted", ({ value }, { icon, type, actions, autoClose } = this.getListenerOptions()) => this.config.active.value && (value ? this.recognition?.abort() : this.start(), this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, this.asking ? { type, actions, autoClose, icon, render: this.getListenerSpeech() } : { type, actions })), { signal: this.signal });
     this.ctlr.config.on("settings.voice.wakeWord", ({ value }) => !this.state.listening && (value ? this.config.active.value && (this.start(), this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: this.getListenerSpeech() })) : this.stop()), { signal: this.signal });
-    this.ctlr.config.on("settings.voice.behavior", ({ value }) => this.config.active.value && (value === "persistent" ? this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions()) : t007.toast?.dismiss(this.IDS.LISTENER)), { signal: this.signal });
-    this.ctlr.config.on("settings.voice.listenerPos.value", ({ value }) => this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { position: value }), { signal: this.signal });
-    this.ctlr.config.on("settings.voice.predictorPos.value", ({ value }) => this.ctlr.plug("settings.toasts")?.toast?.update(this.state.listening ? this.IDS.PREDICTOR : this.IDS.LISTENER, { position: value }), { signal: this.signal });
+    this.ctlr.config.on("settings.voice.toasts.behavior", ({ value }) => this.config.active.value && (value === "persistent" ? this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions()) : t007.toast?.dismiss(this.IDS.LISTENER)), { signal: this.signal });
+    this.ctlr.config.on("settings.voice.toasts.listenerPos.value", ({ value }) => this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { position: value }), { signal: this.signal });
+    this.ctlr.config.on("settings.voice.toasts.predictorPos.value", ({ value }) => this.ctlr.plug("settings.toasts")?.toast?.update(this.state.listening ? this.IDS.PREDICTOR : this.IDS.LISTENER, { position: value }), { signal: this.signal });
     this.ctlr.config.on("disabled", this.syncListeners, { signal: this.signal });
     // Post Wiring
-    this.ctlr.registerAction("voiceQuit", { voice: { stage: "anytime" } });
-    this.ctlr.registerAction("voiceMute", { voice: { stage: "anytime" } });
-    this.ctlr.registerAction("voiceSleep", { fn: this.sleep });
-    this.ctlr.registerAction("voiceSubmit", { fn: () => this.submit(), voice: { stage: "pre-route" } });
-    this.ctlr.registerAction("voiceHistoryFirst", { fn: () => this.goTo("*") });
-    this.ctlr.registerAction("voiceHistoryPrevious", { fn: this.goBack });
-    this.ctlr.registerAction("voiceHistoryNext", { fn: this.goForward });
-    this.ctlr.registerAction("voiceHistoryLast", { fn: () => this.goTo(this.state.context) });
-    this.ctlr.registerAction("voiceHistoryClear", { fn: () => this.resetContext(false) });
+    this.ctlr.addAction("voiceQuit", { voice: { stage: "anytime" } }, this.signal);
+    this.ctlr.addAction("voiceMute", { voice: { stage: "anytime" } }, this.signal);
+    this.ctlr.addAction("voiceSleep", { fn: this.sleep }, this.signal);
+    this.ctlr.addAction("voiceSubmit", { fn: () => this.submit(), voice: { stage: "pre-route" } }, this.signal);
+    this.ctlr.addAction("voiceHistoryFirst", { fn: () => this.goTo("*") }, this.signal);
+    this.ctlr.addAction("voiceHistoryPrevious", { fn: this.goBack }, this.signal);
+    this.ctlr.addAction("voiceHistoryNext", { fn: this.goForward }, this.signal);
+    this.ctlr.addAction("voiceHistoryLast", { fn: () => this.goTo(this.state.context) }, this.signal);
+    this.ctlr.addAction("voiceHistoryClear", { fn: () => this.resetContext(false) }, this.signal);
     this.ctlr.payload.wired ? this.syncListeners() : this.ctlr.state.wonce("readyState", this.syncListeners, { signal: this.signal }); // #HEAVY: waits for !lightState. If wake word is enabled, start the engine immediately in "sleep" mode
     super.wire();
   }
@@ -90,7 +90,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
         const idx = transcript.indexOf(token);
         transcript = idx !== -1 ? transcript.substring(idx + token.length).trim() : ""; // Remove the wake word from the transcript
       }
-      if ((!token || !transcript) && this.config.behavior.value === "strict") return;
+      if ((!token || !transcript) && this.config.toasts.behavior.value === "strict") return;
     }
     // 2. Update the listener UI.
     if (!this.config.muted) this.ctlr.plug("settings.toasts")?.toast?.(transcript ? `${transcript}${!this.state.listening ? `... Say "${this.linked(this.config.wakeWord)}"!` : ""}` : this.getListenerSpeech(undefined, this.state.listening ? "Didn't catch that..." : undefined), this.getListenerOptions(true));
@@ -124,17 +124,16 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const state = (await navigator.permissions?.query({ name: "microphone" }).catch(() => null))?.state ?? "prompt";
     if (state === "granted" || state === "denied") return state;
     // prettier-ignore
-    return new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.ctlr.plug("settings.toasts")?.toast?.info("We need permission to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, closeButton: true, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(() => (this.ctlr.plug("settings.toasts")?.toast?.warn("Grant permissions to use Voice Control", { id: this.IDS.LISTENER, autoClose: false, actions: { Retry: req!, } }), ++i > 3 && res("cancelled"))) }, onClose: () => res("cancelled") }))())); // #EXTRA-MILE: doing the most with the least
+    return new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.ctlr.plug("settings.toasts")?.toast?.info("Voice control requires mic access", { id: this.IDS.LISTENER, autoClose: false, closeButton: true, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.ctlr.plug("settings.toasts")?.toast?.warn("Grant permission to use microphone", { id: this.IDS.LISTENER, autoClose: false, actions: { Retry: req! } })), ...this.getListenerActions() }, onClose: () => res("cancelled") }))())); // #EXTRA-MILE: doing the most with the least
   }
   private asking = false;
   public async start(): Promise<void> {
     let state = this.config.muted ? "granted" : ((this.asking = true), await this.askPermission());
-    if (this.config.muted || (state === "granted" && !this.state.listening)) this.config.behavior.value === "persistent" ? (!this.config.muted || !t007.toast.isActive(this.IDS.LISTENER)) && this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions()) : t007.toast?.dismiss(this.IDS.LISTENER);
+    if (!this.signal || this.signal?.aborted) return;
+    if (this.config.muted || (state === "granted" && !this.state.listening)) this.config.toasts.behavior.value === "persistent" ? (!this.config.muted || !t007.toast.isActive(this.IDS.LISTENER)) && this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions()) : t007.toast?.dismiss(this.IDS.LISTENER);
     try {
       (this.asking = false), state === "granted" ? !this.config.muted && this.recognition?.start() : this.handleError({ error: "not-allowed" });
-    } catch (e) {
-      this.ctlr.log(e, "error", true);
-    } // Silently swallows the InvalidStateError since we might call when already on due to wake word
+    } catch (e) {} // Silence the InvalidStateError since we might call when already on due to wake word
   }
   public stop(): void {
     this.sleep(), this.recognition?.abort();
@@ -152,21 +151,21 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (this.config.active.value !== "passive") return void (this.config.active.value = this.config.wakeWord ? "passive" : false);
     this.state.listening = false;
     this.resetContext();
-    t007.toast?.dismiss(this.IDS.PREDICTOR), !this.config.active.value || this.config.behavior.value !== "persistent" ? t007.toast?.dismiss(this.IDS.LISTENER) : this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions(true));
+    t007.toast?.dismiss(this.IDS.PREDICTOR), !this.config.active.value || this.config.toasts.behavior.value !== "persistent" ? t007.toast?.dismiss(this.IDS.LISTENER) : this.ctlr.plug("settings.toasts")?.toast?.(this.getListenerSpeech(), this.getListenerOptions(true));
   }
 
-  protected dispatchActions(stage: VoiceStage, transcript: string): boolean {
+  protected trigger(stage: VoiceStage, transcript: string): boolean {
     const acc = this.config.inputs.accuracy;
     for (const action of Object.values(this.ctlr.actions.entries)) {
       const triggers = this.config.commands[action.id];
-      if (!this.snublist.includes(action.id) && (action.voice?.stage ?? "post-route") === stage && triggers?.length && match(triggers, transcript, acc)) return this.ctlr.runAction(action.id), this.ctlr.plug("settings.toasts")?.toast?.success(`Executed <i>${action.label || action.id}</i>`, { id: this.IDS.LISTENER, autoClose: this.config.behavior.value !== "persistent" }), true;
+      if (!this.snublist.includes(action.id) && (action.voice?.stage ?? "post-route") === stage && triggers?.length && match(triggers, transcript, acc)) return this.ctlr.perform(action.id), this.ctlr.plug("settings.toasts")?.toast?.success(`Executed <i>${action.label || action.id}</i>`, { id: this.IDS.LISTENER, icon: true, autoClose: this.config.toasts.behavior.value !== "persistent" }), true;
     }
     return false;
   }
   protected process(transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), isSubmit = false, dormant = !this.state.listening): void {
-    if ((!this.config.inputs.commandsDisabled && this.dispatchActions("anytime", transcript)) || dormant) return;
+    if ((!this.config.inputs.commandsDisabled && this.trigger("anytime", transcript)) || dormant) return;
     // --- 1. PRE-ROUTE STAGE ---
-    if (!this.config.inputs.commandsDisabled && this.dispatchActions("pre-route", transcript)) return;
+    if (!this.config.inputs.commandsDisabled && this.trigger("pre-route", transcript)) return;
     // --- 2. LEAF EXECUTION ---
     if (this.isLeaf(this.state.context)) return this.execute(this.state.context, transcript, cleaned, false);
     // --- 3. PATH EXTRACTION (PRIORITY) ---
@@ -186,7 +185,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (matched) return void ((this.state.context = matched), this.isLeaf(matched) && this.execute(matched, transcript, cleaned, true)); // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
     else if (isSubmit) {
       const path = this.state.context === "*" ? transcript : `${this.state.context}.${transcript}`,
-        val = this.ctlr.isLogicPath(path) ? getPath(this.root as any, path) : undefined;
+        val = this.ctlr.isLogical(path) ? getPath(this.root as any, path) : undefined;
       if (val !== undefined) return void ((this.state.context = path), this.isLeaf(path, val) && this.execute(path, transcript, cleaned, true)); // Hey dev or explorer, here u go!
     }
     if (paths.length) {
@@ -194,10 +193,10 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       if (pathInput) pathInput.value = transcript.trim();
     }
     // --- 4. POST-ROUTE STAGE ---
-    if (!this.config.inputs.commandsDisabled) this.dispatchActions("post-route", transcript);
+    if (!this.config.inputs.commandsDisabled) this.trigger("post-route", transcript);
   }
   protected predict(): void {
-    const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-sticky-crumb">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small><i style="${active ? "font-weight: bold;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : capitalize(p.split(".").pop()!), p, true)}</i></small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
+    const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-sticky-crumb">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small><i style="${active ? "font-weight: bold;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncap(p.split(".").pop()!), p, true)}</i></small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
       actions: Record<string, () => void> = {};
     if (this.history.length > 1) actions[`<span title='Reset Context${formatActionForDisplay(this.settings.keys.shortcuts.voiceHistoryClear, this.config.commands.voiceHistoryClear)}'>↻</span>`] = () => this.resetContext(false);
     if (this.historyIdx > 0) actions[`<span title='Go Back${formatActionForDisplay(this.settings.keys.shortcuts.voiceHistoryPrevious, this.config.commands.voiceHistoryPrevious)}'>‹</span>`] = this.goBack;
@@ -217,7 +216,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const paths = this.getValidPaths();
     if (!paths.length) return;
     const inputHtml = `<input type="text" class="tmg-media-voice-path-input") placeholder="...text"/>`;
-    this.ctlr.plug("settings.toasts")?.toast?.(`${crumbHtml}Say these:<br>${inputHtml} • ${paths.map((p) => this.linked(p.split(".").pop()!)).join(" • ")}`, this.getPredictorOptions(actions));
+    this.ctlr.plug("settings.toasts")?.toast?.(`${crumbHtml}<small style="font-weight: 500;"><i>Say these:</i></small><br>${inputHtml} • ${paths.map((p) => this.linked(uncap(p.split(".").pop()!))).join(" • ")}`, this.getPredictorOptions(actions));
   }
   protected execute(path: string, transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), isNav = false, isSubmit = false): void {
     const value = this.parse(transcript, cleaned, path, isNav);
@@ -226,9 +225,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (strict && !isSubmit) {
       const input = this.ctlr.plug("settings.toasts")?.container?.querySelector<HTMLInputElement>(clame("exact-input"));
       if (input) input.value = Array.isArray(value) ? value.join(", ") : String(value);
-      return void this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: transcript || String(value) });
+      return void this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: transcript || String(value), type: undefined, icon: "🎙️" });
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    setPath(this.root as any, path as any, value), this.ctlr.plug("settings.toasts")?.toast?.success(`Set <i>${path.split(".").join(" > ")}</i> to ${Array.isArray(value) ? `[${value.join(", ")}]` : value}`, { id: this.IDS.LISTENER, autoClose: this.config.behavior.value !== "persistent" }), this.goBack();
+    setPath(this.root as any, path as any, value), this.ctlr.plug("settings.toasts")?.toast?.success(`Set <i>${path.split(".").map(uncap).join(" > ")}</i> to ${Array.isArray(value) ? `[${value.join(", ")}]` : value}`, { id: this.IDS.LISTENER, icon: true, autoClose: this.config.toasts.behavior.value !== "persistent" }), this.goBack();
   }
   protected parse(transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), path: string, isNav = false): any {
     const val = getPath(this.root as any, path as any),
@@ -279,12 +278,11 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return `<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" tabindex="0" style="cursor:pointer; text-decoration-color: currentColor;">${text}</u>`;
   }
   protected handleLinkClick(e: MouseEvent, target = e.target as HTMLElement): void {
-    if (!target.matches?.(clame("link"))) return;
+    if (!target?.matches?.(clame("link"))) return;
     e.preventDefault(), e.stopPropagation();
     if (target.dataset.goto) return this.goTo(target.dataset.goto);
-    const cmd = target.dataset.cmd!;
-    this.ctlr.plug("settings.toasts")?.toast?.(cmd, { id: this.IDS.LISTENER }); // Instantly update the listener toast to show they "clicked/said" it
-    cmd === this.config.wakeWord.toLowerCase() ? this.wakeUp() : this.process(cmd); // Pipe it straight into the process engine as if they spoke it!
+    this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: target.dataset.cmd, type: undefined, icon: "🎙️" }); // Instantly update the listener toast to show they "clicked/said" it
+    target.dataset.cmd === this.config.wakeWord.toLowerCase() ? this.wakeUp() : this.process(target.dataset.cmd || ""); // Pipe it straight into the process engine as if they spoke it!
   }
   protected handleInputEvent(e: Event, target = e.target as HTMLElement, isEnter = e.type === "keydown" && (e as KeyboardEvent).key === "Enter", isClick = e.type === "click"): void {
     this.stayWoke(e);
@@ -292,10 +290,10 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     else if (isEnter && target?.matches?.(clame("path-input"))) e.preventDefault(), e.stopPropagation(), this.submit(target as HTMLInputElement, undefined, true);
   }
   protected submit(input = this.ctlr.plug("settings.toasts")?.container?.querySelector<HTMLInputElement>(clame("exact-input")), render = input?.value.trim(), process = false): void {
-    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: render, type: undefined }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
+    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render, type: undefined }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
   }
   protected stayWoke(e: Event): void {
-    this.state.listening && this.ctlr.throttle("voiceWoking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.IDS.PREDICTOR}"],[id="${this.IDS.LISTENER}"])`)) && this.ctlr.debounce("voiceSleeping", this.sleep, this.config.timeout, false, this.signal), 100);
+    this.state.listening && this.ctlr.throttle("voiceWoking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.IDS.PREDICTOR}"],[id="${this.IDS.LISTENER}"])`)) && this.ctlr.debounce("voiceSleeping", this.sleep, this.config.timeout, false, this.signal), 200);
   }
 
   protected isLeaf(path: string, val = path !== "*" && getPath(this.root as any, path as any)): boolean {
@@ -303,24 +301,27 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
   protected getValidPaths(): string[] {
     // prettier-ignore
-    return getPaths(this.root as any, this.state.context as any, { depth: 1 }).filter(this.ctlr.isLogicPath).sort((a, b) => a.localeCompare(b));
-  }
-  protected getListenerOptions(transient = false): ToastOptions {
-    const actions: Record<string, () => void> = { [this.config.muted ? `<span title='Unmute my Voice'>${IconRegistry.get("volumemuted", true)}</span>` : `<span title='Mute my Voice${formatActionForDisplay(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get("volumehigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
-    return { id: this.IDS.LISTENER, icon: "🎙️", position: this.state.listening ? this.config.listenerPos.value : this.config.predictorPos.value, autoClose: transient ? this.config.behavior.value !== "persistent" : false, closeButton: true, dragToClose: false, actions, onClose: (elapsed) => !elapsed && (this.config.active.value = false), type: this.config.muted ? "warning" : undefined, signal: this.signal };
+    return getPaths(this.root as any, this.state.context as any, { depth: 1 }).filter(this.ctlr.isLogical).sort((a, b) => a.localeCompare(b));
   }
   protected getPredictorOptions(actions: ToastOptions["actions"]): ToastOptions {
-    return { id: this.IDS.PREDICTOR, icon: "✨", position: this.config.predictorPos.value, autoClose: false, closeButton: true, dragToClose: false, animation: "fade", actions, onClose: (elapsed) => !elapsed && this.sleep(), signal: this.signal };
+    return { id: this.IDS.PREDICTOR, icon: "✨", position: this.config.toasts.predictorPos.value, autoClose: false, closeButton: true, dragToClose: false, animation: "fade", actions, onClose: (elapsed) => !elapsed && this.sleep(), signal: this.signal };
+  }
+  protected getListenerOptions(transient = false): ToastOptions {
+    return { id: this.IDS.LISTENER, icon: "🎙️", position: this.state.listening ? this.config.toasts.listenerPos.value : this.config.toasts.predictorPos.value, autoClose: transient ? this.config.toasts.behavior.value !== "persistent" : false, closeButton: true, dragToClose: false, actions: this.getListenerActions(), onClose: (elapsed) => !elapsed && (this.config.active.value = false), type: this.config.muted ? "warning" : undefined, signal: this.signal };
   }
   protected getListenerSpeech(full = !this.state.listening, firstHalf = "Listening...", secondHalf = `Say "${this.linked(this.config.wakeWord)}" to wake me up!`, first = true): string {
     return full ? `${firstHalf} ${secondHalf}` : first ? firstHalf : secondHalf;
+  }
+  protected getListenerActions(): Record<string, () => void> {
+    return { [this.config.muted ? `<span title='Unmute my Voice'>${IconRegistry.get("volumeMuted", true)}</span>` : `<span title='Mute my Voice${formatActionForDisplay(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get("volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
 
   public override onDestroy(): void {
     this.stop(), super.onDestroy();
   }
 }
-const clame = (suffix: string) => `.tmg-media-voice-${suffix}`;
+const uncap = (str: string) => capitalize(uncamelize(str)),
+  clame = (suffix: string) => `.tmg-media-voice-${suffix}`;
 
 export type * from "./types";
 export * from "./build";

@@ -26,7 +26,7 @@ export default defineConfig([
     entry: ["src/ts/super.ts"],
     format: ["iife"],
     globalName: "tmg",
-    noExternal: ["sia-reactor", /@t007/],
+    noExternal: ["sia-reactor"], // /@t007/
     ...config,
   },
 ]);

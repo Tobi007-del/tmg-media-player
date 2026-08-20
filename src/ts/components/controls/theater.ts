@@ -10,7 +10,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
   public static readonly isControl: boolean = true;
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-theater-btn", type: "button", innerHTML: IconRegistry.get("entertheater") + IconRegistry.get("leavetheater") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-theater-btn", type: "button", innerHTML: IconRegistry.get("enterTheater") + IconRegistry.get("leaveTheater") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

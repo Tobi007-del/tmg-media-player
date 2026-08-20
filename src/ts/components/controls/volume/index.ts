@@ -22,7 +22,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     // Variables Assignments
     this.slider = new VolumeSlider(this.ctlr, this.config);
     this.element = createEl("div", { className: "tmg-media-volume-container tmg-media-vb-container" }, { draggableControl: "", controlId: this.name });
-    this.button = createEl("button", { className: "tmg-media-mute-btn tmg-media-vb-btn", type: "button", innerHTML: IconRegistry.get("volumehigh") + IconRegistry.get("volumelow") + IconRegistry.get("volumemuted") });
+    this.button = createEl("button", { className: "tmg-media-mute-btn tmg-media-vb-btn", type: "button", innerHTML: IconRegistry.get("volumeHigh") + IconRegistry.get("volumeLow") + IconRegistry.get("volumeMuted") });
     this.sliderWrapper = createEl("span", { className: "tmg-media-volume-slider-wrapper tmg-media-vb-slider-wrapper" });
     const sliderEl = this.slider.create();
     // DOM Injection

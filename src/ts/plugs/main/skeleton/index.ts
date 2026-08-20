@@ -57,7 +57,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
           </div>
           <div class="tmg-media-settings" inert>
             <div class="tmg-media-settings-content">
-              <div class="tmg-media-settings-top-panel"><button type="button" class="tmg-media-settings-close-btn">${IconRegistry.get("returnback")}<span>Close Settings</span></button></div>
+              <div class="tmg-media-settings-top-panel"><button type="button" class="tmg-media-settings-close-btn">${IconRegistry.get("returnBack")}<span>Close Settings</span></button></div>
               <div class="tmg-media-settings-bottom-panel"><p>More Settings Coming Soon!</p></div>
             </div>
           </div>

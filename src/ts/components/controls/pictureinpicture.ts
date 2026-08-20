@@ -6,11 +6,11 @@ import { formatActionForDisplay } from "@utils/keys";
 export type PictureInPictureConfig = undefined;
 
 export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName: string = "pictureinpicture";
+  public static readonly componentName: string = "pictureInPicture";
   public static readonly isControl: boolean = true;
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: IconRegistry.get("enterpip") + IconRegistry.get("leavepip") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: IconRegistry.get("enterPip") + IconRegistry.get("leavePip") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -39,6 +39,6 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    pictureinpicture: typeof PictureInPictureButton;
+    pictureInPicture: typeof PictureInPictureButton;
   }
 }

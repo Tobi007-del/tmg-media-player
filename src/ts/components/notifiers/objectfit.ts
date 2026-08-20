@@ -5,8 +5,8 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 
 export class ObjectFitNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
-  public static readonly componentName = "objectfitnotifier";
-  public static readonly triggers = ["objectfitcontain", "objectfitcover", "objectfitfill"];
+  public static readonly componentName = "objectFitNotifier";
+  public static readonly triggers = ["objectFitContain", "objectFitCover", "objectFitFill"];
   public content!: HTMLDivElement;
   public containDiv!: HTMLDivElement;
   public coverDiv!: HTMLDivElement;
@@ -14,9 +14,9 @@ export class ObjectFitNotifier extends BaseNotifier<undefined, ComponentState, H
 
   public override create() {
     this.content = createEl("div", { className: "tmg-media-object-fit-notifier-content tmg-media-notifier-content" });
-    this.containDiv = createEl("div", { className: "tmg-media-object-fit-contain-notifier", innerHTML: IconRegistry.get("objectfitcontain", true) });
-    this.coverDiv = createEl("div", { className: "tmg-media-object-fit-cover-notifier", innerHTML: IconRegistry.get("objectfitcover", true) });
-    this.fillDiv = createEl("div", { className: "tmg-media-object-fit-fill-notifier", innerHTML: IconRegistry.get("objectfitfill", true) });
+    this.containDiv = createEl("div", { className: "tmg-media-object-fit-contain-notifier", innerHTML: IconRegistry.get("objectFitContain", true) });
+    this.coverDiv = createEl("div", { className: "tmg-media-object-fit-cover-notifier", innerHTML: IconRegistry.get("objectFitCover", true) });
+    this.fillDiv = createEl("div", { className: "tmg-media-object-fit-fill-notifier", innerHTML: IconRegistry.get("objectFitFill", true) });
     return this.bindNodes([this.content, this.containDiv, this.coverDiv, this.fillDiv]);
   }
 
@@ -33,6 +33,6 @@ export class ObjectFitNotifier extends BaseNotifier<undefined, ComponentState, H
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    objectfitnotifier: typeof ObjectFitNotifier;
+    objectFitNotifier: typeof ObjectFitNotifier;
   }
 }
