@@ -26,7 +26,7 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     },
     accuracy: 0.75,
     autoToggles: false,
-    commandsDisabled: false,
+    allowCommands: true,
   },
   commands: {
     voiceQuit: ["bye bye", "exit", "quit"],

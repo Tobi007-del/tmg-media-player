@@ -26,7 +26,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   }
 
   protected canHandle(e: TouchEvent): boolean {
-    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.speedCheck;
+    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.active;
   }
 
   protected handleStart(e: TouchEvent): void {
@@ -41,7 +41,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
 
   protected handleInit(e: Event): void {
     const te = e as TouchEvent;
-    if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.state.speedCheck) return;
+    if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.state.active) return;
     te.preventDefault();
     const tc = this.config,
       rect = this.media.container.getBoundingClientRect(),

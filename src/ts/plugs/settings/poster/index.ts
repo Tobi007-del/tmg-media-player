@@ -38,7 +38,7 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     this.media.on("intent.poster", this.handlePosterIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.src", (e) => e.resolved && this.syncState(true), { signal: this.signal });
     this.media.on("state.paused", ({ value }) => !value && this.config.eager && this.syncState(false), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.currentTime", () => (!this.config.eager || this.media.state.currentTime) && this.syncState(false), { init: this.ctlr.payload.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
+    this.media.on("state.currentTime", ({ value }) => (!this.config.eager || value) && this.media.status.loadedData && this.syncState(false), { init: this.ctlr.payload.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
     this.media.on("status.ended", this.syncView, { signal: this.signal });
     this.media.on("state.poster", ({ value }) => ((this.element.dataset.loaded = "false"), value ? (this.element.src = value) : this.element.removeAttribute("src")), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.loadedMetadata", this.autoGenerate, { init: this.ctlr.payload.wired, signal: this.signal });
@@ -63,9 +63,9 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
 
   public async autoGenerate(): Promise<void> {
     const url = this.media.state.poster;
-    if (this.config.autoGen.disabled || !this.ctlr.isNativeEl || this.media.type === "audio" || (url && !url.endsWith(this.config.autoGen.hash))) return;
+    if (!this.config.allowAutoGen || !this.ctlr.isNativeEl || this.media.type === "audio" || (url && !url.endsWith(this.ctlr.hash))) return;
     const frame = this.ctlr.isNativeEl && (await this.ctlr.plug("settings.frame")?.extract("", this.ctlr.config.lightState.preview.time));
-    silence(() => (this.media.intent.poster = frame?.url ? `${frame.url}${this.config.autoGen.hash}` : "")), url && URL.revokeObjectURL(url.replace(this.config.autoGen.hash, ""));
+    silence(() => (this.media.intent.poster = frame?.url ? `${frame.url}${this.ctlr.hash}` : "")), url && URL.revokeObjectURL(url.replace(this.ctlr.hash, ""));
   }
 }
 

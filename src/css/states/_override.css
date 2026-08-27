@@ -7,8 +7,8 @@
   pointer-events: none;
   transition: opacity var(--tmg-media-fade-transition-time) ease;
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) :is(.tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)):not(.tmg-media-progress-bar, :has(.tmg-media-fast-play-notifier.tmg-media-control-active)) .tmg-media-timeline-container {
+.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible)) :is(.tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
+.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible)):not(.tmg-media-progress-bar, :has(.tmg-media-fast-play-notifier.tmg-media-control-active)) .tmg-media-timeline-container {
   opacity: 1;
   pointer-events: all;
 }

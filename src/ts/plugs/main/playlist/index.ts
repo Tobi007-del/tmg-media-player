@@ -36,12 +36,14 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(deepClone(PLAYLIST_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
     // ---- Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
+    this.media.watch("state.poster", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.intent.poster = v), { signal: this.signal });
+    this.media.watch("status.duration", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.status.duration = v), { signal: this.signal });
     for (const key of ["title", "artist", "profile", "artwork", "chapterInfo"] as const) this.media.watch(`settings.metadata.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata[key] = v as any), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
     for (const key of ["title", "artist", "profile"] as const) this.media.watch(`settings.metadata.links.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.settings.metadata.links[key] = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
-    this.media.watch("status.duration", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].media.status.duration = v), { signal: this.signal });
-    // ---- Config Listeners
+    // ---- Config Watchers
     this.ctlr.config.watch("settings.time.start", (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.time.start = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
     for (const key of ["previews", "marks"] as const) this.ctlr.config.watch(`settings.controlPanel.timeline.${key}`, (v) => this.config.content && !this.applying && (this.config.content[this.state.currentIndex].settings.controlPanel.timeline[key] = v as any), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
+    // ----------- Listeners
     this.ctlr.config.on("playlist.content", this.handleContent, { signal: this.signal, init: true, depth: 1 });
     this.ctlr.config.on("playlist.allowOverride", this.syncFeatures, { signal: this.signal });
     // Post Wiring
@@ -54,25 +56,24 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     const idx = content?.findIndex((v) => (v.media.settings.metadata.id && v.media.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(v.media.intent.src, this.media.intent.src)) ?? -1;
     this.state.currentIndex = idx === -1 ? 0 : idx;
     const pmdle = this.ctlr.plug("settings.persist")?.module,
-      apply = () => (content?.[idx] ? this.applyItem(content[idx], false, "Playlist update") : this.moveTo(this.state.currentIndex));
+      apply = () => (content?.[idx] ? this.applyItem(content[idx], "Playlist update") : this.moveTo(this.state.currentIndex));
     pmdle && !pmdle.state.hydrated ? pmdle.state.wonce("hydrated", apply, { signal: this.signal }) : apply();
   }
 
-  protected applyItem(item: PlaylistItemConfig, _reset = true, txLabel?: string): void {
+  protected applyItem(item: PlaylistItemConfig, txLabel?: string): void {
     (this.applying = true), fanout(this.settings, item.settings, { cloneSets: true, txLabel }), fanout(this.media, item.media, { cloneSets: true, txLabel }), (this.applying = false);
   }
   protected applying = false;
 
-  public moveTo(i: number, play?: boolean, label = `move to ${i} of ${this.config.content?.length}`): void {
+  public moveTo(i: number, play?: boolean, label = `move to ${i + 1} of ${this.config.content?.length}`): void {
     if (!this.config.content || !this.config.content[i]) return;
     this.state.currentIndex = i;
-    this.applyItem(this.config.content![i], true, `Playlist ${label}`);
-    isBool(play) && silence(() => (this.media.intent.paused = !play));
+    this.applyItem(this.config.content![i], `Playlist ${label}`), isBool(play) && silence(() => (this.media.intent.paused = !play));
   }
 
   public previous(): void {
-    if (safeNum(this.media.state.currentTime) >= 3) transaction(() => ((this.media.intent.currentTime = 0), (this.media.intent.paused = false)), "Playlist previous (Restart)");
-    else if (this.config.content && this.state.currentIndex > 0) this.moveTo(this.state.currentIndex - 1, true, "previous");
+    if (safeNum(this.media.state.currentTime) >= this.media.settings.timePlayedMin) transaction(() => ((this.media.intent.currentTime = 0), (this.media.intent.paused = false)), "Playlist previous (Restart)");
+    else this.config.content && this.state.currentIndex > 0 && this.moveTo(this.state.currentIndex - 1, true, "previous");
   }
   public next(): void {
     if (this.config.content && this.state.currentIndex < this.config.content.length - 1) this.moveTo(this.state.currentIndex + 1, true, "next");
@@ -94,7 +95,7 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     list?.splice(index, 1), index === this.state.currentIndex && list?.length && this.moveTo(Math.min(index, list.length - 1));
   }
 
-  protected syncFeatures(): void {
+  public syncFeatures(): void {
     this.media.features.playlist = !!(this.config.content?.length || this.config.allowOverride.add);
     (this.media.features.nextItem = !this.atLast), (this.media.features.previousItem = !this.atFirst);
   }

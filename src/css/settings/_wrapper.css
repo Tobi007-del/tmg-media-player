@@ -5,7 +5,7 @@
   transform: rotateY(180deg);
 }
 .tmg-media-container.tmg-media-settings-view .tmg-media-container-content :is(.tmg-media, .tmg-media-filtered) {
-  filter: var(--tmg-media-filter) blur(10px);
+  filter: var(--tmg-media-settings-filter);
 }
 .tmg-media-container.tmg-media-settings-view .tmg-media-settings-btn svg {
   transform: rotate(30deg);

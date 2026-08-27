@@ -18,6 +18,8 @@
 }
 .tmg-media-container:not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar .tmg-media-timeline-container {
   opacity: var(--tmg-media-progress-bar-opacity);
+  transform: scaleY(0.75);
+  transform-origin: bottom;
   pointer-events: none;
 }
 .tmg-media-timeline-container.tmg-media-range-container.tmg-media-control-compact .tmg-media-timeline-bars-wrapper.tmg-media-range-bars-wrapper {
@@ -144,8 +146,8 @@ div.tmg-media-preview {
 div.tmg-media-thumbnail {
   background: var(--tmg-media-current-thumbnail-url) var(--tmg-media-current-thumbnail-background-position) / 100% 100% no-repeat, var(--tmg-media-disabled-background);
 }
-.tmg-media-container.tmg-media-inactive div:is(.tmg-media-thumbnail, .tmg-media-preview) {
-  background: var(--tmg-media-img-background);
+.tmg-host-container.tmg-media-inactive div:is(.tmg-media-thumbnail, .tmg-media-preview) {
+  background: var(--tmg-media-image-background);
 }
 .tmg-media-container:not(.tmg-media-scrubbing) .tmg-media-thumbnail,
 .tmg-media-container:is([data-preview-type="image"], [data-preview-type="sprite"]) canvas:is(.tmg-media-thumbnail, .tmg-media-preview),

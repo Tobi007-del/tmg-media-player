@@ -48,7 +48,7 @@ export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (ite
   for (const file of files) {
     const key = getNamePrefix(getName(file));
     let group = groups.get(key);
-    log("Prefix", `"${getName(file)}" -> "${key}"`), (group ?? (groups.set(key, (group = [])), group)).push(file);
+    log("Prefix", `"${getName(file)}" → "${key}"`), (group ?? (groups.set(key, (group = [])), group)).push(file);
   }
   const sortedFiles = [],
     byGroup = ([a]: [string, F[]], [b]: [string, F[]], diff = a === "unknown" ? 1 : b === "unknown" ? -1 : a.localeCompare(b)) => (log("Group Compare", `[${a}] vs [${b}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}`), diff), // Sort groups alphabetically by their prefix

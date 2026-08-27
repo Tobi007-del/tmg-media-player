@@ -163,9 +163,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return false;
   }
   protected process(transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), isSubmit = false, dormant = !this.state.listening): void {
-    if ((!this.config.inputs.commandsDisabled && this.trigger("anytime", transcript)) || dormant) return;
+    if ((this.config.inputs.allowCommands && this.trigger("anytime", transcript)) || dormant) return;
     // --- 1. PRE-ROUTE STAGE ---
-    if (!this.config.inputs.commandsDisabled && this.trigger("pre-route", transcript)) return;
+    if (this.config.inputs.allowCommands && this.trigger("pre-route", transcript)) return;
     // --- 2. LEAF EXECUTION ---
     if (this.isLeaf(this.state.context)) return this.execute(this.state.context, transcript, cleaned, false);
     // --- 3. PATH EXTRACTION (PRIORITY) ---
@@ -193,7 +193,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       if (pathInput) pathInput.value = transcript.trim();
     }
     // --- 4. POST-ROUTE STAGE ---
-    if (!this.config.inputs.commandsDisabled) this.trigger("post-route", transcript);
+    if (this.config.inputs.allowCommands) this.trigger("post-route", transcript);
   }
   protected predict(): void {
     const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-sticky-crumb">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small><i style="${active ? "font-weight: bold;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncap(p.split(".").pop()!), p, true)}</i></small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
@@ -225,9 +225,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (strict && !isSubmit) {
       const input = this.ctlr.plug("settings.toasts")?.container?.querySelector<HTMLInputElement>(clame("exact-input"));
       if (input) input.value = Array.isArray(value) ? value.join(", ") : String(value);
-      return void this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: transcript || String(value), type: undefined, icon: "🎙️" });
+      return void this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: transcript || String(value), type: this.config.muted ? "warning" : undefined, icon: "🎙️" });
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    setPath(this.root as any, path as any, value), this.ctlr.plug("settings.toasts")?.toast?.success(`Set <i>${path.split(".").map(uncap).join(" > ")}</i> to ${Array.isArray(value) ? `[${value.join(", ")}]` : value}`, { id: this.IDS.LISTENER, icon: true, autoClose: this.config.toasts.behavior.value !== "persistent" }), this.goBack();
+    setPath(this.root as any, path as any, value), this.ctlr.plug("settings.toasts")?.toast?.success(`<i>${path.split(".").map(uncap).join(" > ")}</i> -> ${Array.isArray(value) ? `[${value.join(", ")}]` : value}`, { id: this.IDS.LISTENER, icon: true, autoClose: this.config.toasts.behavior.value !== "persistent" }), this.goBack();
   }
   protected parse(transcript: string, cleaned = transcript.replace(/[-\s]/g, ""), path: string, isNav = false): any {
     const val = getPath(this.root as any, path as any),
@@ -281,7 +281,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (!target?.matches?.(clame("link"))) return;
     e.preventDefault(), e.stopPropagation();
     if (target.dataset.goto) return this.goTo(target.dataset.goto);
-    this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: target.dataset.cmd, type: undefined, icon: "🎙️" }); // Instantly update the listener toast to show they "clicked/said" it
+    this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render: target.dataset.cmd, type: this.config.muted ? "warning" : undefined, icon: "🎙️" }); // Instantly update the listener toast to show they "clicked/said" it
     target.dataset.cmd === this.config.wakeWord.toLowerCase() ? this.wakeUp() : this.process(target.dataset.cmd || ""); // Pipe it straight into the process engine as if they spoke it!
   }
   protected handleInputEvent(e: Event, target = e.target as HTMLElement, isEnter = e.type === "keydown" && (e as KeyboardEvent).key === "Enter", isClick = e.type === "click"): void {
@@ -290,7 +290,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     else if (isEnter && target?.matches?.(clame("path-input"))) e.preventDefault(), e.stopPropagation(), this.submit(target as HTMLInputElement, undefined, true);
   }
   protected submit(input = this.ctlr.plug("settings.toasts")?.container?.querySelector<HTMLInputElement>(clame("exact-input")), render = input?.value.trim(), process = false): void {
-    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render, type: undefined }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
+    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render, type: this.config.muted ? "warning" : undefined }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
   }
   protected stayWoke(e: Event): void {
     this.state.listening && this.ctlr.throttle("voiceWoking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.IDS.PREDICTOR}"],[id="${this.IDS.LISTENER}"])`)) && this.ctlr.debounce("voiceSleeping", this.sleep, this.config.timeout, false, this.signal), 200);

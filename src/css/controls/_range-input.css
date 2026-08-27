@@ -4,6 +4,7 @@
   block-size: calc(var(--tmg-media-range-track-block-size) * 2); /* pointer allowance */
   display: flex;
   align-items: center;
+  border-radius: calc(var(--tmg-media-range-track-block-size) / 2);
   touch-action: none;
   cursor: pointer;
   container-type: size;
@@ -86,16 +87,13 @@
 .tmg-media-range-container[readonly] .tmg-media-range-thumb {
   display: none;
 }
-.tmg-media-range-container {
-  border-radius: calc(var(--tmg-media-range-track-block-size) / 2);
-}
 .tmg-media-range-chunk:first-child {
-  border-start-start-radius: calc(var(--tmg-media-range-track-block-size) / 2);
-  border-end-start-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+  border-start-start-radius: inherit;
+  border-end-start-radius: inherit;
 }
 .tmg-media-range-chunk:last-child {
-  border-start-end-radius: calc(var(--tmg-media-range-track-block-size) / 2);
-  border-end-end-radius: calc(var(--tmg-media-range-track-block-size) / 2);
+  border-start-end-radius: inherit;
+  border-end-end-radius: inherit;
 }
 .tmg-media-range-chunk {
   position: relative;

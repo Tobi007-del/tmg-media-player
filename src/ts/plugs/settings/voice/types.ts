@@ -16,7 +16,7 @@ export interface VoiceConfig {
     strict: UISettings<boolean | "auto">;
     accuracy: number; // e.g., 0.75 means 75% character overlap required
     autoToggles: boolean;
-    commandsDisabled: boolean;
+    allowCommands: boolean;
   };
   commands: VoiceCommands;
   toasts: {

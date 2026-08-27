@@ -41,8 +41,9 @@ export class Controller {
   // --- MEMORY ---
   public payload: { readyState: number; initialized: boolean; wired: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any;
   public _build: CtlrConfig; // Build Cache
-  // DOM References (Utilized by Externals)
+  // --- DOM (Utilized by Externals) ---
   public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
+  public hash = "#tmg-auto-gen";
   public mutatingDOMM = true; // mutatingDOMMedia: for external watchers that need to know
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
@@ -132,8 +133,8 @@ export class Controller {
   }
   public log(mssg: any, type: "error" | "warn" | "log" = "log", swallow = false): void {
     if (!this.config.debug) return;
-    if (type === "error") return swallow && !this.config.devMode ? console.warn(`[TMG Controller] Error swallowed:`, mssg) : console.error(`[TMG Controller] Error occurred:`, mssg);
-    else type === "warn" ? console.warn(`[TMG Controller] Warning:`, mssg) : console.log(`[TMG Controller] Log:`, mssg);
+    if (type === "error") return swallow && !this.config.devMode ? console.warn(`[TMG Controller] Error swallowed →`, mssg) : console.error(`[TMG Controller] Error occurred →`, mssg);
+    else type === "warn" ? console.warn(`[TMG Controller] Warning →`, mssg) : console.log(`[TMG Controller] Log →`, mssg);
   }
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
@@ -175,8 +176,8 @@ export class Controller {
   public setImgFallback<Ev extends Partial<Pick<Event, "target">>>({ target: img }: Ev): void {
     img instanceof HTMLImageElement && img.src !== window.TMG_MEDIA_ALT_IMG_SRC && (img.src = window.TMG_MEDIA_ALT_IMG_SRC!);
   }
-  public setCanvasFallback(canvas: HTMLCanvasElement, context?: CanvasRenderingContext2D | null, _callback = (img = this.altImg) => context?.drawImage((this.altImg = img)!, 0, 0, canvas.width, canvas.height)): void {
-    const _img = canvas && (this.altImg && this.altImg.src === window.TMG_MEDIA_ALT_IMG_SRC ? _callback() : createEl("img", { src: window.TMG_MEDIA_ALT_IMG_SRC, onload: () => _callback(_img as HTMLImageElement) }));
+  public setCanvasFallback(canvas: HTMLCanvasElement, context?: CanvasRenderingContext2D | null, callback = (img = this.altImg) => context?.drawImage((this.altImg = img)!, 0, 0, canvas.width, canvas.height)): void {
+    const _img = canvas && (this.altImg && this.altImg.src === window.TMG_MEDIA_ALT_IMG_SRC ? callback() : createEl("img", { src: window.TMG_MEDIA_ALT_IMG_SRC, onload: () => callback(_img as HTMLImageElement) }));
   }
   private altImg?: HTMLImageElement;
 

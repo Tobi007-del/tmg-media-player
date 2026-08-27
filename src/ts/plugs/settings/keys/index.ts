@@ -52,7 +52,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     if (!e) return (this.media.intent.paused = !this.media.state.paused), this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
     this.playTriggerSeq++;
     this.playTriggerSeq === 1 && (e.currentTarget as Window | null)?.addEventListener("keyup", this.handlePlayTriggerUp, { signal: this.signal });
-    this.playTriggerSeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.fastPlay(e.shiftKey ? "backwards" : "forwards");
+    this.playTriggerSeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.speedUp(e.shiftKey ? "backwards" : "forwards");
   }
 
   protected handlePlayTriggerUp(e: KeyboardEvent, action = allowed(e, this.settings.keys)): void {
@@ -63,7 +63,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
       this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
     }
     const fastPlug = this.ctlr.plug("settings.fastPlay");
-    if (fastPlug?.state.speedCheck && this.playTriggerSeq > 1 && !fastPlug?.state.speedPtrCheck) fastPlug.slowDown();
+    if (fastPlug?.state.active && this.playTriggerSeq > 1 && !fastPlug?.state.ptrActive) fastPlug.slowDown();
     this.playTriggerSeq = 0;
     (e.currentTarget as Window | null)?.removeEventListener("keyup", this.handlePlayTriggerUp);
   }

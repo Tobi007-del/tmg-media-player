@@ -29,7 +29,7 @@ export const getSettingsFastPlayMenu = (plug: FastPlayPlug): SettingsMenuItem =>
           items: [
             {
               id: "fastPlayRate",
-              label: "Fast play speed",
+              label: "Playback speed",
               widget: "range",
               getValue: () => `${plug.config.playbackRate}x`,
               getRange() {
@@ -43,7 +43,7 @@ export const getSettingsFastPlayMenu = (plug: FastPlayPlug): SettingsMenuItem =>
             },
             {
               id: "fastPlayPointer",
-              label: "Pointer hold trigger",
+              label: "Pointer trigger",
               widget: "group",
               getValue: () => (plug.config.pointer.threshold && fPRgx.test(plug.config.pointer.type.value) ? "On" : "Off"),
               configPaths: ["settings.fastPlay.pointer.type.value", "settings.fastPlay.pointer.threshold"],
@@ -53,9 +53,9 @@ export const getSettingsFastPlayMenu = (plug: FastPlayPlug): SettingsMenuItem =>
                 { id: "fastPlayPointerInset", label: "Edge inset", widget: "range", getValue: () => formatMenuPx(plug.config.pointer.inset, true), getRange: () => ({ min: 0, max: 100, step: 5, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.pointer.inset = val), configPaths: ["settings.fastPlay.pointer.inset"], getTipHTML: () => "Distance from the screen edges to ignore long presses (prevents accidental triggers)" },
               ],
             },
-            { id: "fastPlayKey", label: "Keyboard hold trigger", widget: "toggle", getValue: () => (plug.config.key ? "On" : "Off"), onChange: (val: boolean) => (plug.config.key = val), configPaths: ["settings.fastPlay.key"], title: "Press and hold the Left/Right arrow keys to temporarily rewind or fast-forward" },
-            { id: "fastPlayReset", label: "Reset paused on release", widget: "toggle", getValue: () => (plug.config.resetPaused ? "On" : "Off"), onChange: (val: boolean) => (plug.config.resetPaused = val), configPaths: ["settings.fastPlay.resetPaused"], title: "Automatically reset play state when you release the trigger" },
-            { id: "fastPlayRewind", label: "Allow rewind", widget: "toggle", getValue: () => (plug.config.rewind ? "On" : "Off"), onChange: (val: boolean) => (plug.config.rewind = val), configPaths: ["settings.fastPlay.rewind"], title: "Allow fast playing backwards (rewinding) if triggered on the left side of the screen" },
+            { id: "fastPlayKey", label: "Keyboard trigger", widget: "toggle", getValue: () => (plug.config.key ? "On" : "Off"), onChange: (val: boolean) => (plug.config.key = val), configPaths: ["settings.fastPlay.key"], title: "Press and hold the Left/Right arrow keys to temporarily rewind or fast-forward" },
+            { id: "fastPlayResetPaused", label: "Reset paused on release", widget: "toggle", getValue: () => (plug.config.resetPaused ? "On" : "Off"), onChange: (val: boolean) => (plug.config.resetPaused = val), configPaths: ["settings.fastPlay.resetPaused"], title: "Automatically reset play state when you release the trigger" },
+            { id: "fastPlayAllowRewind", label: "Allow rewind", widget: "toggle", getValue: () => (plug.config.allowRewind ? "On" : "Off"), onChange: (val: boolean) => (plug.config.allowRewind = val), configPaths: ["settings.fastPlay.allowRewind"], title: "Allow fast playing backwards (rewinding) if triggered on the left side of the screen" },
           ],
         },
       ],

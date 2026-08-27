@@ -3,7 +3,6 @@ import { FastPlayConfig } from "./types";
 
 export const FAST_PLAY_BUILD: DeepPartial<FastPlayConfig> = {
   playbackRate: 2,
-  key: true,
   pointer: {
     type: {
       value: "all",
@@ -13,11 +12,12 @@ export const FAST_PLAY_BUILD: DeepPartial<FastPlayConfig> = {
         { value: "touch", display: "Touch" },
         { value: "pen", display: "Pen" },
         { value: "none", display: "None" },
-      ]
+      ],
     },
     threshold: 800,
     inset: 20,
   },
+  key: true,
   resetPaused: true,
-  rewind: true,
+  allowRewind: true,
 };

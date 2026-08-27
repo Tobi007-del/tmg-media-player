@@ -59,10 +59,10 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     if (value && this.config.start != null && this.media.state.currentTime !== this.actualStart) this.media.intent.currentTime = this.actualStart;
   }
 
-  protected handleCurrentTimeState({ value: curr }: REvent<CtlrMedia, "state.currentTime">): void {
-    curr = safeNum(curr);
-    (curr < this.config.min || curr > this.config.max) && silence(() => ((this.media.intent.currentTime = this.config.loop ? this.config.min : curr), !this.config.loop && (this.media.intent.paused = true))); // "Time Clamp Guard" if transaction
-    if (this.media.status.readyState && curr && this.ctlr.payload.wired) (this.writing = true), (this.config.start = curr > this.toTime(3) && curr < (this.config.end ?? this.media.status.duration) - this.toTime(3) ? curr : this.actualStart), (this.writing = false);
+  protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), pmin?: number): void {
+    const { intent: int, status: st, settings: set } = this.media;
+    (curr < this.config.min || curr > this.config.max) && silence(() => ((int.currentTime = this.config.loop ? this.config.min : curr), !this.config.loop && (int.paused = true))); // "Time Clamp Guard" if transaction
+    if (st.readyState && curr && this.ctlr.payload.wired) (this.writing = true), (this.config.start = curr > (pmin = this.toTime(set.timePlayedMin)) && curr < (this.config.end ?? st.duration) - pmin ? curr : this.actualStart), (this.writing = false);
   }
   private writing = false;
 

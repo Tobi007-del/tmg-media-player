@@ -30,12 +30,12 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
     if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.settingsView")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
   },
   onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-edit")) : undefined),
-  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.  <br> <small>Viewing <b>${plug.state.currentIndex + 1}</b> / <b>${plug.config.content || 0}</b>.</small>` : ""),
+  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.state.currentIndex + 1}</b> / <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
   actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-add") } as const] : [])],
   items: [
     {
       id: "playlist-add",
-      label: "Add to Playlist",
+      label: "Add to playlist",
       icon: "add",
       widget: "input",
       inputs: [
@@ -48,7 +48,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
     },
     {
       id: "playlist-edit",
-      label: "Edit Playlist Item",
+      label: "Edit playlist item",
       icon: "edit",
       widget: "input",
       inputs: [

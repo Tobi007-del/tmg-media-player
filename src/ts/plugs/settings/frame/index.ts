@@ -17,9 +17,9 @@ export class FramePlug extends BasePlug<FrameConfig> {
 
   public override wire(): void {
     // Ctlr Media Watchers
-    this.media.watch("tech", () => (this.media.features.frameCapture ||= this.ctlr.isNativeEl && this.media.type === "video" && !this.config.disabled), { init: true, signal: this.signal });
+    this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // ---- Config Listeners
-    this.ctlr.config.on("settings.frame.disabled", ({ value }) => (this.media.features.frameCapture = !value), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.frame.disabled", this.syncFeatures, { init: true, signal: this.signal });
     // Post Wiring
     this.ctlr.addAction("capture", { fn: () => this.capture(""), keyboard: { phase: "keyup" } }, this.signal);
     this.ctlr.addAction("timeStepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } }, this.signal);
@@ -59,22 +59,22 @@ export class FramePlug extends BasePlug<FrameConfig> {
     const toast = this.ctlr.plug("settings.toasts")?.toast,
       tTxt = formatMediaTime({ time, format: "human", showMs: true }),
       fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,
-      toastId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.media.settings.metadata.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
+      tId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.media.settings.metadata.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
       frame = await this.extract(display, time, false, 0, this.media.element as HTMLVideoElement),
       filename = `${this.media.settings.metadata.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_"); // system filename safe
     const Save = () => {
-      toast?.loading(toastId, { render: `Saving ${fTxt}`, actions: {} });
+      toast?.loading(tId, { render: `Saving ${fTxt}`, actions: {} });
       createEl("a", { href: frame.url as string, download: filename })?.click?.();
-      toast?.success(toastId, { delay: 1000, render: `Saved ${fTxt}`, actions: {} });
+      toast?.success(tId, { delay: 1000, render: `Saved ${fTxt}`, actions: {} });
     };
     const Share = () => {
-      toast?.loading(toastId, { render: `Sharing ${fTxt}`, actions: {} });
+      toast?.loading(tId, { render: `Sharing ${fTxt}`, actions: {} });
       navigator.share?.({ title: this.media.settings.metadata.title ?? "Video", text: `Captured ${fTxt}`, files: [new File([frame.blob!], filename, { type: frame.blob!.type })] }).then(
-        () => toast?.success(toastId, { render: `Shared ${fTxt}`, actions: {} }),
-        () => toast?.error(toastId, { render: `Failed sharing ${fTxt}`, actions: { Save } })
-      ) || toast?.warn(toastId, { delay: 1000, render: `Couldn't share ${fTxt}`, actions: { Save } });
+        () => toast?.success(tId, { render: `Shared ${fTxt}`, actions: {} }),
+        () => toast?.error(tId, { render: `Failed sharing ${fTxt}`, actions: { Save } })
+      ) || toast?.warn(tId, { delay: 1000, render: `Couldn't share ${fTxt}`, actions: { Save } });
     };
-    frame?.url ? toast?.success(toastId, { render: `Captured ${fTxt}`, image: frame.url, autoClose: this.config.captureAutoClose, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url) }) : toast?.error(toastId, { render: `Failed capturing ${fTxt}` });
+    frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, autoClose: this.config.captureAutoClose, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url) }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
   }
 
   public async findGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | null> {
@@ -95,6 +95,10 @@ export class FramePlug extends BasePlug<FrameConfig> {
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
     this.media.state.paused && this.ctlr.throttle("frameStepping", () => silence(() => (this.media.intent.currentTime = clamp(getMediaMin(this.media), Math.round(this.media.state.currentTime * this.config.fps) + (dir === "backwards" ? -1 : 1), Math.floor(getMediaMax(this.media) * this.config.fps)) / this.config.fps)), Math.round(1000 / this.config.fps));
+  }
+
+  public syncFeatures(): void {
+    this.media.features.frameCapture = this.ctlr.isNativeEl && this.media.type === "video" && !this.config.disabled;
   }
 } // Video only
 

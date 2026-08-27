@@ -54,7 +54,7 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
     playedMarks: false,
     formatTooltip: (v: number) => `${Math.round(v)}%`,
   },
-  progressBar: IS_MOBILE,
+  progressBar: true,
   bigVisible: IS_MOBILE,
   // draggable: CONTROL_PANEL_DRAGGABLE_BUILD,
 };

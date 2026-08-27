@@ -17,12 +17,12 @@ export const VIMEO_EVENTS = ["loaded", "play", "playing", "pause", "ended", "tim
 
 export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName: string = "vimeo";
-  public host: Player | null = null;
   public static override canPlaySource(src: string): boolean {
     return MATCH_URL_VIMEO.test(src);
   }
+  public host: Player | null = null;
   public hostDiv: HTMLDivElement;
-  public hostHTML = `<div class="tmg-host-content"><iframe class="tmg-foreign-host tmg-vimeo-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+  public hostHTML = `<iframe class="tmg-foreign-host tmg-vimeo-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share;"></iframe>`;
   protected hostSrc: string | null = null;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
@@ -44,7 +44,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       metadata: true, liveTolerance: true, minDVRWindow: true,  ...features
     });
     ctlr.config.mediaPlayer = "Vimeo"; // You can't say, I never did nothing for you
-    this.element = this.hostDiv = createEl("div", { className: `tmg-host-div ${this.el.className}`, innerHTML: this.hostHTML }) as HTMLIFrameElement; // for tech.element replaceWith
+    this.element = this.hostDiv = createEl("div", { className: `tmg-host-div ${this.el.className}`, innerHTML: `<div class="tmg-host-content">${this.hostHTML}</div>` }) as HTMLIFrameElement; // for tech.element replaceWith
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
@@ -140,7 +140,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
     this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
-      if (e.value < min! || e.value > max!) e.reject(this.name); // Out of bounds
+      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
       this.host!.setCurrentTime(clamp(min, e.value, max)).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
@@ -229,9 +229,9 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
           () => {
             st.waiting = false; // UX boost
             st.readyState = 2; // HAVE METADATA & CURRENT DATA
-            st.canPlay = st.loadedData = true;
+            st.canPlay = st.loadedData = st.loadedMetadata = true;
           },
-          100, // effects of promise abuse
+          100, // setbacks of promise abuse
           this.signal
         ); // stall due to promises
         break;
@@ -344,7 +344,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   protected destroyHost(): void {
     if (!this.host) return;
     this.host.destroy(), (this.host = null), (this.config.status.hostReady = false);
-    (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = this.hostHTML; // Reset to placeholder
+    (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = `<div class="tmg-host-content">${this.hostHTML}</div>`; // Reset to placeholder
   }
   protected override onDestroy(): void {
     this.destroyHost(), super.onDestroy();

@@ -56,9 +56,9 @@ export interface MediaState {
   // --- Track Switching (Async Buffering/Streaming) --- NOTE: "-1" is "Disabled" or a no-op
   currentChapter: number;
   currentTextTrack: number; // Subtitle
-  currentAudioTrack: number; // Language (English -> Spanish)
+  currentAudioTrack: number; // Language (English - Spanish)
   currentVideoTrack: number; // Angle
-  currentLevel: number; // Quality (280p -> 4K)
+  currentLevel: number; // Quality (280p - 4K)
   textVisible: boolean; // Captions on/off (UI-only)
   autoLevel: boolean; // ABR Algorithm enabled?
   // --- HTML Attributes ---
@@ -130,9 +130,6 @@ export interface MediaStatus {
 }
 
 export interface MediaSettings {
-  // --- Defaults (Startup values) ---
-  defaultMuted: boolean;
-  defaultPlaybackRate: number;
   // --- Stream Sources ---
   srcObject: SrcObject; // HTML courtesy
   // --- Metadata ---
@@ -141,10 +138,14 @@ export interface MediaSettings {
   // --- Live Content ---
   liveTolerance: number; // seconds
   minDVRWindow: number; // seconds
+  // --- Defaults (Startup values) ---
+  defaultMuted: boolean;
+  defaultPlaybackRate: number;
   // --- Lifecycles ---
   idleWaiting: boolean;
+  timePlayedMin: number; // seconds
   timeUpdateInterval: number; // time shift polling, e.g. in YT tech
-  resetPaths: { status: (keyof MediaStatus)[]; state: (keyof MediaState)[] };
+  transientPaths: { status: (keyof MediaStatus)[]; state: (keyof MediaState)[] }; // reset on `src` change
 }
 
 export interface MediaExtraFeatures {} // for external but custom usecases

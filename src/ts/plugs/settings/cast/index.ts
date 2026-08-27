@@ -21,7 +21,7 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.ctlr.payload.wired ? this.initApi() : this.ctlr.state.wonce("readyState", this.initApi, { signal: this.signal }); // #HEAVY: waits for !lightState
   }
   protected async initApi(): Promise<void> {
-    if (this.apiSetup) return;
+    if (this.apiSetup || location.protocol === "file:") return;
     try {
       if (typeof cast === "undefined") {
         const prev = (window as any).__onGCastApiAvailable;

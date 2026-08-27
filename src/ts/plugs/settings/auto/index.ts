@@ -15,6 +15,7 @@ import { CtlrState } from "@tools/runtime";
 export class AutoPlug extends BasePlug<AutoConfig> {
   public static readonly plugName = "auto";
   public static readonly BUILD = AUTO_BUILD;
+  public autonextPaths = ["state.currentTime", "state.paused", "status.waiting"] as const;
   protected nextPreview: HTMLVideoElement | null = null;
   protected canMovePlaylist = true;
 
@@ -106,7 +107,6 @@ export class AutoPlug extends BasePlug<AutoConfig> {
     this.config.next.preview.usePoster = this.config.next.preview.usePoster; // force update
   }
   private nextClup?: (() => void) | null;
-  private autonextPaths = ["state.currentTime", "state.paused", "status.waiting"] as const;
   private get usingPreviewPoster(): boolean {
     return !!this.nextPreview?.poster && !isSameURL(this.nextPreview.poster, window.TMG_MEDIA_ALT_IMG_SRC);
   }

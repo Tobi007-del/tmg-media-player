@@ -14,14 +14,14 @@ import { getMediaMax, getMediaMin } from "@utils/time";
 
 export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName: string = "youtube";
-  public host: YT.Player | null = null;
-  protected intervalId = -1;
   public static override canPlaySource(src: string): boolean {
     return MATCH_URL_YOUTUBE.test(src);
   }
+  public host: YT.Player | null = null;
   public hostDiv: HTMLDivElement;
-  public hostHTML = `<div class="tmg-host-content"><iframe class="tmg-foreign-host tmg-youtube-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+  public hostHTML = `<iframe class="tmg-foreign-host tmg-youtube-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share;"></iframe>`;
   protected hostSrc: string | null = null;
+  protected intervalId = -1;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {
@@ -42,7 +42,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       liveTolerance: true, minDVRWindow: true, ...features
     });
     ctlr.config.mediaPlayer = "YouTube"; // Don't say, I never did nothing for you
-    this.element = this.hostDiv = createEl("div", { className: `tmg-host-div ${this.el.className}`, innerHTML: this.hostHTML }) as HTMLIFrameElement; // for tech.element replaceWith
+    this.element = this.hostDiv = createEl("div", { className: `tmg-host-div ${this.el.className}`, innerHTML: `<div class="tmg-host-content">${this.hostHTML}</div>` }) as HTMLIFrameElement; // for tech.element replaceWith
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
@@ -162,7 +162,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
       this.config.status.seeking = true;
       const prev = this.config.state.currentTime;
-      if (e.value < min! || e.value > max!) e.reject(this.name); // Out of bounds
+      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
       this.host!.seekTo(clamp(min, e.value, max), true), this.config.state.paused && this.host!.pauseVideo(); // pampering observed quirk
       const check = setInterval(() => (!this.config.state.paused || this.config.state.currentTime !== prev) && (clearInterval(check), this.syncCurrentStats(), (this.config.status.seeking = false)), this.config.settings.timeUpdateInterval, this.signal); // YT has no "seeked" event, so we poll for the time shift
     });
@@ -346,7 +346,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected destroyHost(): void {
     if (!this.host) return;
     this.host.destroy(), (this.host = null);
-    (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = this.hostHTML; // Reset to placeholder
+    (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = `<div class="tmg-host-content">${this.hostHTML}</div>`; // Reset to placeholder
   }
   protected override onDestroy(): void {
     this.destroyHost(), super.onDestroy();

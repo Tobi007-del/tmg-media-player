@@ -60,7 +60,7 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
 
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return;
-    if (this.ctlr.plug("settings.fastPlay")?.state.speedCheck && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 1) < 1) return;
+    if (this.ctlr.plug("settings.fastPlay")?.state.active && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 1) < 1) return;
     if (IS_MOBILE && !this.media.state.pictureInPicture && !this.media.status.waiting && !this.media.status.ended && (!this.ctlr.plug("settings.time")?.skipNotifier || !this.ctlr.isUIActive("overlay"))) !/hidden|persistent/.test(this.settings.overlay.behavior.value) && this.media.container.classList.toggle("tmg-media-overlay");
     if (!this.media.state.miniplayer && this.config.click) (this.media.intent[this.config.click] = !this.media.state[this.config.click] as never), this.config.click === "paused" && this.ctlr.plug("settings.notifiers")?.notify(this.media.intent.paused ? "mediaPause" : "mediaPlay");
   }

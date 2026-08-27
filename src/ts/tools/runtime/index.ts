@@ -123,7 +123,7 @@ export function disconnectFromAudioManager(medium: HTMLMediaElement) {
   if (!AUDIO_CONTEXT) return "unavailable";
   medium._tmgGainNode?.disconnect(), medium._tmgDynamicsCompressorNode?.disconnect();
   medium.mediaElementSourceNode?.disconnect(), medium.mediaElementSourceNode?.connect(AUDIO_CONTEXT.destination);
-} // reroutes sourceNode -> destination so audio keeps flowing
+} // reroutes sourceNode to destination so audio keeps flowing
 
 let orientated = false,
   prevScreenType: OrientationType | undefined;

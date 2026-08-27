@@ -108,9 +108,6 @@ export const MEDIA_STATUS_BUILD: Partial<MediaStatus> = {
 
 // DEFAULT SETTINGS (The Config)
 export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
-  // Defaults
-  defaultMuted: false,
-  defaultPlaybackRate: 1,
   // Streams
   srcObject: null,
   // Metadata
@@ -132,10 +129,14 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
   // Live Content
   liveTolerance: 6,
   minDVRWindow: 60,
+  // Defaults
+  defaultMuted: false,
+  defaultPlaybackRate: 1,
   // Lifecycles
   idleWaiting: false,
+  timePlayedMin: 3,
   timeUpdateInterval: 250, // 4 times a second
-  resetPaths: {
+  transientPaths: {
     status: ["error", "activeCues", "duration", "waiting", "buffered", "seekable", "readyState", "ended", "stalled", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough"],
     state: ["currentTime"],
   },

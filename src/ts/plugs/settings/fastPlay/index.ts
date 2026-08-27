@@ -11,121 +11,114 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
   protected wasPaused = false;
   protected prevRate = 1;
   protected rewindRate = 0;
-  protected speedIntervalId: number | null = null;
-  protected speedDirection: "forwards" | "backwards" = "forwards";
-  protected speedTimeoutId: number | null = null;
+  protected direction: "forwards" | "backwards" = "forwards";
+  protected intervalId: number | null = null;
+  protected ptrTimeoutId: number | null = null;
+  protected lastTimestamp = 0;
 
   constructor(ctlr: Controller, config = ctlr.settings.fastPlay) {
-    super(ctlr, config, { speedCheck: false, speedPtrCheck: false, isRewinding: false });
+    super(ctlr, config, { active: false, ptrActive: false, rewinding: false });
   }
 
   public override wire(): void {
-    const run = () => this.ctlr.DOM.controlsContainer?.addEventListener("pointerdown", this.handleSpeedPointerDown, { capture: true, signal: this.signal });
+    const run = () => this.ctlr.DOM.controlsContainer?.addEventListener("pointerdown", this.handlePointerDown, { capture: true, signal: this.signal });
     this.ctlr.payload.wired ? run() : this.ctlr.state.wonce("readyState", run, { signal: this.signal }); // #HEAVY: waits for !lightState
     // Post Wiring
     super.wire();
   }
 
-  public fastPlay(pos: "forwards" | "backwards", interim = false): void {
-    if (this.state.speedCheck) return;
-    this.state.speedCheck = true;
+  public speedUp(pos: "forwards" | "backwards", interim = performance.now() - this.lastTimestamp < this.config.pointer.threshold): void {
+    if (this.state.active) return;
+    this.state.active = true;
     if (!interim) (this.wasPaused = this.media.state.paused), (this.prevRate = this.media.state.playbackRate);
     this.ctlr.plug("settings.notifiers")?.comp("fastPlayNotifier")?.active();
-    setTimeout(pos === "backwards" && this.config.rewind ? this.rewind : this.fastForward, 0, this.signal);
+    setTimeout(pos === "backwards" && this.config.allowRewind ? this.rewind : this.fastForward, 0, this.signal);
+  }
+
+  public slowDown(): void {
+    if (!this.state.active) return;
+    this.state.active = false;
+    this.intervalId && clearInterval(this.intervalId), this.media.off("state.paused", this.unwind);
+    silence(() => (this.media.intent.playbackRate = this.prevRate));
+    (this.rewindRate = 0), (this.state.rewinding = false), (this.lastTimestamp = performance.now());
+    silence(() => (this.media.intent.paused = this.config.resetPaused ? this.wasPaused : false));
+    this.ctlr.plug("settings.overlay")?.hide();
+    this.ctlr.plug("settings.notifiers")?.compEl("fastPlayNotifier")?.classList.remove("tmg-media-control-active", "tmg-media-rewind");
   }
 
   public fastForward(rate = this.config.playbackRate): void {
     silence(() => (this.media.intent.playbackRate = rate));
-    this.state.isRewinding = false;
+    this.state.rewinding = false;
     this.ctlr.plug("settings.notifiers")?.compEl("fastPlayNotifier")?.classList.remove("tmg-media-rewind");
     silence(() => (this.media.intent.paused = false));
   }
 
   public rewind(rate = this.config.playbackRate): void {
     silence(() => (this.media.intent.playbackRate = 1));
-    (this.rewindRate = rate), (this.state.isRewinding = true);
+    (this.rewindRate = rate), (this.state.rewinding = true);
     this.ctlr.plug("settings.notifiers")?.compEl("fastPlayNotifier")?.classList.add("tmg-media-rewind");
-    this.media.on("state.paused", this.rewindReset, { signal: this.signal });
-    this.speedIntervalId = setInterval(this.rewindMedia, Math.round(1000 / this.settings.frame.fps) - 18, this.signal); // intervals lag nd i'm 18 now so, yeah!
+    this.media.on("state.paused", this.unwind, { signal: this.signal });
+    this.intervalId = setInterval(this.shiftTime, Math.round(1000 / this.settings.frame.fps) - 18, this.signal); // intervals lag; i'm 18 rn so, yeah!
   }
-
-  protected rewindMedia(): void {
-    const textEl = this.ctlr.plug("settings.notifiers")?.comp("fastPlayNotifier")?.text;
-    if (textEl) textEl.textContent = `${this.rewindRate}x`;
+  protected shiftTime(): void {
+    const txtEl = this.ctlr.plug("settings.notifiers")?.comp("fastPlayNotifier")?.text;
+    if (txtEl) txtEl.textContent = `${this.rewindRate}x`;
     if (!this.media.state.paused) silence(() => (this.media.intent.paused = true));
     silence(() => (this.media.intent.currentTime = this.media.state.currentTime - this.rewindRate / this.settings.frame.fps)); // Apprentice Slider syncs, no CSS hack
-    // this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = this.media.state.currentTime / this.media.status.duration; // #REBORN: old things have passed away
   }
-
-  protected rewindReset(): void {
+  public unwind(): void {
     if (this.media.state.paused) return;
-    if (this.speedIntervalId) {
+    if (this.intervalId) {
       this.ctlr.plug("settings.notifiers")?.notify("mediaPause");
       silence(() => (this.media.intent.paused = true));
-      clearInterval(this.speedIntervalId);
-      this.speedIntervalId = null;
-    } else this.speedIntervalId ??= setInterval(this.rewindMedia, Math.round(1000 / this.settings.frame.fps) - 18, this.signal);
+      clearInterval(this.intervalId), (this.intervalId = null);
+    } else this.intervalId ??= setInterval(this.shiftTime, Math.round(1000 / this.settings.frame.fps) - 18, this.signal);
   }
 
-  public slowDown(): void {
-    if (!this.state.speedCheck) return;
-    this.state.speedCheck = false;
-    this.speedIntervalId && clearInterval(this.speedIntervalId);
-    this.media.off("state.paused", this.rewindReset);
-    silence(() => (this.media.intent.playbackRate = this.prevRate));
-    (this.rewindRate = 0), (this.state.isRewinding = false);
-    silence(() => (this.media.intent.paused = this.config.resetPaused ? this.wasPaused : false));
-    this.ctlr.plug("settings.overlay")?.hide();
-    this.ctlr.plug("settings.notifiers")?.compEl("fastPlayNotifier")?.classList.remove("tmg-media-control-active", "tmg-media-rewind");
-  }
-
-  protected handleSpeedPointerDown(e: PointerEvent): void {
-    if (!new RegExp(`all|${e.pointerType}`).test(this.config.pointer.type.value) || e.target !== this.ctlr.DOM.controlsContainer || this.media.state.miniplayer || this.state.speedCheck) return;
-    for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container?.addEventListener(evt, this.handleSpeedPointerUp, { signal: this.signal });
-    this.media.container?.addEventListener("mouseleave", this.handleSpeedPointerOut, { signal: this.signal });
-    clearTimeout(this.speedTimeoutId!);
-    this.speedTimeoutId = setTimeout(
+  protected handlePointerDown(e: PointerEvent): void {
+    if (!new RegExp(`all|${e.pointerType}`).test(this.config.pointer.type.value) || e.target !== this.ctlr.DOM.controlsContainer || this.media.state.miniplayer || this.state.active) return;
+    for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container.addEventListener(evt, this.handlePointerUp, { signal: this.signal });
+    this.media.container.addEventListener("mouseleave", this.handlePointerOut, { signal: this.signal });
+    clearTimeout(this.ptrTimeoutId!);
+    this.ptrTimeoutId = setTimeout(
       () => {
-        this.media.container?.removeEventListener("touchmove", this.handleSpeedPointerUp);
-        this.state.speedPtrCheck = true;
-        const x = e.clientX ?? (e as unknown as TouchEvent).targetTouches?.[0]?.clientX,
-          rect = this.media.container.getBoundingClientRect(),
-          rLeft = x - rect.left;
-        this.speedDirection = rLeft >= rect.width * 0.5 ? "forwards" : "backwards";
+        this.media.container.removeEventListener("touchmove", this.handlePointerUp);
+        this.state.ptrActive = true;
+        const rect = this.media.container.getBoundingClientRect(),
+          rLeft = (e.clientX ?? (e as unknown as TouchEvent).targetTouches?.[0]?.clientX) - rect.left;
+        this.direction = rLeft >= rect.width * 0.5 ? "forwards" : "backwards";
         if (rLeft < this.config.pointer.inset || rLeft > rect.width - this.config.pointer.inset) return;
-        if (this.config.rewind) for (const evt of ["mousemove", "touchmove"]) this.media.container?.addEventListener(evt, this.handleSpeedPointerMove, { signal: this.signal });
-        this.fastPlay(this.speedDirection);
+        if (this.config.allowRewind) for (const evt of ["mousemove", "touchmove"]) this.media.container.addEventListener(evt, this.handlePointerMove, { signal: this.signal });
+        this.speedUp(this.direction);
       },
       this.config.pointer.threshold,
       this.signal
     );
   }
 
-  protected handleSpeedPointerMove(e: globalThis.Event): void {
+  protected handlePointerMove(e: globalThis.Event): void {
     if ((e as TouchEvent).touches?.length > 1) return;
     this.ctlr.throttle(
       "speedPointerMove",
       () => {
         const rect = this.media.container.getBoundingClientRect(),
-          x = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX,
-          currPos = x - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
-        if (currPos !== this.speedDirection) (this.speedDirection = currPos), this.slowDown(), this.fastPlay(this.speedDirection, true);
+          pos = ((e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX) - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
+        if (pos !== this.direction) this.slowDown(), this.speedUp((this.direction = pos), true);
       },
       200
     );
   }
 
-  protected handleSpeedPointerUp(): void {
-    clearTimeout(this.speedTimeoutId!);
-    this.state.speedPtrCheck = false;
-    if (this.state.speedCheck && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 0) < 1) setTimeout(this.slowDown, 350, this.signal); // safe dbl clicks need 300ms wait for singles
-    for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container?.removeEventListener(evt, this.handleSpeedPointerUp);
-    for (const evt of ["mousemove", "touchmove"]) this.media.container?.removeEventListener(evt, this.handleSpeedPointerMove);
-    this.media.container?.removeEventListener("mouseleave", this.handleSpeedPointerOut);
+  protected handlePointerUp(): void {
+    clearTimeout(this.ptrTimeoutId!);
+    this.state.ptrActive = false;
+    if (this.state.active && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 0) < 1) setTimeout(this.slowDown, 350, this.signal); // safe dbl clicks need 300ms wait for singles
+    for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container.removeEventListener(evt, this.handlePointerUp);
+    for (const evt of ["mousemove", "touchmove"]) this.media.container.removeEventListener(evt, this.handlePointerMove);
+    this.media.container.removeEventListener("mouseleave", this.handlePointerOut);
   }
-
-  protected handleSpeedPointerOut(): void {
-    !this.media.container?.matches(":hover") && this.handleSpeedPointerUp();
+  protected handlePointerOut(): void {
+    !this.media.container.matches(":hover") && this.handlePointerUp();
   }
 }
 

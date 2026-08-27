@@ -72,16 +72,16 @@ export function removeSafeClicks(el?: SafeClickEl | null): void {
 // DOM Observers
 declare global {
   interface Element {
-    _resizeCbs?: Set<(entry: ResizeObserverEntry) => void>;
-    _intersectCbs?: Set<(entry: IntersectionObserverEntry) => void>;
-    _mutationCbs?: Set<(mutations: MutationRecord[]) => void>;
+    _resizeCallbacks?: Set<(entry: ResizeObserverEntry) => void>;
+    _intersectCallbacks?: Set<(entry: IntersectionObserverEntry) => void>;
+    _mutationCallbacks?: Set<(mutations: MutationRecord[]) => void>;
   }
 }
 
 export const intersectionObserver = win
   ? new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) if (entry.target._intersectCbs) for (const cb of entry.target._intersectCbs) cb(entry);
+        for (const entry of entries) if (entry.target._intersectCallbacks) for (const cb of entry.target._intersectCallbacks) cb(entry);
       },
       { root: null, rootMargin: "0px", threshold: 0.3 }
     )
@@ -89,40 +89,33 @@ export const intersectionObserver = win
 
 export const resizeObserver = win
   ? new ResizeObserver((entries) => {
-      for (const entry of entries) if (entry.target._resizeCbs) for (const cb of entry.target._resizeCbs) cb(entry);
+      for (const entry of entries) if (entry.target._resizeCallbacks) for (const cb of entry.target._resizeCallbacks) cb(entry);
     })
   : null;
 
 export const mutationObserver = win
   ? new MutationObserver((mutations) => {
-      // Dispatch to specific targets if they are being observed directly
-      // Note: MutationObserver works differently; this handles the 'root' observer callbacks
-      // We map the *target* of the observation, not the mutation target usually.
-      // For this util, we assume the observer instance calls the callback associated with the observed node.
-      // Since we use one global observer, we need to map back.
-      // Actually, for MutationObserver it's cleaner to keep separate instances if configs differ,
-      // but for "utils" style, we can use a Map logic or just basic callback sets.
-      // Current implementation assumes the caller handles the mutation list.
+      // Single global observer routing mutations back to the specific observed node. Assumes the caller handles the mutation list.
       const target = mutations[0].target as Element; // Batch usually targets one observer
-      if (target._mutationCbs) for (const cb of target._mutationCbs) cb(mutations);
+      if (target._mutationCallbacks) for (const cb of target._mutationCallbacks) cb(mutations);
     })
   : null;
 
 // --- PUBLIC API ---
 export function observeResize(el: Element, cb: (entry: ResizeObserverEntry) => void, sig?: AbortSignal) {
-  (el._resizeCbs ?? (el._resizeCbs = new Set())).add(cb);
+  (el._resizeCallbacks ?? (el._resizeCallbacks = new Set())).add(cb);
   resizeObserver?.observe(el);
-  return bindSig(() => (el._resizeCbs?.delete(cb), !el._resizeCbs?.size && resizeObserver?.unobserve(el)), sig);
+  return bindSig(() => (el._resizeCallbacks?.delete(cb), !el._resizeCallbacks?.size && resizeObserver?.unobserve(el)), sig);
 }
 
 export function observeIntersection(el: Element, cb: (entry: IntersectionObserverEntry) => void, sig?: AbortSignal) {
-  (el._intersectCbs ?? (el._intersectCbs = new Set())).add(cb);
+  (el._intersectCallbacks ?? (el._intersectCallbacks = new Set())).add(cb);
   intersectionObserver?.observe(el);
-  return bindSig(() => (el._intersectCbs?.delete(cb), !el._intersectCbs?.size && intersectionObserver?.unobserve(el)), sig);
+  return bindSig(() => (el._intersectCallbacks?.delete(cb), !el._intersectCallbacks?.size && intersectionObserver?.unobserve(el)), sig);
 }
 
 export function observeMutation(el: Element, cb: (mutations: MutationRecord[]) => void, options: MutationObserverInit, sig?: AbortSignal) {
-  (el._mutationCbs ?? (el._mutationCbs = new Set())).add(cb);
+  (el._mutationCallbacks ?? (el._mutationCallbacks = new Set())).add(cb);
   mutationObserver?.observe(el, options);
-  return bindSig(() => el._mutationCbs?.delete(cb), sig);
+  return bindSig(() => el._mutationCallbacks?.delete(cb), sig);
 }

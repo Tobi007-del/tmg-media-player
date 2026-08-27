@@ -16,6 +16,7 @@ import { HTML5Tech } from "@techs/html5";
 export class Timeline extends RangeInput<TimelineConfig> {
   public static readonly componentName = "timeline"; // enforced name
   public static readonly isControl: boolean = true;
+  public marksActive = true;
   public chaptersWrapper!: HTMLDivElement;
   public previewContainer!: HTMLDivElement;
   public previewImg!: HTMLDivElement;

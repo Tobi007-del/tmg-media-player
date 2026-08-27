@@ -1,5 +1,23 @@
 # tmg-media-player
 
+## 0.0.19
+
+### Patch Changes
+
+- Bug fixes nd stability
+
+## 0.0.18
+
+### Patch Changes
+
+- Poster visibility and other bug fixes
+
+## 0.0.17
+
+### Patch Changes
+
+- Slight fixes nd selective interactive markers
+
 ## 0.0.16
 
 ### Patch Changes

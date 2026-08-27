@@ -269,7 +269,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
     this.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
-      if (e.value < min! || e.value > max!) e.reject(this.name); // Out of bounds
+      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
       this.el.currentTime = clamp(min, e.value, max);
     }); // tested nd trusted status due to reactive dynamics
     e.resolve(this.name);
@@ -307,7 +307,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected setHTMLStateFromMutation(mutations: MutationRecord[]): void {
     for (const m of mutations) {
-      const { state, settings } = this.config; // Reverse Bind: DOM -> State
+      const { state, settings } = this.config; // Reverse Bind: DOM <-> State
       if (m.type === "childList") {
         const nodes = [...m.addedNodes, ...m.removedNodes];
         if (nodes.some(({ nodeName: nm }) => nm === "SOURCE")) state.sources = inert(getSources(this.el));

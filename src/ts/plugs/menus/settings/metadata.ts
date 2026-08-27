@@ -99,7 +99,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     widget: "select",
     feature: "currentChapter",
     hidden: () => plug.media.settings.metadata.chapterInfo.length <= 1,
-    getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters. <small>Viewing <b>${plug.media.state.currentChapter + 1}</b> / <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
+    getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters.<br><small>Viewing <b>${plug.media.state.currentChapter + 1}</b> / <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
     getValue() {
       const list = plug.media.settings.metadata.chapterInfo;
       return !list.length || plug.media.state.currentChapter === -1 ? "" : list[plug.media.state.currentChapter]?.title || `Chapter ${plug.media.state.currentChapter + 1}`;

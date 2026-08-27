@@ -92,7 +92,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.canvas.style.opacity = String(this.config.opacity);
   }
 
-  protected syncFeatures(): void {
+  public syncFeatures(): void {
     this.media.features.ambience ||= !this.canPulse ? !!this.media.state.poster : true;
   }
 

@@ -60,6 +60,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
               items: [
                 { id: "timelineDisabled", label: "Disabled", widget: "toggle", getValue: () => (plug.config.timeline.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.disabled = val), configPaths: ["settings.controlPanel.timeline.disabled"], title: "Completely disables the timeline" },
                 { id: "timelineReadonly", label: "Read only", widget: "toggle", getValue: () => (plug.config.timeline.readonly ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.readonly = val), configPaths: ["settings.controlPanel.timeline.readonly"], title: "Prevents interacting with the timeline to seek" },
+                { id: "timelineProgressBar", label: "Progress bar", widget: "toggle", getValue: () => (plug.config.progressBar ? "On" : "Off"), onChange: (val: boolean) => (plug.config.progressBar = val), configPaths: ["settings.controlPanel.progressBar"] },
                 {
                   id: "timelinePreviewsGroup",
                   label: "Hover previews",
@@ -251,7 +252,6 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                 },
               ],
             },
-            { id: "layoutProgressBar", label: "Progress bar", widget: "toggle", getValue: () => (plug.config.progressBar ? "On" : "Off"), onChange: (val: boolean) => (plug.config.progressBar = val), configPaths: ["settings.controlPanel.progressBar"] },
             { id: "layoutBuffer", label: "Loading spinner", widget: "select", getValue: () => getUIOpt(plug.config.buffer.options, plug.config.buffer.value), getOptions: () => plug.config.buffer.options!, onChange: (val: any) => (plug.config.buffer.value = val), configPaths: ["settings.controlPanel.buffer.value"] },
             { id: "layoutDraggable", label: "Drag and drop", widget: "toggle", getValue: () => (plug.config.draggable ? "On" : "Off"), onChange: (val: boolean) => (plug.config.draggable = val), configPaths: ["settings.controlPanel.draggable"] },
           ],

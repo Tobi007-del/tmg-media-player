@@ -110,7 +110,7 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   color: transparent;
   text-shadow: none;
   -webkit-text-stroke: 0px transparent;
-  background: var(--tmg-media-img-background);
+  background: var(--tmg-media-image-background);
   min-width: unset;
   min-height: unset;
   max-width: unset;

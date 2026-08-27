@@ -24,7 +24,7 @@ export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
           mediaPaths: ["state.poster"],
           items: [
             { id: "posterEager", label: "Eager visibility", widget: "toggle", getValue: () => (plug.settings.poster.eager ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.eager = val), configPaths: ["settings.poster.eager"], title: "If not eager, the poster hides when playback starts or time changes, and doesn't come back at the end." },
-            { id: "posterAutoGenerate", label: "Disable auto-generate", widget: "toggle", getValue: () => (plug.settings.poster.autoGen.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.autoGen.disabled = val), configPaths: ["settings.poster.autoGen.disabled"], title: "Don't generate a poster image from the video if none is provided" },
+            { id: "posterAllowAutoGen", label: "Allow auto-generate", widget: "toggle", getValue: () => (plug.settings.poster.allowAutoGen ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.allowAutoGen = val), configPaths: ["settings.poster.allowAutoGen"], title: "Automatically generate a poster image from the video if none is provided" },
           ],
         },
       ],

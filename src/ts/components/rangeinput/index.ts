@@ -17,6 +17,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   public chunks: RangeInputChunk[] = [];
   public thumbEl!: HTMLElement;
   public tooltipEl!: HTMLElement;
+  public marksActive = false;
   public isVertical = false;
   public isRTL = false;
   protected rect!: DOMRect;
@@ -90,7 +91,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   }
 
   protected handlePointerDown(e: PointerEvent, t = e.target as HTMLElement): void {
-    if (this.state.scrubbing || this.config.readonly || this.config.disabled || t?.matches?.(".tmg-media-range-mark")) return;
+    if (this.state.scrubbing || this.config.readonly || this.config.disabled || (this.marksActive && t?.matches?.(".tmg-media-range-mark"))) return;
     this.state.scrubbing = true;
     this.el.setPointerCapture(e.pointerId);
     const s = getWindow(this.el).getComputedStyle(this.el);
@@ -228,7 +229,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (range <= 0) return;
     for (let i = 0, len = marks.length; i < len; i++) {
       const m = marks[i],
-        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${m.type || "base"}-mark`, title: m.label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark`, tabIndex: 0, onclick: () => this.scrub(m.start), onkeydown: (e) => (/^(Enter| )$/.test(e.key) ? this.scrub(m.start) : null) }, undefined);
+        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${m.type || "base"}-mark`, title: m.label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark`, tabIndex: this.marksActive ? 0 : -1, onclick: this.marksActive ? () => this.scrub(m.start) : undefined, onkeydown: this.marksActive ? (e) => (/^(Enter| )$/.test(e.key) ? this.scrub(m.start) : null) : undefined }, undefined);
       this.syncElPos(el, (m.start - this.config.min) / range, false), this.syncElPos(el, m.end ? (m.end - m.start) / range : 0, true), els.push(el);
     }
     this.marksWrapper.append(...els);
