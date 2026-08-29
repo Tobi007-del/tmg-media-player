@@ -47,6 +47,7 @@ class Boombox {
     this.media.loop = true;
     this.bbSens = { translate: 1.2, rotate: 0.6, zoom: 2.4, overflow: 70 }; // S.I.A. configuration
     this.eS = { lastX: 0, lastY: 0, isZSliding: false, auxDown: false }; // event store
+    this.bbPtrs = new Map();
     this.bbEl = document.querySelector(".tmg-boombox");
     this.boundsEl = this.bbEl.closest(".tmg-video-container") || document.documentElement;
     this.bbBody = this.bbEl.querySelector(".tmg-boombox-body");
@@ -60,7 +61,6 @@ class Boombox {
     this.moveModeBtn = this.bbEl.querySelector(".tmg-bbfm-move-mode");
     this.playBtn = this.bbEl.querySelector(".tmg-bbfs-play");
     this.resetBtn = document.querySelector(".tmg-bbb-reset");
-    (this.bbPtrs = new Map()), (this.rafLoopMap = new Map()), (this.rafLoopFnMap = new Map());
   }
   wire() {
     // State Listeners: using watchers for forwarded intents so it doesn't take two microtasks, listeners otherwise
@@ -100,7 +100,7 @@ class Boombox {
     this.resetBtn?.addEventListener("click", this.resetPos);
   }
   setupAudio() {
-    if (this.mediaSetup || tmg.connectMediaToAudioManager(this.media) === "unavailable") return;
+    if (this.mediaSetup || tmg.connectToAudioManager(this.media) === "unavailable") return;
     this.context = tmg.AUDIO_CONTEXT;
     this.source = this.media.mediaElementSourceNode;
     this.compressor = this.media._tmgDynamicsCompressorNode;
@@ -213,7 +213,7 @@ class Boombox {
     this.bbEl.style.setProperty("--bb-vibe", vibe * 0.007); // most natural plus 7's my fav
   }
   handleVibeDisabled({ value: disabled }) {
-    !disabled ? this.RAFLoop("vibing", this.startVibing) : this.cancelRAFLoop("vibing");
+    !disabled ? tmg.utils.RAFLoop("bbVibing", this.startVibing) : tmg.utils.cancelRAFLoop("bbVibing");
   }
   handleTransform() {
     const {
@@ -307,7 +307,7 @@ class Boombox {
   }
   handlePointerMove(e) {
     if (this.bbPtrs.has(e.pointerId)) this.bbPtrs.set(e.pointerId, e); // Just update the map; the RAFLoop does the math
-    this.RAFLoop("bbDragging", () => {
+    tmg.utils.RAFLoop("bbDragging", () => {
       if (this.bbPtrs.size === 1 && !this.eS.isZSliding) {
         // --- 1 FINGER: 2D Move OR 3D Spin ---
         const ptr = Array.from(this.bbPtrs.values())[0],
@@ -334,7 +334,7 @@ class Boombox {
     });
   }
   handlePointerUp(e) {
-    this.cancelRAFLoop("bbDragging"), this.bbPtrs.delete(e.pointerId);
+    tmg.utils.cancelRAFLoop("bbDragging"), this.bbPtrs.delete(e.pointerId);
     this.eS.bounds = this.eS.rect = undefined;
     if (this.bbPtrs.size === 0) this.eS.isZSliding = false;
     else if (this.bbPtrs.size === 1) {
@@ -365,12 +365,5 @@ class Boombox {
   handleAuxUp(e) {
     if (e.button === 1) this.eS.auxDown = false;
   }
-  // Borrowed these from Controller for Convenience
-  RAFLoop(key, fn) {
-    this.rafLoopFnMap.set(key, fn);
-    const loop = () => (this.rafLoopFnMap.get(key)?.(), this.rafLoopMap.set(key, requestAnimationFrame(loop)));
-    !this.rafLoopMap.has(key) && this.rafLoopMap.set(key, requestAnimationFrame(loop)); // taps into that RAF power quite tersely
-  }
-  cancelRAFLoop = (key) => (cancelAnimationFrame(this.rafLoopMap.get(key)), this.rafLoopFnMap.delete(key), this.rafLoopMap.delete(key));
 }
 (window.NinoBoombox = new Boombox()).wire();
