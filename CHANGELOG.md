@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.21
+
+### Patch Changes
+
+- Voice matching levenshteing blobs over chunks
+
+## 0.0.20
+
+### Patch Changes
+
+- Next video toast smarter
+
 ## 0.0.19
 
 ### Patch Changes

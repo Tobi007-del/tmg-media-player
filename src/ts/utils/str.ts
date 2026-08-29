@@ -33,7 +33,7 @@ export function getBigRamSimilarity(target: string, spoken: string): number {
     if (spoken.includes(bigram)) matches++;
   } // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${matches} / ${target.length - 1} = ${matches / (target.length - 1)}`);
   return matches / (target.length - 1); // Returns a score from 0.0 to 1.0 (e.g., 0.85 = 85% match)
-}
+} // For clumpsy fingers
 
 export function getLevenshteinSimilarity(target: string, spoken: string): number {
   if (target === spoken) return 1;
@@ -49,21 +49,28 @@ export function getLevenshteinSimilarity(target: string, spoken: string): number
     prev = curr;
   } // console.log(`Fuzzy Match: ${target} vs ${spoken} = ${prev[sLen]} / ${Math.max(tLen, sLen)} = ${1 - prev[sLen] / Math.max(tLen, sLen)}`);
   return 1 - prev[sLen] / Math.max(tLen, sLen);
+} // For missy voice
+
+export function fuzzyBlobMatch(targets: string[], transcript: string, threshold: number): string | null {
+  const chunkBlob = transcript.replace(/[-\s]/g, "");
+  for (const target of targets) {
+    const targetBlob = target.replace(/[-\s]/g, "");
+    if (chunkBlob === targetBlob || (Math.abs(chunkBlob.length - targetBlob.length) <= Math.max(chunkBlob.length, targetBlob.length) * (1 - threshold) && getLevenshteinSimilarity(targetBlob, chunkBlob) >= threshold)) return transcript; // skip levenshtein math if diff is too large to ever pass the threshold
+  }
+  return null;
 }
 
-export function fuzzyMatch(targets: string[], transcript: string, threshold: number): string | null {
+export function fuzzyChunkMatch(targets: string[], transcript: string, threshold: number): string | null {
   const tokens = transcript.split(/\s+/);
   for (const target of targets) {
     const targetBlob = target.replace(/[-\s]/g, "");
-    for (let i = 0; i < tokens.length; i++) {
-      let rawChunk = "",
-        chunkBlob = "";
-      // Group words together to check multi-word phrases
-      for (let j = i; j < tokens.length; j++) {
-        rawChunk += (j === i ? "" : " ") + tokens[j]; // The exact string with spaces
-        chunkBlob += tokens[j]; // The squashed string for math
-        if (chunkBlob === targetBlob || getLevenshteinSimilarity(targetBlob, chunkBlob) >= threshold) return rawChunk; // Returns exactly what was spoken (e.g., "six seven")
-      }
+    for (let i = 0, tlen = tokens.length; i < tlen; i++) {
+      let rawChunk = "", // The exact string with spaces
+        chunkBlob = ""; // The squashed string for math
+      for (let j = i; j < tlen; j++) {
+        rawChunk += (j === i ? "" : " ") + (chunkBlob += tokens[j]);
+        if (chunkBlob === targetBlob || (Math.abs(chunkBlob.length - targetBlob.length) <= Math.max(chunkBlob.length, targetBlob.length) * (1 - threshold) && getLevenshteinSimilarity(targetBlob, chunkBlob) >= threshold)) return rawChunk; // Returns exactly what was spoken (e.g., "six seven")
+      } // Group words together to check multi-word phrases
     }
   }
   return null;

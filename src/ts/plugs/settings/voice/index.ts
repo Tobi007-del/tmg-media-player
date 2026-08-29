@@ -4,7 +4,7 @@ import { force, getPath, getPaths, isLeafPath, setPath } from "sia-reactor/utils
 import { limited } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
-import { capitalize, uncamelize, fuzzyMatch as match, getLevenshteinSimilarity } from "@utils/str";
+import { capitalize, uncamelize, fuzzyBlobMatch as match, getLevenshteinSimilarity } from "@utils/str";
 import { formatActionForDisplay } from "@utils/keys";
 import { type ToastOptions } from "@t007/toast";
 import { REvent } from "sia-reactor";
@@ -290,7 +290,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     else if (isEnter && target?.matches?.(clame("path-input"))) e.preventDefault(), e.stopPropagation(), this.submit(target as HTMLInputElement, undefined, true);
   }
   protected submit(input = this.ctlr.plug("settings.toasts")?.container?.querySelector<HTMLInputElement>(clame("exact-input")), render = input?.value.trim(), process = false): void {
-    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render, type: this.config.muted ? "warning" : undefined }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
+    if (input && render) this.ctlr.plug("settings.toasts")?.toast?.update(this.IDS.LISTENER, { render, type: this.config.muted ? "warning" : undefined, icon: "🎙️" }), !process ? this.execute(this.state.context, render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
   }
   protected stayWoke(e: Event): void {
     this.state.listening && this.ctlr.throttle("voiceWoking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.IDS.PREDICTOR}"],[id="${this.IDS.LISTENER}"])`)) && this.ctlr.debounce("voiceSleeping", this.sleep, this.config.timeout, false, this.signal), 200);
