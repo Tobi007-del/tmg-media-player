@@ -18,9 +18,7 @@ export class LimitsWidget extends BaseWidget<Record<string, number>> {
     }
     this.form.append(createEl("button", { className: "tmg-media-smenu-limits-btn", type: "submit", textContent: "Save Limits" }));
     (this.form as any).onSubmit = () => {
-      const val = Array.from(this.form.elements)
-        .filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && !!el.name)
-        .reduce((acc, el) => ((acc[el.name] = Number(el.value)), acc), {} as Record<string, number>);
+      const val = [...this.form.elements].filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && !!el.name).reduce((acc, el) => ((acc[el.name] = Number(el.value)), acc), {} as Record<string, number>);
       setTimeout(() => (this.item.onChange?.(val), this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
     };
     return t007.handleFormValidation?.(this.form), this.element.append(this.form), this.syncUI(), this.element;
@@ -30,7 +28,7 @@ export class LimitsWidget extends BaseWidget<Record<string, number>> {
     for (const inp of this.item.getLimits?.() || []) {
       for (const key of ["min", "max", "step", "start", "end"] as const) {
         const input = key in inp ? this.form.querySelector<HTMLInputElement>(`input[name="${inp.name}_${key}"]`) : null;
-        if (input && getActiveEl(document) !== input) input.value = inp[key] != null ? String(inp[key]) : "";
+        if (input && getActiveEl(input.ownerDocument) !== input) input.value = inp[key] != null ? String(inp[key]) : "";
       }
       const minEl = this.form.querySelector<HTMLInputElement>(`input[name="${inp.name}_min"]`),
         maxEl = this.form.querySelector<HTMLInputElement>(`input[name="${inp.name}_max"]`);

@@ -40,7 +40,7 @@ export interface SettingsMenuRangeConfig {
   formatTooltip?: (val: number) => string;
 }
 
-export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title" | "hidden"> & {
+export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title" | "hidden" | "min" | "max"> & {
   id: string;
   label: string;
   icon?: keyof IconRegistryMap;
@@ -48,6 +48,8 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   title?: string | (() => string);
   getBadge?: () => { label?: string; value?: string } | string | undefined;
   widget: MenuItemWidget;
+  min?: string | number | (() => string | number);
+  max?: string | number | (() => string | number);
   /** Hide the row based on custom logic */
   hidden?: boolean | (() => boolean);
   /** Hide the row if this feature flag is falsy */

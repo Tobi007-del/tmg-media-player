@@ -268,9 +268,9 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
-      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
-      this.el.currentTime = clamp(min, e.value, max);
+    this.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
+      if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
+      if (finite) this.el.currentTime = clamp(min, e.value, max);
     }); // tested nd trusted status due to reactive dynamics
     e.resolve(this.name);
   }
@@ -391,16 +391,16 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (key === "playsInline") this.el.toggleAttribute("webkit-playsinline", Boolean(e.value));
     e.resolve(this.name);
   }
-  private renderSources?: ReturnType<typeof renderList<any>>;
+  private renderSources?: ReturnType<typeof renderList<Source, HTMLSourceElement>>;
   protected handleSourcesIntent(e: REvent<CtlrMedia, "intent.sources">): void {
-    if (e.resolved || isSameSources(Array.from(this.el.querySelectorAll("source")), e.value)) return;
-    (this.renderSources ??= renderList<Source, HTMLSourceElement>({ container: this.el, getKey: (s) => `${cleanURL(s.src)}|${s.type}${s.media}`, createNode: (s) => createEl("source", s), updateNode: (el, s) => assignEl(el, s, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLSourceElement && register(`${cleanURL(el.src)}|${el.type}${el.media}`) }))(e.currentTarget.value);
+    if (e.resolved || isSameSources([...this.el.querySelectorAll("source")], e.value)) return;
+    (this.renderSources ??= renderList({ container: this.el, getKey: (s) => `${cleanURL(s.src)}|${s.type}${s.media}`, createNode: (s) => createEl("source", s), updateNode: (el, s) => assignEl(el, s, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLSourceElement && register(`${cleanURL(el.src)}|${el.type}${el.media}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
-  private renderTracks?: ReturnType<typeof renderList<any>>;
+  private renderTracks?: ReturnType<typeof renderList<Track, HTMLTrackElement>>;
   protected handleTracksIntent(e: REvent<CtlrMedia, "intent.tracks">): void {
-    if (e.resolved || isSameTracks(Array.from(this.el.querySelectorAll("track")), e.value)) return;
-    (this.renderTracks ??= renderList<Track>({ container: this.el, getKey: (t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}`, createNode: (t) => createEl("track", t), updateNode: (el, t) => assignEl(el, t, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLTrackElement && register(`${cleanURL(el.src)}|${el.kind}|${el.label}|${el.srclang}|${el.default}`) }))(e.currentTarget.value);
+    if (e.resolved || isSameTracks([...this.el.querySelectorAll("track")], e.value)) return;
+    (this.renderTracks ??= renderList({ container: this.el, getKey: (t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}`, createNode: (t) => createEl("track", t), updateNode: (el, t) => assignEl(el, t, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLTrackElement && register(`${cleanURL(el.src)}|${el.kind}|${el.label}|${el.srclang}|${el.default}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
   protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
@@ -446,9 +446,9 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.status.waiting = false;
   }
   protected handleTracksStatus(type: TrackType, list: any, init = false): void {
-    this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`] = Array.prototype.filter.call(list, (t) => (type === "Text" ? t.kind === "subtitles" || t.kind === "captions" : true)); // filter out non-cue text tracks
     type === "Text" && (this.autoChapters = this.config.settings.metadata.allowMediaOverride) && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
-    !init && silence(() => (this.config.intent[`current${type}Track`] = this.config.intent[`current${type}Track`])); // #RE-TRIGGER: sync intent resolution
+    this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`] = Array.prototype.filter.call(list, (t) => (type === "Text" ? t.kind === "subtitles" || t.kind === "captions" : true)); // filter out non-cue text tracks
+    !init && silence(() => ((this.config.intent[`current${type}Track`] = this.config.intent[`current${type}Track`]), this.config.tick(`intent.current${type}Track`))); // #RE-TRIGGER: sync intent resolution
     !init && type === "Text" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
   }
   protected handleChaptersStatus(list = this.el.textTracks): void {

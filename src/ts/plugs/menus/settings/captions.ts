@@ -84,7 +84,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
       getValue() {
         if (plug.media.state.currentTextTrack === -1 || !plug.media.status.textTracks.length) return "Off";
         return (this.items![0].getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentTextTrack)?.display || "Off";
-      },
+      }, // this = !()=>{}
       actions: [{ id: "goToStyles", getLabel: () => "Styles", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("subtitleStyle") }],
       items: [
         {
@@ -94,19 +94,15 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
           inline: true,
           onWire: (syncUI, signal) => plug.state.on("secondaryTracks", syncUI, { signal }),
           getMultiple: () => plug.config.multiple,
-          getValue() {
-            const curr = plug.media.state.currentTextTrack;
-            return !plug.config.multiple ? String(curr) : curr === -1 ? ["-1"] : [String(curr), ...plug.state.secondaryTracks.map(String)];
-          },
-          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (_t, i) => ({ value: i, display: getTrackLabel(plug.media.status.textTracks, i), badge: plug.config.multiple && plug.state.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
+          getValue: (curr = plug.media.state.currentTextTrack) => (!plug.config.multiple ? String(curr) : curr === -1 ? ["-1"] : [String(curr), ...plug.state.secondaryTracks.map(String)]),
+          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (_t, i) => ({ value: i, display: getTrackLabel(plug.media.status.textTracks, i), badge: plug.state.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
           onChange: (val: number) => {
             if (val === -1) (plug.media.intent.currentTextTrack = -1), (plug.state.secondaryTracks = []);
             else if (!plug.config.multiple) (plug.media.intent.currentTextTrack = val), (plug.state.secondaryTracks = []);
             else if (plug.media.state.currentTextTrack === -1) plug.media.intent.currentTextTrack = val;
-            else if (val !== plug.media.state.currentTextTrack) {
-              const idx = plug.state.secondaryTracks.indexOf(val);
-              idx > -1 ? plug.state.secondaryTracks.splice(idx, 1) : plug.state.secondaryTracks.push(val);
-            }
+            else if (val === plug.media.state.currentTextTrack) return;
+            const idx = plug.state.secondaryTracks.indexOf(val);
+            idx > -1 ? plug.state.secondaryTracks.splice(idx, 1) : plug.state.secondaryTracks.push(val);
           },
           mediaPaths: ["status.textTracks", "state.currentTextTrack"],
           configPaths: ["settings.captions.multiple"],

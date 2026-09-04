@@ -32,9 +32,9 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
     addSafeClicks(this.element, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("state.currentTime", this.syncTime, { signal: this.signal });
-    this.media.on("state.live", (e) => (this.liveBadge.classList.toggle("tmg-media-control-live", e.value), this.syncARIA()), { signal: this.signal });
+    this.media.on("state.live", (e) => (this.liveBadge.classList.toggle("tmg-media-control-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     this.media.on("status.duration", this.syncDuration, { signal: this.signal });
-    this.media.on("status.isLive", (e) => (this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { signal: this.signal });
+    this.media.on("status.isLive", (e) => (this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.mode", this.syncTime, { signal: this.signal });
@@ -55,10 +55,10 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
     this.syncTime(), this.syncDuration();
   }
   public syncTime(): void {
-    this.time.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "-:--";
+    this.time.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "";
   }
   public syncDuration(): void {
-    this.duration.textContent = this.plug?.toTimeText(this.media.status.duration) || "-:--";
+    this.duration.textContent = this.plug?.toTimeText(this.media.status.duration) || "";
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode} time`;

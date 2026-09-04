@@ -34,7 +34,7 @@ export class ModesPlug extends BasePlug<ModesConfig> {
     // Utility Injection
     this.fullscreen?.wire(), this.theater?.wire(), this.pictureInPicture?.wire(), this.miniplayer?.wire();
     // Post Wiring
-    this.ctlr.addAction("escape", { fn: this.closePopUps, keyboard: { phase: "keydown" } }, this.signal), super.wire();
+    this.ctlr.learn("escape", { fn: this.closePopUps, keyboard: { phase: "keydown" } }, this.signal), super.wire();
   }
 
   public closePopUps(): void {

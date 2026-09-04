@@ -38,44 +38,36 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   }
 
   protected handleInit({ clientX: x, clientY: y }: WheelEvent): void {
-    const rect = this.media.container.getBoundingClientRect();
-    this.zone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
+    const { left, top, right, bottom } = this.media.container.getBoundingClientRect();
+    this.zone = { x: x - left > (right - left) / 2 ? "right" : "left", y: y - top > (bottom - top) / 2 ? "bottom" : "top" };
     this.deltaY = this.timePercent = 0;
     this.timeMultiplier = 1;
   }
 
-  protected handleMove({ clientX: x, deltaX, deltaY, shiftKey }: WheelEvent): void {
-    deltaX = shiftKey ? deltaY : deltaX;
-    const wc = this.config,
-      rect = this.media.container.getBoundingClientRect(),
-      width = shiftKey ? rect.height : rect.width,
-      height = shiftKey ? rect.width : rect.height;
-    let xPercent = -deltaX / (width * wc.xRatio);
+  protected handleMove({ clientX: x, deltaX, deltaY, shiftKey: alt }: WheelEvent): void {
+    deltaX = alt ? deltaY : deltaX;
+    const { width: aWidth, height: aHeight, left } = this.media.container.getBoundingClientRect(),
+      width = alt ? aHeight : aWidth,
+      rHeight = ((alt ? aWidth : aHeight) * this.config.yRatio) / 2;
+    let xPercent = -deltaX / (width * this.config.xRatio);
     xPercent = this.timePercent += xPercent;
     const xSign = xPercent >= 0 ? "+" : "-";
     xPercent = Math.abs(xPercent);
-    if (deltaX || shiftKey) {
-      if (!wc.timeline || this.yCheck) return this.handleStop();
+    if (deltaX || alt) {
+      if (!this.config.timeline || this.yCheck) return this.handleStop();
       this.xCheck = true;
       this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
       this.applyTimeline({ percent: xPercent, sign: xSign, multiplier: this.timeMultiplier });
-      if (shiftKey) return;
+      if (alt) return;
     }
     if (deltaY) {
-      if (this.xCheck) {
-        const mY = clamp(0, Math.abs((this.deltaY += deltaY)), height * wc.yRatio * 0.5);
-        this.timeMultiplier = 1 - mY / (height * wc.yRatio * 0.5);
-        return this.applyTimeline({ percent: xPercent, sign: xSign, multiplier: this.timeMultiplier });
-      }
-      const cancel = (this.zone?.x === "right" && !wc.volume) || (this.zone?.x === "left" && !wc.brightness),
-        currentXZone = x - rect.left > width * 0.5 ? "right" : "left";
-      if (cancel || currentXZone !== this.zone?.x) return this.handleStop();
+      if (this.xCheck) return this.applyTimeline({ percent: xPercent, sign: xSign, multiplier: (this.timeMultiplier = 1 - clamp(0, Math.abs((this.deltaY += deltaY)), rHeight) / rHeight) });
+      const cancel = (this.zone?.x === "right" && !this.config.volume) || (this.zone?.x === "left" && !this.config.brightness);
+      if (cancel || (x - left > width / 2 ? "right" : "left") !== this.zone?.x) return this.handleStop();
       this.yCheck = true;
       // prettier-ignore
       this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchVolumeNotifier" : "touchBrightnessNotifier")?.active();
-      const ySign = -deltaY >= 0 ? "+" : "-",
-        yPercent = clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
-      this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", yPercent, ySign);
+      this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", clamp(0, Math.abs(deltaY), rHeight * 2) / (rHeight * 2), -deltaY >= 0 ? "+" : "-");
     }
   }
 

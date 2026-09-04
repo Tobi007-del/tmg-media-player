@@ -3,7 +3,7 @@ import { Dimensions } from "@defs/generics";
 // Defines states explicitly managed by the TMG Environment Observers
 export interface CtlrState {
   readyState: number;
-  audioContextReady: boolean;
+  audioCtxReady: boolean;
   mediaIntersecting: boolean;
   mediaParentIntersecting: boolean;
   dimensions: {

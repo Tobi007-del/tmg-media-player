@@ -1,6 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { AutoPlug } from "@plugs/settings/auto";
-import { getUIOpt } from "@utils/obj";
+import { getUIOpt, isArr } from "@utils/obj";
 import { formatUITime } from "@utils/time";
 
 export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
@@ -13,38 +13,38 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
   configPaths: ["settings.auto.play.value"],
   items: [
     {
-      id: "autoplay",
-      label: "Autoplay",
+      id: "autoPlay",
+      label: "Auto-play",
       widget: "select",
       getMultiple: () => true,
-      getValue: () => (plug.config.play.value === false ? ["Off"] : Array.isArray(plug.config.play.value) ? plug.config.play.value.map((v) => getUIOpt(plug.config.play.options, v)) : [getUIOpt(plug.config.play.options, plug.config.play.value)]),
-      getOptions: () => plug.config.play.options!,
+      getValue: () => (plug.config.play.value === false ? ["Off"] : isArr(plug.config.play.value) ? plug.config.play.value.map((v) => getUIOpt(plug.config.play.options, v)) : [getUIOpt(plug.config.play.options, plug.config.play.value)]),
+      getOptions: () => plug.config.play.options,
       onChange(v: any) {
         if (v === false) return void (plug.config.play.value = false);
-        const cur = Array.isArray(plug.config.play.value) ? [...plug.config.play.value] : [],
+        const cur = isArr(plug.config.play.value) ? [...plug.config.play.value] : [],
           idx = cur.indexOf(v);
         idx > -1 ? cur.splice(idx, 1) : cur.push(v);
-        plug.config.play.value = cur.length ? cur : false;
+        plug.config.play.value = cur.length ? cur : false; // forwarding intent
       },
       configPaths: ["settings.auto.play.value"],
-      getTipHTML: () => "Automatically start playback when the player enters or leaves based on selected options",
+      getTipHTML: () => "Start playback when the player enters or leaves based on selected options",
     },
     {
       id: "autoPause",
       label: "Auto-pause",
       widget: "select",
       getMultiple: () => true,
-      getValue: () => (plug.config.pause.value === false ? ["Off"] : Array.isArray(plug.config.pause.value) ? plug.config.pause.value.map((v) => getUIOpt(plug.config.pause.options, v)) : [getUIOpt(plug.config.pause.options, plug.config.pause.value)]),
-      getOptions: () => plug.config.pause.options!,
+      getValue: () => (plug.config.pause.value === false ? ["Off"] : isArr(plug.config.pause.value) ? plug.config.pause.value.map((v) => getUIOpt(plug.config.pause.options, v)) : [getUIOpt(plug.config.pause.options, plug.config.pause.value)]),
+      getOptions: () => plug.config.pause.options,
       onChange(v: any) {
         if (v === false) return void (plug.config.pause.value = false);
-        const cur = Array.isArray(plug.config.pause.value) ? [...plug.config.pause.value] : [],
+        const cur = isArr(plug.config.pause.value) ? [...plug.config.pause.value] : [],
           idx = cur.indexOf(v);
         idx > -1 ? cur.splice(idx, 1) : cur.push(v);
         plug.config.pause.value = cur.length ? cur : false;
       },
       configPaths: ["settings.auto.pause.value"],
-      getTipHTML: () => "Automatically pause playback when the player enters or leaves based on selected options",
+      getTipHTML: () => "Pause playback when the player enters or leaves based on selected options",
     },
     {
       id: "autoNext",

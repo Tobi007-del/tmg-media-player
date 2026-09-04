@@ -26,7 +26,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   }
 
   public override mount(): void {
-    this.ctlr.state.audioContextReady ? this.connectAudio() : this.ctlr.state.once("audioContextReady", this.connectAudio, { signal: this.signal });
+    this.ctlr.state.audioCtxReady ? this.connectAudio() : this.ctlr.state.once("audioCtxReady", this.connectAudio, { signal: this.signal });
   }
 
   public override wire(): void {
@@ -50,9 +50,9 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     this.ctlr.config.on("settings.volume.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.volume.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("mute", { fn: this.handleKeyMute, keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.addAction("volumeDown", { fn: this.handleKeyVolumeDown, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("mute", { fn: this.handleKeyMute, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("volumeDown", { fn: this.handleKeyVolumeDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 

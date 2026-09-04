@@ -19,7 +19,7 @@ export function getMediaReport(m: HTMLMediaElement, isVid = m instanceof HTMLVid
   return { state: merge(MEDIA_STATE_BUILD, report.state, opts), intent: merge(MEDIA_INTENT_BUILD, report.state, opts), status: merge(MEDIA_STATUS_BUILD, report.status, opts), settings: merge(MEDIA_SETTINGS_BUILD, report.settings, opts) } as MediaReport;
 }
 export const getMediaState = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): Partial<MediaState> => ({ src: m.src, currentTime: m.currentTime, paused: m.paused, volume: m.volume * 100, muted: m.muted, playbackRate: m.playbackRate, pictureInPicture: queryPictureInPictureEl() === m, fullscreen: queryFullscreenEl() === m, currentTextTrack: _txtTrackIdx, currentAudioTrack: getTrackIdx(m, "Audio"), currentVideoTrack: getTrackIdx(m, "Video"), poster: isVid ? (m as HTMLVideoElement).poster : "", autoplay: m.autoplay, loop: m.loop, preload: m.preload, playsInline: isVid ? m.playsInline : false, crossOrigin: m.crossOrigin, controls: m.controls, controlsList: m.controlsList ?? m.getAttribute("controlsList"), disablePictureInPicture: isVid ? m.disablePictureInPicture ?? m.hasAttribute("disablePictureInPicture") : false, sources: getSources(m), tracks: getTracks(m) });
-export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text"), _flagsOnly = false): Partial<MediaStatus> => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? (m as HTMLVideoElement).videoWidth : 0, videoHeight: isVid ? (m as HTMLVideoElement).videoHeight : 0, textTracks: _flagsOnly ? undefined : m.textTracks, audioTracks: _flagsOnly ? undefined : (m as any).audioTracks, videoTracks: _flagsOnly ? undefined : (m as any).videoTracks, activeCues: _flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues ? Array.from(m.textTracks[_txtTrackIdx].activeCues) : null });
+export const getMediaStatus = (m: HTMLMediaElement, isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text"), _flagsOnly = false): Partial<MediaStatus> => ({ readyState: m.readyState, networkState: m.networkState, error: m.error, seeking: m.seeking, buffered: m.buffered, played: m.played, seekable: m.seekable, duration: m.duration, ended: m.ended, loadedMetadata: m.readyState >= 1, loadedData: m.readyState >= 2, canPlay: m.readyState >= 3, canPlayThrough: m.readyState >= 4, videoWidth: isVid ? (m as HTMLVideoElement).videoWidth : 0, videoHeight: isVid ? (m as HTMLVideoElement).videoHeight : 0, textTracks: _flagsOnly ? undefined : m.textTracks, audioTracks: _flagsOnly ? undefined : (m as any).audioTracks, videoTracks: _flagsOnly ? undefined : (m as any).videoTracks, activeCues: _flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues ? [...m.textTracks[_txtTrackIdx].activeCues] : null });
 export const getMediaSettings = (m: HTMLMediaElement): DeepPartial<MediaSettings> => ({ defaultMuted: m.defaultMuted, defaultPlaybackRate: m.defaultPlaybackRate, srcObject: m.srcObject });
 
 export function getMediaBoolProps(media: CtlrMedia, prop: "intent" | "state" = "intent"): string[] {
@@ -219,6 +219,7 @@ export const canVideoTracks = (type: MediaType = "video", dummy = type === "vide
 export const canAudioTracks = (type: MediaType = "video", dummy = type === "video" ? DUMMY_VID : DUMMY_AUD): boolean => !!dummy && "audioTracks" in dummy;
 
 // ============ Caption/Subtitle Utilities ============
+const ESC_DICT: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const stripTags = (text: string): string => text.replace(/<(\/)?([a-z0-9.:]+)([^>]*)>/gi, "");
 
 export function srtToVtt(srt: string, vttLines: string[] = ["WEBVTT", ""]): string {
@@ -231,7 +232,7 @@ export function srtToVtt(srt: string, vttLines: string[] = ["WEBVTT", ""]): stri
     if (!m) continue;
     const [, startHms, startMsRaw = "0", endHms, endMsRaw = "0"] = m,
       to3 = (ms: string) => ms.padEnd(3, "0").slice(0, 3);
-    vttLines.push(startHms + "." + to3(startMsRaw) + " --> " + endHms + "." + to3(endMsRaw));
+    vttLines.push(`${startHms}.${to3(startMsRaw)} --> ${endHms}.${to3(endMsRaw)}`);
     for (let i = idx + 1; i < lines.length; i++) vttLines.push(lines[i]);
     vttLines.push("");
   }
@@ -239,7 +240,7 @@ export function srtToVtt(srt: string, vttLines: string[] = ["WEBVTT", ""]): stri
 }
 
 export function parseVttText(text: string): string {
-  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)),
+  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC_DICT[c]!),
     state = { tag: /\<(\/)?(\d[\d:.]*|\w+)([^>]*)>/gi, o: "", l: 0, p: null as string | null, c: "", spans: [] as string[] };
   let m: RegExpExecArray | null;
   while ((m = state.tag.exec(text))) {

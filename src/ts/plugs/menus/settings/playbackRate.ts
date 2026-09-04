@@ -22,7 +22,7 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
           for (let i = Math.ceil(plug.config.min); i <= plug.config.max; i++) divs.push(i);
           return { min: plug.config.min, max: plug.config.max, step: 0.05, formatTooltip: (v: number) => `${v.toFixed(2)}x`, divs };
         },
-        getValue: () => plug.media.state.playbackRate.toFixed(2).replace(/\.?0+$/, "") + "x",
+        getValue: () => `${plug.media.state.playbackRate}x`,
         onChange: (val: number) => (plug.media.intent.playbackRate = val),
         configPaths: ["settings.playbackRate.min", "settings.playbackRate.max"],
         mediaPaths: ["state.playbackRate"],

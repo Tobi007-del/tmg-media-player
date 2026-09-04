@@ -10,12 +10,12 @@ import { guardAllMethods, guardMethod } from "@utils/methd";
 import { setTimeout, throttle, cancelRAFLoop, RAFLoop, mockAsync, debounce } from "@utils/fn";
 import { getWindow } from "@utils/dom";
 import { createEl, observeIntersection, observeResize } from "@utils/dom";
-import { uncamelize } from "@utils/str";
+import { capitalize, uncamelize } from "@utils/str";
 import { cloneMedia, getMediaReport, isSameSources, getSizeTier } from "@utils/media";
 import { type Volatile, reactive, type Reactive, inert, intent, volatile, getRaw } from "sia-reactor";
-import { fanout, getPath, mergeObjs, nuke, setPath } from "sia-reactor/utils";
+import { fanout, getPath, getPaths, isLeafPath, mergeObjs, nuke, setPath } from "sia-reactor/utils";
 import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
-import { isFunc, isStr } from "@utils/obj";
+import { isArr, isFunc, isStr } from "@utils/obj";
 import { silence, transaction } from "sia-reactor/modules";
 import { AUDIO_EXTENSIONS } from "@utils/match";
 import { MediaType } from "@defs/generics";
@@ -127,7 +127,7 @@ export class Controller {
     this.fire("tmgreadystatechange", this.payload), this.fire(rS === 0 ? "tmgcreate" : rS === 1 ? "tmginit" : rS === 2 ? "tmgwire" : rS === 3 ? "tmgfirstplay" : rS === -1 ? "tmgdestroy" : "", this.payload);
   }
 
-  public guard = <Fn extends Function>(fn: Fn, silent = false) => guardMethod(fn, (e) => this.notice(e, "error", !silent)); // `()=>{}`: needs to be bounded even before initialization
+  public guard = <Fn extends Function>(fn: Fn, silent = false) => guardMethod(fn, (e) => this.notice(e, "error", !silent)); // `()=>{}`: bounded even before init
   public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null, swallow = true): void {
     this.log(mssg, type, swallow), toast !== false && (type === "log" || (type === "error" && swallow && !this.config.devMode) ? this.plug("settings.toasts")?.toast : this.plug("settings.toasts")?.toast?.[type])?.(toast === null || this.config.devMode ? mssg : isStr(toast) ? toast : "Something went wrong", { tag: "tmg-stwr" });
   }
@@ -140,10 +140,38 @@ export class Controller {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
   }
 
+  public learn(key: string, act: Omit<Action, "id">, signal = this.signal, old = this.actions.entries[key] ?? {}): void {
+    this.actions.entries[key] = { ...act, ...old, id: key as any, fn: act.fn }; // fn must comes from the registering plug (runtime source of truth), persisted fields (label, logic, notify) survive from old entry
+    this.config.on(`actions.entries.${key}` as any, () => this.actions.entries[key] && this.actions.entries[key].fn !== act.fn && (this.actions.entries[key].fn = act.fn), { signal });
+  }
+  public perform(id?: string, ...args: any[]): boolean {
+    const act = id && this.actions.entries[id];
+    if (!act || act.disabled || (!act.zen && this.zenlist.some(this.isUIActive))) return false;
+    const can = !act.gates?.some((g) => this.media.features[g] === false);
+    transaction((root = act.logic?.length ? (this.logicRoot as any) : undefined) => {
+      if (act.logic?.length) for (const step of act.logic) step.op === "toggle" ? setPath(root, step.path, !getPath(root, step.path)) : step.op === "increment" ? setPath(root, step.path, getPath(root, step.path) + (step.value ?? 1)) : step.op === "decrement" ? setPath(root, step.path, getPath(root, step.path) - (step.value ?? 1)) : setPath(root, step.path, step.value);
+      can && act.notify && this.plug("settings.notifiers")?.notify(act.notify), act.fn?.(...args), can && act.toast && this.plug("settings.toasts")?.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: this.config.id + act.id, renotify: true, ...act.toast });
+    }, act.label ?? act.id);
+    return can;
+  }
+  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, path as any)): boolean {
+    return !leaf ? !(this.config.actions.logicBlacklist.some((b) => path === b || path.startsWith(b + ".")) || (path.startsWith("media.intent.") && (this.media.features as any)[path.split(".").pop()!] !== true)) : isArr(value) || isLeafPath(this.logicRoot as any, path as any, undefined, value);
+  }
+  public get logicRoot() {
+    return { media: this.media, settings: this.config.settings };
+  }
+  public get logicActions() {
+    return (Object.values(this.actions.entries) as Action[]).filter((a) => !a.system || this.config.devMode).sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+  }
+  public getLogicPaths(path: string): string[] {
+    // prettier-ignore
+    return getPaths(this.logicRoot as any, path, { depth: 1 }).filter((p) => this.isLogical(p)).sort((a: string, b) => a.localeCompare(b));
+  }
+
   public throttle(key: string, fn: Function, delay = 30, strict: ((fn: Function) => number) | boolean = true, signal = this.signal) {
     throttle(this.config.id + key, fn, delay, strict, signal, getWindow(this.media.container));
   }
-  public debounce(key: string, fn: Function, delay = 30, strict = true, signal = this.signal) {
+  public debounce(key: string, fn: Function, delay = 30, strict = false, signal = this.signal) {
     debounce(this.config.id + key, fn, delay, strict, signal, getWindow(this.media.container));
   }
   public RAFLoop(key: string, fn: Function, signal = this.signal): void {
@@ -176,29 +204,10 @@ export class Controller {
   public setImgFallback<Ev extends Partial<Pick<Event, "target">>>({ target: img }: Ev): void {
     img instanceof HTMLImageElement && img.src !== window.TMG_MEDIA_ALT_IMG_SRC && (img.src = window.TMG_MEDIA_ALT_IMG_SRC!);
   }
-  public setCanvasFallback(canvas: HTMLCanvasElement, context?: CanvasRenderingContext2D | null, callback = (img = this.altImg) => context?.drawImage((this.altImg = img)!, 0, 0, canvas.width, canvas.height)): void {
+  public setCanvasFallback(canvas: HTMLCanvasElement, ctx?: CanvasRenderingContext2D | null, callback = (img = this.altImg) => ctx?.drawImage((this.altImg = img)!, 0, 0, canvas.width, canvas.height)): void {
     const _img = canvas && (this.altImg && this.altImg.src === window.TMG_MEDIA_ALT_IMG_SRC ? callback() : createEl("img", { src: window.TMG_MEDIA_ALT_IMG_SRC, onload: () => callback(_img as HTMLImageElement) }));
   }
   private altImg?: HTMLImageElement;
-
-  public addAction(key: string, action: Omit<Action, "id">, signal = this.signal, existing = this.actions.entries[key] ?? {}): void {
-    this.actions.entries[key] = { ...action, ...existing, id: key as any, fn: action.fn }; // fn must comes from the registering plug (runtime source of truth), persisted fields (label, logic, notify) survive from existing entry
-    this.config.on(`actions.entries.${key}` as any, () => this.actions.entries[key] && this.actions.entries[key].fn !== action.fn && (this.actions.entries[key].fn = action.fn), { signal });
-  }
-  public getActions() {
-    return (Object.values(this.actions.entries) as Action[]).filter((a) => !a.system || this.config.devMode).sort((a, b) => (a.label || "").localeCompare(b.label || ""));
-  }
-  public perform(id: string, ...args: any[]): void {
-    const action = this.actions.entries[id];
-    if (!action || action.disabled || (!action.zen && this.zenlist.some(this.isUIActive))) return;
-    transaction((can = !action.gates?.some((g) => this.media.features[g] === false), root = action.logic?.length ? ({ media: this.media, settings: this.config.settings } as any) : undefined) => {
-      if (action.logic?.length) for (const step of action.logic) step.op === "toggle" ? setPath(root, step.path, !getPath(root, step.path)) : step.op === "increment" ? setPath(root, step.path, getPath(root, step.path) + (step.value ?? 1)) : step.op === "decrement" ? setPath(root, step.path, getPath(root, step.path) - (step.value ?? 1)) : setPath(root, step.path, step.value);
-      can && action.notify && this.plug("settings.notifiers")?.notify(action.notify), action.fn?.(...args), can && action.toast && this.plug("settings.toasts")?.toast?.((isFunc(action.toast.render) ? action.toast.render() : action.toast.render) || `Executed ${action.label ?? action.id}`, action.toast);
-    }, action.label ?? action.id);
-  }
-  public isLogical(path: string): boolean {
-    return this.config.actions.logicBlacklist.some((b) => path === b || path.startsWith(b + ".")) || (path.startsWith("media.intent.") && (this.media.features as any)[path.split(".").pop()!] === false) ? false : true;
-  }
 
   public destroy() {
     this.mutatingDOMM = true; // destruction will mutate, flag external watchers

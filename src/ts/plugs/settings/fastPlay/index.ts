@@ -61,8 +61,8 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
     this.intervalId = setInterval(this.shiftTime, Math.round(1000 / this.settings.frame.fps) - 18, this.signal); // intervals lag; i'm 18 rn so, yeah!
   }
   protected shiftTime(): void {
-    const txtEl = this.ctlr.plug("settings.notifiers")?.comp("fastPlayNotifier")?.text;
-    if (txtEl) txtEl.textContent = `${this.rewindRate}x`;
+    const textEl = this.ctlr.plug("settings.notifiers")?.comp("fastPlayNotifier")?.text;
+    if (textEl) textEl.textContent = `${this.rewindRate}x`;
     if (!this.media.state.paused) silence(() => (this.media.intent.paused = true));
     silence(() => (this.media.intent.currentTime = this.media.state.currentTime - this.rewindRate / this.settings.frame.fps)); // Apprentice Slider syncs, no CSS hack
   }
@@ -84,10 +84,10 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
       () => {
         this.media.container.removeEventListener("touchmove", this.handlePointerUp);
         this.state.ptrActive = true;
-        const rect = this.media.container.getBoundingClientRect(),
-          rLeft = (e.clientX ?? (e as unknown as TouchEvent).targetTouches?.[0]?.clientX) - rect.left;
-        this.direction = rLeft >= rect.width * 0.5 ? "forwards" : "backwards";
-        if (rLeft < this.config.pointer.inset || rLeft > rect.width - this.config.pointer.inset) return;
+        const { width, left } = this.media.container.getBoundingClientRect(),
+          rLeft = (e.clientX ?? (e as unknown as TouchEvent).targetTouches?.[0]?.clientX) - left;
+        this.direction = rLeft >= width / 2 ? "forwards" : "backwards";
+        if (rLeft < this.config.pointer.inset || rLeft > width - this.config.pointer.inset) return;
         if (this.config.allowRewind) for (const evt of ["mousemove", "touchmove"]) this.media.container.addEventListener(evt, this.handlePointerMove, { signal: this.signal });
         this.speedUp(this.direction);
       },
@@ -101,8 +101,8 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
     this.ctlr.throttle(
       "speedPointerMove",
       () => {
-        const rect = this.media.container.getBoundingClientRect(),
-          pos = ((e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX) - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
+        const { width, left } = this.media.container.getBoundingClientRect(),
+          pos = ((e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX) - left >= width / 2 ? "forwards" : "backwards";
         if (pos !== this.direction) this.slowDown(), this.speedUp((this.direction = pos), true);
       },
       200

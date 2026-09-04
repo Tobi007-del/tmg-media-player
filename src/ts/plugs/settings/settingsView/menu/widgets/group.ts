@@ -2,7 +2,7 @@ import type { SettingsMenuItem, SettingsRowElement } from "../../types";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import { isFunc, parseUIOpt, parseUIBadge } from "@utils/obj";
+import { isFunc, parseUIOpt, parseUIBadge, isArr } from "@utils/obj";
 
 export class GroupWidget extends BaseWidget {
   private renderRows!: ReturnType<typeof createListRenderer<SettingsMenuItem>>;
@@ -21,7 +21,8 @@ export class GroupWidget extends BaseWidget {
 
   protected override onSetup(): void {
     super.onSetup();
-    const cPaths = new Set<string>(), mPaths = new Set<string>();
+    const cPaths = new Set<string>(),
+      mPaths = new Set<string>();
     for (const sub of this.item?.items ?? []) {
       if (sub.configPaths) for (const p of sub.configPaths) cPaths.add(p as string);
       if (sub.mediaPaths) for (const p of sub.mediaPaths) mPaths.add(p as string);
@@ -35,7 +36,7 @@ export class GroupWidget extends BaseWidget {
     const active = (this.item.items ?? []).filter((sub) => {
       if (this.settings.settingsView.menu.blacklist.includes(sub.id)) return false;
       if (isFunc(sub.hidden) ? sub.hidden() : sub.hidden) return false;
-      return !sub.feature || this.media.features[sub.feature] !== false;
+      return !sub.feature || this.media.features[sub.feature] === true;
     });
     this.renderRows(active);
     for (const sub of active) {
@@ -51,7 +52,7 @@ export class GroupWidget extends BaseWidget {
           if (badge?.label) lblNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
         }
         if (valNode) {
-          valNode.textContent = Array.isArray(value) ? value.join(", ") : value || "";
+          valNode.textContent = isArr(value) ? value.join(", ") : value || "";
           if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
         } else {
           const el = li.widget?.element;
@@ -87,7 +88,7 @@ export class GroupWidget extends BaseWidget {
       const value = sub.getValue?.(),
         opts = /^(select|drag-select)$/.test(sub.widget as string) && !sub.getMultiple?.() ? sub.getOptions?.() : undefined,
         badge = parseUIBadge(sub.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
-        val = createEl("span", { className: "tmg-media-smenu-group-value", textContent: Array.isArray(value) ? value.join(", ") : value || "" });
+        val = createEl("span", { className: "tmg-media-smenu-group-value", textContent: isArr(value) ? value.join(", ") : value || "" });
 
       if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
       if (badge?.value) val.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
@@ -107,7 +108,7 @@ export class GroupWidget extends BaseWidget {
               if (badge?.label) lblNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
             }
             if (valNode) {
-              valNode.textContent = Array.isArray(value) ? value.join(", ") : value || "";
+              valNode.textContent = isArr(value) ? value.join(", ") : value || "";
               if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
             } else {
               const el = (li as SettingsRowElement).widget?.element;

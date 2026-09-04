@@ -1,5 +1,5 @@
 import { CtlrMedia } from "@defs/contract";
-import { capitalize, isNum } from "@t007/utils";
+import { capitalize, isArr, isNum } from "@t007/utils";
 
 // Time Ranges
 
@@ -32,7 +32,7 @@ export function createTimeRanges(ranges?: [number, number][] | TimeRanges | Arra
       },
     });
   const pairs: [number, number][] = [], // 1. Spec Normalization Loop: Merge overlapping or touching timelines
-    rawPairs = (Array.isArray(ranges) ? ranges : Array.from(ranges as ArrayLike<any>)).sort((a, b) => a[0] - b[0]); // 2. Sort incoming intervals chronologically by start time
+    rawPairs = (isArr(ranges) ? ranges : Array.from(ranges)).sort((a, b) => a[0] - b[0]); // 2. Sort incoming intervals chronologically by start time
   for (const current of rawPairs) {
     const last = pairs[pairs.length - 1];
     if (!last || current[0] > last[1]) pairs.push([current[0], current[1]]); // Clean discontinuity gap

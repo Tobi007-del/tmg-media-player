@@ -1,15 +1,11 @@
 import { AptRange } from "@defs/generics";
-import { isNum, clamp } from "@t007/utils";
+import { isNum, clamp, isArr } from "@t007/utils";
 
 // Validators
 export { clamp };
 
-export function isSafeNum(val: any): boolean {
-  return isNum(val) && !isNaN(val ?? NaN) && val !== Infinity;
-}
-
 export function safeNum(number: any, fallback = 0): number {
-  return isSafeNum(number) ? number : fallback;
+  return Number.isFinite(number) ? number : fallback;
 }
 
 // Parsers
@@ -42,7 +38,7 @@ export function rotateAny<T>(cur: T, steps: T[] | readonly T[], dir?: "forwards"
 export function rotateAny(cur: number, steps: AptRange, dir?: "forwards" | "backwards", wrap?: boolean): number;
 export function rotateAny(cur: any, steps: any, dir: "forwards" | "backwards" = "forwards", wrap = true): any {
   let list: any[];
-  if (Array.isArray(steps)) list = steps;
+  if (isArr(steps)) list = steps;
   else {
     const key = `${steps.min}|${steps.max}|${steps.step}`; // Generate cache key from min|max|step
     if (stepsCache.has(key)) list = stepsCache.get(key)!;

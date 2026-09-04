@@ -12,8 +12,9 @@ import { getMimeTypeFromExtension } from "@utils/file";
 export class CastPlug extends BasePlug<CastConfig> {
   public static readonly plugName = "cast";
   public static readonly BUILD = CAST_BUILD;
-  public remotePlayer: cast.framework.RemotePlayer | null = null;
-  public remoteController: cast.framework.RemotePlayerController | null = null;
+  public ctx: cast.framework.CastContext | null = null;
+  public remotePlyr: cast.framework.RemotePlayer | null = null;
+  public remoteCtlr: cast.framework.RemotePlayerController | null = null;
   public apiSetup = false;
   protected placeholder: CastPlaceholder | null = null;
 
@@ -34,7 +35,7 @@ export class CastPlug extends BasePlug<CastConfig> {
 
   public override wire(): void {
     // Ctlr Media Watchers
-    this.media.watch("tech", () => (this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup), { init: true, signal: this.signal }); // no YT or Vimeo until d custom client
+    this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal }); // no YT or Vimeo until d custom client
     // --------- Listeners
     this.media.on("intent.cast", this.handleCastIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal });
     this.media.on("intent.paused", this.handlePausedIntent, { capture: true, signal: this.signal });
@@ -42,19 +43,18 @@ export class CastPlug extends BasePlug<CastConfig> {
     this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.muted", this.handleMutedIntent, { capture: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("cast", { fn: () => (this.media.intent.cast = !this.media.state.cast), keyboard: { phase: "keyup" } }, this.signal), super.wire();
+    this.ctlr.learn("cast", { fn: () => (this.media.intent.cast = !this.media.state.cast), keyboard: { phase: "keyup" } }, this.signal), super.wire();
   }
 
   protected handleCastIntent(e: REvent<CtlrMedia, "intent.cast">): void {
-    if (e.resolved || !this.apiSetup) return;
-    const context = cast.framework.CastContext.getInstance(),
-      active = this.ctlr.isUIActive("cast");
+    if (e.resolved) return;
+    const active = this.ctlr.isUIActive("cast");
     if (e.value && !active) {
       this.ctlr.plug("settings.metadata")?.syncSession();
-      context.requestSession().then(this.loadMediaSession).catch(this.ctlr.notice);
+      this.ctx!.requestSession().then(this.loadMediaSession).catch(this.ctlr.notice);
       this.ctlr.plug("settings.notifiers")?.notify("cast"); // #STALLING: necessary optimistic distraction
     } else if (!e.value && active) {
-      context.endCurrentSession(true);
+      this.ctx!.endCurrentSession(true);
       this.media.container.classList.remove("tmg-media-cast");
       this.media.state.cast = false;
     }
@@ -62,40 +62,41 @@ export class CastPlug extends BasePlug<CastConfig> {
   }
 
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
-    if (!this.media.state.cast || e.resolved) return;
-    if (e.value !== this.remotePlayer!.isPaused) this.remoteController!.playOrPause();
+    if (e.resolved || !this.media.state.cast) return;
+    e.value !== this.remotePlyr!.isPaused && this.remoteCtlr!.playOrPause();
     e.resolve(this.name);
   }
 
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
-    if (!this.media.state.cast || e.resolved) return;
-    this.remotePlayer!.currentTime = e.value;
-    this.remoteController!.seek();
+    if (e.resolved || !this.media.state.cast) return;
+    this.remotePlyr!.currentTime = e.value;
+    this.remoteCtlr!.seek();
     e.resolve(this.name);
   }
 
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
-    if (!this.media.state.cast || e.resolved) return;
-    this.remotePlayer!.volumeLevel = e.value / 100;
-    this.remoteController!.setVolumeLevel();
+    if (e.resolved || !this.media.state.cast) return;
+    this.remotePlyr!.volumeLevel = e.value / 100;
+    this.remoteCtlr!.setVolumeLevel();
     e.resolve(this.name);
   }
 
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">): void {
-    if (!this.media.state.cast || e.resolved) return;
-    if (this.remotePlayer!.isMuted !== e.value) this.remoteController!.muteOrUnmute();
+    if (e.resolved || !this.media.state.cast) return;
+    this.remotePlyr!.isMuted !== e.value && this.remoteCtlr!.muteOrUnmute();
     e.resolve(this.name);
   }
 
   protected setupApi(): void {
     if (!chrome.cast) return;
-    const context = cast.framework.CastContext.getInstance();
-    context.setOptions({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED, ...this.config.options });
-    this.remotePlayer = new cast.framework.RemotePlayer();
-    this.remoteController = new cast.framework.RemotePlayerController(this.remotePlayer);
-    this.remoteController.addEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
+    this.ctx = cast.framework.CastContext.getInstance();
+    this.ctx.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this.syncFeatures);
+    this.ctx.setOptions({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED, ...this.config.options });
+    this.remotePlyr = new cast.framework.RemotePlayer();
+    this.remoteCtlr = new cast.framework.RemotePlayerController(this.remotePlyr);
+    this.remoteCtlr.addEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
     this.placeholder ??= ComponentRegistry.init("castPlaceholder", this.ctlr);
-    (this.apiSetup = true), (this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup); // Unlock the feature UI
+    (this.apiSetup = true), this.syncFeatures();
   }
 
   protected async loadMediaSession(): Promise<void> {
@@ -104,35 +105,35 @@ export class CastPlug extends BasePlug<CastConfig> {
     silence(() => (this.media.intent.paused = true)); // pause local playback to avoid double audio
     const textEl = this.placeholder?.el.querySelector("p"),
       request = new chrome.cast.media.LoadRequest(new chrome.cast.media.MediaInfo(this.media.state.src, getMimeTypeFromExtension(this.media.state.src)));
-    request.currentTime = this.media.state.currentTime;
-    await session.loadMedia(request);
-    if (textEl) textEl.textContent = `Casting to ${session.getCastDevice().friendlyName || "External Display"}`;
-    this.media.container.classList.add("tmg-media-cast");
+    if (textEl) textEl.textContent = `Casting to ${session.getCastDevice().friendlyName || "External display"}`;
+    await session.loadMedia(((request.currentTime = this.media.state.currentTime), request));
+    this.media.container.classList.add("tmg-media-cast"), this.ctlr.log(`${this.ctlr.config.id} Casting → ${this.media}`); // dev
     this.media.state.cast = true;
-    // console.log("Media loaded to TV", this.media.state.src, this.media.state.currentTime); // dev
   } // #STANDALONE: needs scoped behavior
 
-  protected syncRemoteState(event: cast.framework.RemotePlayerChangedEvent): void {
-    const isConnected = this.remotePlayer!.isConnected;
-    if (this.media.state.cast !== isConnected) this.media.state.cast = isConnected;
-    if (!isConnected) return;
-    switch (event.field) {
+  protected syncRemoteState({ field }: cast.framework.RemotePlayerChangedEvent): void {
+    if (!(this.media.state.cast = this.remotePlyr!.isConnected)) return;
+    switch (field) {
       case "currentTime":
-        return void (this.media.state.currentTime = this.remotePlayer!.currentTime);
+        return void (this.media.state.currentTime = this.remotePlyr![field]);
       case "isPaused":
-        return void (this.media.state.paused = this.remotePlayer!.isPaused);
+        return void (this.media.state.paused = this.remotePlyr![field]);
       case "volumeLevel":
-        return void (this.media.state.volume = this.remotePlayer!.volumeLevel * 100);
+        return void (this.media.state.volume = this.remotePlyr![field] * 100);
       case "isMuted":
-        return void (this.media.state.muted = this.remotePlayer!.isMuted);
+        return void (this.media.state.muted = this.remotePlyr![field]);
       case "duration":
-        return void (this.media.status.duration = this.remotePlayer!.duration);
+        return void (this.media.status.duration = this.remotePlyr![field]);
     }
+  }
+  public syncFeatures(): void {
+    this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup && this.ctx!.getCastState() !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
   }
 
   protected override onDestroy(): void {
-    this.remoteController?.removeEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
-    this.media.state.cast && cast.framework.CastContext.getInstance().endCurrentSession(true);
+    this.media.state.cast && this.ctx!.endCurrentSession(true);
+    this.ctx?.removeEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this.syncFeatures);
+    this.remoteCtlr?.removeEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
     this.placeholder?.destroy(), super.onDestroy();
   }
 }

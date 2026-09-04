@@ -27,7 +27,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
 
 export const STATE_BUILD = (): CtlrState => ({
   readyState: 0,
-  audioContextReady: !!AUDIO_CONTEXT,
+  audioCtxReady: !!AUDIO_CONTEXT,
   mediaIntersecting: true,
   mediaParentIntersecting: true,
   dimensions: {

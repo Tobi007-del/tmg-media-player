@@ -17,7 +17,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     widget: "select",
     feature: "levels",
     hidden: () => plug.media.status.levels.length <= 1,
-    getTipHTML: (bw = plug.media.status.bandwidth) => `Adjust ${plug.media.type} quality or use auto (adaptive). <br> ${bw ? `<small>Your last known network speed was ~<b>${formatSize(bw, 1).replace(/(?:(B|bytes))$/i, "bps")}</b>.</small>` : ""}`,
+    getTipHTML: (bw = plug.media.status.bandwidth) => `Adjust ${plug.media.type} quality or use auto (adaptive). <br> ${bw ? `<small>Last checked network speed was ~<b>${formatSize(bw, 1).replace(/(?:(B|bytes))$/i, "bps")}</b>.</small>` : ""}`,
     getValue() {
       const list = plug.media.status.levels,
         opts = this.getOptions!() as UITuple<number>[];
@@ -49,7 +49,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     getValue() {
       if (plug.media.state.currentAudioTrack === -1 || !plug.media.status.audioTracks.length) return "";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentAudioTrack)?.display || "";
-    },
+    }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.audioTracks;
       return !list.length ? [] : getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })));
@@ -67,7 +67,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     getValue() {
       if (plug.media.state.currentVideoTrack === -1 || !plug.media.status.videoTracks.length) return "";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentVideoTrack)?.display || "";
-    },
+    }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.videoTracks;
       return !list.length ? [] : getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })));
@@ -84,7 +84,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     getValue() {
       if (plug.media.state.currentTextTrack === -1 || !plug.media.status.textTracks.length) return "Off";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentTextTrack)?.display || "Off";
-    },
+    }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.textTracks;
       return !list.length ? [] : [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })))];

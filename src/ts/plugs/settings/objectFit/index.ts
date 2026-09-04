@@ -6,6 +6,7 @@ import type { REvent } from "sia-reactor";
 import { rotateAny } from "@utils/num";
 import { getUIOpt, parseUIOpts } from "@utils/obj";
 import { getRenderedBox } from "@utils/media";
+import { capitalize } from "@utils/str";
 
 export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
   public static readonly plugName = "objectFit";
@@ -23,7 +24,7 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
     this.ctlr.config.watch("settings.css.objectFit", this.syncSizes, { signal: this.signal });
     this.ctlr.config.watch("settings.css.objectPosition", this.syncSizes, { signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("objectFit", { fn: this.rotateFit, keyboard: { phase: "keydown" } }, this.signal), super.wire();
+    this.ctlr.learn("objectFit", { fn: this.rotateFit, keyboard: { phase: "keydown" } }, this.signal), super.wire();
   }
 
   protected handleObjectFitIntent(e: REvent<CtlrMedia, "intent.objectFit">): void {
@@ -42,7 +43,7 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
   }
   public rotateFit(): void {
     this.media.intent.objectFit = rotateAny(this.media.state.objectFit, parseUIOpts(this.config.options!) as ObjectFit[]);
-    this.media.features.objectFit && this.ctlr.plug("settings.notifiers")?.notify(`objectFit${this.media.intent.objectFit}`); // must notify for visual aid
+    this.media.features.objectFit && this.ctlr.plug("settings.notifiers")?.notify(`objectFit${capitalize(this.media.intent.objectFit)}`); // must notify for visual aid
   }
 
   public toLabel(fit = this.media.state.objectFit): string {

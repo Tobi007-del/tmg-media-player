@@ -5,7 +5,7 @@ import { createEl, createListRenderer } from "@utils/dom";
 import { WidgetRegistry } from "../widgets";
 import type { Controller } from "@core/controller";
 import { IconRegistry } from "@core/registries";
-import { isFunc, parseUIOpt, parseUIBadge } from "@utils/obj";
+import { isFunc, parseUIOpt, parseUIBadge, isArr } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
 
 export class MainMenuPanel extends BaseMenuPanel {
@@ -75,7 +75,7 @@ export class MainMenuPanel extends BaseMenuPanel {
         badge = parseUIBadge(item.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
         val = createEl("span", { className: "tmg-media-smenu-row-value" });
       if (badge?.label) lbl.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
-      val.append(createEl("span", { className: "tmg-media-smenu-text", textContent: Array.isArray(value) ? value.join(", ") : value || "" }));
+      val.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : value || "" }));
       if (badge?.value) val.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
       if (item.infoText) {
         const info = createEl("span", { className: "tmg-media-smenu-row-info" });
@@ -97,7 +97,7 @@ export class MainMenuPanel extends BaseMenuPanel {
             }
             if (valNode) {
               valNode.textContent = "";
-              valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: Array.isArray(value) ? value.join(", ") : value || "" }));
+              valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : value || "" }));
               if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
             } else {
               const el = (li as SettingsRowElement).widget?.element;

@@ -32,67 +32,55 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   protected handleStart(e: TouchEvent): void {
     if (!this.canHandle(e)) return;
     this.handleEnd();
-    this.lastX = e.touches[0].clientX;
-    this.lastY = e.touches[0].clientY;
+    (this.lastX = e.touches[0].clientX), (this.lastY = e.touches[0].clientY);
     this.media.container.addEventListener("touchmove", this.handleInit, { once: true, signal: this.signal });
     this.cancelTimeoutId = setTimeout(() => (this.canCancel = false), this.config.threshold, this.signal);
     for (const evt of ["touchend", "touchcancel"]) this.media.container.addEventListener(evt, this.handleEnd, { signal: this.signal });
   }
 
-  protected handleInit(e: Event): void {
-    const te = e as TouchEvent;
+  protected handleInit(e: Event, te = e as TouchEvent): void {
     if (te.touches?.length > 1 || this.ctlr.plug("settings.fastPlay")?.state.active) return;
     te.preventDefault();
-    const tc = this.config,
-      rect = this.media.container.getBoundingClientRect(),
+    const { width, height, left, top } = this.media.container.getBoundingClientRect(),
       x = te.touches[0].clientX,
       y = te.touches[0].clientY,
       deltaX = Math.abs(this.lastX - x),
       deltaY = Math.abs(this.lastY - y);
-    this.zone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
-    const rLeft = this.lastX - rect.left,
-      rTop = this.lastY - rect.top;
-    if (deltaX > deltaY * tc.axesRatio && rLeft > tc.inset && rLeft < rect.width - tc.inset) {
-      if (tc.timeline) {
+    this.zone = { x: x - left > width / 2 ? "right" : "left", y: y - top > height / 2 ? "bottom" : "top" };
+    const rLeft = this.lastX - left,
+      rTop = this.lastY - top;
+    if (deltaX > deltaY * this.config.axesRatio && rLeft > this.config.inset && rLeft < width - this.config.inset) {
+      if (this.config.timeline) {
         this.xCheck = true;
         this.media.container.addEventListener("touchmove", this.handleXMove, { passive: false, signal: this.signal });
       }
-    } else if (deltaY > deltaX * tc.axesRatio && rTop > tc.inset && rTop < rect.height - tc.inset) {
-      if ((tc.volume && this.zone?.x === "right") || (tc.brightness && this.zone?.x === "left")) {
+    } else if (deltaY > deltaX * this.config.axesRatio && rTop > this.config.inset && rTop < height - this.config.inset) {
+      if ((this.config.volume && this.zone?.x === "right") || (this.config.brightness && this.zone?.x === "left")) {
         this.yCheck = true;
         this.media.container.addEventListener("touchmove", this.handleYMove, { passive: false, signal: this.signal });
       }
     }
   }
 
-  protected handleXMove(e: Event): void {
-    const te = e as TouchEvent;
+  protected handleXMove(e: Event, te = e as TouchEvent): void {
     if (this.canCancel) return this.handleEnd();
     te.preventDefault();
     this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
-        const tc = this.config,
-          { width, height } = this.ctlr.state.dimensions.container,
-          x = te.touches[0].clientX,
-          y = te.touches[0].clientY,
-          deltaX = x - this.lastX,
-          deltaY = y - this.lastY,
-          sign = deltaX >= 0 ? "+" : "-",
-          percent = clamp(0, Math.abs(deltaX), width * tc.xRatio) / (width * tc.xRatio),
-          mY = clamp(0, Math.abs(deltaY), height * tc.yRatio * 0.5),
-          multiplier = 1 - mY / (height * tc.yRatio * 0.5);
-        this.applyTimeline({ percent, sign, multiplier });
+        const { width, height } = this.ctlr.state.dimensions.container,
+          rHeight = (height * this.config.yRatio) / 2,
+          deltaX = te.touches[0].clientX - this.lastX,
+          deltaY = te.touches[0].clientY - this.lastY,
+          percent = clamp(0, Math.abs(deltaX), width * this.config.xRatio) / (width * this.config.xRatio);
+        this.applyTimeline({ percent, sign: deltaX >= 0 ? "+" : "-", multiplier: 1 - clamp(0, Math.abs(deltaY), rHeight) / rHeight });
       },
-      30,
-      false,
-      this.signal
+      30
     );
   }
 
-  protected handleYMove(e: Event): void {
-    const te = e as TouchEvent;
+  protected handleYMove(e: Event, te = e as TouchEvent): void {
     if (this.canCancel && !this.media.state.fullscreen) return this.handleEnd();
     te.preventDefault();
     // prettier-ignore
@@ -100,18 +88,13 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
     this.ctlr.throttle(
       "gestureTouchMove",
       () => {
-        const tc = this.config,
-          height = this.ctlr.state.dimensions.container.height,
+        const rHeight = this.ctlr.state.dimensions.container.height * this.config.yRatio,
           y = te.touches[0].clientY,
-          deltaY = y - this.lastY,
-          sign = deltaY >= 0 ? "-" : "+",
-          percent = clamp(0, Math.abs(deltaY), height * tc.yRatio) / (height * tc.yRatio);
+          deltaY = y - this.lastY;
         this.lastY = y;
-        this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", percent, sign);
+        this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", clamp(0, Math.abs(deltaY), rHeight) / rHeight, deltaY >= 0 ? "-" : "+");
       },
-      30,
-      false,
-      this.signal
+      30
     );
   }
 

@@ -61,12 +61,13 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.state.on("cancelScrub", ({ value }) => this.el.classList.toggle("tmg-media-control-cancel-scrub", !!value), { signal: this.signal });
     // Config Setters
     this.config.set("value", (value) => stepNum(value, this.config), { signal: this.signal });
-    // ------ Listeners
+    // ----- Watchers
+    this.config.watch("value", this.onValue, { init: true, signal: this.signal }); // #SYNC: near native speed
+    this.config.watch("previewValue", this.onPreviewValue, { init: true, signal: this.signal }); // #SYNC: near native speed
+    // ----- Listeners
     this.config.on("label", ({ value }) => (this.el.ariaLabel = value!), { init: true, signal: this.signal });
     this.config.on("min", ({ value }) => (this.el.ariaValueMin = String(value!)), { init: true, signal: this.signal });
     this.config.on("max", ({ value }) => (this.el.ariaValueMax = String(value!)), { init: true, signal: this.signal });
-    this.config.watch("value", this.onValue, { init: true, signal: this.signal }); // #SYNC: near native speed
-    this.config.watch("previewValue", this.onPreviewValue, { init: true, signal: this.signal }); // #SYNC: near native speed
     this.config.on("tooltip", ({ value }) => this.el.toggleAttribute("tooltip", !!value), { init: true, signal: this.signal });
     this.config.on("readonly", ({ value }) => this.el.toggleAttribute("readonly", !!value), { init: true, signal: this.signal });
     this.config.on("disabled", ({ value }) => this.el.toggleAttribute("disabled", !!value), { init: true, signal: this.signal });
@@ -87,7 +88,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (!this.state.scrubbing) this.el.ariaValueNow = String(value);
   }
   protected onPreviewValue(value: number): void {
-    this.syncChunks("preview", value), this.config.tooltip && (this.syncElPos(this.tooltipEl, this.getValuePos(value), false, !(this.state.previewing && !this.state.scrubbing) ? "auto" : false, this.thumbEl), (this.tooltipEl.innerHTML = (this.config.formatTooltip ? String(this.config.formatTooltip(value)) : `${Math.round(value)}`) + ` ${this.getValueChunk(value)?.label || ""}`.trim()));
+    this.syncChunks("preview", value), this.config.tooltip && (this.syncElPos(this.tooltipEl, this.getValuePos(value), false, !(this.state.previewing && !this.state.scrubbing) ? "auto" : false, this.thumbEl), (this.tooltipEl.innerHTML = `${this.config.formatTooltip ? this.config.formatTooltip(value) : Math.round(value)} ${this.getValueChunk(value)?.label || ""}`.trim()));
   }
 
   protected handlePointerDown(e: PointerEvent, t = e.target as HTMLElement): void {

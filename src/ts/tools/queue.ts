@@ -15,10 +15,10 @@ export interface QueueResult {
 // for ffmpeg future tasks
 export class AsyncQueue {
   // add jobs, performs and reports sequentially; drop job: reports; cancel job: records, reports when about to perform
-  private jobs: QueueJob[] = [];
-  private running = false;
+  protected jobs: QueueJob[] = [];
+  protected running = false;
 
-  private async handle(): Promise<void> {
+  protected async handle(): Promise<void> {
     if (this.running) return;
     this.running = true;
     while (this.jobs.length > 0) {

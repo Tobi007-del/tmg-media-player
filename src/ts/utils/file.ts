@@ -26,7 +26,7 @@ export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (ite
   // Extracts the main series title + optional season
   function getNamePrefix(name: string, base = stripExt(name), match = base.match(/(.*?)(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)?/i)) {
     // prettier-ignore
-    return bCache.set(name, base), (match ? (match[1].replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase() + " s" + match[2].padStart(2, "0")) : base.replace(/(?:(?:e|ep|episode|part)[\s\-]?)\d+/gi, "").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()) || "unknown";
+    return bCache.set(name, base), (match ? (`${match[1].replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()} s${match[2].padStart(2, "0")}`) : base.replace(/(?:(?:e|ep|episode|part)[\s\-]?)\d+/gi, "").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()) || "unknown";
   }
   // Extract episode key: season, episode number(s), or special flags
   function extractEpisodeKey(name: string, base = bCache.get(name).toLowerCase()) {

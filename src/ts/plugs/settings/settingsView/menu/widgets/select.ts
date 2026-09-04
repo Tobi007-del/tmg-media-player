@@ -1,7 +1,7 @@
 import { UITuple } from "@defs/UIOptions";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
-import { isFunc, parseUIOpt } from "@utils/obj";
+import { isArr, isFunc, parseUIOpt } from "@utils/obj";
 import { IconRegistry } from "@core/registries";
 
 export class SelectWidget<T = unknown> extends BaseWidget<T> {
@@ -43,7 +43,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
         node.dataset.optVal = opt.value as string;
         node.dataset.optDisplay = opt.display;
         const isMulti = this.item.getMultiple?.(),
-          vals = isMulti ? (Array.isArray(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
+          vals = isMulti ? (isArr(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
         node.ariaSelected = String(vals.includes(opt.display) || vals.includes(node.dataset.optVal));
       },
     });
@@ -61,7 +61,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
 
   private syncActive(): void {
     const isMulti = this.item.getMultiple?.(),
-      vals = isMulti ? (Array.isArray(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
+      vals = isMulti ? (isArr(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
     for (const li of this.element.querySelectorAll<HTMLElement>("[data-opt-val]")) {
       const active = vals.includes(li.dataset.optDisplay!) || vals.includes(li.dataset.optVal!);
       li.classList.toggle("tmg-media-smenu-option-active", active), (li.ariaSelected = String(active));

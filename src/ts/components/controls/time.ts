@@ -38,8 +38,7 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
   }
 
   public syncUI(): void {
-    this.el.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "-:--";
-    this.syncARIA();
+    this.el.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "";
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode} time`;

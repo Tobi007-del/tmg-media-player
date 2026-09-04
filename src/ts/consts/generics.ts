@@ -1,6 +1,6 @@
 // ============ Constants ============
 
-export const FN_KEY = "tmg_fn_registry";
+export const FN_KEY = "tmg_local_fn_registry";
 
 export const LUID_KEY = `tmg_local_${
   location.pathname

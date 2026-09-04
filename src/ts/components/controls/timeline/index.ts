@@ -23,8 +23,8 @@ export class Timeline extends RangeInput<TimelineConfig> {
   public previewCanvas!: HTMLCanvasElement;
   public thumbnailImg!: HTMLDivElement;
   public thumbnailCanvas!: HTMLCanvasElement;
-  public previewContext: CanvasRenderingContext2D | null = null;
-  public thumbnailContext: CanvasRenderingContext2D | null = null;
+  public previewCtx: CanvasRenderingContext2D | null = null;
+  public thumbnailCtx: CanvasRenderingContext2D | null = null;
   protected wasPaused = false;
   protected scrubbingId = -1;
   protected get plug() {
@@ -45,10 +45,10 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.previewContainer = createEl("div", { className: "tmg-media-preview-container" });
     this.previewImg = createEl("div", { className: "tmg-media-preview" });
     this.previewCanvas = createEl("canvas", { className: "tmg-media-preview" });
-    this.previewContext = this.previewCanvas.getContext("2d", { alpha: false });
+    this.previewCtx = this.previewCanvas.getContext("2d", { alpha: false });
     this.thumbnailImg = createEl("div", { className: "tmg-media-thumbnail tmg-media-filtered tmg-media-object" });
     this.thumbnailCanvas = createEl("canvas", { className: "tmg-media-thumbnail tmg-media-filtered tmg-media-object" });
-    this.thumbnailContext = this.thumbnailCanvas.getContext("2d", { alpha: false });
+    this.thumbnailCtx = this.thumbnailCanvas.getContext("2d", { alpha: false });
     // DOM Injection
     this.el.classList.add("tmg-media-timeline-container"), this.barsWrapper.classList.add("tmg-media-timeline-bars-wrapper", "tmg-media-timeline"), this.thumbEl.classList.add("tmg-media-timeline-thumb");
     this.previewContainer.append(this.previewImg, this.previewCanvas);
@@ -66,7 +66,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.media.pseudoElement.addEventListener("timeupdate", this.syncCanvasPreviews, { signal: this.signal });
     // State Listeners
     this.state.on("scrubbing", this.handleScrubbing, { signal: this.signal });
-    this.state.on("previewing", ({ value }) => (value ? (this.media.container.classList.add("tmg-media-previewing"), this.clearCanvasPreviews()) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
+    this.state.on("previewing", ({ value }) => (value ? (this.clearCanvasPreviews(), this.media.container.classList.add("tmg-media-previewing")) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
     this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelScrubNotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
     // Config --------
     this.config.on("previewValue", this.syncPreviewText, { init: true, signal: this.signal });
@@ -172,20 +172,20 @@ export class Timeline extends RangeInput<TimelineConfig> {
     if (this.plug) this.previewContainer.dataset.previewText = `${this.plug.toTimeText(this.getTime(this.config.previewValue / 100), true)}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
   }
   public syncCanvasPreviews(): void {
-    if (!this.previewContext || !this.thumbnailContext || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 1) return;
+    if (!this.previewCtx || !this.thumbnailCtx || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 1) return;
     this.ctlr.throttle(
       "canvasPreviewSync",
       () => {
         this.previewCanvas.width = this.previewCanvas.clientWidth || this.previewCanvas.width;
         this.previewCanvas.height = this.previewCanvas.clientHeight || this.previewCanvas.height;
-        if (!this.config.compact) this.previewContext!.drawImage(this.media.pseudoElement as HTMLVideoElement, 0, 0, this.previewCanvas.width, this.previewCanvas.height);
-        if (this.state.scrubbing && this.config.autopause) this.thumbnailContext!.drawImage(this.media.pseudoElement as HTMLVideoElement, 0, 0, this.thumbnailCanvas.width, this.thumbnailCanvas.height);
+        if (!this.config.compact) this.previewCtx!.drawImage(this.media.pseudoElement as HTMLVideoElement, 0, 0, this.previewCanvas.width, this.previewCanvas.height);
+        if (this.state.scrubbing && this.config.autopause) this.thumbnailCtx!.drawImage(this.media.pseudoElement as HTMLVideoElement, 0, 0, this.thumbnailCanvas.width, this.thumbnailCanvas.height);
       },
       33
     );
   }
   public clearCanvasPreviews(bool = this.media.container.dataset.previewType === "canvas" && this.media.pseudoElement.readyState < 1): void {
-    if (bool) this.ctlr.setCanvasFallback(this.previewCanvas, this.previewContext), this.ctlr.setCanvasFallback(this.thumbnailCanvas, this.thumbnailContext);
+    if (bool) this.ctlr.setCanvasFallback(this.previewCanvas, this.previewCtx), this.ctlr.setCanvasFallback(this.thumbnailCanvas, this.thumbnailCtx);
   }
 
   protected override syncDivs(divs = this.config.divs): void {

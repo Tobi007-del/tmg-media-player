@@ -22,7 +22,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     // ---- Config ---------
     this.ctlr.config.on("settings.modes.theater.disabled", this.handleDisabled, { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("theater", { keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("theater", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.theater.disabled">): void {

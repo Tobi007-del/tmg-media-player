@@ -13,7 +13,7 @@ import { rotateAny } from "@utils/num";
 import { getTrackIdx, getTrackKind, getTrackLabel } from "@utils/media";
 import { camelize, uncamelize } from "@utils/str";
 import { silence } from "sia-reactor/modules";
-import { parseUIObj } from "@utils/obj";
+import { isArr, parseUIObj } from "@utils/obj";
 import { HTML5Tech } from "@techs/html5";
 import { KeyMod } from "../keys";
 
@@ -51,7 +51,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.media.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.textVisible", this.handleTextVisibleIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.currentTextTrack", this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.textVisible", this.handleTextVisibleState, { init: true, signal: this.signal });
+    this.media.on("state.textVisible", this.handleTextVisibleState, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("state.currentTime", () => (this.views.forEach((v) => v.syncKaraoke()), this.secondaryViews.forEach((regionMap) => regionMap.forEach((v) => v.syncKaraoke()))), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.textTracks", () => (this.syncTracks(), this.syncUI()), { signal: this.signal });
     this.media.on("status.activeCues", this.handleActiveCuesStatus, { init: this.ctlr.payload.wired, signal: this.signal });
@@ -61,9 +61,9 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.ctlr.config.on("settings.captions.font.size.max", ({ value }) => this.settings.captions.font.size.value > value && (this.settings.captions.font.size.value = value), { init: true, signal: this.signal });
     for (const p of ["lockToPanel", "lockToVideo"] as const) this.ctlr.config.on(`settings.captions.window.position.${p}`, ({ value }) => this.media.container.classList.toggle(`tmg-media-captions-${uncamelize(p, "-")}`, value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("captions", { fn: () => (this.toggleVisible(), this.media.features.textVisible && this.ctlr.plug("settings.notifiers")?.notify("captions")), keyboard: { phase: "keyup" } }, this.signal);
-    for (const p of ["Up", "Down"] as const) this.ctlr.addAction(`captionsFontSize${p}`, { fn: (_: KeyboardEvent, mod: KeyMod) => this.changeFontSize((this.ctlr.plug("settings.keys")?.getModded("captionsFontSize", mod, this.config.font.size.skip) ?? this.config.font.size.skip) * (p === "Up" ? 1 : -1)), keyboard: { phase: "keydown" } }, this.signal);
-    for (const p of ROTATE_PATHS) this.ctlr.addAction(camelize(p.replace(".value", ""), /\./), { fn: () => this.rotateProp(getPath(parseUIObj(this.config), `${p.replace("captions.", "")}s` as any), p, p.includes("opacity")), keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("captions", { fn: () => (this.toggleVisible(), this.media.features.textVisible && this.ctlr.plug("settings.notifiers")?.notify("captions")), keyboard: { phase: "keyup" } }, this.signal);
+    for (const p of ["Up", "Down"] as const) this.ctlr.learn(`captionsFontSize${p}`, { fn: (_: KeyboardEvent, mod: KeyMod) => this.changeFontSize((this.ctlr.plug("settings.keys")?.getModded("captionsFontSize", mod, this.config.font.size.skip) ?? this.config.font.size.skip) * (p === "Up" ? 1 : -1)), keyboard: { phase: "keydown" } }, this.signal);
+    for (const p of ROTATE_PATHS) this.ctlr.learn(camelize(p.replace(".value", ""), /\./), { fn: () => this.rotateProp(getPath(parseUIObj(this.config), `${p.replace("captions.", "")}s` as any), p, p.includes("opacity")), keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -107,7 +107,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     const regionMap = this.secondaryViews.get(idx);
     if (!regionMap) return;
     const order = this.secondaryViews.size;
-    this.syncCueMap(track.activeCues ? Array.from(track.activeCues) : null, regionMap, (key, v = ComponentRegistry.init("captionsView", this.ctlr, { secondaryOrder: order })) => v && (regionMap.set(key, v), v));
+    this.syncCueMap(track.activeCues ? [...track.activeCues] : null, regionMap, (key, v = ComponentRegistry.init("captionsView", this.ctlr, { secondaryOrder: order })) => v && (regionMap.set(key, v), v));
   }
 
   public toggleVisible(): void {
@@ -181,7 +181,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
 
   protected syncCueMap(value: CueLike[] | null, map: Map<string, CaptionsView>, spawn: (key: string) => CaptionsView | undefined | null): void {
     const groups = new Map<string, CueLike[]>();
-    for (const cue of Array.from(value ?? [])) {
+    for (const cue of value ?? []) {
       const key = cue.region ? `region-${cue.region.id || `${cue.region.viewportAnchorX}-${cue.region.viewportAnchorY}`}` : "main";
       (groups.get(key) ?? (groups.set(key, []), groups.get(key)!)).push(cue);
     }
@@ -191,7 +191,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
   }
 
   protected override registerMenu(items = MenuRegistry.get("settings.captions")?.(this), menu = this.ctlr.plug("settings.settingsView")?.menu): void {
-    if (items && menu) menu.unregister("captions"), Array.isArray(items) ? items.forEach((item) => menu.registerBefore("chapters", item)) : menu.registerBefore("chapters", items);
+    if (items && menu) menu.unregister("captions"), isArr(items) ? items.forEach((item) => menu.registerBefore("chapters", item)) : menu.registerBefore("chapters", items);
   }
 
   protected override onDestroy(): void {

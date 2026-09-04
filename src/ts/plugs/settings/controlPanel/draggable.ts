@@ -8,6 +8,7 @@ import { inBoolArrOpt, getPanelLocation } from "@utils/obj";
 import type { ControlPanelDraggable, PanelShell, PanelSlot, AnyControl, ControlPanelShells } from "./types";
 import { Paths } from "sia-reactor";
 import { tutorialOpts } from "../toasts";
+import { luid } from "@utils/str";
 
 export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlPanelDraggable> {
   public static readonly pinName = "draggable";
@@ -92,8 +93,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
         afterCtrl ? t.insertBefore(this.draggingEl!, afterCtrl) : t.append(this.draggingEl!);
         if (!t.dataset.dragId) for (const el of this.plug.zoneEls) this.plug.handleCompsView(el);
       },
-      500,
-      false
+      500
     );
   }
 
@@ -116,8 +116,8 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
   }
 
   public syncConfig(): void {
-    const id = (el: HTMLElement) => el.dataset.controlId,
-      derive = (slot: PanelSlot, center = false) => [center ? "spacer" : "", ...(slot instanceof HTMLElement ? [id(slot)] : Array.from(slot.zone.children as HTMLCollectionOf<HTMLElement>, id)), center && (slot instanceof HTMLElement || slot.zone.children.length) ? "spacer" : ""].filter(Boolean) as AnyControl[];
+    const cid = (el: HTMLElement) => el.dataset.controlId,
+      derive = (slot: PanelSlot, center = false) => [center ? "spacer" : "", ...(slot instanceof HTMLElement ? [cid(slot)] : Array.from(slot.zone.children as HTMLCollectionOf<HTMLElement>, cid)), center && (slot instanceof HTMLElement || slot.zone.children.length) ? "spacer" : ""].filter(Boolean) as AnyControl[];
     this.settings.controlPanel.top = [...derive(this.plug.slots.top.left), ...derive(this.plug.slots.top.center, true), ...derive(this.plug.slots.top.right)];
     this.settings.controlPanel.center = derive(this.plug.shells.center);
     this.settings.controlPanel.bottom = { 1: [...derive(this.plug.slots.bottom[1].left), ...derive(this.plug.slots.bottom[1].center, true), ...derive(this.plug.slots.bottom[1].right)], 2: [...derive(this.plug.slots.bottom[2].left), ...derive(this.plug.slots.bottom[2].center, true), ...derive(this.plug.slots.bottom[2].right)], 3: [...derive(this.plug.slots.bottom[3].left), ...derive(this.plug.slots.bottom[3].center, true), ...derive(this.plug.slots.bottom[3].right)] };
@@ -156,7 +156,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
       if (toast.isActive(tId)) highlightZone(), toast(`Try dragging it to an empty space now!`, { id: tId, position: "center-center", autoClose: true }), cleanup();
       this.teaching = false;
     },
-    { key: "tmg_cp_tut_1", maxTimes: 3 }
+    { key: `${luid()}_ctrl_dnd_basics`, maxTimes: 3 }
   );
 }
 

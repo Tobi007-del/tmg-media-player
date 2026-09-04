@@ -37,7 +37,7 @@ export class DisabledPlug extends BasePlug<DisabledConfig> {
   public deactivate(): void {
     this.ctlr.plug("settings.overlay")?.show();
     const timeline = this.ctlr.plug("settings.controlPanel")?.comp("timeline");
-    if (timeline) this.ctlr.setCanvasFallback(timeline["previewCanvas"], timeline["previewContext"]!), this.ctlr.setCanvasFallback(timeline["thumbnailCanvas"], timeline["thumbnailContext"]!);
+    if (timeline) this.ctlr.setCanvasFallback(timeline["previewCanvas"], timeline["previewCtx"]!), this.ctlr.setCanvasFallback(timeline["thumbnailCanvas"], timeline["thumbnailCtx"]!);
     this.media.container.classList.add("tmg-media-inactive"), this.media.pseudoContainer.classList.add("tmg-media-inactive"); // #TWINING
   }
 

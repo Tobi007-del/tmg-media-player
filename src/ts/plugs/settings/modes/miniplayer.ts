@@ -152,8 +152,8 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected handleResizeStart(e: PointerEvent, dir: ResizeDir): void {
     e.stopPropagation(), e.preventDefault();
     const { left, top } = getComputedStyle(this.media.container),
-      rect = this.media.container.getBoundingClientRect();
-    (this.resizeDir = dir), (this.resizeStartX = e.clientX), (this.resizeStartY = e.clientY), (this.resizeStartW = rect.width), (this.resizeStartH = rect.height), (this.resizeStartLeft = parseFloat(left)), (this.resizeStartTop = parseFloat(top));
+      { width, height } = this.ctlr.state.dimensions.container;
+    (this.resizeDir = dir), (this.resizeStartX = e.clientX), (this.resizeStartY = e.clientY), (this.resizeStartW = width), (this.resizeStartH = height), (this.resizeStartLeft = parseFloat(left)), (this.resizeStartTop = parseFloat(top));
     document.addEventListener("pointermove", this.handleResizing, { signal: this.signal });
     document.addEventListener("pointerup", this.handleResizeEnd, { signal: this.signal });
   }

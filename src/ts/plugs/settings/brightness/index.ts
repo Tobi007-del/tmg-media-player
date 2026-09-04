@@ -36,9 +36,9 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
     this.ctlr.config.on("settings.brightness.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.brightness.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("dark", { fn: this.handleKeyDark, keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("brightnessUp", { fn: this.handleKeyBrightnessUp, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.addAction("brightnessDown", { fn: this.handleKeyBrightnessDown, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("dark", { fn: this.handleKeyDark, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("brightnessUp", { fn: this.handleKeyBrightnessUp, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("brightnessDown", { fn: this.handleKeyBrightnessDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -68,7 +68,7 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
   }
   protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
-    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessMuted") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessDark") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
   }
 }
 

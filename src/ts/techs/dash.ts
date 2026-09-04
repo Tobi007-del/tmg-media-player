@@ -9,6 +9,7 @@ import { isNum } from "@utils/obj";
 import { loadResource } from "@utils/dom";
 import type { TrackType } from "@utils/media";
 import type * as dashjs from "dashjs";
+import { silence } from "sia-reactor/modules";
 
 interface DashMediaPlayer extends dashjs.MediaPlayerClass {
   getBitrateInfoListFor(type: "video" | "audio"): any[];
@@ -60,7 +61,7 @@ export class DashTech extends HTML5Tech {
       });
       this.host.on(DASHJS.MediaPlayer.events.TRACK_CHANGE_RENDERED, (ev: any) => {
         const i = this.host?.getTracksFor(ev.mediaType)?.findIndex((t) => t.id === ev.newMediaInfo?.id || t.index === ev.newMediaInfo?.index);
-        this.config.state[`current${capitalize<TrackType>(ev.mediaType)}Track`] = i ?? -1;
+        this.config.state[`current${capitalize(ev.mediaType) as TrackType}Track`] = i ?? -1;
       });
       this.host.on(DASHJS.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (ev: any) => ev.mediaType === "video" && (this.config.state.currentLevel = ev.newQuality ?? ev.index)); // v4+ uses newQuality, v3 uses index
       this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidthing", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round(this.host!.getAverageThroughput("video") * 1000)), 2000)); // kbps to bps
@@ -72,6 +73,11 @@ export class DashTech extends HTML5Tech {
         chapters.push({ title: new TextDecoder("utf-8").decode(ev.messageData).replace(/\0/g, "").trim(), startTime: ev.presentationTime });
         this.config.settings.metadata.chapterInfo = chapters.sort((a, b) => a.startTime - b.startTime);
       });
+      this.host.on(DASHJS.MediaPlayer.events.PERIOD_SWITCH_COMPLETED, () => {
+        for (const t of ["text", "audio", "video"] as const) this.config.status[`${t}Tracks`] = inert(this.host!.getTracksFor(t));
+        this.config.status.levels = inert(this.host!.getBitrateInfoListFor("video"));
+        for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
+      }); // Dynamic Track List Updates (Mid-stream changes, e.g. multi-period live streams)
       this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
         if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`);
         ev.error === "mediasource" && this.handleHostError(ev);

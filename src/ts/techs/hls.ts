@@ -10,6 +10,7 @@ import { loadResource } from "@utils/dom";
 import type { TrackType } from "@utils/media";
 import type Hls from "hls.js";
 import type { MediaPlaylist } from "hls.js";
+import { silence } from "sia-reactor/modules";
 
 export class HLSTech extends HTML5Tech {
   public static readonly techName: string = "hls";
@@ -67,10 +68,10 @@ export class HLSTech extends HTML5Tech {
         if (updated) this.config.settings.metadata.chapterInfo = chapters.sort((a: any, b: any) => a.startTime - b.startTime);
       });
       this.host.on(HLS.Events.FRAG_LOADED, () => this.ctlr.throttle("hlsBandwidthing", () => (this.config.status.bandwidth = Math.round(this.host!.bandwidthEstimate)), 2000));
-      this.host.on(HLS.Events.ERROR, (_, data) => {
-        if (!data.fatal) return;
-        return data.type === HLS.ErrorTypes.NETWORK_ERROR ? this.host!.startLoad() : data.type === HLS.ErrorTypes.MEDIA_ERROR ? this.host!.recoverMediaError() : this.handleHostError(data);
-      });
+      this.host.on(HLS.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => ((this.config.status.textTracks = inert(data.subtitleTracks)), silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"))); // #RE-TRIGGER: sync intent resolution
+      this.host.on(HLS.Events.AUDIO_TRACKS_UPDATED, (_, data) => ((this.config.status.audioTracks = inert(data.audioTracks)), silence(() => (this.config.intent.currentAudioTrack = this.config.intent.currentAudioTrack)), this.config.tick("intent.currentAudioTrack"))); // #RE-TRIGGER: sync intent resolution
+      this.host.on(HLS.Events.LEVELS_UPDATED, (_, data) => ((this.config.status.levels = inert(data.levels)), silence(() => (this.config.intent.currentLevel = this.config.intent.currentLevel)), this.config.tick("intent.currentLevel"))); // #RE-TRIGGER: sync intent resolution
+      this.host.on(HLS.Events.ERROR, (_, data) => data.fatal && (data.type === HLS.ErrorTypes.NETWORK_ERROR ? this.host!.startLoad() : data.type === HLS.ErrorTypes.MEDIA_ERROR ? this.host!.recoverMediaError() : this.handleHostError(data)));
       this.host.attachMedia(this.el);
     } catch (err) {
       this.handleHostError(err);

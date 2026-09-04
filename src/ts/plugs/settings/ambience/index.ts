@@ -12,12 +12,10 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   public static readonly BUILD = AMBIENT_BUILD;
   public wrapper!: HTMLDivElement;
   public canvas!: HTMLCanvasElement;
-  public context!: CanvasRenderingContext2D | null;
+  public ctx!: CanvasRenderingContext2D | null;
   public get canPulse(): boolean {
     return this.ctlr.isNativeEl && this.media.type !== "audio";
   }
-  private posterImg?: HTMLImageElement;
-  private posterSeq = 0;
 
   constructor(ctlr: Controller, config = ctlr.settings.ambience) {
     super(ctlr, config, { snubbingAmbience: false });
@@ -27,7 +25,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     // Variables Assignment
     this.wrapper = createEl("div", { className: "tmg-media-ambience-wrapper tmg-media-filtered", ariaHidden: "true" });
     this.canvas = createEl("canvas", { className: "tmg-media-ambience-canvas" });
-    this.context = this.canvas.getContext("2d", { alpha: false });
+    this.ctx = this.canvas.getContext("2d", { alpha: false });
     // DOM Injection
     this.ctlr.DOM.containerContent?.prepend((this.wrapper.append(this.canvas), this.wrapper));
   }
@@ -67,18 +65,21 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.canPulse && this.ctlr.throttle("ambienceGlowing", this.syncGlow, this.config.refresh.interval, false, this.signal);
   }
   protected syncGlow(usePoster = !this.canPulse || !!this.ctlr.plug("settings.poster")?.state.visible, flush = usePoster): void {
-    if (this.state.snubbingAmbience || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.context) return;
-    (this.context.globalAlpha = flush ? 1.0 : this.config.refresh.smoothness), flush && this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.state.snubbingAmbience || !this.media.state.ambience || !this.media.features.ambience || !this.ctlr.state.mediaIntersecting || !this.ctx) return;
+    (this.ctx.globalAlpha = flush ? 1.0 : this.config.refresh.smoothness), flush && this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     try {
       if (usePoster) {
         const seq = ++this.posterSeq,
-          i = this.posterImg && this.posterImg.src === this.media.state.poster ? this.context.drawImage(this.posterImg, 0, 0, this.canvas.width, this.canvas.height) : (this.posterImg = createEl("img", { crossOrigin: "anonymous", src: this.media.state.poster, onload: () => seq === this.posterSeq && this.context?.drawImage(i as HTMLImageElement, 0, 0, this.canvas.width, this.canvas.height) }));
+          img = this.posterImg && this.posterImg.src === this.media.state.poster ? this.ctx.drawImage(this.posterImg, 0, 0, this.canvas.width, this.canvas.height) : (this.posterImg = createEl("img", { crossOrigin: "anonymous", src: this.media.state.poster, onload: () => seq === this.posterSeq && this.ctx?.drawImage(img as HTMLImageElement, 0, 0, this.canvas.width, this.canvas.height) }));
       } else if (!this.ctlr.isNativeEl || this.media.element.readyState < 1) return;
-      else this.context.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
+      else this.ctx.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
     } catch (e) {
       this.ctlr.log(e, "error", true);
     }
   }
+  private posterImg?: HTMLImageElement;
+  private posterSeq = 0;
+
   protected syncSize(): void {
     const ar = this.ctlr.state.dimensions.container.width / this.ctlr.state.dimensions.container.height;
     if (ar >= 1) (this.canvas.width = 4), (this.canvas.height = Math.max(2, Math.round(4 / ar)));

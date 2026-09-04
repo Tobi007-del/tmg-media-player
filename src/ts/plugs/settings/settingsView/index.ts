@@ -35,7 +35,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
     // Ctlr Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("settings", { fn: () => this.menu.toggle(undefined, true), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("settings", { fn: () => this.menu.toggle(undefined, true), keyboard: { phase: "keyup" } }, this.signal);
     !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 

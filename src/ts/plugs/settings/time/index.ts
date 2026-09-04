@@ -19,7 +19,7 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
   public actualStart = 0;
   public skipDuration = 0;
   public skipNotifier?: HTMLElement | null = null;
-  private skipDurationId = -1;
+  protected skipDurationId = -1;
 
   constructor(ctlr: Controller, config = ctlr.settings.time) {
     super(ctlr, config, {
@@ -41,13 +41,13 @@ export class TimePlug extends BasePlug<TimeConfig, TimeState> {
     this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.waiting", this.handleWaitingStatus, { signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("timeSkipFwd", { fn: this.handleKeySkipFwd, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.addAction("timeSkipBwd", { fn: this.handleKeySkipBwd, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.addAction("timeStart", { keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration), keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("timeMode", { fn: this.toggleMode, keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("timeFormat", { fn: this.rotateFormat, keyboard: { phase: "keyup" } }, this.signal);
-    for (const n of "123456789".split("")) this.ctlr.addAction(n, { fn: () => (this.media.intent.currentTime = getMediaTime(this.media, +n / 10)), keyboard: { phase: "keyup" }, system: true, label: `Time: Move to ${n}0%` }, this.signal);
+    this.ctlr.learn("timeSkipFwd", { fn: this.handleKeySkipFwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeSkipBwd", { fn: this.handleKeySkipBwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeStart", { keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("timeMode", { fn: this.toggleMode, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("timeFormat", { fn: this.rotateFormat, keyboard: { phase: "keyup" } }, this.signal);
+    for (const n of "123456789".split("")) this.ctlr.learn(n, { fn: () => (this.media.intent.currentTime = getMediaTime(this.media, +n / 10)), keyboard: { phase: "keyup" }, system: true, label: `Time: Move to ${n}0%` }, this.signal);
     super.wire();
   }
 

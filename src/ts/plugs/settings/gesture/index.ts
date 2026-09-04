@@ -68,8 +68,8 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   protected handleDblClick(e: MouseEvent): void {
     const { clientX: x, target, detail } = e;
     if (target !== this.ctlr.DOM.controlsContainer) return;
-    const rect = this.media.container.getBoundingClientRect(),
-      pos = x - rect.left > rect.width * 0.65 ? "right" : x - rect.left < rect.width * 0.35 ? "left" : "center";
+    const { width, left } = this.media.container.getBoundingClientRect(),
+      pos = x - left > width * 0.65 ? "right" : x - left < width * 0.35 ? "left" : "center";
     if (this.state.skipPersist && pos !== this.skipPersistPos) {
       this.stopSkipPersist();
       if (detail === 1) return;

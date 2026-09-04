@@ -22,7 +22,7 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
     // Ctlr Media Listeners
     this.media.on("status.error", this.handleErrorStatus, { init: this.ctlr.payload.wired, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("reload", { fn: this.reloadTech }, this.signal), super.wire();
+    this.ctlr.learn("reload", { fn: this.reloadTech }, this.signal), super.wire();
   }
 
   protected async handleErrorStatus({ value }: REvent<CtlrMedia, "status.error">): Promise<void> {

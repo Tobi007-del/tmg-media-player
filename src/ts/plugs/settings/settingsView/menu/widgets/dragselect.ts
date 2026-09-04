@@ -1,6 +1,6 @@
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer, getElSiblingAt } from "@utils/dom";
-import { isFunc, parseUIOpt } from "@utils/obj";
+import { isArr, isFunc, parseUIOpt } from "@utils/obj";
 import { clamp } from "@utils/num";
 import { initVScrollerator } from "@t007/utils/hooks/vanilla";
 import { IconRegistry } from "@core/registries";
@@ -61,7 +61,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
                 "listItemDragging",
                 () => {
                   const liTop = clamp(0, scrollEl.scrollTop - initialScrollY + ev.clientY - initialOffsetY - li.offsetHeight / 2, el.offsetHeight - li.offsetHeight),
-                    afterLine = getElSiblingAt(ev.clientY, "y", Array.from(el.querySelectorAll<HTMLElement>(".tmg-media-smenu-select-option:not(.tmg-media-smenu-dragging)")));
+                    afterLine = getElSiblingAt(ev.clientY, "y", el.querySelectorAll<HTMLElement>(".tmg-media-smenu-select-option:not(.tmg-media-smenu-dragging)"));
                   (li.style.top = `${liTop}px`), scrollerator.drive(ev.clientY, !(liTop > 0 && liTop < el.offsetHeight - li.offsetHeight), scrollEl.getBoundingClientRect().top);
                   afterLine ? el.insertBefore(placeholder, afterLine) : el.append(placeholder);
                 },
@@ -71,7 +71,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
             function onPointerUp() {
               navigator.vibrate?.([50]), ctlr.cancelRAFLoop("listItemDragging"), scrollerator.reset();
               li.classList.remove("tmg-media-smenu-dragging"), (li.style.top = ""), placeholder.parentElement?.replaceChild(li, placeholder);
-              const newIdx = Array.from(el.querySelectorAll(".tmg-media-smenu-select-option")).indexOf(li),
+              const newIdx = [...el.querySelectorAll(".tmg-media-smenu-select-option")].indexOf(li),
                 oldIdx = (item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === opt.value);
               newIdx !== -1 && oldIdx !== -1 && newIdx !== oldIdx && item.onReorder?.(oldIdx, newIdx);
               for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.removeEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp);
@@ -113,7 +113,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
   public override syncUI(): void {
     if (!this.renderRows) return;
     const val = this.item.getValue() || "";
-    this.currentValue = Array.isArray(val) ? val.join(", ") : String(val);
+    this.currentValue = isArr(val) ? val.join(", ") : String(val);
     this.renderRows((this.item.getOptions?.() ?? []).map(parseUIOpt));
     this.syncActive();
   }

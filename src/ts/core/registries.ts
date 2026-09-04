@@ -110,7 +110,7 @@ export class PinRegistry extends BaseRegistry<PinConstructor> {
   }
   public static register(Pin: PinConstructor, editBuild = Pin.BUILD !== undefined): void {
     this.instance.register(Pin.fullName, Pin);
-    editBuild && setPath(CB as any, Pin.Plug.fullName + "." + Pin.pinName, Pin.BUILD);
+    editBuild && setPath(CB as any, `${Pin.Plug.fullName}.${Pin.pinName}`, Pin.BUILD);
   }
   public static unregister(fullName: string, editBuild = true): void {
     this.instance.unregister(fullName);

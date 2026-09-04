@@ -49,7 +49,7 @@ export function handleMediaMutation(mutations: MutationRecord[]): void {
 
 export function handleDOMMutation(mutations: MutationRecord[]): void {
   for (const mutation of mutations) {
-    for (const node of Array.from(mutation.addedNodes)) {
+    for (const node of mutation.addedNodes) {
       if (!(node instanceof HTMLElement)) continue;
       const els = node.matches(":is(video,audio):not(.tmg-host)") ? [node] : node.querySelectorAll(":is(video,audio):not(.tmg-host)");
       for (const el of els) {
@@ -57,7 +57,7 @@ export function handleDOMMutation(mutations: MutationRecord[]): void {
         (el as HTMLMediaElement).tmgcontrols = el.hasAttribute("tmgcontrols");
       }
     }
-    for (const node of Array.from(mutation.removedNodes)) {
+    for (const node of mutation.removedNodes) {
       if (!(node instanceof HTMLElement)) continue;
       const els = node.matches(".tmg-host") ? [node] : node.querySelectorAll(".tmg-host");
       for (const el of els) !(el as HTMLMediaElement).tmgPlayer?.Controller?.mutatingDOMM && (el as HTMLMediaElement).tmgPlayer?.detach();
@@ -106,7 +106,7 @@ export function startAudioManager(): void {
     AUDIO_CONTEXT = new (win!.AudioContext || (win as any).webkitAudioContext)() as AudioContext;
     const L = (AUDIO_LIMITER = AUDIO_CONTEXT!.createDynamicsCompressor());
     (L.threshold.value = -1.0), (L.knee.value = 0.0), (L.ratio.value = 20), (L.attack.value = 0.001), (L.release.value = 0.05); // peak logic = peak sound
-    for (const c of Controllers) if (c.state) c.state.audioContextReady = true;
+    for (const c of Controllers) if (c.state) c.state.audioCtxReady = true;
   } else if (AUDIO_CONTEXT?.state === "suspended") AUDIO_CONTEXT.resume();
 }
 export function connectToAudioManager(medium: HTMLMediaElement) {

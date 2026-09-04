@@ -9,8 +9,8 @@ import { setTimeout } from "sia-reactor/utils";
 export class SleepTimerPlug extends BasePlug<SleepTimerConfig, SleepTimerState> {
   public static readonly plugName = "sleepTimer";
   public static readonly BUILD = SLEEP_TIMER_BUILD;
-  private targetTime = 0;
-  private timeoutId?: number;
+  protected targetTime = 0;
+  protected timeoutId?: number;
 
   constructor(ctlr: Controller, config = ctlr.settings.sleepTimer) {
     super(ctlr, config, { ms: 0 });
@@ -33,11 +33,11 @@ export class SleepTimerPlug extends BasePlug<SleepTimerConfig, SleepTimerState> 
     this.ctlr.plug("settings.toasts")?.toast?.(`Sleep timer set for ${formatUITime(ms, true)}`, { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
   }
 
-  private checkTimer(): void {
+  protected checkTimer(): void {
     if (this.targetTime === -1 && this.media.status.duration > 0 && this.media.state.currentTime >= this.media.status.duration - 0.5) this.triggerSleep();
   }
 
-  private triggerSleep(): void {
+  protected triggerSleep(): void {
     this.media.intent.paused = true;
     this.setTimer(0), this.ctlr.plug("settings.notifiers")?.notify("timer");
   }

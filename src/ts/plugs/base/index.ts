@@ -56,7 +56,7 @@ export abstract class BasePin<Plug extends BasePlug = BasePlug, Config = any, St
     return this.Plug.plugName;
   }
   public static get fullName() {
-    return (this.surname + "." + this.pinName) as keyof PinRegistryMap;
+    return `${this.surname}.${this.pinName}` as keyof PinRegistryMap;
   }
   public get name() {
     return (this.constructor as PIC).Plug.fullName;
@@ -67,7 +67,7 @@ export abstract class BasePin<Plug extends BasePlug = BasePlug, Config = any, St
 
   constructor(ctlr: Controller, config: Config, state?: State) {
     super(ctlr, config, state);
-    const path = (new.target.Plug.fullName + "." + new.target.pinName) as any;
+    const path: any = `${new.target.Plug.fullName}.${new.target.pinName}`;
     this.ctlr.config.watch(path, () => (this.config = getPath(this.ctlr.config, path)), { signal: this.signal }); // #COMPUTED: config can lose reference
   }
 

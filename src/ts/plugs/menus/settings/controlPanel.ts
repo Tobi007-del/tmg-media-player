@@ -2,7 +2,7 @@ import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { ControlPanelPlug } from "@plugs/settings/controlPanel";
 import { CONTROLS } from "@plugs/settings/controlPanel/build";
 import type { AnyControl, ControlPanelBottomTuple } from "@plugs/settings/controlPanel/types";
-import { getUIOpt, insertPanelCtrl, getPanelLocation, inPanel } from "@utils/obj";
+import { getUIOpt, insertPanelCtrl, getPanelLocation, inPanel, isArr } from "@utils/obj";
 import { capitalize, uncamelize, formatMenuPx } from "@utils/str";
 import { getPath, setPath } from "sia-reactor/utils";
 import { formatUITime, getMediaProgress } from "@utils/time";
@@ -15,7 +15,7 @@ const setEnabled = (plug: ControlPanelPlug, id: AnyControl, enabled: boolean, b 
   if (cLoc.row.includes(id)) return;
   const bLoc = getPanelLocation(b, id),
     cfgRow = getPath(plug.config as any, bLoc.path) as any[];
-  Array.isArray(cfgRow) && bLoc.row.length ? insertPanelCtrl(cfgRow, bLoc.row, id) : (plug.config.bottom as ControlPanelBottomTuple)[1].push(id);
+  isArr<AnyControl>(cfgRow) && bLoc.row.length ? insertPanelCtrl(cfgRow, bLoc.row, id) : (plug.config.bottom as ControlPanelBottomTuple)[1].push(id);
 };
 
 export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { markerEditIdx: -1 }): SettingsMenuItem => ({
@@ -84,7 +84,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       label: "Bookmarks",
                       widget: "drag-select",
                       getValue: () => `${plug.config.timeline.marks.length}`,
-                      getTipHTML: () => "Create custom points of interest on the timeline to easily jump to later",
+                      getTipHTML: () => "Custom points of interest on the timeline to easily jump to when desired",
                       getOptions: () => plug.config.timeline.marks.map((m, i) => ({ value: String(i), display: m.label || `Marker ${i + 1}`, infoText: `${m.start}%` + (m.end ? ` - ${m.end}%` : "") })),
                       getDisabled: () => false,
                       onDelete: (idx: number) => plug.config.timeline.marks.splice(idx, 1),
@@ -97,7 +97,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                           label: "Add marker",
                           widget: "input",
                           inputs: [
-                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Lover" }, required: true },
+                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, required: true },
                             { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 – 100" }, type: "number", step: "any", required: true, value: () => String(safeNum(getMediaProgress(plug.media)) * 100) },
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number" },
                           ],
@@ -109,7 +109,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                           label: "Edit marker",
                           widget: "input",
                           inputs: [
-                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Lover" }, required: true, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.label || "" },
+                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, required: true, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.label || "" },
                             { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 – 100" }, type: "number", step: "any", required: true, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.start || "" },
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number", value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.end || "" },
                           ],
@@ -125,6 +125,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       id: "timelinePlayedMarks",
                       label: "Played marks",
                       widget: "toggle",
+                      feature: "played",
                       getValue: () => (plug.config.timeline.playedMarks ? "On" : "Off"),
                       onChange: (val: boolean) => (plug.config.timeline.playedMarks = val),
                       configPaths: ["settings.controlPanel.timeline.playedMarks"],
@@ -134,10 +135,11 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       id: "timelineBufferMarks",
                       label: "Buffer marks",
                       widget: "toggle",
+                      feature: "buffered",
                       getValue: () => (plug.config.timeline.bufferMarks ? "On" : "Off"),
                       onChange: (val: boolean) => (plug.config.timeline.bufferMarks = val),
                       configPaths: ["settings.controlPanel.timeline.bufferMarks"],
-                      title: "Shows a progress bar indicating how much of the video has been pre-loaded",
+                      title: "Displays colored indicators on the timeline for sections that are pre-loaded",
                     },
                   ],
                 },

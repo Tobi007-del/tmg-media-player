@@ -27,7 +27,7 @@ export class FastPlayNotifier extends BaseNotifier<undefined, ComponentState, HT
   }
 
   protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">): void {
-    this.el.setAttribute("data-current-time", this.ctlr.plug("settings.time")?.toTimeText(value, true) ?? "0:00");
+    this.el.setAttribute("data-current-time", this.ctlr.plug("settings.time")?.toTimeText(value, true) || "");
   }
 }
 

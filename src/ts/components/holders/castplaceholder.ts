@@ -10,7 +10,7 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
   protected iconBtn!: HTMLButtonElement;
 
   public override create() {
-    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-cast-placeholder", innerHTML: `<p>Casting to External Display</p>` });
+    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-cast-placeholder", innerHTML: `<p>Casting to External display</p>` });
     this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-cast-icon-btn", innerHTML: IconRegistry.get("castPlaceholder") });
     return this.el.prepend(this.iconBtn), this.el;
   }

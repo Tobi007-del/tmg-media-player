@@ -45,7 +45,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.ctlr.config.on("settings.modes.pictureInPicture.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.modes.pictureInPicture.floatingPlayer.disabled", this.handleDisabled, { signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("pictureInPicture", { keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("pictureInPicture", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.pictureInPicture.disabled" | "settings.modes.pictureInPicture.floatingPlayer.disabled">): void {

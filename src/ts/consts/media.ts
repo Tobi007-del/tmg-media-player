@@ -39,6 +39,7 @@ export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   panningZ: 0,
   xrInputSource: [],
   // Tracks & Streaming
+  currentItem: 0, // Playlist Item
   currentChapter: -1,
   currentTextTrack: -1,
   currentAudioTrack: -1,

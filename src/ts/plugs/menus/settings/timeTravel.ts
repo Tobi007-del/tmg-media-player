@@ -1,5 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { TimeTravelPlug } from "@plugs/settings/timeTravel";
+import { isArr } from "@t007/utils";
 import { capitalize, uncamelize } from "@utils/str";
 
 const formatEntry = (entry: any, index: number) => {
@@ -66,7 +67,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
               getLabel: (w = plug.config.module.whitelist as string[] | undefined) => (w?.[0] === "state" || w?.[0]?.[0] === "state" ? "Intents" : "States"),
               onClick: (w = plug.config.module.whitelist as any) => {
                 const isState = w?.[0] === "state" || w?.[0]?.[0] === "state";
-                plug.config.module.whitelist = Array.isArray(w) ? [isState ? "intent" : "state"] : { ...w, 0: [isState ? "intent" : "state"] };
+                plug.config.module.whitelist = isArr(w) ? [isState ? "intent" : "state"] : { ...w, 0: [isState ? "intent" : "state"] };
               },
               hidden: () => !plug.ctlr.config.devMode,
             },

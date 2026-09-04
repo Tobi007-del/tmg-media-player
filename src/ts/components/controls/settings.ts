@@ -25,7 +25,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
     // Event Listeners
     addSafeClicks(this.element, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
-    for (const path of ["state.currentLevel", "state.autoLevel", "status.levels"] as const) this.ctlr.media.on(path, this.syncBadge, { init: true, signal: this.signal });
+    for (const p of ["state.currentLevel", "state.autoLevel", "status.levels"] as const) this.ctlr.media.on(p, this.syncBadge, { init: p === "status.levels", signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.settings", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.settings", this.syncARIA, { signal: this.signal });

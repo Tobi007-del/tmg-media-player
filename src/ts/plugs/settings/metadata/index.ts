@@ -40,8 +40,8 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
     set("pause", () => (this.media.intent.paused = true));
     set("seekbackward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(-this.settings.time.skip) : null);
     set("seekforward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(this.settings.time.skip) : null);
-    set("previoustrack", list && (this.ctlr.plug("playlist")?.state.currentIndex ?? 0) > 0 ? this.ctlr.plug("playlist")!.previous : null);
-    set("nexttrack", list && (this.ctlr.plug("playlist")?.state.currentIndex ?? 0) < list.length - 1 ? this.ctlr.plug("playlist")!.next : null);
+    set("previoustrack", list && this.media.state.currentItem > 0 ? this.ctlr.plug("playlist")!.previous : null);
+    set("nexttrack", list && this.media.state.currentItem < list.length - 1 ? this.ctlr.plug("playlist")!.next : null);
   }
 }
 

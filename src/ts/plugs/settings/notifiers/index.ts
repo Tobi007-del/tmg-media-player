@@ -25,7 +25,7 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
     // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.container);
     // DOM -> Ctlr Config Listeners
-    this.ctlr.config.on("settings.notifiers.list", this.handleList, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.notifiers.whitelist", this.handleList, { init: true, signal: this.signal });
   }
   public override unmount(): void {
     this.container.remove();
@@ -38,12 +38,12 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
     super.wire();
   }
 
-  protected handleEventsState({ currentTarget: { value: events = [] } }: REvent<NotifiersState, "events">): void {
-    for (const eN of events) this.container.addEventListener(eN, this.handleEvent, { signal: this.signal });
+  protected handleEventsState({ currentTarget: { value = [] } }: REvent<NotifiersState, "events">): void {
+    for (const eN of value) this.container.addEventListener(eN, this.handleEvent, { signal: this.signal });
   }
 
-  protected handleList({ value: list = [] }: REvent<CtlrConfig, "settings.notifiers.list">): void {
-    for (const id of list) !this.components.has(id) && this.initComp(id);
+  protected handleList({ value = [] }: REvent<CtlrConfig, "settings.notifiers.whitelist">): void {
+    for (const id of value) !this.components.has(id) && this.initComp(id);
   }
 
   public initComp<K extends keyof ComponentRegistryMap>(name: K, comp?: InstanceType<ComponentRegistryMap[K]>): InstanceType<ComponentRegistryMap[K]> | undefined;

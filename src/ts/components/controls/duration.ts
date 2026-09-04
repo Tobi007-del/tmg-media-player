@@ -21,8 +21,8 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("status.duration", this.syncUI, { signal: this.signal });
-    this.media.on("state.live", (e) => (this.el.classList.toggle("tmg-media-control-live", e.value), this.el.classList.toggle("tmg-media-live-badge", e.value), this.syncARIA()), { signal: this.signal });
-    this.media.on("status.isLive", (e) => (this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { signal: this.signal });
+    this.media.on("state.live", (e) => (this.el.classList.toggle("tmg-media-control-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
+    this.media.on("status.isLive", (e) => (this.el.classList.toggle("tmg-media-live-badge", e.value), this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { init: true, signal: this.signal });
@@ -34,7 +34,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
 
   public syncUI(): void {
-    this.el.textContent = !this.media.status.isLive ? this.plug?.toTimeText(this.media.status.duration) || "-:--" : "Live";
+    this.el.textContent = !this.media.status.isLive ? this.plug?.toTimeText(this.media.status.duration) || "" : "Live";
   }
   public syncARIA(): void {
     this.state.label = "Switch time format";

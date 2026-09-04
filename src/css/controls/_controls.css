@@ -35,7 +35,7 @@
 :is(.tmg-media-container.tmg-media-theater .tmg-media-enter-theater-icon, .tmg-media-container:not(.tmg-media-theater) .tmg-media-leave-theater-icon),
 :is(.tmg-media-container[data-track-kind="subtitles"] .tmg-media-captions-icon, .tmg-media-container:not([data-track-kind="subtitles"]) .tmg-media-subtitles-icon),
 :is(.tmg-media-container:is(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-enter-picture-in-picture-icon, .tmg-media-container:not(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-leave-picture-in-picture-icon),
-:is(.tmg-media-container:not(.tmg-media-is-live) :is(.tmg-media-time-btn, .tmg-media-time-and-duration-btn) .tmg-media-live-badge, .tmg-media-container.tmg-media-is-live :is(.tmg-media-time-btn, .tmg-media-time-and-duration-btn) > *:not(.tmg-media-live-badge)),
+:is(.tmg-media-container:not(.tmg-media-is-live) .tmg-media-time-and-duration-btn .tmg-media-live-badge, .tmg-media-container.tmg-media-is-live .tmg-media-time-and-duration-btn > *:not(.tmg-media-live-badge)),
 :is(.tmg-media-object-fit-contain-icon, .tmg-media-object-fit-cover-icon, .tmg-media-object-fit-fill-icon, .tmg-media-volume-high-icon, .tmg-media-volume-low-icon, .tmg-media-volume-muted-icon, .tmg-media-brightness-high-icon, .tmg-media-brightness-low-icon, .tmg-media-brightness-dark-icon) {
   display: none;
 }

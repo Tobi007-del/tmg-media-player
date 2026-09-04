@@ -55,12 +55,12 @@ export default class ShakaTech extends HTML5Tech {
       this.host.addEventListener("trackschanged", () => {
         this.config.status.isLive = this.host.isLive();
         const [aMap, vMap, lMap] = [new Map(), new Map(), new Map()];
-        for (const v of this.host.getVariantTracks()) v.height && v.bandwidth && lMap.set(v.height + "_" + v.bandwidth, v), v.language && aMap.set(v.language + "_" + v.audioRoles?.join(","), v), vMap.set(v.videoRoles?.join(","), v);
+        for (const v of this.host.getVariantTracks()) v.height && v.bandwidth && lMap.set(`${v.height}_${v.bandwidth}`, v), v.language && aMap.set(`${v.language}_${v.audioRoles?.join(",")}`, v), vMap.set(v.videoRoles?.join(","), v);
         this.config.status.textTracks = inert(this.host.getTextTracks());
-        this.config.status.audioTracks = inert(Array.from(aMap.values()));
-        this.config.status.videoTracks = inert(Array.from(vMap.values()));
-        this.config.status.levels = inert(Array.from(lMap.values()).sort((a: any, b: any) => (b.height !== a.height ? a.height - b.height : a.bandwidth - b.bandwidth))); // ascending, mimicks other libs
-        this.config.status.hostReady && silence(() => (["Text", "Audio", "Video"] as const).forEach((t) => (this.config.intent[`current${t}Track`] = this.config.intent[`current${t}Track`]))); // #RE-TRIGGER: sync intent resolution
+        this.config.status.audioTracks = inert([...aMap.values()]);
+        this.config.status.videoTracks = inert([...vMap.values()]);
+        this.config.status.levels = inert([...lMap.values()].sort((a: any, b: any) => (b.height !== a.height ? a.height - b.height : a.bandwidth - b.bandwidth))); // ascending, mimicks other libs
+        if (this.config.status.hostReady) for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
         if (!this.config.settings.metadata.allowMediaOverride) return;
         const chapters = this.host.getChapters(this.config.status.textTracks[this.config.state.currentTextTrack]?.language || this.config.status.audioTracks[this.config.state.currentAudioTrack]?.language || "en");
         this.config.settings.metadata.chapterInfo = inert(chapters?.length ? chapters.map((ch: any) => ({ title: ch.title, startTime: ch.startTime })) : []);
@@ -80,7 +80,7 @@ export default class ShakaTech extends HTML5Tech {
   // ===========================================================================
   protected override wireMediaTracks(): void {}
   protected override wireCurrentTrack(type: TrackType, _type = type.toLowerCase() as Lowercase<TrackType>): void {
-    this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as shaka.extern.Track[]).findIndex((t) => t.id === term || t.language === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.set(`intent.current${type}Track`, (term) => (isNum(term) ? term : (this.config.status[`${_type}Tracks`] as shaka.extern.Track[]).findIndex((t) => t.id === term || t.label === term || t.language === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on(`intent.current${type}Track`, (e) => this.handleCurrentHostTrackIntent(e, _type), this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {

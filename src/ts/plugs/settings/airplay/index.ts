@@ -16,7 +16,7 @@ export class AirPlayPlug extends BasePlug<AirPlayConfig> {
   public override wire(): void {
     // Event Listeners
     if (isFunc(window.WebKitPlaybackTargetAvailabilityEvent)) {
-      this.media.element.addEventListener("webkitplaybacktargetavailabilitychanged", this.handleAvailability, { capture: true, signal: this.signal });
+      this.media.element.addEventListener("webkitplaybacktargetavailabilitychanged", this.handleAvailabilityChange, { capture: true, signal: this.signal });
       this.media.element.addEventListener("webkitcurrentplaybacktargetiswirelesschanged", this.handleWirelessChange, { capture: true, signal: this.signal });
     }
     // Ctlr Media Watchers
@@ -24,10 +24,10 @@ export class AirPlayPlug extends BasePlug<AirPlayConfig> {
     // --------- Listeners
     this.media.on("intent.airplay", this.handleAirPlayIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("airplay", { keyboard: { phase: "keyup" } }, this.signal), super.wire();
+    this.ctlr.learn("airplay", { keyboard: { phase: "keyup" } }, this.signal), super.wire();
   }
 
-  protected handleAvailability(e: any, can = e.availability === "available"): void {
+  protected handleAvailabilityChange(e: any, can = e.availability === "available"): void {
     if (can) this.placeholder ??= ComponentRegistry.init("airplayPlaceholder", this.ctlr);
     (this.isAvailable = can), (this.media.features.airplay ||= this.ctlr.isNativeEl && can); // e.availability returns "available" if an Apple TV/HomePod is on the network
   }
@@ -39,8 +39,8 @@ export class AirPlayPlug extends BasePlug<AirPlayConfig> {
   protected handleAirPlayIntent(e: REvent<CtlrMedia, "intent.airplay">): void {
     if (e.resolved || !e.value) return;
     if (!this.ctlr.isUIActive("airplay")) {
-      this.media.element?.webkitShowPlaybackTargetPicker?.(); // Apple requires this to be triggered by a direct user gesture (like a click)
-      this.ctlr.plug("settings.notifiers")?.notify("airplay"); // #STALLING: necessary optimistic distraction
+      this.media.element?.webkitShowPlaybackTargetPicker?.(), // Apple requires this to be triggered by a direct user gesture (like a click)
+        this.ctlr.plug("settings.notifiers")?.notify("airplay"); // #STALLING: necessary optimistic distraction
     }
     e.resolve(this.name);
   }

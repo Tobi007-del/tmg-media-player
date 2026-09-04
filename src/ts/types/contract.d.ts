@@ -54,6 +54,7 @@ export interface MediaState {
   // --- Interaction (XR Controllers) ---
   xrInputSource: ArrayLike<any>; // Reference to active controllers/hand-tracking
   // --- Track Switching (Async Buffering/Streaming) --- NOTE: "-1" is "Disabled" or a no-op
+  currentItem: number; // Playlist Item
   currentChapter: number;
   currentTextTrack: number; // Subtitle
   currentAudioTrack: number; // Language (English - Spanish)
@@ -85,6 +86,7 @@ export type MediaIntent = Omit<
   MediaState,
   "currentChapter" | "currentTextTrack" | "currentAudioTrack" | "currentVideoTrack" | "currentLevel"
 > & {
+  currentItem: unknown;
   currentChapter: unknown;
   currentTextTrack: unknown;
   currentAudioTrack: unknown;

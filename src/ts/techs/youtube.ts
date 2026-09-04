@@ -56,12 +56,12 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       if (!this.signal || this.signal?.aborted) return;
       this.hostSrc = url;
       this.element = this.hostDiv.querySelector("iframe")!;
-      this.el.src = `${truth.crossOrigin === "use-credentials" ? "https://www.youtube.com" : "https://www.youtube-nocookie.com"}/embed/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, playsinline: +truth.playsInline, loop: +truth.loop, start: truth.currentTime, rel: +truth.controls, modestbranding: +truth.controls, fs: +truth.controls, iv_load_policy: truth.controls ? 1 : 3, cc_load_policy: "1", disablekb: "1", enablejsapi: "1", origin: window.location.origin } as any).toString()}`;
+      this.el.src = `https://www.youtube${truth.crossOrigin === "use-credentials" ? "" : "-nocookie"}.com/embed/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, playsinline: +truth.playsInline, loop: +truth.loop, start: truth.currentTime, rel: +truth.controls, modestbranding: +truth.controls, fs: +truth.controls, iv_load_policy: truth.controls ? 1 : 3, cc_load_policy: "1", disablekb: "1", enablejsapi: "1", origin: window.location.origin } as any).toString()}`;
       this.el.toggleAttribute("data-hide-ui", !truth.controls);
       this.host = new window.YT.Player(this.el, {
         events: {
           onReady: () => {
-            if (!isFunc(this.host?.getPlayerState) && retries < 3) return this.initHost(url, id, ++retries); // pampering observed quirk where YT API is broken
+            if (!isFunc(this.host?.getPlayerState) && retries < this.hostAttempts) return this.ctlr.log(`Retrying host load for "${url}" (${++retries}/${this.hostAttempts})`, "warn"), this.initHost(url, id, retries); // pampering observed quirk where YT API is broken
             this.config.status.hostReady = true;
             this.setInitInfo();
           },
@@ -84,6 +84,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.handleHostError(err);
     }
   }
+  public hostAttempts = 3;
   // ===========================================================================
   // WIRING (Connections Only)
   // ===========================================================================
@@ -126,7 +127,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Track Switching Wiring ---
   protected wireCurrentTextTrack(): void {
-    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as any[]).findIndex((t) => t.srclang === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as any[]).findIndex((t) => t.vssId === term || t.displayName === term || t.languageCode === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {
@@ -159,18 +160,18 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
+    this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val), prev = this.config.state.currentTime) => {
       this.config.status.seeking = true;
-      const prev = this.config.state.currentTime;
-      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
-      this.host!.seekTo(clamp(min, e.value, max), true), this.config.state.paused && this.host!.pauseVideo(); // pampering observed quirk
+      if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
+      if (!finite) return;
+      this.host!.seekTo(val, true), this.config.state.paused && this.host!.pauseVideo(); // pampering observed quirk
       const check = setInterval(() => (!this.config.state.paused || this.config.state.currentTime !== prev) && (clearInterval(check), this.syncCurrentStats(), (this.config.status.seeking = false)), this.config.settings.timeUpdateInterval, this.signal); // YT has no "seeked" event, so we poll for the time shift
     });
     e.resolve(this.name);
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (e.value ? this.host!.pauseVideo() : this.host!.playVideo(), this.config.status.ended && setTimeout(() => this.host!.playVideo(), 0, this.signal))); // #PAMPERING: observed quirk where playVideo after ended doesn't reset to 0, but a delayed one does
+    this.when("loadedMetadata", e, () => (e.value ? this.host!.pauseVideo() : this.host!.playVideo(), this.config.status.ended && setTimeout(() => this.host!.playVideo(), 0, this.signal))); // #PAMPERING: observed quirk
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -264,19 +265,19 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- API Logic ---
   protected handleHostStateChange(e: { data: number }): void {
+    this.reInitInfo && this.setInitInfo();
     const { state: s, status: st, settings: set } = this.config,
       STATE = window.YT.PlayerState;
     // console.log("YouTube Event:", e);
     switch (e.data) {
       case STATE.UNSTARTED:
-        this.reInitInfo && this.setInitInfo(), silence(() => (this.config.intent.currentTime = clamp(0, this.config.state.currentTime, this.config.status.duration - 1))); // #PAMPERING: observed quirk
+        silence(() => (this.config.intent.currentTime = clamp(0, this.config.state.currentTime, this.config.status.duration - 1))); // #PAMPERING: observed quirk
         break;
       case STATE.CUED:
         st.duration = this.host!.getDuration();
         st.readyState = 1; // HAVE METADATA
         break;
       case STATE.BUFFERING:
-        this.reInitInfo && this.setInitInfo();
         st.waiting = set.idleWaiting || !s.paused;
         st.readyState = 2; // HAVE CURRENT DATA
         break;
@@ -320,13 +321,13 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       s.live = st.duration - s.currentTime <= set.liveTolerance;
     } else st.ended = s.currentTime === st.duration; // UX boost
   }
-  protected syncMetadata(data = this.host!.getVideoData() as any): void {
-    data && this.config.settings.metadata.allowMediaOverride && ((this.config.settings.metadata.title = data.title), (this.config.settings.metadata.artist = data.author));
+  public syncMetadata(data = this.host!.getVideoData()): void {
+    if (data && this.config.settings.metadata.allowMediaOverride) data.title && (this.config.settings.metadata.title = data.title), data.author && (this.config.settings.metadata.artist = data.author);
   }
   // --- Lifecycle ---
   protected reInitInfo = false;
   protected setInitInfo(data = this.config.status.hostReady && this.host!.getVideoData(), isShort = this.hostSrc?.includes("/shorts/")): void {
-    if (!this.host || !data) return;
+    if (!this.host || !data || (this.reInitInfo = false)) return;
     // Status (Infos & Lists)
     this.config.status.duration = this.host.getDuration();
     this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // pampering observed quirk
@@ -336,13 +337,14 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.config.status.readyState = 1; // HAVE METADATA
     this.config.status.loadedMetadata = true;
     // Settings & Post-Init
-    this.syncCurrentStats(), this.syncMetadata(data), (this.reInitInfo = false);
+    this.syncCurrentStats(), this.syncMetadata(data);
   }
-  protected setAutoResPoster(id = ""): void {
+  public setAutoResPoster(id = "", hq = `https://img.youtube.com/vi/${id}/hqdefault.jpg`, maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`): void {
     if (!this.config.settings.metadata.allowMediaOverride) return;
-    const hq = `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
-      img = createEl("img", { src: hq, onload: () => this.config && (this.config.state.poster = img.naturalWidth <= 120 ? hq : `https://img.youtube.com/vi/${id}/maxresdefault.jpg`), onerror: () => this.config && (this.config.state.poster = hq) }); // Preload HQ for immediate use, then conditionally switch to MX if valid
+    const seq = ++this.posterSeq,
+      img = createEl("img", { src: hq, onload: () => seq === this.posterSeq && (this.config.state.poster = img.naturalWidth <= 120 ? hq : maxres), onerror: () => seq === this.posterSeq && (this.config.state.poster = hq) }); // Preload HQ for immediate use, then conditionally switch to MX if valid
   }
+  private posterSeq = 0;
   protected destroyHost(): void {
     if (!this.host) return;
     this.host.destroy(), (this.host = null);

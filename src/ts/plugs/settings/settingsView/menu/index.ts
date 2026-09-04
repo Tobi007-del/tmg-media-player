@@ -4,7 +4,7 @@ import { MainMenuPanel } from "./panel/main";
 import { SubMenuPanel } from "./panel/sub";
 import type { BaseMenuPanel, PanelDir } from "./panel";
 import { createEl } from "@utils/dom";
-import { getActiveEl, isFunc } from "@t007/utils";
+import { getActiveEl, isArr, isFunc } from "@t007/utils";
 import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
 import { requestAnimationFrame, setInterval } from "@utils/fn";
 import { OrderedRegistry } from "@core/registries";
@@ -86,7 +86,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     return item;
   }
   public register(items?: SettingsMenuItem | SettingsMenuItem[]): void {
-    if (items) Array.isArray(items) ? items.forEach((item) => ((item = this.mergeItem(item)), this.registry.register(item.id, item))) : ((items = this.mergeItem(items)), this.registry.register(items.id, items)), this.menuOpen && this.syncMain();
+    if (items) isArr(items) ? items.forEach((item) => ((item = this.mergeItem(item)), this.registry.register(item.id, item))) : ((items = this.mergeItem(items)), this.registry.register(items.id, items)), this.menuOpen && this.syncMain();
   }
   public registerFirst(item?: SettingsMenuItem): void {
     if (item) (item = this.mergeItem(item)), this.registry.registerFirst(item.id, item), this.menuOpen && this.syncMain();
@@ -183,7 +183,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private syncMain(): void {
-    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || this.media.features[item.feature] !== false)));
+    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || this.media.features[item.feature] === true)));
     this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
   private syncHeight(panel: BaseMenuPanel, height = panel.contentHeight): void {

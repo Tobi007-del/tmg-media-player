@@ -13,7 +13,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   public static readonly plugName = "frame";
   public static readonly BUILD = FRAME_BUILD;
   public exportCanvas: HTMLCanvasElement = createEl("canvas");
-  public exportContext: CanvasRenderingContext2D = this.exportCanvas.getContext("2d", { alpha: false })!;
+  public exportCtx: CanvasRenderingContext2D = this.exportCanvas.getContext("2d", { alpha: false })!;
 
   public override wire(): void {
     // Ctlr Media Watchers
@@ -21,16 +21,16 @@ export class FramePlug extends BasePlug<FrameConfig> {
     // ---- Config Listeners
     this.ctlr.config.on("settings.frame.disabled", this.syncFeatures, { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("capture", { fn: () => this.capture(""), keyboard: { phase: "keyup" } }, this.signal);
-    this.ctlr.addAction("timeStepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.addAction("timeStepBwd", { fn: () => this.moveFrame("backwards"), keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("capture", { fn: () => this.capture(""), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("timeStepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeStepBwd", { fn: () => this.moveFrame("backwards"), keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
   public async extract(display: "" | "monochrome", time?: number, raw?: false, min?: number, video?: HTMLVideoElement): Promise<{ blob: Blob | null; url: string }>;
   public async extract(display: "" | "monochrome", time?: number, raw?: true, min?: number, video?: HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }>;
   public async extract(display: string = "", time = safeNum(this.media.state.currentTime), raw = false, min = 0, video = this.media.pseudoElement as HTMLVideoElement): Promise<any> {
-    if (!this.media.features.frameCapture) return raw ? { canvas: this.exportCanvas, context: this.exportContext } : { blob: null, url: "" };
+    if (!this.media.features.frameCapture) return raw ? { canvas: this.exportCanvas, context: this.exportCtx } : { blob: null, url: "" };
     if (video !== this.media.element) {
       if (this.ctlr.state.frameReadyPromise) await this.ctlr.state.frameReadyPromise; // wait for it to get set by last getter 5 lines below
       if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
@@ -40,10 +40,10 @@ export class FramePlug extends BasePlug<FrameConfig> {
       this.ctlr.state.frameReadyPromise = await this.ctlr.state.frameReadyPromise;
     }
     (this.exportCanvas.width = video.videoWidth || min), (this.exportCanvas.height = video.videoHeight || min);
-    this.exportContext.filter = `${this.settings.css.filter as string}${display === "monochrome" ? " grayscale(100%)" : ""}`;
-    this.exportContext.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
-    this.exportContext.filter = "none";
-    if (raw === true) return { canvas: this.exportCanvas, context: this.exportContext };
+    this.exportCtx.filter = `${this.settings.css.filter as string}${display === "monochrome" ? " grayscale(100%)" : ""}`;
+    this.exportCtx.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
+    this.exportCtx.filter = "none";
+    if (raw === true) return { canvas: this.exportCanvas, context: this.exportCtx };
     let blob: Blob | null | false | 0 = null;
     try {
       blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));

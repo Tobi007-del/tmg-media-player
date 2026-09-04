@@ -19,7 +19,7 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     this.ctlr.config.on("settings.playbackRate.min", ({ value }) => this.media.state.playbackRate < value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.playbackRate.max", ({ value }) => this.media.state.playbackRate > value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } }, this.signal), this.ctlr.addAction("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("playbackRateUp", { fn: this.handleKeyRateUp, keyboard: { phase: "keydown" } }, this.signal), this.ctlr.learn("playbackRateDown", { fn: this.handleKeyRateDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 

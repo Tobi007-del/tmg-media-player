@@ -11,9 +11,9 @@ export { loadResource } from "@t007/utils";
 
 // Viewport Checks
 export function inDocView(el: Element, axis: "x" | "y" = "y"): boolean {
-  const rect = el.getBoundingClientRect(),
-    inX = rect.left + win!.scrollX >= 0 && rect.right + win!.scrollX <= win!.scrollX + (win!.innerWidth || win!.document.documentElement.clientWidth),
-    inY = rect.top + win!.scrollY >= 0 && rect.bottom + win!.scrollY <= win!.scrollY + (win!.innerHeight || win!.document.documentElement.clientHeight);
+  const { left, top, right, bottom } = el.getBoundingClientRect(),
+    inX = left + win!.scrollX >= 0 && right + win!.scrollX <= win!.scrollX + (win!.innerWidth || win!.document.documentElement.clientWidth),
+    inY = top + win!.scrollY >= 0 && bottom + win!.scrollY <= win!.scrollY + (win!.innerHeight || win!.document.documentElement.clientHeight);
   return axis === "x" ? inY : axis === "y" ? inX : inY && inX;
 }
 

@@ -20,7 +20,7 @@ export const TOAST_FORM_INPUTS = [
   { name: "autoClose", label: "Auto close (ms)", type: "number", helperText: { info: "Blank for Default, -1 for None" }, min: "-1" },
 ] as const;
 
-const getActionLogicOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.getActions().map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const;
+const getActionLogicOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.logicActions.map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const;
 
 export const getSettingsToastsMenu = (plug: ToastsPlug): SettingsMenuItem => ({
   id: "advanced",

@@ -46,7 +46,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     this.ctlr.config.on("settings.modes.fullscreen.pseudo", this.handlePseudo, { signal: this.signal });
     this.ctlr.config.on("settings.modes.fullscreen.orientation.allowMediaOverride", ({ value }) => value && this.media.state.fullscreen && (this.media.intent.fullscreenOrientation = this.preferredOrientation), { signal: this.signal });
     // Post Wiring
-    this.ctlr.addAction("fullscreen", { keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("fullscreen", { keyboard: { phase: "keyup" } }, this.signal);
   }
 
   protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.fullscreen.disabled">): void {

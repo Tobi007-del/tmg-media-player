@@ -18,11 +18,11 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
   widget: "drag-select",
   feature: "playlist",
   configPaths: ["playlist", "playlist.content"],
-  onWire: (syncUI, signal) => plug.state.on("currentIndex", syncUI, { signal }),
-  getValue: () => getContent(plug)[plug.state.currentIndex]?.media.settings.metadata.title || `Item ${plug.state.currentIndex + 1}`,
+  onWire: (syncUI, signal) => plug.media.on("state.currentItem", syncUI, { signal }),
+  getValue: () => getContent(plug)[plug.media.state.currentItem]?.media.settings.metadata.title || `Item ${plug.media.state.currentItem + 1}`,
   getOptions: () => getContent(plug).map((opt: any, i: number, _, src = opt.media.intent.src || "", dur = opt.media.status.duration, start = opt.settings.time.start) => ({ value: String(i), display: opt.media.settings.metadata.title || `Item ${i + 1}`, badge: MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_URL_VIMEO.test(src) ? "Vimeo" : AUDIO_EXTENSIONS.test(src) ? "Audio" : "", progress: dur && start ? Math.round((start / dur) * 100) : 0 })),
   getDisabled: () => !plug.config.content && !plug.config.allowOverride.add,
-  onChange: (val: string) => plug.moveTo(Number(val), true),
+  onChange: (val: string) => (plug.media.intent.currentItem = Number(val)),
   onReorder: (oldIdx: number, newIdx: number) => (plug.config.allowOverride.move ? plug.config.content?.splice(newIdx, 0, plug.config.content.splice(oldIdx, 1)[0]) : undefined),
   onDelete: async (idx: number) => {
     if (!plug.config.allowOverride.delete) return;
@@ -30,7 +30,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
     if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.settingsView")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
   },
   onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-edit")) : undefined),
-  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.state.currentIndex + 1}</b> / <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
+  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.media.state.currentItem + 1}</b> / <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
   actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-add") } as const] : [])],
   items: [
     {
@@ -39,12 +39,13 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
       icon: "add",
       widget: "input",
       inputs: [
-        { name: "src", label: "Video URL", placeholder: "https://www.youtube.com/...", type: "url", required: true, helperText: { info: "Input any media (video or audio) url" } },
-        { name: "title", label: "Title", placeholder: "There's Something About Kosi", type: "text" },
+        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, helperText: { info: "Input any media (video or audio) url" } },
+        { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", minLength: 1, maxLength: 179 },
+        { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", minLength: 1, maxLength: 179 },
       ],
       getValue: () => "",
       getTipHTML: () => "YouTube and Vimeo urls are supported, as well as direct public or local media urls (mp4, webm, mp3, etc)",
-      onChange: (vals: any) => (plug.config.content = [...getContent(plug, false), mergeObjs(PLAYLIST_ITEM_BUILD as any, { media: { intent: { src: vals.src }, settings: { metadata: { title: vals.title } } } } as any)] as any),
+      onChange: (vals: any) => (plug.config.content = [...getContent(plug, false), mergeObjs(PLAYLIST_ITEM_BUILD as any, { media: { intent: { src: vals.src }, settings: { metadata: { title: vals.title, artist: vals.artist } } } } as any)] as any),
     },
     {
       id: "playlist-edit",
@@ -52,11 +53,12 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
       icon: "edit",
       widget: "input",
       inputs: [
-        { name: "src", label: "Video URL", placeholder: "https://www.youtube.com/...", type: "url", required: true, value: () => getContent(plug)[ctx.editIdx]?.media.intent.src || "", helperText: { info: "Input any media (video or audio) url" } },
-        { name: "title", label: "Title", placeholder: "There's Something About Kosi", type: "text", value: () => getContent(plug)[ctx.editIdx]?.media.settings.metadata.title || "" },
+        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, value: () => getContent(plug)[ctx.editIdx]?.media.intent.src || "", helperText: { info: "Input any media (video or audio) url" } },
+        { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", minLength: 1, maxLength: 179, value: () => getContent(plug)[ctx.editIdx]?.media.settings.metadata.title || "" },
+        { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", minLength: 1, maxLength: 179, value: () => getContent(plug)[ctx.editIdx]?.media.settings.metadata.artist || "" },
       ],
       getValue: () => "",
-      onChange: (vals: any, c = plug.config.content, obj = c ? c[ctx.editIdx] : plug) => ((obj.media.intent.src = vals.src), (obj.media.settings.metadata.title = vals.title)),
+      onChange: (vals: any, c = plug.config.content, obj = c ? c[ctx.editIdx] : plug) => ((obj.media.intent.src = vals.src), (obj.media.settings.metadata.title = vals.title), (obj.media.settings.metadata.artist = vals.artist)),
     },
   ],
 });

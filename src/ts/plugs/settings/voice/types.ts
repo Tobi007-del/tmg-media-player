@@ -27,7 +27,7 @@ export interface VoiceConfig {
 }
 
 export interface VoiceState {
-  context: string; // "*" means no context, otherwise it's a path like "media" or "settings"
+  ctx: string; // "*" means no context, otherwise it's a path like "media" or "settings"
   listening: boolean;
 }
 

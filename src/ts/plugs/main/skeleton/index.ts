@@ -35,10 +35,10 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     // Ctlr Media Listeners
     this.media.on("state.paused", this.handlePaused, { init: this.ctlr.payload.wired, signal: this.signal });
     // this.media.on("intent.paused", this.handlePaused, { signal: this.signal }); // #APPRENTICE: folklore embodiment
+    this.media.on("state.src", this.syncPseudoSrc, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("state.poster", ({ value }) => (this.settings.css.currentPosterUrl = `url(${value})`), { signal: this.signal });
     this.media.on("status.ended", ({ value }) => this.media.container.classList.toggle("tmg-media-replay", value), { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("status.waiting", ({ value }) => this.media.container.classList.toggle("tmg-media-buffering", value), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.payload.wired, signal: this.signal });
     // ---- State --------
     this.ctlr.state.on("readyState", () => (this.media.container.dataset.readyTier = "x".repeat(this.ctlr.state.readyState)), { init: this.ctlr.payload.wired, signal: this.signal });
     // Post Wiring
@@ -72,16 +72,10 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.ctlr.DOM.settingsBottomPanel = this.ctlr.queryDOM(".tmg-media-settings-bottom-panel");
   }
 
-  protected handlePaused({ value, rejectable, resolved }: REvent<CtlrMedia, "state.paused" | "intent.paused">): void {
+  protected handlePaused({ value, resolved, rejectable }: REvent<CtlrMedia, "state.paused" | "intent.paused">): void {
     if (rejectable && !resolved) return;
     if (!rejectable && !value && this.config.autoPauseOthers) for (const media of document.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
     this.media.container.classList.toggle("tmg-media-paused", value);
-  }
-
-  protected handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): void {
-    if (!value) return;
-    this.media.pseudoElement.src = this.media.element.currentSrc;
-    this.media.pseudoElement.crossOrigin = this.media.element.crossOrigin;
   }
 
   public enterPseudoMode(): void {
@@ -101,6 +95,11 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.media.pseudoContainer.className = `tmg-pseudo-${this.media.type}-container tmg-pseudo-media-container tmg-host-container`;
     this.media.pseudoContainer.parentElement?.replaceChild(destroy ? this.media.element : this.media.container, this.media.pseudoContainer);
     this.ctlr.state.pseudoActive = false;
+  }
+
+  protected syncPseudoSrc(): void {
+    this.media.pseudoElement.src = this.media.element.currentSrc;
+    this.media.pseudoElement.crossOrigin = this.media.element.crossOrigin;
   }
 
   protected registerMenu(): void {

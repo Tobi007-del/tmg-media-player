@@ -6,7 +6,7 @@ import { createEl, loadResource, supportsFullscreen, supportsPictureInPicture } 
 import { createTimeRanges } from "@utils/time";
 import { isSameURL } from "@utils/str";
 import { isNum } from "@utils/obj";
-import { clamp, isSafeNum } from "@utils/num";
+import { clamp } from "@utils/num";
 import { MATCH_ID_VIMEO, MATCH_URL_VIMEO } from "@utils/match";
 import { setTimeout } from "@utils/fn";
 import { getMediaMin, getMediaMax } from "@utils/time";
@@ -73,7 +73,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.src", this.handleSrcIntent, this.evtOpts.CONFIG);
   }
   protected override wireCurrentTime(): void {
-    this.config.set("intent.currentTime", (t, _, __, d = this.config.status.duration) => (isSafeNum(d) ? clamp(0, t, d - 1) : t), this.evtOpts.CONFIG); // #PAMPERING: observed quirks
+    this.config.set("intent.currentTime", (t, _, __, d = this.config.status.duration) => (Number.isFinite(d) ? clamp(0, t, d - 1) : t), this.evtOpts.CONFIG); // #PAMPERING: observed quirks
     this.config.on("intent.currentTime", this.handleCurrentTimeIntent, this.evtOpts.CONFIG);
   }
   protected override wireDuration(): void {}
@@ -104,15 +104,15 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Track Switching Wiring ---
   protected wireCurrentChapter(): void {
-    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.startTime === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentTextTrack(): void {
-    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as VimeoTextTrack[]).findIndex((t) => t.language === term && t.kind === term)), { signal: this.signal });
+    this.config.set("intent.currentTextTrack", (term) => (isNum(term) ? term : (this.config.status.textTracks as VimeoTextTrack[]).findIndex((t) => t.label === term || t.language === term)), { signal: this.signal });
     this.config.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentAudioTrack(): void {
-    this.config.set("intent.currentAudioTrack", (term) => (isNum(term) ? term : (this.config.status.audioTracks as VimeoAudioTrack[]).findIndex((t) => t.language === term && t.kind === term)), { signal: this.signal });
+    this.config.set("intent.currentAudioTrack", (term) => (isNum(term) ? term : (this.config.status.audioTracks as VimeoAudioTrack[]).findIndex((t) => t.label === term || t.language === term)), { signal: this.signal });
     this.config.on("intent.currentAudioTrack", this.handleCurrentAudioTrackIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentLevel(): void {
@@ -139,9 +139,9 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config)) => {
-      if (e.value < min || e.value > max) e.reject(this.name); // Out of bounds
-      this.host!.setCurrentTime(clamp(min, e.value, max)).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
+    this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
+      if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
+      finite && this.host!.setCurrentTime(val).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
     });
     e.resolve(this.name);
   }
@@ -293,7 +293,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       case "playbackratechange":
         return void (s.playbackRate = data.playbackRate);
       case "texttrackchange":
-        return void (s.currentTextTrack = (st.textTracks as VimeoTextTrack[]).findIndex((t) => t.language === data.language && t.kind === data.kind));
+        return void (s.currentTextTrack = (st.textTracks as VimeoTextTrack[]).findIndex((t) => t.label === data.label && t.language === data.language && t.kind === data.kind));
       case "cuechange":
         return void (st.activeCues = data.cues || null);
       case "chapterchange":
