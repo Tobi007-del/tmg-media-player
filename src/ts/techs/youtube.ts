@@ -6,7 +6,7 @@ import { createEl, enterFullscreen, exitFullscreen, loadResource, queryFullscree
 import { createTimeRanges } from "@utils/time";
 import { MATCH_ID_YOUTUBE, MATCH_URL_YOUTUBE } from "@utils/match";
 import { isSameURL } from "@utils/str";
-import { isFunc, isNum } from "@utils/obj";
+import { isBool, isFunc, isNum } from "@utils/obj";
 import { setTimeout, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { silence } from "sia-reactor/modules";
@@ -317,7 +317,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     st.seekable = createTimeRanges([[st.isLive ? Math.max(0, st.duration - 43200) : 0, st.duration]]); // yt has a 12-Hour max DVR
     if (st.isLive) {
       st.canSeekLive = true;
-      st.duration = this.host!.getDuration() - 3600; // yt has a 1-Hour latency approx.
+      st.duration = Math.max(0, this.host!.getDuration() - 3600); // yt has a 1-Hour latency approx.
       s.live = st.duration - s.currentTime <= set.liveTolerance;
     } else st.ended = s.currentTime === st.duration; // UX boost
   }
@@ -330,7 +330,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     if (!this.host || !data || (this.reInitInfo = false)) return;
     // Status (Infos & Lists)
     this.config.status.duration = this.host.getDuration();
-    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // pampering observed quirk
+    this.config.status.isLive = isBool((data as any).isLive) ? (data as any).isLive : this.config.status.duration === 0; // pampering observed quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;

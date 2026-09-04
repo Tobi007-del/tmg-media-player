@@ -15,5 +15,5 @@ import "../css/index.scss";
 import "./init";
 
 // dev
-// import * as _s from "./super";
-// Object.assign(window.tmg, _s);
+import * as _s from "./super";
+Object.assign(window.tmg, _s);
