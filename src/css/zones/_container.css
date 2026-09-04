@@ -18,7 +18,7 @@
   background: var(--tmg-media-background);
 }
 .tmg-pseudo-media-container.tmg-media-in-miniplayer::before {
-  content: "Playing in mini player";
+  content: "Playing in miniplayer";
   position: absolute;
   width: 100%;
   height: 100%;

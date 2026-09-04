@@ -319,7 +319,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       st.canSeekLive = true;
       st.duration = Math.max(0, this.host!.getDuration() - 3600); // yt has a 1-Hour latency approx.
       s.live = st.duration - s.currentTime <= set.liveTolerance;
-    } else st.ended = s.currentTime === st.duration; // UX boost
+    } else if (st.duration) st.ended = s.currentTime === st.duration; // UX boost
   }
   public syncMetadata(data = this.host!.getVideoData()): void {
     if (data && this.config.settings.metadata.allowMediaOverride) data.title && (this.config.settings.metadata.title = data.title), data.author && (this.config.settings.metadata.artist = data.author);

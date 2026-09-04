@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.24
+
+### Patch Changes
+
+- Youtube ended accuracy
+
 ## 0.0.23
 
 ### Patch Changes
