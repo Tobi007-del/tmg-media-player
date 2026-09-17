@@ -10,4 +10,5 @@ export * from "@utils/methd";
 export * from "@utils/num";
 export * from "@utils/obj";
 export * from "@utils/str";
+export * from "@utils/text";
 export * from "@utils/time";

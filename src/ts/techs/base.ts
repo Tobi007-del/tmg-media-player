@@ -1,12 +1,13 @@
 import { Controllable } from "@core/controllable";
 import type { Controller } from "@core/controller";
-import type { CtlrMedia, MediaFeatures, MediaStatus } from "@defs/contract";
-import { type REvent, type Reactive, ListenerOptions, NOOP } from "sia-reactor";
+import type { CtlrMedia, MediaFeatures } from "@defs/contract";
+import { type REvent, type Reactive, ListenerOptionsTuple } from "sia-reactor";
 import { deepClone, fanout, force } from "sia-reactor/utils";
 import { silence } from "sia-reactor/modules";
-import { getMediaStatus } from "@utils/media";
+import { getMediaStatus, isFeatured } from "@utils/media";
 import { capitalize } from "@utils/str";
-import { isNum } from "@utils/obj";
+import { isArr, isBool, isNum } from "@utils/obj";
+import { setTimeout } from "@utils/fn";
 import { MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
 
 export interface TechConstructor<T extends BaseTech = BaseTech> {
@@ -28,50 +29,61 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     return this.element;
   }
   public wired = false; // for light status checks where needed
-  public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptions } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } };
-  public readonly wiredFeatures: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
-  protected readonly pending = new Map<string, () => void>();
-  protected autoChapters: boolean = false;
+  public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptionsTuple } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } };
+  public readonly features!: MediaFeatures;
+  public readonly wiredSet: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
+  public autoChapters: boolean = false;
 
   constructor(ctlr: Controller, features: MediaFeatures = {}) {
-    ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`);
+    ctlr.media.tech.wired && ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`); // kill if listening
     super(ctlr, ctlr.media); // Odekunle Olasubomi Abimbola Cornelius Adisun was here; Aug 14th 2026
-    ctlr.config.mediaPlayer = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
+    ctlr.config.courtesy = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
     this.element = ctlr.media.element as any; // must reassign if not using original
     for (const key of Object.keys(ctlr.media.features)) ctlr.media.features[key as keyof MediaFeatures] = false;
-    fanout(ctlr.media.features, features); // dynamics baby!
+    // prettier-ignore
+    fanout(ctlr.media.features, (this.features = {
+      // Currents
+      currentChapter: true,
+      // Settings
+      srcObject: true, metadata: true, timePlayedMin: true, flushKeys: true, ...features
+    })); // dynamics baby!
   }
   protected override onSetup(): void {
-    this.mount();
-    this.ctlr.state.readyState ? this.wire() : this.ctlr.state.wonce("readyState", this.wire, { signal: this.signal }); // wire after all plugs setup
+    this.mount(), this.onAwaken();
   }
   protected override onDestroy(): void {
     this.unmount(), (this.config.status.hostReady = false);
   }
+  protected onAwaken(): void {
+    this.evtOpts.CONFIG.signal = this.evtOpts.EL.signal = this.signal;
+    this.ctlr.state.readyState ? this.wire() : this.ctlr.state.wonce("readyState", this.wire, { signal: this.signal }); // wire after all plugs setup
+  }
+  protected onHibernate(): void {
+    this.wiredSet.clear(), (this.wired = false);
+  }
 
   public mount(): void {
-    (this.el as any) !== this.config.element && this.config.element.replaceWith(this.el);
+    if ((this.el as any) !== this.config.element) (this.ctlr.mutating = true), this.config.element.replaceWith(this.el), setTimeout(() => (this.ctlr.mutating = false), 0, this.signal);
   }
   public unmount(): void {
-    (this.el as any) !== this.config.element && this.el.replaceWith(this.config.element);
+    if ((this.el as any) !== this.config.element) (this.ctlr.mutating = true), this.el.replaceWith(this.config.element), setTimeout(() => (this.ctlr.mutating = false), 0, this.signal);
   }
 
   // --- THE WIRING ---
   public wire(): void {
     // Variables Assignments
     (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained if element was replaced in mount
-    // Ctlr Media Watchers
+    // Config Watchers
     this.config.watch("state.currentTime", this.onCurrentTime, this.evtOpts.CONFIG);
-    // --------- Listeners
+    // ------ Listeners
     this.config.on("intent", this.handleWrite, this.evtOpts.CONFIG), this.config.on("settings", this.handleWrite, this.evtOpts.CONFIG); // protecting everybody
     // Bulk Wiring
     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
     // Post Wiring
-    (this.ctlr.payload.wired || !this.ctlr.isNativeEl) && this.resetLoadInfo();
-    !this.ctlr.payload.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl ? getMediaStatus(this.el as any, undefined, undefined, true) : {}) }, { skipUndef: true })); // incase of async init
-    silence(() => (fanout(this.config.intent, this.config[this.ctlr.techTruth]), fanout(this.config.settings, this.config.settings))); // over to you, child. it go touch everybodyyyyy, no fear!
-    !this.ctlr.payload.wired ? force(() => this.config.tick()) : this.config.tick(); // state isn't volatile but it must touch
-    this.wired = true;
+    (this.ctlr.flags.wired || !this.ctlr.isNativeEl) && this.flush();
+    !this.ctlr.flags.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl && getMediaStatus(this.el as any, true)) }, { skipUndef: true })); // async init proof
+    silence(() => (fanout(this.config.intent, this.config[this.ctlr.gospel]), fanout(this.config.settings))); // contemplating intent only
+    force(() => this.config.tick(), !this.ctlr.flags.wired), (this.wired = true); // state isn't volatile but it must touch
   }
   // --- THE CORE 5 (Media "Must Haves") ---
   protected abstract wireSrc(): void;
@@ -81,49 +93,62 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   protected abstract wireEnded(): void;
   // --- THE EXTENSIONS ---
   protected wireFeatures(): void {
-    this.media.on("features", this.handleFeatures, { init: true, signal: this.signal });
+    this.config.on("features", this.handleFeatures, { init: true, signal: this.signal });
   }
   protected wireFeature(feature: keyof MediaFeatures): void {
-    !this.wiredFeatures.has(feature) && (this.wiredFeatures.add(feature), (this as any)[`wire${capitalize(feature)}`]?.());
+    if (!this.wiredSet.has(feature)) this.wiredSet.add(feature), (this as any)[`wire${capitalize(feature)}`]?.();
   }
   // Track Switching Wiring
   protected wireCurrentChapter(): void {
     this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
   }
+  // ive Content Wiring
+  protected wireLive(): void {
+    this.config.on("intent.live", this.handleLiveIntent, this.evtOpts.CONFIG);
+    this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG);
+  }
 
   // --- THE HANDLERS ---
   protected handleFeatures({ type, target }: REvent<CtlrMedia, "features">): void {
-    if (type === "update") this.wireFeature(target.key);
-    else if (type === "init") for (const feature of Object.keys(target.value)) this.wireFeature(feature as keyof MediaFeatures);
+    if (type === "update") return this.wireFeature(target.key);
+    if (type === "init") for (const feature of Object.keys(target.value)) this.wireFeature(feature as keyof MediaFeatures);
   }
   protected handleWrite(e: REvent<CtlrMedia, "intent" | "settings">): void {
-    if (e.type === "update" && this.config.features[e.target.key as keyof MediaFeatures] === false && (e.value || !this.ctlr.payload.wired)) return e.reject(this.name), e.stopImmediatePropagation(); // falsy values pass during runtime so they can turn off
+    if (e.type === "update" && !isFeatured(this.media, e.target.key as keyof MediaFeatures)) return e.reject(this.name), e.stopImmediatePropagation(); // (`&& (e.value || !this.ctlr.flags.wired)` = turn off at runtime) -> polyfill()
   }
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
     if (e.resolved || !this.wired) return;
-    const chapter = this.config.settings.metadata.chapterInfo[e.value as number];
-    if (chapter) this.media.intent.currentTime = chapter.startTime; // #VALIDATED: mediated for cast conformity; no-opy // #FACADED: silenced intent actual op
+    const chapter = this.config.settings.metadata.chapterInfo[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
+    if (chapter) (this.config.intent.currentTime = chapter.startTime), (this.config.state.currentChapter = e.value as number); // #FACADED: silenced intent actual op // #NEED FOR SPEED: optimistic but eventual
     this.ctlr.plug("settings.notifiers")?.notify("chapter");
     e.resolve(this.name);
   }
-
-  // --- THE HELPERS ---
-  protected resetLoadInfo(): void {
-    for (const path of this.config.settings.transientPaths.status) this.config.status[path] = deepClone(MEDIA_STATUS_BUILD[path]) as never;
-    for (const path of this.config.settings.transientPaths.state) this.config.state[path] = deepClone(MEDIA_STATE_BUILD[path]) as never;
+  protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
+    if (e.resolved) return;
+    this.ctlr.when("loadedMetadata", e, (seekable = this.config.status.seekable) => e.value && seekable.length && (this.config.intent.currentTime = seekable.end(seekable.length - 1) - 1)); // #FACADED: silenced intent actual op
+    e.resolve(this.name);
   }
-  public when<Evt extends REvent<CtlrMedia>>(status: keyof MediaStatus, e?: Evt, task: () => void = NOOP, always = true, _key = status + e?.path || "", _value = (!always && this.wired) || this.config.status[status], _log = this.ctlr.config.devMode && !this.config.status[status]): void {
-    const callback = this.ctlr.guard((v: any, __: any, stalled = true) => v && (stalled && this.pending.get(_key)?.(), this.pending.delete(_key), _log && this.ctlr.log(`${e?.path} stalled by ${status} with ${e?.value}`), task())); // RS(${this.ctlr.payload.readyState})
-    this.pending.get(_key)?.(), _value ? callback(_value, null, false) : this.pending.set(_key, this.config.watch(`status.${status}`, callback, { signal: this.signal }));
-  } // #EXTRA-MILE: doing the most with the least
   // Dog Feeders
-  protected onCurrentTime(v: number): void {
+  protected onCurrentTime(time = this.config.state.currentTime): void {
     if (!this.autoChapters) return;
     const chapters = this.config.settings.metadata.chapterInfo;
-    if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (v >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
-    this.media.state.currentChapter = -1;
+    if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
+    this.config.state.currentChapter = -1;
   }
+  protected onIsLiveStatus(v: boolean): void {
+    this.config.features.live = v;
+  }
+
+  // --- THE HELPERS ---
+  protected flush(): void {
+    for (const path of this.config.settings.flushKeys.status) this.config.status[path] = deepClone(MEDIA_STATUS_BUILD[path]) as never;
+    for (const path of this.config.settings.flushKeys.state) this.config.state[path] = deepClone(MEDIA_STATE_BUILD[path]) as never;
+  }
+  public polyfill(feature: keyof MediaFeatures | Array<keyof MediaFeatures>, condition?: any, disabled?: any): boolean | void {
+    const apply = (f: keyof MediaFeatures, v = !disabled && (!!this.features[f] || !!condition)) => (!v && isBool(disabled) && (this.config.state as any)[f] === true && (silence(() => ((this.config.intent as any)[f] = false)), this.config.tick(`intent.${f}` as any)), (this.config.features[f] = v));
+    return !isArr(feature) ? apply(feature) : feature.forEach((f) => apply(f));
+  } // #EXTRA-MILE: doing the most with the least
 }
 
 declare module "@defs/contract" {

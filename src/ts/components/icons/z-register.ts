@@ -62,6 +62,7 @@ import { edit } from "./edit";
 import { sort } from "./sort";
 import { check } from "./check";
 import { goBack } from "./goBack";
+import { mic } from "./mic";
 
 IconRegistry.registerAll({
   // Random Order
@@ -128,4 +129,5 @@ IconRegistry.registerAll({
   sort,
   check,
   goBack,
+  mic,
 });

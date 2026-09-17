@@ -5,20 +5,20 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { assignEl } from "@utils/dom";
 import { capitalize } from "@utils/str";
+import { setTimeout } from "@utils/fn";
 import { IS_MOBILE } from "@utils/env";
 import { IconRegistry, MenuRegistry } from "@core/registries";
-import { setTimeout } from "sia-reactor/utils";
 
 export class SkeletonPlug extends BasePlug<SkeletonConfig> {
   public static readonly plugName = "skeleton";
   public static readonly BUILD = SKELETON_BUILD;
   public static readonly isCore: boolean = true;
   public static readonly isMain: boolean = true;
-  public rootElement = document.body;
+  public rootEl = document.body;
 
   public override mount(): void {
     // Properties Assignment
-    assignEl(this.media.container, { role: "region", ariaLabel: `${capitalize(this.media.type)} Player`, className: `tmg-${this.media.type}-container tmg-media-container tmg-host-container${IS_MOBILE ? " tmg-media-mobile" : ""}${this.media.state.paused ? " tmg-media-paused" : ""}` }, { trackKind: "captions", volumeLevel: "muted", brightnessLevel: "dark", objectFit: "contain" });
+    assignEl(this.media.container, { role: "region", ariaLabel: `${capitalize(this.media.type)} Player`, className: `tmg-${this.media.type}-container tmg-media-container tmg-host-container${IS_MOBILE ? " tmg-media-mobile" : ""}${this.media.state.paused ? " tmg-media-paused" : ""}` }, { textKind: "captions", volumeLevel: "muted", brightnessLevel: "dark", objectFit: "contain" });
     assignEl(this.media.pseudoContainer, { role: "status", className: `tmg-pseudo-${this.media.type}-container tmg-pseudo-media-container tmg-host-container` });
     assignEl(this.media.pseudoElement, { ariaHidden: "true", className: `tmg-pseudo-${this.media.type} tmg-pseudo-media tmg-host`, muted: true, autoplay: false });
     // DOM Injection
@@ -33,24 +33,24 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
 
   public override wire(): void {
     // Ctlr Media Listeners
-    this.media.on("state.paused", this.handlePaused, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.paused", this.handlePaused, { init: this.ctlr.flags.wired, signal: this.signal });
     // this.media.on("intent.paused", this.handlePaused, { signal: this.signal }); // #APPRENTICE: folklore embodiment
-    this.media.on("state.src", this.syncPseudoSrc, { init: this.ctlr.payload.wired, signal: this.signal });
     this.media.on("state.poster", ({ value }) => (this.settings.css.currentPosterUrl = `url(${value})`), { signal: this.signal });
-    this.media.on("status.ended", ({ value }) => this.media.container.classList.toggle("tmg-media-replay", value), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.waiting", ({ value }) => this.media.container.classList.toggle("tmg-media-buffering", value), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.ended", ({ value }) => this.media.container.classList.toggle("tmg-media-replay", value), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.waiting", ({ value }) => this.media.container.classList.toggle("tmg-media-buffering", value), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("readyState", () => (this.media.container.dataset.readyTier = "x".repeat(this.ctlr.state.readyState)), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.ctlr.state.on("readyState", () => (this.media.container.dataset.readyTier = "x".repeat(this.ctlr.state.readyState)), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     super.wire();
   }
 
   protected injectInterface(): void {
-    !this.ctlr.queryDOM(".tmg-media-container-content-wrapper") &&
+    !this.ctlr.queryDOM(".tmg-media-content-wrapper") &&
       this.media.container.insertAdjacentHTML(
         "beforeend",
-        `<div class="tmg-media-container-content-wrapper">
-          <div class="tmg-media-container-content">
+        `<div class="tmg-media-content-wrapper">
+          <div class="tmg-media-content">
             <div class="tmg-media-controls-container">
               <div class="tmg-media-curtain tmg-media-top-curtain"></div><div class="tmg-media-curtain tmg-media-bottom-curtain"></div><div class="tmg-media-curtain tmg-media-cover-curtain"></div>
             </div>
@@ -63,8 +63,8 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
           </div>
         </div>`
       );
-    this.ctlr.DOM.containerContentWrapper = this.ctlr.queryDOM(".tmg-media-container-content-wrapper");
-    this.ctlr.DOM.containerContent = this.ctlr.queryDOM(".tmg-media-container-content");
+    this.ctlr.DOM.containerContentWrapper = this.ctlr.queryDOM(".tmg-media-content-wrapper");
+    this.ctlr.DOM.containerContent = this.ctlr.queryDOM(".tmg-media-content");
     this.ctlr.DOM.controlsContainer = this.ctlr.queryDOM(".tmg-media-controls-container");
     this.ctlr.DOM.settings = this.ctlr.queryDOM(".tmg-media-settings");
     this.ctlr.DOM.settingsContent = this.ctlr.queryDOM(".tmg-media-settings-content");
@@ -74,32 +74,30 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
 
   protected handlePaused({ value, resolved, rejectable }: REvent<CtlrMedia, "state.paused" | "intent.paused">): void {
     if (rejectable && !resolved) return;
-    if (!rejectable && !value && this.config.autoPauseOthers) for (const media of document.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
+    if (!rejectable && !value && this.config.autoPauseOthers) for (const media of this.media.container.ownerDocument.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
     this.media.container.classList.toggle("tmg-media-paused", value);
+  }
+
+  protected handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): void {
+    if (!value) return this.media.pseudoElement.removeAttribute("src");
+    this.media.pseudoElement.src = this.media.element.currentSrc;
+    this.media.pseudoElement.crossOrigin = this.media.element.crossOrigin;
   }
 
   public enterPseudoMode(): void {
     if (this.ctlr.state.pseudoActive) return;
-    (this.media.pseudoElement.id = this.media.element.id), (this.media.element.id = "");
+    (this.ctlr.state.pseudoActive = true), (this.media.pseudoElement.id = this.media.element.id), (this.media.element.id = "");
     this.media.pseudoElement.className += " " + this.media.element.className.replace(/tmg-(?:media|video|audio|host)/g, "");
     this.media.pseudoContainer.className += " " + this.media.container.className.replace(/tmg-(?:media|video|audio|host)-container/g, "");
-    this.media.container.parentElement?.insertBefore(this.media.pseudoContainer, this.media.container);
-    this.rootElement.append(this.media.container);
-    this.ctlr.state.pseudoActive = true;
+    this.media.container.parentElement?.insertBefore(this.media.pseudoContainer, this.media.container), this.rootEl.append(this.media.container);
   }
 
   public leavePseudoMode(destroy = false): void {
     if (!this.ctlr.state.pseudoActive) return;
-    (this.media.element.id = this.media.pseudoElement.id), (this.media.pseudoElement.id = "");
+    (this.ctlr.state.pseudoActive = false), (this.media.element.id = this.media.pseudoElement.id), (this.media.pseudoElement.id = "");
     this.media.pseudoElement.className = `tmg-pseudo-${this.media.type} tmg-pseudo-media tmg-host`;
     this.media.pseudoContainer.className = `tmg-pseudo-${this.media.type}-container tmg-pseudo-media-container tmg-host-container`;
     this.media.pseudoContainer.parentElement?.replaceChild(destroy ? this.media.element : this.media.container, this.media.pseudoContainer);
-    this.ctlr.state.pseudoActive = false;
-  }
-
-  protected syncPseudoSrc(): void {
-    this.media.pseudoElement.src = this.media.element.currentSrc;
-    this.media.pseudoElement.crossOrigin = this.media.element.crossOrigin;
   }
 
   protected registerMenu(): void {

@@ -1,6 +1,7 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { KeysPlug } from "@plugs/settings/keys";
 import { capitalize, uncamelize } from "@utils/str";
+import { getUIOpt } from "@utils/obj";
 import { KEY_SHORTCUT_MOD_ACTIONS } from "@plugs/settings/keys/build";
 
 export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
@@ -21,14 +22,14 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
           label: "Keyboard",
           widget: "group",
           getValue: () => (plug.config.disabled ? "Off" : "On"),
-          getTipHTML: () => "Configure keyboard shortcuts and modifier keys",
           configPaths: ["settings.keys.disabled"],
           items: [
             { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
-            { id: "keyboardStrictMatches", label: "Strict matches", widget: "toggle", getValue: () => (plug.config.strictMatches ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatches = val), configPaths: ["settings.keys.strictMatches"], title: "Require exact key combo matches for actions (e.g., Shift+f will not trigger the action for f)." },
+            { id: "keyboardStrictMatch", label: "Strict match", widget: "toggle", getValue: () => (plug.config.strictMatch ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatch = val), configPaths: ["settings.keys.strictMatch"], title: "Require exact key combo match for actions (e.g., Shift+f will not trigger the action for f)." },
+            { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase (keydown/keyup) to trigger actions when not explicitly specified" },
             {
               id: "keyboardMods",
-              label: "Modifier keys",
+              label: "Modifiers",
               widget: "group",
               getValue: () => (plug.config.mods.disabled ? "Off" : "On"),
               items: [
@@ -39,24 +40,8 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
                   widget: "group" as const,
                   getValue: () => "",
                   items: [
-                    {
-                      id: `keyboardMod-${mod}-ctrl`,
-                      label: "Ctrl amount",
-                      widget: "input" as const,
-                      inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl }],
-                      getValue: () => String(plug.config.mods[mod].ctrl),
-                      onChange: (val: any) => (plug.config.mods[mod].ctrl = val["Amount"]),
-                      configPaths: [`settings.keys.mods.${mod}` as const],
-                    },
-                    {
-                      id: `keyboardMod-${mod}-shift`,
-                      label: "Shift amount",
-                      widget: "input" as const,
-                      inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift }],
-                      getValue: () => String(plug.config.mods[mod].shift),
-                      onChange: (val: any) => (plug.config.mods[mod].shift = val["Amount"]),
-                      configPaths: [`settings.keys.mods.${mod}` as const],
-                    },
+                    { id: `keyboardMod-${mod}-ctrl`, label: "Ctrl amount", widget: "input" as const, inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl }], getValue: () => String(plug.config.mods[mod].ctrl ?? ""), onChange: (val: any) => (plug.config.mods[mod].ctrl = val["Amount"]), configPaths: [`settings.keys.mods.${mod}` as const] },
+                    { id: `keyboardMod-${mod}-shift`, label: "Shift amount", widget: "input" as const, inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift }], getValue: () => String(plug.config.mods[mod].shift ?? ""), onChange: (val: any) => (plug.config.mods[mod].shift = val["Amount"]), configPaths: [`settings.keys.mods.${mod}` as const] },
                   ],
                 })),
               ],
@@ -74,8 +59,11 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
                   widget: "input" as const,
                   inputs: [{ label: "Keys", placeholder: "Space, ArrowUp", helperText: { info: "Comma-separated keys that override default browser behavior" }, value: () => plug.config.overrides.join(", ") }],
                   getValue: () => plug.config.overrides.join(", "),
-                  // prettier-ignore
-                  onChange: (val: any) => (plug.config.overrides = val["Keys"].split(",").map((s: string) => s.trim()).filter(Boolean)),
+                  onChange: (val: any) =>
+                    (plug.config.overrides = val["Keys"]
+                      .split(",")
+                      .map((s: string) => s.trim())
+                      .filter(Boolean)),
                   configPaths: ["settings.keys.overrides"],
                 },
                 {
@@ -84,8 +72,11 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
                   widget: "input" as const,
                   inputs: [{ label: "Keys", placeholder: "Space, ArrowUp", helperText: { info: "Comma-separated keys that block key shortcuts" }, value: () => plug.config.blocks.join(", ") }],
                   getValue: () => plug.config.blocks.join(", "),
-                  // prettier-ignore
-                  onChange: (val: any) => (plug.config.blocks = val["Keys"].split(",").map((s: string) => s.trim()).filter(Boolean)),
+                  onChange: (val: any) =>
+                    (plug.config.blocks = val["Keys"]
+                      .split(",")
+                      .map((s: string) => s.trim())
+                      .filter(Boolean)),
                   configPaths: ["settings.keys.blocks"],
                 },
                 {
@@ -94,8 +85,11 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
                   widget: "input" as const,
                   inputs: [{ label: "Keys", placeholder: "Space, ArrowUp", helperText: { info: "Comma-separated keys that are explicitly allowed" }, value: () => plug.config.whitelist.join(", ") }],
                   getValue: () => plug.config.whitelist.join(", "),
-                  // prettier-ignore
-                  onChange: (val: any) => (plug.config.whitelist = val["Keys"].split(",").map((s: string) => s.trim()).filter(Boolean)),
+                  onChange: (val: any) =>
+                    (plug.config.whitelist = val["Keys"]
+                      .split(",")
+                      .map((s: string) => s.trim())
+                      .filter(Boolean)),
                   configPaths: ["settings.keys.whitelist"],
                 },
               ],

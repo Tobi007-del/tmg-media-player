@@ -14,7 +14,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   public static readonly BUILD = TIME_TRAVEL_BUILD;
   public module!: TimeTravelModule<any>;
   public console?: TimeTravelConsole | undefined;
-  public docklist: string[] = ["state.fullscreen", "state.pictureInPicture"]; // #DEFAULT: build privilege
+  public dockList: string[] = ["state.fullscreen", "state.pictureInPicture"]; // #DEFAULT: build privilege
 
   public override mount(): void {
     // Variables Assignment
@@ -26,9 +26,9 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   public override wire(): void {
-    // ---- Media Listeners
-    for (const p of this.docklist) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
-    // ----------- Listeners
+    // Ctlr Media Listeners
+    for (const p of this.dockList) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
+    // ---- Config --------
     createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     this.ctlr.config.on("settings.timeTravel.console.disabled", this.handleConsoleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.timeTravel.persist", this.handlePersist, { init: true, signal: this.signal });
@@ -50,7 +50,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   public redock(scoped = false) {
-    if (this.console && !this.ctlr._build.settings.timeTravel.console.container) this.console.config.container = scoped ? this.media.container : undefined;
+    if (this.console && !this.ctlr.build.settings.timeTravel.console.container) this.console.config.container = scoped ? this.media.container : undefined;
   }
 
   protected override onDestroy(): void {

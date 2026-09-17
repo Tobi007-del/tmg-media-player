@@ -17,7 +17,7 @@ export class BigPlayPauseButton extends BaseComponent<BigPlayPauseConfig, Compon
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.paused", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.paused", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("status.ended", this.syncARIA, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.playPause", this.syncARIA, { signal: this.signal });

@@ -1,3 +1,4 @@
+import { ATTR } from "@tools/runtime";
 import { Player } from "@tools/player";
 import * as TMGGlobal from "../../super";
 import "@t007/toast";
@@ -12,11 +13,11 @@ declare global {
     disablePictureInPicture: boolean;
     webkitShowPlaybackTargetPicker?: () => void;
     webkitCurrentPlaybackTargetIsWireless?: boolean;
-    // Optional Public Props
-    tmgcontrols: boolean;
+    // Monkey-patched Public Props
+    [ATTR]: boolean;
     tmgPlayer?: Player | null;
     mediaElementSourceNode?: MediaElementAudioSourceNode | null; // Public since it's 1 per media element
-    // Optional Private Props
+    // -------------- Private Props
     _tmgGainNode?: GainNode | null;
     _tmgDynamicsCompressorNode?: DynamicsCompressorNode | null;
     _tmgStereoPannerNode?: StereoPannerNode | null;
@@ -28,9 +29,10 @@ declare global {
   interface Window {
     // Auto-patched Props
     WebKitPlaybackTargetAvailabilityEvent?: any;
-    // Optional Public Props
+    // Public Props
     /** Shared TMG namespace. */
     tmg: TMGNamespace;
+    /** Alternative image source for media to act as a fallback where applicable. */
     TMG_MEDIA_ALT_IMG_SRC?: string;
     /** CDN stylesheet for `tmg-media-player`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
     TMG_MEDIA_CSS_SRC?: string | symbol;
@@ -45,7 +47,9 @@ declare global {
     /** API js entrypoint for `vimeo.com`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
     TMG_VIMEO_API_SRC?: string | symbol;
     /** CDN js entrypoint for Google's `cast_sender.js`, assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
-    TMG_CAST_SENDER_SRC?: string | symbol;
+    TMG_CAST_API_SRC?: string | symbol;
+    /** CDN js entrypoint for Google's `ima3.js` (IMA SDK), assign a symbol if bundling, e.g. `VIRTUAL_RESOURCE` from `@t007/utils`. */
+    TMG_IMA_SDK_SRC?: string | symbol;
   }
 
   var tmg: TMGNamespace; // for IIFE build

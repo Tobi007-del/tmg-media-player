@@ -21,10 +21,10 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
   protected safeTimeoutId = -1;
 
   public override wire(): void {
-    this.ctlr.config.on("settings.controlPanel.draggable", ({ value }) => this.setEventListeners(value ? "add" : "remove"), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.controlPanel.draggable", ({ value }) => this.setListeners(value ? "add" : "remove"), { init: true, signal: this.signal });
   }
 
-  public setEventListeners(action: "add" | "remove" = this.config ? "add" : "remove"): void {
+  public setListeners(action: "add" | "remove" = this.config ? "add" : "remove"): void {
     for (const c of this.ctlr.queryDOM("[data-draggable-control]", true)) {
       c.dataset.dragId = c.dataset.dragId ?? "";
       const act = !inBoolArrOpt(this.config, c.dataset.dragId) ? "remove" : action;
@@ -125,7 +125,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
 
   protected teaching = false;
   protected teachBasics = limited(
-    async (id: AnyControl = "meta", toast = this.ctlr.plug("settings.toasts")?.toast) => {
+    async (id: AnyControl = "meta", toast = this.ctlr.toast) => {
       if (!toast) return;
       this.teaching = true;
       const el = this.ctlr.queryDOM(".tmg-media-meta-wrapper"),
@@ -142,7 +142,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
           if (!(slot instanceof HTMLElement) && slot.zone && !slot.zone.querySelector('[data-control-id]:not([data-control-id="spacer"])') && pos(r, z) !== startPos) emptyZones.push({ pos: pos(r, z), zone: slot.zone });
         }
       el?.classList.add("tmg-media-control-dragging"), this.ctlr.media.container.classList.add("tmg-media-control-dragging"), this.ctlr.plug("settings.overlay")?.show();
-      const tId = toast(`Did you know you can drag the <b>Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
+      const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-current-control-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
       await mockAsync(3500);
       if (!toast.isActive(tId)) return;
       toast(`You can move it from here...`, { id: tId, position: startPos });

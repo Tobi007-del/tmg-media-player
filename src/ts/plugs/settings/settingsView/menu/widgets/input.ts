@@ -13,7 +13,7 @@ export class InputWidget extends BaseWidget<string | number | undefined | Record
     this.form.append(createEl("button", { className: "tmg-media-smenu-input-btn", type: "submit", textContent: "Submit" }));
     (this.form as any).onSubmit = () => {
       const val = this.item.inputs ? [...this.form.elements].filter((el: any) => el.name).reduce((acc, el: any) => ((acc[el.name] = el.type === "number" ? (el.value === "" ? undefined : Number(el.value)) : el.value), acc), {} as Record<string, string | number | undefined>) : (this.form.elements[0] as HTMLInputElement).type === "number" ? ((this.form.elements[0] as HTMLInputElement).value === "" ? undefined : Number((this.form.elements[0] as HTMLInputElement).value)) : (this.form.elements[0] as HTMLInputElement).value;
-      setTimeout(() => (this.item.onChange?.(val), this.form.reset(), this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
+      setTimeout(() => (this.item.onChange?.(val), this.form.reset(), this.item.closeOnSelect !== false && this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
     };
     t007.handleFormValidation?.(this.form);
     this.element = createEl("div", { className: "tmg-media-smenu-input-wrapper" });

@@ -4,7 +4,6 @@ import { ModesPlug } from "./index";
 import type { ModesTheaterConfig } from "./types";
 import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
-import type { CtlrConfig } from "@defs/config";
 
 export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
   public static readonly pinName = "theater";
@@ -17,17 +16,12 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
   public override wire(): void {
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
+    // ---- Config --------
+    this.ctlr.config.watch("settings.modes.theater.disabled", this.syncFeatures, { signal: this.signal });
     // ---- Media Listeners
-    this.media.on("intent.theater", this.handleTheaterIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    // ---- Config ---------
-    this.ctlr.config.on("settings.modes.theater.disabled", this.handleDisabled, { init: true, signal: this.signal });
+    this.media.on("intent.theater", this.handleTheaterIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     // Post Wiring
-    this.ctlr.learn("theater", { keyboard: { phase: "keyup" } }, this.signal);
-  }
-
-  protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.theater.disabled">): void {
-    this.syncFeatures();
-    if (value && this.ctlr.isUIActive("theater")) this.media.intent.theater = false;
+    this.ctlr.learn("theater", undefined, this.signal);
   }
 
   protected handleTheaterIntent(e: REvent<CtlrMedia, "intent.theater">): void {
@@ -39,8 +33,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
   }
 
   public syncFeatures(): void {
-    if (this.config.disabled) return void (this.media.features.theater = false);
-    this.media.features.theater ||= true;
+    this.media.tech.polyfill("theater", true, this.config.disabled);
   }
 }
 

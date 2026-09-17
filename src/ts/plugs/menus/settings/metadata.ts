@@ -9,7 +9,7 @@ import { UITuple } from "@defs/UIOptions";
 import { silence } from "sia-reactor/modules";
 
 export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] => [
-  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", getValue: () => (plug.media.state.loop ? "On" : "Off"), onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop"] },
+  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => (plug.media.state.loop ? "On" : "Off"), onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop"] },
   {
     id: "quality",
     label: "Quality",
@@ -99,7 +99,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     widget: "select",
     feature: "currentChapter",
     hidden: () => plug.media.settings.metadata.chapterInfo.length <= 1,
-    getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters.<br><small>Viewing <b>${plug.media.state.currentChapter + 1}</b> / <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
+    getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters.<br><small>Viewing <b>${plug.media.state.currentChapter + 1}</b> of <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
     getValue() {
       const list = plug.media.settings.metadata.chapterInfo;
       return !list.length || plug.media.state.currentChapter === -1 ? "" : list[plug.media.state.currentChapter]?.title || `Chapter ${plug.media.state.currentChapter + 1}`;
@@ -109,7 +109,8 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
       return !list.length ? [] : list.map((c: any, i: number) => ({ value: i, display: c.title || `Chapter ${i + 1}`, infoText: isNum(c.startTime) ? formatMediaTime({ time: c.startTime }) : undefined }));
     },
     onChange: (val: number) => silence(() => (plug.media.intent.currentChapter = val)),
-    mediaPaths: ["settings.metadata.chapterInfo", "state.currentChapter", "features.currentChapter"],
+    mediaPaths: ["settings.metadata.chapterInfo", "state.currentChapter"],
+    actions: [{ id: "previousChapter", getLabel: () => "Previous", icon: "previous", onClick: () => plug.ctlr.perform("timePreviousChapter"), getDisabled: () => !plug.media.features.previousChapter } as const, { id: "nextChapter", getLabel: () => "Next", icon: "next", onClick: () => plug.ctlr.perform("timeNextChapter"), getDisabled: () => !plug.media.features.nextChapter } as const],
   },
 ];
 

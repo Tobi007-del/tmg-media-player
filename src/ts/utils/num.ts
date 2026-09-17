@@ -1,5 +1,5 @@
 import { AptRange } from "@defs/generics";
-import { isNum, clamp, isArr } from "@t007/utils";
+import { isNum, clamp, isArr, isDef } from "@t007/utils";
 
 // Validators
 export { clamp };
@@ -9,9 +9,9 @@ export function safeNum(number: any, fallback = 0): number {
 }
 
 // Parsers
-export function parseIfPercent(percent: any, amount: any, autocap = 0.25): number {
+export function parseIfPercent(percent: any, amount: any, autoCap?: number): number {
   const val = percent?.endsWith?.("%") ? safeNum((parseFloat(percent) / 100) * amount) : percent;
-  return val && amount && autocap && amount <= val ? amount * autocap : val;
+  return val && amount && isDef(autoCap) && amount <= val ? amount * autoCap! : val;
 }
 
 export function parseRomanNum(roman: string, valid = /^[IVXLCDM]+$/i.test(roman), ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 } as Record<string, number>): number {

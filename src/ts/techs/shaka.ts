@@ -19,13 +19,13 @@ declare global {
   }
 } // shaka is notorious for stale types; not us
 
-export default class ShakaTech extends HTML5Tech {
+export class ShakaTech extends HTML5Tech {
   public static readonly techName: string = "shaka";
-  public host: shaka.Player | null = null;
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && (DASH_EXTENSIONS.test(src) || HLS_EXTENSIONS.test(src));
   }
-  protected hostSrc: string | null = null;
+  public host: shaka.Player | null = null;
+  public hostSrc: string | null = null;
   protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     const isVid = ctlr.media.type === "video";
@@ -36,14 +36,14 @@ export default class ShakaTech extends HTML5Tech {
       // States & Currents (Shaka specific)
       currentAudioTrack: true, currentVideoTrack: isVid, currentLevel: true, autoLevel: true,
       // Status & Settings
-      bandwidth: true,  protection: true, srcObject: false, ...features
+      bandwidth: true,  protection: true, ...features
     });
     this.config.status.hostReady = false;
   }
   // --- API Injection ---
   protected async initHost(src = ""): Promise<void> {
     try {
-      if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load((this.hostSrc = src), this.config[this.ctlr.techTruth].currentTime);
+      if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load((this.hostSrc = src), this.config[this.ctlr.gospel].currentTime);
       // Setup & Compatibility
       const SHAKA = (window as any).shaka ?? (await loadResource(window.TMG_SHAKA_JS_SRC!, "script"), (window as any).shaka);
       if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
@@ -70,7 +70,7 @@ export default class ShakaTech extends HTML5Tech {
       this.host.addEventListener("texttrackvisibility", () => (this.config.state.textVisible = this.host.isTextTrackVisible()));
       this.host.addEventListener("error", (ev: any) => this.handleHostError(ev.detail));
       await this.host.attach(this.el), this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection });
-      await this.host.load(src, this.config[this.ctlr.techTruth].currentTime), (this.config.status.hostReady = true), this.syncCurrentStats();
+      await this.host.load(src, this.config[this.ctlr.gospel].currentTime), (this.config.status.hostReady = true), this.syncCurrentStats();
     } catch (e: any) {
       this.handleHostError(e);
     }
@@ -103,17 +103,17 @@ export default class ShakaTech extends HTML5Tech {
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, (variant = (this.config.status.levels as shaka.extern.Track[])[e.value as number]) => variant && (this.useAutoLevel(), this.host.selectVariantTrack(variant, true))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch // Turn off ABR to force manual selection, true clears buffer
+    this.ctlr.when("hostReady", e, (variant = (this.config.status.levels as shaka.extern.Track[])[e.value as number]) => variant && (this.useAutoLevel(), this.host.selectVariantTrack(variant, true))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch // Turn off ABR to force manual selection, true clears buffer
     e.resolve(this.name);
   }
   // protected override handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
   //   if (e.resolved) return;
-  //   this.when("hostReady", e, () => (this.host.setTextTrackVisibility(e.value), this.config.state.textVisible = e.value)); // #SKIPPED: not uptight enough; base logic more predictable rn
+  //   this.ctlr.when("hostReady", e, () => (this.host.setTextTrackVisibility(e.value), this.config.state.textVisible = e.value)); // #SKIPPED: not uptight enough; base logic more predictable rn
   //   e.resolve(this.name);
   // }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.useAutoLevel(e.value));
+    this.ctlr.when("hostReady", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
   }
   protected useAutoLevel(value = false): void {
@@ -122,7 +122,7 @@ export default class ShakaTech extends HTML5Tech {
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: Lowercase<TrackType>): void {
     if (e.resolved) return;
-    this.when("hostReady", e, (target = (this.config.status[`${type}Tracks`] as shaka.extern.Track[])[e.value as number]) => {
+    this.ctlr.when("hostReady", e, (target = (this.config.status[`${type}Tracks`] as shaka.extern.Track[])[e.value as number]) => {
       if (!target || type === "text") return target && this.host.selectTextTrack(target), type === "text" && (this.config.state.currentTextTrack = e.value as number);
       const variants = this.host.getVariantTracks(),
         active = variants.find((t: any) => t.active);
@@ -131,14 +131,14 @@ export default class ShakaTech extends HTML5Tech {
           keepsAlt = type === "audio" ? vVR === active?.videoRoles?.join() : v.language === active?.language && vAR === active?.audioRoles?.join(); // 2. Preserve the OTHER constraint (If changing audio, lock video. If changing video, lock audio)
         return mtchsTgt && keepsAlt && (this.config.state.autoLevel || v.height === active?.height); // 3. STRICTLY PRESERVE RESOLUTION (If ABR is OFF, it must match current height)
       }); // primal behavior, this is no joke; more like a "dance".
-      const auto = this.config[this.ctlr.techTruth].autoLevel;
+      const auto = this.config[this.ctlr.gospel].autoLevel;
       auto && this.host.configure({ abr: { enabled: false } }), this.host.selectVariantTrack(match || target, true), auto && this.host.configure({ abr: { enabled: true } }); // Fire the weapon safely so Shaka doesn't guess
     });
     e.resolve(this.name);
   }
   // protected override handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
   //   if (e.resolved) return;
-  //   this.when("loadedMetadata", e, () => e.value && this.host.goToLive()); // #SKIPPED: not uptight enough; `intent.live` facade for `intent.currentTime` more predictable rn
+  //   this.ctlr.when("loadedMetadata", e, () => e.value && this.host.goToLive()); // #SKIPPED: not uptight enough; `intent.live` facade for `intent.currentTime` more predictable
   //   e.resolve(this.name);
   // }
   // --- API Logic ---

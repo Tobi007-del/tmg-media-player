@@ -4,7 +4,6 @@ import type { ModesMiniplayerConfig, ResizeDir } from "./types";
 import { ModesPlug } from "./index";
 import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
-import type { CtlrConfig } from "@defs/config";
 import { inDocView, getWindow, createEl, getClientWH } from "@utils/dom";
 import { setTimeout } from "@utils/fn";
 import { clamp } from "@utils/num";
@@ -23,21 +22,16 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
     this.ctlr.state.watch("dimensions.container.width", (w, { target: { object } }) => this.handleResize(w, object.height), { signal: this.signal });
     this.ctlr.state.watch("dimensions.container.height", (h, { target: { object } }) => this.handleResize(object.width, h), { signal: this.signal });
-    // ---- Media Listeners
-    this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.payload.wired, signal: this.signal });
-    // ---- State --------
-    this.ctlr.state.on("mediaParentIntersecting", () => this.ctlr.payload.wired && this.toggle(), { signal: this.signal }); // #HEAVY: waits for !lightState
     // ---- Config --------
-    this.ctlr.config.on("settings.modes.miniplayer.disabled", this.handleDisabled, { init: true, signal: this.signal });
-  }
-
-  protected handleDisabled({ value }: REvent<CtlrConfig, "settings.modes.miniplayer.disabled">): void {
-    this.syncFeatures();
-    if (value && this.ctlr.isUIActive("miniplayer")) this.media.intent.miniplayer = false;
+    this.ctlr.config.watch("settings.modes.miniplayer.disabled", this.syncFeatures, { signal: this.signal });
+    // ---- Media Listeners
+    this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.flags.wired, signal: this.signal });
+    // ---- State --------
+    this.ctlr.state.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
+    this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.toggle(), { signal: this.signal }); // #HEAVY: waits for !lightState
   }
 
   protected handleMiniplayerIntent(e: REvent<CtlrMedia, "intent.miniplayer">): void {
@@ -77,11 +71,10 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     else if (active && (bool === false || this.shouldExit())) this.media.intent.miniplayer = false;
   }
   public shouldEnter(): boolean {
-    const modes = this.ctlr.plug("settings.modes");
-    return !this.media.state.pictureInPicture && !modes?.fullscreen?.inFullscreen && !this.ctlr.state.mediaParentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;
+    return !this.media.state.pictureInPicture && !this.media.state.fullscreen && !this.ctlr.state.parentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;
   }
   public shouldExit(): boolean {
-    return this.ctlr.state.mediaParentIntersecting || getWindow(this.media.container).innerWidth < this.config.minWindowWidth;
+    return this.ctlr.state.parentIntersecting || getWindow(this.media.container).innerWidth < this.config.minWindowWidth;
   }
 
   // ---- Drag (move) ----
@@ -94,12 +87,9 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected wildMiniplayerX = "";
   protected wildMiniplayerY = "";
 
-  protected handleDragStart(e: globalThis.Event): void {
-    const target = e.target as HTMLElement,
-      clientX = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX ?? 0,
-      clientY = (e as MouseEvent).clientY ?? (e as TouchEvent).targetTouches?.[0]?.clientY ?? 0; // console.log(target.scrollWidth, target.clientWidth, target.scrollWidth >= target.clientWidth + 3);
+  protected handleDragStart(e: globalThis.Event, target = e.target as HTMLElement, clientX = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches[0].clientX, clientY = (e as MouseEvent).clientY ?? (e as TouchEvent).targetTouches[0].clientY): void {
     if (!this.ctlr.isUIActive("miniplayer") || target.scrollWidth >= target.clientWidth + 3 || [this.ctlr.DOM.topControlsWrapper, this.ctlr.DOM.bottomControlsWrapper, this.ctlr.DOM.captionsContainer].some((w) => w?.contains(target)) || target.closest(`:is(${INTERACTIVE_SELECTOR},.tmg-media-miniplayer-resize-handle,[class$='toast-container'])`)) return;
-    const { left, top } = getComputedStyle(this.media.container);
+    const { left, top } = getComputedStyle(this.media.container); // console.log(target.scrollWidth, target.clientWidth, target.scrollWidth >= target.clientWidth + 3);
     (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(top)), (this.lastMiniplayerPtrX = clientX), (this.lastMiniplayerPtrY = clientY);
     (this.nextMiniplayerX = this.settings.css.currentMiniplayerX as string), (this.nextMiniplayerY = this.settings.css.currentMiniplayerY as string), (this.wildMiniplayerX = this.nextMiniplayerX), (this.wildMiniplayerY = this.nextMiniplayerY);
     document.addEventListener("mousemove", this.handleDragging, { signal: this.signal }), document.addEventListener("touchmove", this.handleDragging, { passive: false, signal: this.signal });
@@ -112,9 +102,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     e.preventDefault();
     this.ctlr.plug("settings.overlay")?.hide("force");
     this.media.container.classList.add("tmg-media-player-dragging");
-    this.ctlr.RAFLoop("miniplayerDragging", () => {
-      const x = (e as MouseEvent).clientX ?? (e as TouchEvent).changedTouches?.[0]?.clientX ?? 0,
-        y = (e as MouseEvent).clientY ?? (e as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
+    this.ctlr.RAFLoop("miniplayerDragging", (x = (e as MouseEvent).clientX ?? (e as TouchEvent).changedTouches[0].clientX, y = (e as MouseEvent).clientY ?? (e as TouchEvent).changedTouches[0].clientY) => {
       if (this.prevEX === x && this.prevEY === y) return; // #CONSERVATION: peak stays peak
       (this.prevEX = x), (this.prevEY = y);
       const { clientWidth: ww, clientHeight: wh } = getClientWH(this.media.container.parentElement),
@@ -186,7 +174,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.resizers = RESIZE_DIRS.map((dir) => {
       const el = createEl("div", { className: `tmg-media-miniplayer-resize-handle tmg-media-miniplayer-resize-${dir}`, ariaHidden: "true" });
       el.addEventListener("pointerdown", (e) => this.handleResizeStart(e, dir), { signal: this.signal });
-      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?._cache) => (e.stopImmediatePropagation(), sache && ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!))), { signal: this.signal });
+      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?.build) => (e.stopImmediatePropagation(), sache && ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!))), { signal: this.signal });
       return this.media.container.append(el), el;
     });
   }
@@ -196,8 +184,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   }
 
   public syncFeatures(): void {
-    if (this.config.disabled) return void (this.media.features.miniplayer = false);
-    this.media.features.miniplayer ||= this.ctlr.isNativeEl;
+    this.media.tech.polyfill("miniplayer", this.ctlr.isNativeEl, this.config.disabled);
   }
 
   protected override onDestroy(): void {

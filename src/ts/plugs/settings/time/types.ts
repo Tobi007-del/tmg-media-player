@@ -9,8 +9,6 @@ export interface TimeConfig extends OptRange {
   start: number | null | undefined;
   end: number;
   loop: boolean;
-}
-
-export interface TimeState {
-  whitelist: Extract<Paths<CtlrConfig>, `${string}time${string}`>[];
+  autoCap: number;
+  whitelist: string[];
 }

@@ -1,5 +1,6 @@
 import { DeepPartial } from "sia-reactor";
-import { PlaylistConfig, PlaylistItemConfig } from "./types";
+import { PlaylistConfig, PlayItemConfig } from "./types";
+import { MEDIA_ITEM_BUILD } from "@consts/media";
 
 export const PLAYLIST_BUILD: DeepPartial<PlaylistConfig> = {
   allowOverride: {
@@ -11,29 +12,8 @@ export const PLAYLIST_BUILD: DeepPartial<PlaylistConfig> = {
   content: null,
 };
 
-export const PLAYLIST_ITEM_BUILD: DeepPartial<PlaylistItemConfig> = {
-  media: {
-    intent: {
-      src: "",
-      poster: "",
-      tracks: [],
-    },
-    status: {},
-    settings: {
-      metadata: {
-        title: "",
-        artist: "",
-        profile: "",
-        artwork: [],
-        chapterInfo: [],
-        links: {
-          title: "",
-          artist: "",
-          profile: "",
-        },
-      },
-    },
-  },
+export const PLAY_ITEM_BUILD: DeepPartial<PlayItemConfig> = {
+  media: MEDIA_ITEM_BUILD as any,
   settings: {
     time: {
       start: 0,
@@ -44,5 +24,8 @@ export const PLAYLIST_ITEM_BUILD: DeepPartial<PlaylistItemConfig> = {
         marks: [],
       },
     },
+  },
+  ads: {
+    rolls: [],
   },
 }; // for a playlist

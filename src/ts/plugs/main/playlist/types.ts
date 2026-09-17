@@ -1,9 +1,10 @@
 import { CtlrConfig } from "@defs/config";
+import type { Inert } from "sia-reactor";
 
-export interface PlaylistItemConfig extends Pick<Required<CtlrConfig>, "media" | "settings"> {}
+export interface PlayItemConfig extends Pick<Required<CtlrConfig>, "media" | "settings" | "ads"> {}
 
 export type PlaylistConfig = {
-  content: PlaylistItemConfig[] | null;
+  content: Inert<PlayItemConfig[]> | null;
   allowOverride: {
     add: boolean;
     delete: boolean;

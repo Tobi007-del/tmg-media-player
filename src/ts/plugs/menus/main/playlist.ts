@@ -1,6 +1,6 @@
 import type { PlaylistPlug } from "@plugs/main/playlist";
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
-import { PLAYLIST_ITEM_BUILD } from "@plugs/main/playlist/build";
+import { PLAY_ITEM_BUILD } from "@plugs/main/playlist/build";
 import { mergeObjs } from "sia-reactor/utils";
 import { AUDIO_EXTENSIONS, MATCH_URL_YOUTUBE, MATCH_URL_VIMEO } from "@utils/match";
 
@@ -8,7 +8,7 @@ const getContent = (plug: PlaylistPlug, basic = true) => {
   if (plug.config.content) return plug.config.content;
   if (basic) return [{ media: { intent: { src: plug.media.state.src }, settings: { metadata: { title: plug.media.settings.metadata.title } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start } } }];
   const { title, artist, profile, artwork, chapterInfo, links } = plug.media.settings.metadata;
-  return [{ ...mergeObjs(PLAYLIST_ITEM_BUILD as any, { media: { intent: { src: plug.media.state.src, poster: plug.media.state.poster, tracks: plug.media.state.tracks }, settings: { metadata: { title, artist, profile, artwork, chapterInfo, links } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start }, controlPanel: { timeline: { previews: plug.settings.controlPanel.timeline.previews, marks: [...(plug.settings.controlPanel.timeline.marks || [])] } } } }) }];
+  return [{ ...mergeObjs(PLAY_ITEM_BUILD as any, { media: { intent: { src: plug.media.state.src, poster: plug.media.state.poster, tracks: plug.media.state.tracks }, settings: { metadata: { title, artist, profile, artwork, chapterInfo, links } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start }, controlPanel: { timeline: { previews: plug.settings.controlPanel.timeline.previews, marks: [...plug.settings.controlPanel.timeline.marks] } } } }) }];
 };
 
 export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): SettingsMenuItem => ({
@@ -17,12 +17,12 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
   icon: "playlist",
   widget: "drag-select",
   feature: "playlist",
-  configPaths: ["playlist", "playlist.content"],
+  configPaths: ["playlist"],
   onWire: (syncUI, signal) => plug.media.on("state.currentItem", syncUI, { signal }),
   getValue: () => getContent(plug)[plug.media.state.currentItem]?.media.settings.metadata.title || `Item ${plug.media.state.currentItem + 1}`,
   getOptions: () => getContent(plug).map((opt: any, i: number, _, src = opt.media.intent.src || "", dur = opt.media.status.duration, start = opt.settings.time.start) => ({ value: String(i), display: opt.media.settings.metadata.title || `Item ${i + 1}`, badge: MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_URL_VIMEO.test(src) ? "Vimeo" : AUDIO_EXTENSIONS.test(src) ? "Audio" : "", progress: dur && start ? Math.round((start / dur) * 100) : 0 })),
-  getDisabled: () => !plug.config.content && !plug.config.allowOverride.add,
-  onChange: (val: string) => (plug.media.intent.currentItem = Number(val)),
+  getDisabled: () => !plug.media.features.playlist,
+  onChange: (val: string) => plug.moveTo(Number(val)),
   onReorder: (oldIdx: number, newIdx: number) => (plug.config.allowOverride.move ? plug.config.content?.splice(newIdx, 0, plug.config.content.splice(oldIdx, 1)[0]) : undefined),
   onDelete: async (idx: number) => {
     if (!plug.config.allowOverride.delete) return;
@@ -30,8 +30,8 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
     if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.settingsView")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
   },
   onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-edit")) : undefined),
-  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.media.state.currentItem + 1}</b> / <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
-  actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-add") } as const] : [])],
+  getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.media.state.currentItem + 1}</b> of <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
+  actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort, getDisabled: () => !plug.config.content } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle, getDisabled: () => !plug.config.content } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-add") } as const] : [])],
   items: [
     {
       id: "playlist-add",
@@ -45,7 +45,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
       ],
       getValue: () => "",
       getTipHTML: () => "YouTube and Vimeo urls are supported, as well as direct public or local media urls (mp4, webm, mp3, etc)",
-      onChange: (vals: any) => (plug.config.content = [...getContent(plug, false), mergeObjs(PLAYLIST_ITEM_BUILD as any, { media: { intent: { src: vals.src }, settings: { metadata: { title: vals.title, artist: vals.artist } } } } as any)] as any),
+      onChange: (vals: any) => (plug.config.content = [...getContent(plug, false), mergeObjs(PLAY_ITEM_BUILD as any, { media: { intent: { src: vals.src }, settings: { metadata: { title: vals.title, artist: vals.artist } } } } as any)] as any),
     },
     {
       id: "playlist-edit",

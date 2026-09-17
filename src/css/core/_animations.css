@@ -28,7 +28,7 @@
     transform: translateX(0);
   }
 }
-@keyframes tmg-show {
+@keyframes tmg-hide {
   from,
   20% {
     opacity: 1;
@@ -37,7 +37,7 @@
     opacity: 0;
   }
 }
-@keyframes tmg-show-alt {
+@keyframes tmg-hide-alt {
   0%,
   60% {
     opacity: 1;
@@ -45,12 +45,6 @@
   90%,
   100% {
     opacity: 0;
-  }
-}
-@keyframes tmg-stay-visible {
-  from,
-  to {
-    opacity: 1;
   }
 }
 @keyframes tmg-scale-up {

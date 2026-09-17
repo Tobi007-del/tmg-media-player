@@ -10,7 +10,8 @@ if ("undefined" !== typeof window) {
   window.TMG_DASH_JS_SRC ??= "https://cdn.jsdelivr.net/npm/dashjs@4/dist/dash.all.min.js";
   window.TMG_YT_API_SRC ??= "https://www.youtube.com/iframe_api";
   window.TMG_VIMEO_API_SRC ??= "https://player.vimeo.com/api/player.js";
-  window.TMG_CAST_SENDER_SRC ??= "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+  window.TMG_CAST_API_SRC ??= "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+  window.TMG_IMA_SDK_SRC ??= "https://imasdk.googleapis.com/js/sdkloader/ima3.js";
   window.TMG_MEDIA_ALT_IMG_SRC ??= "https://cdn.jsdelivr.net/npm/tmg-media-player@latest/dist/assets/icons/movie-tape.png";
   init(), loadResource(window.TMG_MEDIA_CSS_SRC), loadResource(window.T007_TOAST_JS_SRC!, "script"), loadResource(window.T007_INPUT_JS_SRC!, "script"), loadResource(window.T007_DIALOG_JS_SRC!, "script");
   console.log("%cTMG Media Player Available", "color: darkturquoise");

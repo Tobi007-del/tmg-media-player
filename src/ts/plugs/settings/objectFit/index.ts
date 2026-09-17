@@ -5,8 +5,8 @@ import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
 import { rotateAny } from "@utils/num";
 import { getUIOpt, parseUIOpts } from "@utils/obj";
-import { getRenderedBox } from "@utils/media";
 import { capitalize } from "@utils/str";
+import { getRenderedBox } from "@utils/dom";
 
 export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
   public static readonly plugName = "objectFit";
@@ -14,10 +14,10 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
 
   public override wire(): void {
     // Ctlr Media Watchers
-    this.media.watch("tech", () => (this.media.features.objectFit ||= true), { init: true, signal: this.signal });
-    this.media.watch("state.objectFit", this.onObjectFitState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.watch("tech", () => this.media.tech.polyfill("objectFit", this.ctlr.isNativeEl || this.media.tech.features.objectFit !== false), { init: true, signal: this.signal });
+    this.media.watch("state.objectFit", this.onObjectFitState, { init: this.ctlr.flags.wired, signal: this.signal });
     // --------- Listeners
-    this.media.on("intent.objectFit", this.handleObjectFitIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("intent.objectFit", this.handleObjectFitIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     // ---- State ---------
     for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSizes, { init: p === "width", signal: this.signal });
     // ---- Config --------

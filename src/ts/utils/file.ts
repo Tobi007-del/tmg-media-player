@@ -1,6 +1,7 @@
 import { NOOP } from "sia-reactor";
 import { parseRomanNum } from "./num";
 import { MEDIA_EXTENSIONS, FILE_EXTENSIONS, mimeTypes } from "./match";
+import { collator } from "./str";
 
 // File Size Formatting
 export { formatSize } from "@t007/utils";
@@ -51,7 +52,7 @@ export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (ite
     log("Prefix", `"${getName(file)}" → "${key}"`), (group ?? (groups.set(key, (group = [])), group)).push(file);
   }
   const sortedFiles = [],
-    byGroup = ([a]: [string, F[]], [b]: [string, F[]], diff = a === "unknown" ? 1 : b === "unknown" ? -1 : a.localeCompare(b)) => (log("Group Compare", `[${a}] vs [${b}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}`), diff), // Sort groups alphabetically by their prefix
+    byGroup = ([a]: [string, F[]], [b]: [string, F[]], diff = a === "unknown" ? 1 : b === "unknown" ? -1 : collator.compare(a, b)) => (log("Group Compare", `[${a}] vs [${b}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}`), diff), // Sort groups alphabetically by their prefix
     getKey = (name: string, key = kCache.get(name)) => (key ? key : (kCache.set(name, (key = extractEpisodeKey(name))), key)),
     byEpisode = (a: F, b: F, ak = getKey(getName(a)), bk = getKey(getName(b)), diff = ak[0] !== bk[0] ? ak[0] - bk[0] : ak[1] - bk[1]) => (log("Episode Compare", `[${ak}] vs [${bk}] = ${diff > 0 ? "B first" : diff < 0 ? "A first" : "Tie"}  ("${getName(a)}" / "${getName(b)}")`), diff), // season | episode
     sortedGroups = (log("Groups", `Identified ${groups.size} group(s)`, groups), [...groups.entries()].sort(byGroup)); // Sort groups alphabetically by their prefix

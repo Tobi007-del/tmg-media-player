@@ -300,7 +300,7 @@ Every piece of data flows through a transactional pipeline divided strictly into
 You do not write to the player's state. You write to its **Intent**.
 
 ```js
-const { media } = video.tmgPlayer.Controller;
+const { media } = video.tmgPlayer.controller;
 
 video.play(); // ❌ WRONG: Do not touch the video directly
 
@@ -327,7 +327,7 @@ Because S.I.A. intercepts changes *before* they settle, plugins can effortlessly
 TMG exposes the raw power of [sia-reactor](https://github.com/Tobi007-del/sia-reactor) directly to the outside world. You can observe, watch, or intercept state easily.
 
 ```js
-const { media } = video.tmgPlayer.Controller;
+const { media } = video.tmgPlayer.controller;
 
 // Watch fires immediately with current value, and on every change
 media.watch("state.paused", ({ value }) => console.log(value ? "Video is paused" : "Video is playing"));

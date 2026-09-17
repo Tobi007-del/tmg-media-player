@@ -20,9 +20,8 @@ export const getSettingsOverlayMenu = (plug: OverlayPlug): SettingsMenuItem => (
           id: "overlayConfig",
           label: "Overlay",
           widget: "group",
-          getValue: () => (plug.config.behavior.value !== "hidden" && plug.config.delay ? "On" : "Off"),
-          getTipHTML: () => "Configure the overlay behavior and appearance",
-          configPaths: ["settings.overlay.curtain.value"],
+          getValue: () => (plug.config.delay && plug.config.behavior.value !== "hidden" && plug.config.curtain.value !== "none" ? "On" : "Off"),
+          configPaths: ["settings.overlay.behavior.value", "settings.overlay.delay", "settings.overlay.curtain.value"],
           items: [
             { id: "overlayBehavior", label: "Behavior", widget: "select", getValue: () => getUIOpt(plug.config.behavior.options, plug.config.behavior.value), getOptions: () => plug.config.behavior.options!, onChange: (val: string) => (plug.config.behavior.value = val as any), configPaths: ["settings.overlay.behavior.value"] },
             { id: "overlayDelay", label: "Auto-hide delay", widget: "input", inputs: [{ label: "ms", placeholder: "2500", type: "number", min: "0", required: true, value: () => plug.config.delay }], getValue: () => formatUITime(plug.config.delay), onChange: (val: Record<string, any>) => (plug.config.delay = val["ms"]), configPaths: ["settings.overlay.delay"] },

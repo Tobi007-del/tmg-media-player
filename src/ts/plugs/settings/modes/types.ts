@@ -1,6 +1,6 @@
-import { MediaIntent } from "@defs/contract";
+import { MediaIntent, MediaState } from "@defs/contract";
 import { RESIZE_DIRS } from "./build";
-import { UISettings } from "@defs/UIOptions";
+import { UISettings, UITuple } from "@defs/UIOptions";
 
 export type ResizeDir = (typeof RESIZE_DIRS)[number];
 
@@ -12,11 +12,11 @@ export interface ModesFullscreenConfig {
   disabled: boolean;
   pseudo: boolean;
   orientation: {
+    options: UITuple<MediaIntent["fullscreenOrientation"] | "auto">[];
     allowMediaOverride: boolean;
-    options: UISettings<MediaIntent["fullscreenOrientation"] | "auto">["options"];
     rotationToggle: {
-      on: UISettings<MediaIntent["fullscreenOrientation"]>;
-      off: UISettings<MediaIntent["fullscreenOrientation"]>;
+      on: UISettings<MediaState["fullscreenOrientation"]>;
+      off: UISettings<MediaState["fullscreenOrientation"]>;
     };
   };
 }
@@ -36,10 +36,28 @@ export interface ModesFloatingPlayerConfig {
   height: number;
   disallowReturnToOpener: boolean;
   preferInitialWindowPlacement: boolean;
+  css: Record<"whitelist" | "blacklist", { url: string[]; token: string[] }>;
 }
 export interface ModesPictureInPictureConfig {
   disabled: boolean;
   floatingPlayer: ModesFloatingPlayerConfig;
+}
+
+export interface ModesCastConfig {
+  disabled: boolean;
+  options: Partial<cast.framework.CastOptions>;
+}
+
+export interface ModesCastState {
+  APIReady: boolean;
+}
+
+export interface ModesAirPlayConfig {
+  disabled: boolean;
+}
+
+export interface ModesAirPlayState {
+  isAvailable: boolean;
 }
 
 export interface ModesConfig {
@@ -47,4 +65,6 @@ export interface ModesConfig {
   theater: ModesTheaterConfig;
   pictureInPicture: ModesPictureInPictureConfig;
   miniplayer: ModesMiniplayerConfig;
+  cast: ModesCastConfig;
+  airplay: ModesAirPlayConfig;
 }

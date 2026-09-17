@@ -1,10 +1,10 @@
-:is(.tmg-media-container-content, .tmg-media-container-content button) {
+:is(.tmg-media-content, .tmg-media-content button) {
   color: var(--tmg-media-current-control-color);
 }
-.tmg-media-container-content svg {
+.tmg-media-content svg {
   color: currentColor;
 }
-.tmg-media-container-content button:is(:hover, :focus-visible) {
+.tmg-media-content button:is(:hover, :focus-visible) {
   --tmg-media-current-control-color: var(--tmg-media-control-active-color);
 }
 :is(.tmg-media-side-controls-wrapper button, .tmg-media-control-btn) {
@@ -33,7 +33,7 @@
 :is(.tmg-media-container.tmg-media-paused .tmg-media-pause-icon, .tmg-media-container:not(.tmg-media-paused) .tmg-media-play-icon, .tmg-media-container:not(.tmg-media-replay) .tmg-media-replay-icon, .tmg-media-container.tmg-media-replay :is(.tmg-media-pause-icon, .tmg-media-play-icon)),
 :is(.tmg-media-container.tmg-media-fullscreen .tmg-media-enter-fullscreen-icon, .tmg-media-container:not(.tmg-media-fullscreen) .tmg-media-leave-fullscreen-icon),
 :is(.tmg-media-container.tmg-media-theater .tmg-media-enter-theater-icon, .tmg-media-container:not(.tmg-media-theater) .tmg-media-leave-theater-icon),
-:is(.tmg-media-container[data-track-kind="subtitles"] .tmg-media-captions-icon, .tmg-media-container:not([data-track-kind="subtitles"]) .tmg-media-subtitles-icon),
+:is(.tmg-media-container[data-text-kind="subtitles"] .tmg-media-captions-icon, .tmg-media-container:not([data-text-kind="subtitles"]) .tmg-media-subtitles-icon),
 :is(.tmg-media-container:is(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-enter-picture-in-picture-icon, .tmg-media-container:not(.tmg-media-picture-in-picture, .tmg-media-floating-player) .tmg-media-leave-picture-in-picture-icon),
 :is(.tmg-media-container:not(.tmg-media-is-live) .tmg-media-time-and-duration-btn .tmg-media-live-badge, .tmg-media-container.tmg-media-is-live .tmg-media-time-and-duration-btn > *:not(.tmg-media-live-badge)),
 :is(.tmg-media-object-fit-contain-icon, .tmg-media-object-fit-cover-icon, .tmg-media-object-fit-fill-icon, .tmg-media-volume-high-icon, .tmg-media-volume-low-icon, .tmg-media-volume-muted-icon, .tmg-media-brightness-high-icon, .tmg-media-brightness-low-icon, .tmg-media-brightness-dark-icon) {
@@ -48,7 +48,7 @@
 .tmg-media-playback-rate-btn {
   gap: 0.5ch;
   min-height: var(--tmg-media-current-unit);
-  white-space: nowrap;
+  white-space: pre;
   font-variant-numeric: tabular-nums;
 }
 .tmg-media-playback-rate-btn {
@@ -57,23 +57,6 @@
 .tmg-media-container.tmg-media-scrubbing .tmg-media-current-time,
 .tmg-media-playback-rate-btn {
   font-weight: 500;
-}
-.tmg-media-live-badge::before {
-  --pulse-color: #757575;
-  content: "";
-  display: inline-block;
-  width: 0.8ch;
-  height: 0.8ch;
-  border-radius: 50%;
-  background-color: var(--pulse-color);
-  margin-right: 0.7ch;
-  vertical-align: 4%;
-}
-.tmg-media-live-badge.tmg-media-control-live::before {
-  --pulse-color: red;
-}
-.tmg-media-container:not(.tmg-media-paused) .tmg-media-live-badge::before {
-  animation: tmg-live-pulse 2s infinite ease-in-out;
 }
 .tmg-media-captions-btn {
   position: relative;
@@ -93,6 +76,27 @@
 .tmg-media-container.tmg-media-captions .tmg-media-captions-btn::after {
   transform: scale(1, 1);
 }
+.tmg-media-voice-btn.tmg-media-control-active svg {
+  filter: drop-shadow(0 0 calc(var(--tmg-media-current-unit) * 0.08) rgb(from var(--tmg-media-brand-accent-color) r g b / 0.75)) drop-shadow(0 0 calc(var(--tmg-media-current-unit) * 0.25) rgb(from var(--tmg-media-brand-color) r g b / 0.75));
+}
+.tmg-media-live-badge::before {
+  --pulse-color: #757575;
+  content: "";
+  display: inline-block;
+  width: 0.8ch;
+  height: 0.8ch;
+  border-radius: 50%;
+  background-color: var(--pulse-color);
+  margin-right: 0.7ch;
+  vertical-align: 4%;
+}
+.tmg-media-live-badge.tmg-media-control-live::before {
+  --pulse-color: red;
+}
+.tmg-media-container:not(.tmg-media-paused) .tmg-media-live-badge::before {
+  animation: tmg-live-pulse calc(var(--tmg-media-notifiers-animation-time) * 2) infinite ease-in-out;
+}
+
 .tmg-host-container [data-badge] {
   position: relative;
 }
@@ -102,8 +106,8 @@
   top: 1px;
   right: calc(var(--tmg-media-current-unit) / -3.5);
 }
-.tmg-media-control-badge,
-.tmg-host-container [data-badge]::before {
+.tmg-host-container [data-badge]::before,
+.tmg-media-control-badge {
   display: inline-flex;
   align-self: flex-start;
   padding: 0 calc(var(--tmg-media-current-unit) / 15);

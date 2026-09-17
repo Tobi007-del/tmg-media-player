@@ -42,16 +42,14 @@ export class Meta extends BaseComponent<MetaConfig, ComponentState, HTMLDivEleme
     this.syncProfile(), this.syncTitle(), this.syncArtist();
   }
   public syncProfile(): void {
-    const profile = this.settings.controlPanel.profile;
-    if (profile !== true) this.profile.dataset.metaProfile = this.profile.src = profile || "";
+    const val = this.settings.controlPanel.profile;
+    if (val !== true) val ? (this.profile.src = val) : this.profile.removeAttribute("src");
   }
   public syncTitle(): void {
-    const title = this.settings.controlPanel.title;
-    if (title !== true) this.title.dataset.metaTitle = this.title.textContent = title || "";
+    if (this.settings.controlPanel.title !== true) this.title.textContent = this.settings.controlPanel.title || "";
   }
   public syncArtist(): void {
-    const artist = this.settings.controlPanel.artist;
-    if (artist !== true) this.artist.dataset.metaArtist = this.artist.textContent = artist || "";
+    if (this.settings.controlPanel.artist !== true) this.artist.textContent = this.settings.controlPanel.artist || "";
   }
 
   protected override onDestroy(): void {

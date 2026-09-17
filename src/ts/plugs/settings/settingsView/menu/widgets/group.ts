@@ -36,7 +36,7 @@ export class GroupWidget extends BaseWidget {
     const active = (this.item.items ?? []).filter((sub) => {
       if (this.settings.settingsView.menu.blacklist.includes(sub.id)) return false;
       if (isFunc(sub.hidden) ? sub.hidden() : sub.hidden) return false;
-      return !sub.feature || this.media.features[sub.feature] === true;
+      return !sub.feature || !!this.media.features[sub.feature];
     });
     this.renderRows(active);
     for (const sub of active) {
@@ -82,7 +82,7 @@ export class GroupWidget extends BaseWidget {
         if (badge?.value) el.dataset.badge = badge.value;
         sub.inline && sub.widget !== "toggle" ? (li.removeAttribute("tabindex"), li.classList.replace("tmg-media-smenu-group-row", "tmg-media-smenu-inline-wrapper"), li.append(el), sub.widget === "range" && li.classList.add("tmg-media-smenu-row-inline-block")) : (li.append(lbl, el), li.classList.add("tmg-media-smenu-row-inline"));
         li.widget = widget;
-        li.addEventListener("click", (e) => !disabled && (e.target === li || e.target === lbl) && li.querySelector<HTMLElement>("input, button")?.click());
+        li.addEventListener("click", (e) => !disabled && (e.target === li || e.target === lbl) && li.querySelector<HTMLElement>("input, button")?.click(), { signal: this.signal });
       } else li.append(lbl);
     } else {
       const value = sub.getValue?.(),
@@ -94,7 +94,7 @@ export class GroupWidget extends BaseWidget {
       if (badge?.value) val.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
 
       sub.widget !== "button" ? li.append(lbl, val, createEl("span", { className: "tmg-media-smenu-group-arrow", ariaHidden: "true", innerHTML: "&#8250;" })) : li.append(lbl);
-      li.addEventListener("click", () => !disabled && (sub.widget === "button" ? sub.onChange?.(null) : this.onSubItemClick?.(sub)));
+      li.addEventListener("click", () => !disabled && (sub.widget === "button" ? sub.onChange?.(null) : this.onSubItemClick?.(sub)), { signal: this.signal });
       if (sub.onWire) {
         const ac = new AbortController(),
           syncUI = () => {

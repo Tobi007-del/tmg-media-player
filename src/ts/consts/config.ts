@@ -1,14 +1,14 @@
 import type { CtlrConfig } from "@defs/config";
+import { Action } from "@defs/action";
 import { CTX, type DeepPartial } from "sia-reactor";
 import { ACTIONS_BUILD } from "./actions";
 import { AUDIO_CONTEXT, CtlrState } from "@tools/runtime";
 import { queryFullscreen } from "@utils/dom";
 
 export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
-  mediaPlayer: "TMG",
   actions: {
-    entries: Object.fromEntries(Object.entries(ACTIONS_BUILD).map(([k, v]) => [k, { id: k, ...v }])) as any,
-    logicBlacklist: ["media.state", "media.status", "media.tech", "media.features", "media.type", "media.element", "media.pseudoElement", "media.container", "media.pseudoContainer", "media.intent.sources", "media.intent.tracks", "media.intent.xrInputSource", "media.settings.srcObject", "media.settings.protection", "media.settings.metadata.artwork", "media.settings.metadata.chapterInfo"],
+    entries: Object.fromEntries(Object.keys(ACTIONS_BUILD).map((k) => [k, { id: k, ...ACTIONS_BUILD[k as Action["id"]] }])) as any,
+    blacklist: ["media.state", "media.status", "media.tech", "media.features", "media.type", "media.element", "media.pseudoElement", "media.container", "media.pseudoContainer", "media.intent.sources", "media.intent.tracks", "media.intent.xrInputSource", "media.settings.srcObject", "media.settings.protection", "media.settings.metadata.artwork", "media.settings.metadata.chapterInfo"],
   },
   settings: {
     // techOrder: [
@@ -20,8 +20,8 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
     //   "html5", // 6. The Native Floor (Catches raw .mp4, .webm, .mp3, etc.)
     // ],
   },
-  debug: true,
   devMode: CTX.isDevEnv,
+  courtesy: "TMG",
   noPlugList: [], // dev: "settings.persist"
 };
 
@@ -29,7 +29,7 @@ export const STATE_BUILD = (): CtlrState => ({
   readyState: 0,
   audioCtxReady: !!AUDIO_CONTEXT,
   mediaIntersecting: true,
-  mediaParentIntersecting: true,
+  parentIntersecting: true,
   dimensions: {
     container: { width: 0, height: 0, tier: "x" },
     pseudoContainer: { width: 0, height: 0, tier: "x" },

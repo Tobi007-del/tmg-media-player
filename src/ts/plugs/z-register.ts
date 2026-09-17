@@ -2,6 +2,7 @@ import { PlugRegistry, PinRegistry } from "@core/registries";
 import { PersistPlug } from "./settings/persist";
 import { TimeTravelPlug } from "./settings/timeTravel";
 import { PlaylistPlug } from "./main/playlist";
+import { AdsPlug } from "./main/ads";
 import { AutoPlug } from "./settings/auto";
 import { CSSPlug } from "./settings/css";
 import { SkeletonPlug } from "./main/skeleton";
@@ -29,14 +30,14 @@ import { DisabledPlug } from "./main/disabled";
 import { ErrorsPlug } from "./settings/errors";
 import { SettingsViewPlug } from "./settings/settingsView";
 import { AmbiencePlug } from "./settings/ambience";
-import { CastPlug } from "./settings/cast";
-import { AirPlayPlug } from "./settings/airplay";
 import { SleepTimerPlug } from "./settings/sleepTimer";
 import { ControlPanelDraggablePin } from "./settings/controlPanel/draggable";
 import { ModesFullscreenPin } from "./settings/modes/fullscreen";
 import { ModesTheaterPin } from "./settings/modes/theater";
 import { ModesPictureInPicturePin } from "./settings/modes/pictureInPicture";
 import { ModesMiniplayerPin } from "./settings/modes/miniplayer";
+import { ModesCastPin } from "./settings/modes/cast";
+import { ModesAirPlayPin } from "./settings/modes/airplay";
 import { GestureWheelPin } from "./settings/gesture/wheel";
 import { GestureTouchPin } from "./settings/gesture/touch";
 
@@ -58,7 +59,7 @@ for (const Plug of [
   LightStatePlug,
   VolumePlug,
   BrightnessPlug,
-  CastPlug, // Before other Intent resolvers apart from envelopers (volume, brightness)
+  AdsPlug,
   PlaybackRatePlug,
   CaptionsPlug,
   GesturePlug,
@@ -72,7 +73,6 @@ for (const Plug of [
   DisabledPlug,
   ErrorsPlug,
   AmbiencePlug,
-  AirPlayPlug,
   SleepTimerPlug,
   SettingsViewPlug,
 ])
@@ -85,6 +85,8 @@ for (const Pin of [
   ModesTheaterPin,
   ModesPictureInPicturePin,
   ModesMiniplayerPin,
+  ModesCastPin,
+  ModesAirPlayPin,
   GestureWheelPin,
   GestureTouchPin,
 ])

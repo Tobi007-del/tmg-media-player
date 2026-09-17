@@ -81,11 +81,11 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         }
         li.onclick = (e) => {
           if (!this.item.onChange || li.classList.contains("tmg-media-smenu-dragging") || (dragHandle && dragHandle.contains(e.target as Node))) return;
-          if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
+          if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal));
           this.item.onChange?.(opt.value);
           this.currentValue = li.dataset.optDisplay!;
           this.syncActive();
-          setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
+          if (this.item.closeOnSelect !== false) setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
         };
         return li;
       },

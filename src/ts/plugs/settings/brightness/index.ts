@@ -20,23 +20,22 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
 
   public override wire(): void {
     // Variables Assignment
-    const brightness = this.media.intent.brightness ?? this.media.state.brightness ?? this.settings.css.brightness;
-    this.state.aptValue = clamp(this.config.min, brightness, this.config.max);
-    this.shouldToggle = this.useAptValue = this.media.intent.dark ?? false;
+    this.state.aptValue = clamp(this.config.min, this.media[this.ctlr.gospel].brightness, this.config.max); // ?? this.settings.css.brightness
+    this.shouldToggle = this.useAptValue = this.media[this.ctlr.gospel].dark;
     this.media.intent.brightness = this.shouldToggle ? 0 : this.state.aptValue;
     // Ctlr Media Setters
     this.media.set("intent.brightness", (v) => clamp(this.shouldToggle ? 0 : this.config.min, v, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // ----------- Watchers
-    this.media.watch("tech", () => ((this.media.features.brightness ||= true), (this.media.features.dark ||= true)), { init: true, signal: this.signal });
+    this.media.watch("tech", () => this.media.tech.polyfill(["brightness", "dark"], true), { init: true, signal: this.signal });
     // ----------- Listeners
-    this.media.on("intent.brightness", this.handleBrightnessIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("intent.dark", this.handleDarkIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.brightness", (e) => this.handleSliderState(e.value), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("intent.brightness", this.handleBrightnessIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("intent.dark", this.handleDarkIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("state.brightness", (e) => this.handleSliderState(e.value), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config ---------
     this.ctlr.config.on("settings.brightness.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.brightness.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("dark", { fn: this.handleKeyDark, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("dark", { fn: this.handleKeyDark }, this.signal);
     this.ctlr.learn("brightnessUp", { fn: this.handleKeyBrightnessUp, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("brightnessDown", { fn: this.handleKeyBrightnessDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();

@@ -4,21 +4,22 @@ import { TOASTS_BUILD } from "./build";
 import { createEl } from "@utils/dom";
 import { Controller } from "@core/controller";
 import { setTimeout } from "sia-reactor/utils";
-import { ToastOptions } from "@t007/toast";
+import { Toast, ToastOptions } from "@t007/toast";
 import { NOOP } from "sia-reactor";
 
 export class ToastsPlug extends BasePlug<ToastsConfig, ToastsState> {
   public static readonly plugName = "toasts";
   public static readonly BUILD = TOASTS_BUILD;
   public container!: HTMLElement;
+  public toast?: Toast;
 
   constructor(ctlr: Controller, config = ctlr.settings.toasts) {
     super(ctlr, config, { reminders: [] });
   }
 
   public override mount(): void {
-    this.container = createEl("div", { className: "tmg-media-toasts-container" });
-    this.media.container.append(this.container);
+    this.container = this.media.container.appendChild(createEl("div", { className: "tmg-media-toasts-container" }));
+    this.toast = t007.toaster({ rootElement: this.container, signal: this.signal, ...this.config }, this.ctlr.config.id);
   }
   public override unmount(): void {
     this.container.remove();
@@ -26,15 +27,9 @@ export class ToastsPlug extends BasePlug<ToastsConfig, ToastsState> {
 
   public override wire(): void {
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.toasts.disabled", ({ value }) => value && t007.toast?.dismissAll(this.ctlr.config.id), { signal: this.signal });
-    this.ctlr.config.on("settings.toasts", ({ type, target: { path, key, value } }) => type === "update" && !/disabled/.test(path) && t007.toast?.doForAll("update", { [key]: value }, this.ctlr.config.id), { signal: this.signal });
+    this.ctlr.config.on("settings.toasts", ({ type, value, target: { key } }) => type === "update" && t007.toast?.doForAll("update", { [key]: ((this.toast!.defaults as any)[key] = value) }, this.ctlr.config.id), { signal: this.signal });
     // Post Wiring
     super.wire();
-  }
-
-  public get toast() {
-    if (!this.config || this.config.disabled || !t007.toaster) return null; // after the nuke, ctlr might need me for errors but one of use is the wiser
-    return t007.toaster({ groupId: this.ctlr.config.id, rootElement: this.container, signal: this.signal, ...this.config });
   }
 
   public addReminder(opts: Omit<ToastReminder, "id" | "timeoutId">): void {
@@ -54,7 +49,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig, ToastsState> {
   }
 }
 
-export const tutorialOpts = (onGotIt: () => void = NOOP): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", closeButton: true, hideProgressBar: false, animation: "fade", actions: { "Got it!": onGotIt } });
+export const tutorialOpts = (onGotIt: () => void = NOOP): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, actions: { "Got it!": onGotIt } });
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {

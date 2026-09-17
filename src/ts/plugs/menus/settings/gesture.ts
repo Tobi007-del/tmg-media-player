@@ -1,12 +1,17 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { GesturePlug } from "@plugs/settings/gesture";
 import { capitalize, uncamelize } from "@utils/str";
-import { getMediaBoolProps } from "@utils/media";
+import { getMediaProps } from "@utils/media";
 import { formatMenuPx } from "@utils/str";
 import { UITuple } from "@defs/UIOptions";
 import { formatUITime } from "@utils/time";
 
-const getClickOptions = (plug: GesturePlug) => [{ value: false, display: "None" }, ...getMediaBoolProps(plug.media).map((k) => ({ value: k, display: capitalize(uncamelize(k)) }))];
+export const getMediaBools = (plug: GesturePlug) => [
+  { value: false, display: "None" },
+  ...getMediaProps(plug.media)
+    .sort()
+    .map((k) => ({ value: k, display: capitalize(uncamelize(k)) })),
+];
 
 export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => ({
   id: "advanced",
@@ -26,11 +31,10 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
           label: "Gestures",
           widget: "group",
           getValue: () => (plug.config.click === false && plug.config.dblClick === false && !plug.config.touch.volume && !plug.config.touch.brightness && !plug.config.touch.timeline && !plug.config.wheel.volume && !plug.config.wheel.brightness && !plug.config.wheel.timeline ? "Off" : "On"),
-          getTipHTML: () => "Configure touch, swipe, and click interactions",
           configPaths: ["settings.gesture.click", "settings.gesture.dblClick", "settings.gesture.touch.volume", "settings.gesture.touch.brightness", "settings.gesture.touch.timeline", "settings.gesture.wheel.volume", "settings.gesture.wheel.brightness", "settings.gesture.wheel.timeline"],
           items: [
-            { id: "gestureClick", label: "Single click", widget: "select", getValue: () => (plug.config.click === false ? "None" : capitalize(uncamelize(plug.config.click))), getOptions: () => getClickOptions(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.click = val), configPaths: ["settings.gesture.click"], getTipHTML: () => "Action to perform when tapping once on the video player" },
-            { id: "gestureDblClick", label: "Double click", widget: "select", getValue: () => (plug.config.dblClick === false ? "None" : capitalize(uncamelize(plug.config.dblClick))), getOptions: () => getClickOptions(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.dblClick = val), configPaths: ["settings.gesture.dblClick"], getTipHTML: () => "Action to perform when double tapping on the video player" },
+            { id: "gestureClick", label: "Single click", widget: "select", getValue: () => (plug.config.click === false ? "None" : capitalize(uncamelize(plug.config.click))), getOptions: () => getMediaBools(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.click = val), configPaths: ["settings.gesture.click"] },
+            { id: "gestureDblClick", label: "Double click", widget: "select", getValue: () => (plug.config.dblClick === false ? "None" : capitalize(uncamelize(plug.config.dblClick))), getOptions: () => getMediaBools(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.dblClick = val), configPaths: ["settings.gesture.dblClick"] },
             {
               id: "gestureTouchGroup",
               label: "Screen touch",

@@ -23,6 +23,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   private subPanels: SubMenuPanel[] = [];
   public navStack: string[] = [];
   private menuOpen = false;
+  public onViewClick?: () => void;
 
   public override create(): HTMLElement {
     this.element = createEl("div", { className: "tmg-media-smenu-overlay", inert: true });
@@ -34,12 +35,12 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     return this.element;
   }
 
-  public override mount(onViewClick?: () => void): void {
+  public override mount(): void {
     if (!this.element) this.create();
     this.mainPanel = new MainMenuPanel(this.ctlr, this.config);
     this.mainPanel.setup(), this.mainPanel.build();
     this.mainPanel.onItemClick = (item) => this.goTo(item.id);
-    this.mainPanel.onViewClick = onViewClick;
+    this.mainPanel.onViewClick = this.onViewClick;
     this.el.append(this.mainPanel.element);
     this.media.container.append(this.element);
   }
@@ -54,7 +55,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   public override unmount(): void {
-    removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element), super.unmount();
+    if (this.element) removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element), super.unmount();
   }
 
   protected override onDestroy(): void {
@@ -124,11 +125,11 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
 
   public open(anchorEl = this.ctlr.plug("settings.controlPanel")?.compEl("settings") ?? this.media.container, preserveStack = false): void {
     if (!(this.anchorEl = anchorEl) || this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
-    this.menuOpen = true;
+    (this.menuOpen = true), !this.mainPanel && this.mount();
     if (!preserveStack) this.navStack = [];
     if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
-    this.anchorIntervalId = setInterval(() => this.reposition(this.anchorEl), 250, this.signal);
+    this.anchorIntervalId = setInterval(() => this.reposition(this.anchorEl), 250, this.signal); // 4 times a second
     this.reposition(anchorEl), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
     this.media.container.classList.add("tmg-media-settings-menu");
     initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: SettingsMenu.focusSelector });
@@ -183,7 +184,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private syncMain(): void {
-    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || this.media.features[item.feature] === true)));
+    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || !!this.media.features[item.feature])));
     this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
   private syncHeight(panel: BaseMenuPanel, height = panel.contentHeight): void {

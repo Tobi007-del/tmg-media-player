@@ -1,8 +1,6 @@
 import { ToastOptions } from "@t007/toast";
 
-export interface ToastsConfig extends ToastOptions {
-  disabled: boolean;
-}
+export interface ToastsConfig extends ToastOptions {}
 
 export interface ToastReminder extends ToastOptions {
   id: string;

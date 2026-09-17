@@ -31,26 +31,25 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
 
   public override wire(): void {
     // Variables Assignment
-    const volume = this.media.intent.volume ?? this.media.state.volume;
-    this.state.aptValue = clamp(this.config.min, volume, this.config.max);
-    this.shouldToggle = this.useAptValue = this.media.state.muted ?? false;
+    this.state.aptValue = clamp(this.config.min, this.media[this.ctlr.gospel].volume, this.config.max);
+    this.shouldToggle = this.useAptValue = this.media[this.ctlr.gospel].muted;
     this.media.intent.volume = this.shouldToggle ? 0 : this.state.aptValue;
     // Event Listeners
     this.media.element.addEventListener("volumechange", this.handleNativeVolumeChange, { capture: true, signal: this.signal }), this.handleNativeVolumeChange();
     // Ctlr Media Setters
     this.media.set("intent.volume", (v) => clamp(this.shouldToggle ? 0 : this.config.min, v, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
-    this.media.set("state.volume", (v) => ((this.ctlr.isNativeEl || !this.ctlr.payload.wired) && v !== this.shadowVolume ? TERMINATOR : v), { signal: this.signal }); // #DICTATOR: reliable authority
+    this.media.set("state.volume", (v) => ((this.ctlr.isNativeEl || !this.ctlr.flags.wired) && v !== this.shadowVolume ? TERMINATOR : v), { signal: this.signal }); // #DICTATOR: reliable authority
     // ----------- Watchers
-    this.media.watch("tech", () => ((this.media.features.volume ||= this.ctlr.isNativeEl), (this.media.features.muted ||= this.ctlr.isNativeEl), (this.media.features.volumeBoost ||= this.ctlr.isNativeEl)), { init: true, signal: this.signal });
+    this.media.watch("tech", () => this.media.tech.polyfill(["volume", "muted"], this.ctlr.isNativeEl), { init: true, signal: this.signal });
     // ----------- Listeners
-    this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("intent.muted", this.handleMutedIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.volume", (e) => this.handleSliderState(e.value), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("intent.muted", this.handleMutedIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("state.volume", (e) => this.handleSliderState(e.value), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config ---------
     this.ctlr.config.on("settings.volume.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.volume.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("mute", { fn: this.handleKeyMute, keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("mute", { fn: this.handleKeyMute }, this.signal);
     this.ctlr.learn("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("volumeDown", { fn: this.handleKeyVolumeDown, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
@@ -62,7 +61,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     this.setValueState(e.value, isNext);
     this.ctlr.isNativeEl && this.gainNode?.gain.setTargetAtTime((e.value / 100) * 2, this.ctime, 0.05);
     if (!isNext && e.value > 0) this.media.settings.defaultMuted = false; // youtube courtesy
-    if (this.ctlr.isNativeEl || !this.ctlr.payload.wired) this.media.state.volume = this.shadowVolume = e.value;
+    if (this.ctlr.isNativeEl || !this.ctlr.flags.wired) this.media.state.volume = this.shadowVolume = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
@@ -123,11 +122,5 @@ declare module "@defs/registries" {
 declare module "@defs/config" {
   interface Settings {
     volume: VolumeConfig;
-  }
-}
-
-declare module "@defs/contract" {
-  interface MediaExtraFeatures {
-    volumeBoost?: boolean;
   }
 }

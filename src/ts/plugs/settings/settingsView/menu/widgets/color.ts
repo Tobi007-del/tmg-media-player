@@ -17,12 +17,16 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
       createNode: (opt) => {
         const btn = createEl("button", { type: "button", className: "tmg-media-smenu-color-swatch", title: opt.display, ariaLabel: opt.display }, { colorVal: opt.value as string });
         btn.style.setProperty("--swatch", opt.value as string);
-        btn.addEventListener("click", () => {
-          this.item.onChange?.(opt.value);
-          this.currentValue = btn.ariaLabel ?? btn.dataset.colorVal!;
-          this.freeInput.value = btn.dataset.colorVal!;
-          this.syncActive();
-        });
+        btn.addEventListener(
+          "click",
+          () => {
+            this.item.onChange?.(opt.value);
+            this.currentValue = btn.ariaLabel ?? btn.dataset.colorVal!;
+            this.freeInput.value = btn.dataset.colorVal!;
+            this.syncActive();
+          },
+          { signal: this.signal }
+        );
         return btn;
       },
       updateNode: (node, opt) => {
@@ -34,12 +38,16 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
       },
     });
     const field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free" });
-    (this.freeInput = field.inputEl).addEventListener("input", () => {
-      this.item.onChange?.(this.freeInput.value as T);
-      const activeBtn = this.element.querySelector<HTMLElement>(`[data-color-val="${this.freeInput.value}"]`);
-      this.currentValue = activeBtn?.ariaLabel ?? this.freeInput.value;
-      this.syncActive();
-    });
+    (this.freeInput = field.inputEl).addEventListener(
+      "input",
+      () => {
+        this.item.onChange?.(this.freeInput.value as T);
+        const activeBtn = this.element.querySelector<HTMLElement>(`[data-color-val="${this.freeInput.value}"]`);
+        this.currentValue = activeBtn?.ariaLabel ?? this.freeInput.value;
+        this.syncActive();
+      },
+      { signal: this.signal }
+    );
     return this.element.append(grid, field), this.syncUI(), this.element;
   }
   public override syncUI(): void {

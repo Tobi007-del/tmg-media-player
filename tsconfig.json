@@ -13,7 +13,7 @@
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "preserveSymlinks": true,
-    "types": ["node", "youtube", "chrome", "chromecast-caf-sender"],
+    "types": ["node", "youtube", "chrome", "chromecast-caf-sender", "google_interactive_media_ads_types"],
     "paths": {
       // "@src": ["./src/*"],
       "@core/*": ["./src/ts/core/*"],

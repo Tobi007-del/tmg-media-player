@@ -18,8 +18,8 @@ export class FastPlayNotifier extends BaseNotifier<undefined, ComponentState, HT
   public override wire(): void {
     super.wire();
     // Ctlr Media Listeners
-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {

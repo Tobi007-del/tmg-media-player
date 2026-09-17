@@ -14,7 +14,7 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     // Ctlr Media Setters
     this.media.set("intent.playbackRate", (value) => clamp(this.config.min, value!, this.config.max), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // ---- Media Listeners
-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.playbackRate.min", ({ value }) => this.media.state.playbackRate < value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.playbackRate.max", ({ value }) => this.media.state.playbackRate > value && (this.media.intent.playbackRate = value), { init: true, signal: this.signal });
@@ -38,8 +38,7 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     this.media.intent.playbackRate = rotateAny(this.media.state.playbackRate, { min: this.config.min, max: this.config.max, step: this.config.skip }, dir);
   }
 
-  public changeValue(value: number): void {
-    const sign = value >= 0 ? "+" : "-";
+  public changeValue(value: number, sign = value >= 0 ? "+" : "-"): void {
     value = Math.abs(Math.round(value * 100));
     let rate = Math.round(this.media.state.playbackRate * 100);
     if (sign === "-") {

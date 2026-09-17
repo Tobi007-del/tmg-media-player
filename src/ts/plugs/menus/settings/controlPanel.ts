@@ -8,7 +8,7 @@ import { getPath, setPath } from "sia-reactor/utils";
 import { formatUITime, getMediaProgress } from "@utils/time";
 import { safeNum } from "@utils/num";
 
-const setEnabled = (plug: ControlPanelPlug, id: AnyControl, enabled: boolean, b = plug.ctlr._build.settings.controlPanel) => {
+const setEnabled = (plug: ControlPanelPlug, id: AnyControl, enabled: boolean, b = plug.ctlr.build.settings.controlPanel) => {
   const cLoc = getPanelLocation(plug.config, id);
   // prettier-ignore
   if (!enabled) return void (cLoc.row.includes(id) && setPath(plug.config as any, cLoc.path, cLoc.row.filter((c: any) => c !== id)));
@@ -37,7 +37,6 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
           widget: "group",
           getValue: () => String(CONTROLS.filter((c) => c !== "spacer").length),
           getBadge: (off = CONTROLS.filter((id) => id !== "spacer" && !inPanel(plug.config, id)).length) => (off > 0 ? { value: `-${off}` } : undefined),
-          getTipHTML: () => "Configure player controls, layout, and visual feedback",
           configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"],
           items: [
             {
@@ -47,10 +46,9 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
               getValue: () => "",
               configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"],
               items: CONTROLS.filter((id) => id !== "spacer")
-                .sort((a, b) => a.localeCompare(b))
+                .sort()
                 .map((id) => ({ id: `toggle-cp-${id}`, label: capitalize(uncamelize(id)), widget: "toggle" as const, getValue: () => (inPanel(plug.config, id) ? "On" : "Off"), onChange: (val: boolean) => setEnabled(plug, id, val), configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"] })),
             },
-            { id: "layoutBigVisible", label: "Big controls", widget: "toggle", getValue: () => (plug.config.bigVisible ? "On" : "Off"), onChange: (val: boolean) => (plug.config.bigVisible = val), configPaths: ["settings.controlPanel.bigVisible"], title: "Force display the big center playback controls overlay regardless of screen size" },
             {
               id: "layoutTimeline",
               label: "Timeline",
@@ -121,33 +119,18 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                         },
                       ],
                     },
-                    {
-                      id: "timelinePlayedMarks",
-                      label: "Played marks",
-                      widget: "toggle",
-                      feature: "played",
-                      getValue: () => (plug.config.timeline.playedMarks ? "On" : "Off"),
-                      onChange: (val: boolean) => (plug.config.timeline.playedMarks = val),
-                      configPaths: ["settings.controlPanel.timeline.playedMarks"],
-                      title: "Displays colored indicators on the timeline for sections you've already watched",
-                    },
-                    {
-                      id: "timelineBufferMarks",
-                      label: "Buffer marks",
-                      widget: "toggle",
-                      feature: "buffered",
-                      getValue: () => (plug.config.timeline.bufferMarks ? "On" : "Off"),
-                      onChange: (val: boolean) => (plug.config.timeline.bufferMarks = val),
-                      configPaths: ["settings.controlPanel.timeline.bufferMarks"],
-                      title: "Displays colored indicators on the timeline for sections that are pre-loaded",
-                    },
+                    { id: "timelinePlayedMarks", label: "Played marks", widget: "toggle", feature: "played", getValue: () => (plug.config.timeline.playedMarks ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.playedMarks = val), configPaths: ["settings.controlPanel.timeline.playedMarks"], title: "Displays indicators for sections you've already watched" },
+                    { id: "timelineBufferMarks", label: "Buffer marks", widget: "toggle", feature: "buffered", getValue: () => (plug.config.timeline.bufferMarks ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.bufferMarks = val), configPaths: ["settings.controlPanel.timeline.bufferMarks"], title: "Displays indicators for sections that are pre-loaded" },
+                    { id: "timelineAdvertMarks", label: "Advert marks", widget: "toggle", feature: "ads", getValue: () => (plug.config.timeline.advertMarks ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.advertMarks = val), configPaths: ["settings.controlPanel.timeline.advertMarks"], title: "Displays indicators for sections that contain advertisements" },
                   ],
                 },
                 {
                   id: "timelineSeekGroup",
                   label: "Seeking",
                   widget: "group",
-                  getValue: () => "",
+                  getValue: () => (plug.config.timeline.disabled || plug.config.timeline.readonly || !inPanel(plug.config, "timeline") ? "Off" : "On"),
+                  configPaths: ["settings.controlPanel.timeline.disabled", "settings.controlPanel.timeline.readonly"],
+                  getTipHTML: () => `Configure how you drag and interact with the ${plug.media.type} timeline`,
                   items: [
                     {
                       id: "timelineScrub",
@@ -155,24 +138,8 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       widget: "group",
                       getValue: () => "",
                       items: [
-                        {
-                          id: "timelineScrubSync",
-                          label: "Synchronize time",
-                          widget: "toggle",
-                          getValue: () => (plug.config.timeline.scrub.sync ? "On" : "Off"),
-                          onChange: (val: boolean) => (plug.config.timeline.scrub.sync = val),
-                          configPaths: ["settings.controlPanel.timeline.scrub.sync"],
-                          title: "Updates the video frame in real-time as you drag the timeline cursor",
-                        },
-                        {
-                          id: "timelineScrubRelative",
-                          label: "Relative dragging",
-                          widget: "toggle",
-                          getValue: () => (plug.config.timeline.scrub.relative ? "On" : "Off"),
-                          onChange: (val: boolean) => (plug.config.timeline.scrub.relative = val),
-                          configPaths: ["settings.controlPanel.timeline.scrub.relative"],
-                          title: "Whether the seeking pointer should follow your finger exactly or move relative to your initial point of touch",
-                        },
+                        { id: "timelineScrubSync", label: "Synchronize time", widget: "toggle", getValue: () => (plug.config.timeline.scrub.sync ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.scrub.sync = val), configPaths: ["settings.controlPanel.timeline.scrub.sync"], title: "Updates the video frame in real-time as you drag the timeline cursor" },
+                        { id: "timelineScrubRelative", label: "Relative dragging", widget: "toggle", getValue: () => (plug.config.timeline.scrub.relative ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.scrub.relative = val), configPaths: ["settings.controlPanel.timeline.scrub.relative"], title: "Whether the seeking pointer should follow your finger exactly or move relative to your initial point of touch" },
                         {
                           id: "timelineScrubCancel",
                           label: "Cancellation",
@@ -211,51 +178,19 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       widget: "group",
                       getValue: () => (plug.config.timeline.wheel.disabled ? "Off" : "On"),
                       items: [
-                        {
-                          id: "timelineWheelDisabled",
-                          label: "Disable",
-                          widget: "toggle",
-                          getValue: () => (plug.config.timeline.wheel.disabled ? "On" : "Off"),
-                          onChange: (val: boolean) => (plug.config.timeline.wheel.disabled = val),
-                          configPaths: ["settings.controlPanel.timeline.wheel"],
-                          title: "Enables seeking through the video by scrolling the mouse wheel over the timeline",
-                        },
-                        {
-                          id: "timelineWheelAxisRatio",
-                          label: "Sensitivity",
-                          widget: "range",
-                          getValue: () => String(plug.config.timeline.wheel.axisRatio),
-                          getRange: () => ({ min: 1, max: 50, step: 1 }),
-                          onChange: (val: number) => (plug.config.timeline.wheel.axisRatio = val),
-                          configPaths: ["settings.controlPanel.timeline.wheel"],
-                          getTipHTML: () => "Adjusts how much the video seeks per scroll wheel notch",
-                        },
+                        { id: "timelineWheelDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.timeline.wheel.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.wheel.disabled = val), configPaths: ["settings.controlPanel.timeline.wheel"], title: "Enables seeking through the video by scrolling the mouse wheel over the timeline" },
+                        { id: "timelineWheelAxisRatio", label: "Sensitivity", widget: "range", getValue: () => String(plug.config.timeline.wheel.axisRatio), getRange: () => ({ min: 1, max: 50, step: 1 }), onChange: (val: number) => (plug.config.timeline.wheel.axisRatio = val), configPaths: ["settings.controlPanel.timeline.wheel"], getTipHTML: () => "Adjusts how much the video seeks per scroll wheel notch" },
                       ],
                     },
-                    {
-                      id: "timelineAutopause",
-                      label: "Auto-pause",
-                      widget: "toggle",
-                      getValue: () => (plug.config.timeline.autopause ? "On" : "Off"),
-                      onChange: (val: boolean) => (plug.config.timeline.autopause = val),
-                      configPaths: ["settings.controlPanel.timeline.autopause"],
-                      title: "Automatically pauses the video while you are dragging the timeline to seek",
-                    },
-                    {
-                      id: "timelineCompact",
-                      label: "Compact view",
-                      widget: "toggle",
-                      getValue: () => (plug.config.timeline.compact ? "On" : "Off"),
-                      onChange: (val: boolean) => (plug.config.timeline.compact = val),
-                      configPaths: ["settings.controlPanel.timeline.compact"],
-                      title: "Make the timeline thinner and more minimalist to conserve space",
-                    },
+                    { id: "timelineAutopause", label: "Auto-pause", widget: "toggle", getValue: () => (plug.config.timeline.autopause ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.autopause = val), configPaths: ["settings.controlPanel.timeline.autopause"], title: "Automatically pauses the video while you are dragging the timeline to seek" },
+                    { id: "timelineCompact", label: "Compact view", widget: "toggle", getValue: () => (plug.config.timeline.compact ? "On" : "Off"), onChange: (val: boolean) => (plug.config.timeline.compact = val), configPaths: ["settings.controlPanel.timeline.compact"], title: "Make the timeline thinner and more minimalist to conserve space" },
                   ],
                 },
               ],
             },
             { id: "layoutBuffer", label: "Loading spinner", widget: "select", getValue: () => getUIOpt(plug.config.buffer.options, plug.config.buffer.value), getOptions: () => plug.config.buffer.options!, onChange: (val: any) => (plug.config.buffer.value = val), configPaths: ["settings.controlPanel.buffer.value"] },
             { id: "layoutDraggable", label: "Drag and drop", widget: "toggle", getValue: () => (plug.config.draggable ? "On" : "Off"), onChange: (val: boolean) => (plug.config.draggable = val), configPaths: ["settings.controlPanel.draggable"] },
+            { id: "layoutBigVisible", label: "Show big buttons", widget: "toggle", getValue: () => (plug.config.bigVisible ? "On" : "Off"), onChange: (val: boolean) => (plug.config.bigVisible = val), configPaths: ["settings.controlPanel.bigVisible"], title: "Force display the big center controls regardless of screen size" },
           ],
         },
       ],

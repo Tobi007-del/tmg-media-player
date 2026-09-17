@@ -15,11 +15,11 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.pictureInPicture", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.pictureInPicture", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.pictureInPicture", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.pictureInPicture", this.syncARIA, { signal: this.signal });

@@ -5,7 +5,7 @@ export interface CtlrState {
   readyState: number;
   audioCtxReady: boolean;
   mediaIntersecting: boolean;
-  mediaParentIntersecting: boolean;
+  parentIntersecting: boolean;
   dimensions: {
     container: Dimensions & { tier: string };
     pseudoContainer: Dimensions & { tier: string };

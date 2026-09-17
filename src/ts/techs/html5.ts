@@ -9,7 +9,8 @@ import { isStr } from "@utils/obj";
 import type { TrackType } from "@utils/media";
 import { enterFullscreen, exitFullscreen, queryFullscreenEl, supportsFullscreen, supportsPictureInPicture } from "@utils/dom";
 import { observeMutation, createListRenderer as renderList } from "@utils/dom";
-import { getTrackIdx, setCurrentTrack, canUseVolume, canMuteVolume, canUseRate, canTextTracks, canVideoTracks, canAudioTracks, getSources, getTracks, isSameSources, isSameTracks, DUMMY_VID } from "@utils/media";
+import { getTrackIdx, setCurrentTrack, getSources, getTracks, isSameSources, isSameTracks } from "@utils/media";
+import { DUMMY_VID, canTextTracks, canVideoTracks, canAudioTracks, canUseVolume, canMuteVolume, canUseRate } from "@utils/methd";
 import { getMediaMax, getMediaMin } from "@utils/time";
 import { isSameURL, cleanURL } from "@utils/str";
 import { clamp } from "@utils/num";
@@ -30,20 +31,20 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       // Kinda Core
       volume: canUseVolume(ctlr.media.type), muted: canMuteVolume(ctlr.media.type), playbackRate: canUseRate(ctlr.media.type),
       // Modes
-      pictureInPicture: !isAudio && supportsPictureInPicture() && !ctlr.media.state.disablePictureInPicture, fullscreen: !isAudio && supportsFullscreen(),
+      pictureInPicture: !isAudio && supportsPictureInPicture(), fullscreen: !isAudio && supportsFullscreen(),
       // Markup & States
-      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, preload: true, crossOrigin: true, 
-      controls: true, controlsList: true, disablePictureInPicture: true, sources: true, tracks: true, live: false,
+      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, preload: true, 
+      crossOrigin: true, controls: true, controlsList: true, sources: true, tracks: true,
       // Lists
       textTracks: canTxtTrack, videoTracks: !isAudio && canVidTrack, audioTracks: canAudTrack,
       // Currents
-      currentChapter: canTxtTrack, currentTextTrack: canTxtTrack, currentVideoTrack: canVidTrack, currentAudioTrack: canAudTrack, textVisible: canTxtTrack, activeCues: canTxtTrack,
+      currentChapter: true, currentTextTrack: canTxtTrack, currentVideoTrack: canVidTrack, currentAudioTrack: canAudTrack, textVisible: canTxtTrack, activeCues: canTxtTrack,
       // Infos
       readyState: true, networkState: true, error: true, waiting: true, stalled: true,
       seeking: true, buffered: true, played: true, seekable: true, videoWidth: !isAudio, videoHeight: !isAudio, 
       loadedMetadata: true, loadedData: true, canPlay: true, canPlayThrough: true, isLive: true, canSeekLive: true,
       // Settings
-      defaultMuted: true, defaultPlaybackRate: true, srcObject: true, metadata: canTxtTrack, liveTolerance: true, minDVRWindow: true, ...features,
+      defaultMuted: true, defaultPlaybackRate: true, srcObject: true, liveTolerance: true, minDVRWindow: true, idleWaiting: true, ...features,
     });
     ctlr.media.status.hostReady = true; // always active!
   }
@@ -52,7 +53,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   // ===========================================================================
   // --- Core Wiring ---
   protected override wireSrc(): void {
-    this.el.addEventListener("loadstart", this.resetLoadInfo, this.evtOpts.EL);
+    this.el.addEventListener("loadstart", this.flush, this.evtOpts.EL);
     this.config.on("intent.src", this.handleSrcIntent, this.evtOpts.CONFIG);
   }
   protected override wireCurrentTime(): void {
@@ -68,7 +69,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected override wirePaused(): void {
     this.el.addEventListener("play", this.setPlayState, this.evtOpts.EL);
     this.el.addEventListener("pause", this.setPauseState, this.evtOpts.EL);
-    this.config.get("state.paused", () => this.el.paused, { signal: this.signal }); // #VIRTUAL: reliable return value
+    this.config.get("state.paused", (v) => (this.wired ? this.el.paused : v), { signal: this.signal }); // #VIRTUAL: reliable return value
     this.config.on("intent.paused", this.handlePausedIntent, this.evtOpts.CONFIG);
   }
   protected override wireEnded(): void {
@@ -77,8 +78,8 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   // --- Features Wiring ---
   protected override wireFeatures(): void {
     super.wireFeatures(); // Calls individual feature wires (volume, etc.) above
-    this.wireHTMLState(); // Attributes Reverse-Sync (Mutation Observer)
     // Status (Bulk wiring)
+    observeMutation(this.el, this.handleMutation, { attributes: true, childList: true }, this.signal); // Reverse Bind: DOM <-> State
     for (const e of ["progress", "suspend", "abort", "emptied", "stalled"]) this.el.addEventListener(e, this.handleLoadingStatus, this.evtOpts.EL);
     this.el.addEventListener("loadedmetadata", this.handleLoadedMetadataStatus, this.evtOpts.EL);
     this.el.addEventListener("loadeddata", this.handleLoadedDataStatus, this.evtOpts.EL);
@@ -132,11 +133,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected wireTextVisible(): void {
     this.config.on("intent.textVisible", this.handleTextVisibleIntent, this.evtOpts.CONFIG);
   }
-  // --- HTML (Bulk Wiring) ---
-  protected wireHTMLState(): void {
-    observeMutation(this.el, this.setHTMLStateFromMutation, { attributes: true, childList: true, subtree: false }, this.signal);
-  }
-  // --- Attribute Wiring ---
+  // --- Attributes Wiring ---
   protected bindAttribute<K extends keyof MediaIntent>(key: K, isBool = false): void {
     this.config.on(`intent.${key}` as any, (e) => this.handleAttributeIntent(e, key, isBool), this.evtOpts.CONFIG); // non-casted union reached peak ts complexity :)
   }
@@ -163,10 +160,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected wireControlsList(): void {
     this.bindAttribute("controlsList");
-  }
-  protected wireDisablePictureInPicture(): void {
-    this.bindAttribute("disablePictureInPicture", true);
-    this.config.watch("state.disablePictureInPicture", this.onDisablePiPState);
   }
   // --- Lists Wiring ---
   protected wireSources(): void {
@@ -208,11 +201,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (this.chapterTrack && this.chapterTrack !== track) this.chapterTrack.removeEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL);
     (this.chapterTrack = track).addEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL), this.handleChapterCueChange({ target: track });
   }
-  // --- Live Content Wiring ---
-  protected wireLive(): void {
-    this.config.on("intent.live", this.handleLiveIntent, this.evtOpts.CONFIG);
-    this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG);
-  }
   // --- Settings Wiring ---
   protected wireDefaultMuted(): void {
     this.config.on("settings.defaultMuted", this.handleDefaultMutedSetting, this.evtOpts.CONFIG);
@@ -230,13 +218,13 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected setTimeUpdateState(): void {
     const { status: st, settings: set, state: s } = this.config;
     s.currentTime = this.el.currentTime;
-    if (st.isLive)
+    if (st.isLive) {
       if (st.seekable.length) {
         const max = st.seekable.end(st.seekable.length - 1);
         st.canSeekLive = max - st.seekable.start(0) >= set.minDVRWindow;
         s.live = max - s.currentTime <= set.liveTolerance;
       } else s.live = !(st.canSeekLive = false);
-    else this.config.status.ended = this.el.currentTime === this.el.duration; // UX boost
+    } else if (st.duration) this.config.status.ended = this.el.currentTime === this.el.duration; // UX boost
   }
   protected setSeekingState(): void {
     this.config.status.seeking = true;
@@ -268,7 +256,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
+    this.ctlr.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
       if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
       if (finite) this.el.currentTime = clamp(min, e.value, max);
     }); // tested nd trusted status due to reactive dynamics
@@ -276,7 +264,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => this.ctlr?.log(err, "error", true)), this.isAlien && !e.value); // #EYE-SERVICE: hinged only on init // #LESS: error not worth notifying
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => this.ctlr?.log(err, "error", true)), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying // #EYE-SERVICE: hinged only on init
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -305,37 +293,33 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected setCurrentTrackState(type: TrackType, list = this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`]): void {
     this.config.state[`current${type}Track`] = getTrackIdx(this.el, type, "active", list);
   }
-  protected setHTMLStateFromMutation(mutations: MutationRecord[]): void {
-    for (const m of mutations) {
-      const { state, settings } = this.config; // Reverse Bind: DOM <-> State
-      if (m.type === "childList") {
-        const nodes = [...m.addedNodes, ...m.removedNodes];
-        if (nodes.some(({ nodeName: nm }) => nm === "SOURCE")) state.sources = inert(getSources(this.el));
-        if (nodes.some(({ nodeName: nm }) => nm === "TRACK")) state.tracks = inert(getTracks(this.el));
-      } else if (m.type !== "attributes" || !m.attributeName) return;
-      switch (m.attributeName) {
-        case "poster":
-          return void (state.poster = (this.el as HTMLVideoElement).poster);
-        case "autoplay":
-          return void (state.autoplay = this.el.autoplay);
-        case "loop":
-          return void (state.loop = this.el.loop);
-        case "preload":
-          return void (state.preload = this.el.preload);
-        case "crossorigin":
-          return void (state.crossOrigin = this.el.crossOrigin);
-        case "controls":
-          return void (state.controls = this.el.controls);
-        case "playsinline":
-        case "webkit-playsinline":
-          return void (state.playsInline = this.el.playsInline);
-        case "controlslist":
-          return void (state.controlsList = this.el.controlsList ?? this.el.getAttribute(m.attributeName));
-        case "disablepictureinpicture":
-          return void (state.disablePictureInPicture = this.el.disablePictureInPicture ?? this.el.hasAttribute(m.attributeName));
-        case "muted":
-          return void ((state.muted = this.el.muted), (settings.defaultMuted = this.el.defaultMuted));
-      }
+  protected handleMutation(m: MutationRecord) {
+    const { state: s, settings: set } = this.config;
+    if (m.type === "childList") {
+      const nodes = [...m.addedNodes, ...m.removedNodes];
+      if (nodes.some((n) => n.nodeName === "SOURCE")) s.sources = inert(getSources(this.el));
+      if (nodes.some((n) => n.nodeName === "TRACK")) s.tracks = inert(getTracks(this.el));
+    } else if (!m.attributeName) return;
+    switch (m.attributeName) {
+      case "poster":
+        return (s.poster = (this.el as HTMLVideoElement).poster);
+      case "autoplay":
+        return (s.autoplay = this.el.autoplay);
+      case "loop":
+        return (s.loop = this.el.loop);
+      case "preload":
+        return (s.preload = this.el.preload);
+      case "crossorigin":
+        return (s.crossOrigin = this.el.crossOrigin);
+      case "controls":
+        return (s.controls = this.el.controls);
+      case "playsinline":
+      case "webkit-playsinline":
+        return (s.playsInline = this.el.playsInline);
+      case "controlslist":
+        return (s.controlsList = this.el.controlsList);
+      case "muted":
+        return (s.muted = this.el.muted), (set.defaultMuted = this.el.defaultMuted);
     } // Mutations report before Queued MicroTasks so double "state.*" sets is safely batched for `on` listeners :)
   }
   // --- Feature Intents ---
@@ -352,12 +336,12 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePlaybackRateIntent(e: REvent<CtlrMedia, "intent.playbackRate">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (this.el.playbackRate = e.value));
+    this.ctlr.when("loadedMetadata", e, () => (this.el.playbackRate = e.value));
     e.resolve(this.name);
   }
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), true); // #EYE-SERVICE: hinged only on init
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, true); // #EYE-SERVICE: hinged only on init
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
@@ -367,7 +351,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleCurrentTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: TrackType): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (list = this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`]) => {
+    this.ctlr.when("loadedMetadata", e, (list = this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`]) => {
       if ((e.value as number) >= list.length) return;
       setCurrentTrack(this.el, type, e.value as number, true, list); // #VALIDATED: mediated for cast conformity; no-opy
       this.setCurrentTrackState(type, list); // tracks "change" event not reliable
@@ -375,9 +359,9 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     });
     e.resolve(this.name);
   }
-  protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">, idx = this.config[this.ctlr.techTruth].currentTextTrack): void {
+  protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">, idx = this.config[this.ctlr.gospel].currentTextTrack): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (iidx = this.config.intent.currentTextTrack) => {
+    this.ctlr.when("loadedMetadata", e, (iidx = this.config.intent.currentTextTrack) => {
       // prettier-ignore
       if (e.value && this.config.status.textTracks.length && idx === -1) silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : !this.isAlien ? Math.max(0, getTrackIdx(this.config.element, "Text", this.config.state.tracks.find((t) => t.default), this.config.status.textTracks)) : 0)); // #BULLET-PROOF: should comes clutch
       if (this.textTrack) this.textTrack.mode = e.value ? "showing" : "hidden";
@@ -391,23 +375,18 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (key === "playsInline") this.el.toggleAttribute("webkit-playsinline", Boolean(e.value));
     e.resolve(this.name);
   }
-  private renderSources?: ReturnType<typeof renderList<Source, HTMLSourceElement>>;
   protected handleSourcesIntent(e: REvent<CtlrMedia, "intent.sources">): void {
-    if (e.resolved || isSameSources([...this.el.querySelectorAll("source")], e.value)) return;
+    if (e.resolved || isSameSources([...this.el.querySelectorAll("source")], e.currentTarget.value)) return;
     (this.renderSources ??= renderList({ container: this.el, getKey: (s) => `${cleanURL(s.src)}|${s.type}${s.media}`, createNode: (s) => createEl("source", s), updateNode: (el, s) => assignEl(el, s, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLSourceElement && register(`${cleanURL(el.src)}|${el.type}${el.media}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
-  private renderTracks?: ReturnType<typeof renderList<Track, HTMLTrackElement>>;
+  private renderSources?: ReturnType<typeof renderList<Source, HTMLSourceElement>>;
   protected handleTracksIntent(e: REvent<CtlrMedia, "intent.tracks">): void {
-    if (e.resolved || isSameTracks([...this.el.querySelectorAll("track")], e.value)) return;
+    if (e.resolved || isSameTracks([...this.el.querySelectorAll("track")], e.currentTarget.value)) return;
     (this.renderTracks ??= renderList({ container: this.el, getKey: (t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}`, createNode: (t) => createEl("track", t), updateNode: (el, t) => assignEl(el, t, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLTrackElement && register(`${cleanURL(el.src)}|${el.kind}|${el.label}|${el.srclang}|${el.default}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
-  protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
-    if (e.resolved) return;
-    this.when("loadedMetadata", e, (seekable = this.config.status.seekable) => e.value && seekable.length && (this.config.intent.currentTime = seekable.end(seekable.length - 1) - 1)); // #FACADED: silenced intent actual op
-    e.resolve(this.name);
-  }
+  private renderTracks?: ReturnType<typeof renderList<Track, HTMLTrackElement>>;
   // --- Status (Bulk) ---
   protected handleLoadingStatus(): void {
     this.config.status.readyState = this.el.readyState;
@@ -462,25 +441,17 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (!strict || (track && getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack)) force(() => (this.config.status.activeCues = track?.activeCues || null)); // incase of multiple tracks `cuechange`
   }
   protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0] || null): void {
-    this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo?.findIndex((c) => c.startTime === cue.startTime) ?? -1 : -1;
+    this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo.findIndex((c) => c.startTime === cue.startTime) : -1;
   }
   // --- Settings ---
   protected handleDefaultMutedSetting(e: REvent<CtlrMedia, "settings.defaultMuted">): void {
-    this.el.defaultMuted = e.value;
+    if (this.el.defaultMuted !== e.value) this.el.defaultMuted = e.value; // #GUARD: no shots in the foot
   }
   protected handleDefaultPlaybackRateSetting(e: REvent<CtlrMedia, "settings.defaultPlaybackRate">): void {
-    this.el.defaultPlaybackRate = e.value;
+    if (this.el.defaultPlaybackRate !== e.value) this.el.defaultPlaybackRate = e.value; // #GUARD: no shots in the foot
   }
   protected handleSrcObjectSetting(e: REvent<CtlrMedia, "settings.srcObject">): void {
-    this.el.srcObject = e.value;
-  }
-  // --- Dog Feeders ---
-  protected onDisablePiPState(v: boolean): void {
-    this.config.intent.pictureInPicture = false;
-    this.config.features.pictureInPicture = !v;
-  }
-  protected onIsLiveStatus(v: boolean): void {
-    this.config.features.live = v;
+    if (this.el.srcObject !== e.value) this.el.srcObject = e.value; // #GUARD: no shots in the foot
   }
   // --- Lifecycle ---
   protected override onDestroy(): void {

@@ -9,7 +9,6 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
     icon: "playbackRate",
     widget: "group",
     feature: "playbackRate",
-    getTipHTML: () => "Configure custom playback speeds",
     getValue: () => (plug.media.state.playbackRate === 1 ? "Normal" : `${plug.media.state.playbackRate}x`),
     items: [
       {

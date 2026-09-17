@@ -25,12 +25,12 @@ export class DisabledPlug extends BasePlug<DisabledConfig> {
       silence(() => (this.media.intent.paused = true));
       this.media.container.classList.add("tmg-media-disabled"), this.media.pseudoContainer.classList.add("tmg-media-disabled"); // #TWINING
       this.ctlr.DOM.containerContent?.setAttribute("inert", "");
-      this.ctlr.plug("settings.keys")?.setEventListeners("remove");
+      this.ctlr.plug("settings.keys")?.setListeners("remove");
       this.ctlr.notice("You cannot access the custom controls when disabled", "warn", null);
     } else {
       this.media.container.classList.remove("tmg-media-disabled"), this.media.pseudoContainer.classList.remove("tmg-media-disabled"); // #TWINING
       this.ctlr.DOM.containerContent?.removeAttribute("inert");
-      this.ctlr.plug("settings.keys")?.setEventListeners();
+      this.ctlr.plug("settings.keys")?.setListeners();
     }
   }
 

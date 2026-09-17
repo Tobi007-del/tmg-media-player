@@ -8,18 +8,18 @@ export class ChapterNotifier extends BaseNotifier<undefined, ComponentState, HTM
   public static readonly triggers = ["chapter"];
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-chapter-notifier tmg-media-text-notifier tmg-media-top-text-notifier", innerHTML: "Current Chapter" }));
+    return (this.element = createEl("div", { className: "tmg-media-chapter-notifier tmg-media-text-notifier", innerHTML: "Current Chapter" }));
   }
 
   public override wire(): void {
     super.wire();
     // Ctlr Media Listeners
-    this.media.on("state.currentChapter", this.handleChapterState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.currentChapter", this.handleChapterState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
-  protected handleChapterState(e: REvent<CtlrMedia, "state.currentChapter">): void {
-    const chapter = this.media.settings.metadata.chapterInfo?.[e.value];
-    this.el.textContent = chapter?.title || `Chapter ${e.value + 1}`;
+  protected handleChapterState({ value }: REvent<CtlrMedia, "state.currentChapter">): void {
+    const chapter = this.media.settings.metadata.chapterInfo[value];
+    this.el.textContent = chapter?.title || `Chapter ${value + 1}`;
   }
 }
 

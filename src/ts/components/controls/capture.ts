@@ -18,7 +18,7 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.frameCapture", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.frameCapture", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
@@ -36,7 +36,7 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
   public syncARIA(): void {
     this.state.label = "Capture frame";
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.capture), (this.state.voiceCommand = this.settings.voice.commands.capture));
-    this.el.title = `Capture${this.state.cmd} ↔ DblClick→B&W (+alt)`;
+    this.el.title = `${this.state.label} ${this.state.cmd} ↔ DblClick→ B&W (+alt)`;
     this.setBtnARIA("Capture monochrome frame");
   }
 }

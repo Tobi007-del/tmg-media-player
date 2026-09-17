@@ -1,8 +1,10 @@
 import { clamp } from "sia-reactor/utils";
 import { GesturePlug } from ".";
 import { safeNum } from "@utils/num";
-import { BasePin } from "../../base";
+import { BasePin, PinConstructor } from "../../base";
 import { getMediaMin, getMediaMax, getMediaTime } from "@utils/time";
+import { startTx, endTx, Transaction } from "sia-reactor/modules";
+import { capitalize } from "@utils/str";
 
 export class GestureBasePin<Config> extends BasePin<GesturePlug, Config> {
   public static readonly plugName = "gesture";
@@ -21,8 +23,14 @@ export class GestureBasePin<Config> extends BasePin<GesturePlug, Config> {
   }
 
   protected applyRange(key: "volume" | "brightness", percent: number, sign: string): void {
+    !this.tx ? this.useTx(true, key) : this.ctlr.debounce(`gestureRangeTx`, this.useTx, 200);
     const range = this.settings[key],
       value = sign === "+" ? this.media.state[key] + percent * range.max : this.media.state[key] - percent * range.max;
     this.ctlr.plug(("settings." + key) as "settings.volume")?.handleSliderInput?.(clamp(0, Math.round(value), range.max));
+  }
+
+  protected tx: Transaction | null = null;
+  protected useTx(bool: boolean, key = ""): void {
+    bool ? (this.tx = startTx(`${capitalize((this.constructor as PinConstructor).pinName)} ${key} gesture`)) : this.tx && (endTx(this.tx!), (this.tx = null));
   }
 }

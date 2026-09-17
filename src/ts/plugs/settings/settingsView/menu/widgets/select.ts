@@ -21,14 +21,18 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
         if (opt.style) label.setAttribute("style", opt.style);
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         li.append(check, label), opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
-        li.addEventListener("click", () => {
-          const isMulti = this.item.getMultiple?.();
-          if (!isMulti && (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue)) return void setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
-          this.item.onChange?.(opt.value);
-          this.currentValue = isMulti ? this.item.getValue() || [] : li.dataset.optDisplay!;
-          this.syncActive();
-          if (!isMulti) setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
-        });
+        li.addEventListener(
+          "click",
+          () => {
+            const isMulti = this.item.getMultiple?.();
+            if (!isMulti && (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue)) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal));
+            this.item.onChange?.(opt.value);
+            this.currentValue = isMulti ? this.item.getValue() || [] : li.dataset.optDisplay!;
+            this.syncActive();
+            if (!isMulti && this.item.closeOnSelect !== false) setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
+          },
+          { signal: this.signal }
+        );
         return li;
       },
       updateNode: (node, opt) => {

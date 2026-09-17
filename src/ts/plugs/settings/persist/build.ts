@@ -4,7 +4,7 @@ import { PersistConfig } from "./types";
 export const PERSIST_BUILD: Partial<PersistConfig> = {
   strict: !CTX.isDevEnv,
   whitelist: {
-    config: ["lightState", "playlist", "settings", "actions", "devMode", "debug"],
+    config: ["lightState", "playlist", "settings", "actions", "devMode"],
     media: ["state", "settings"],
   },
   blacklist: {
@@ -13,4 +13,5 @@ export const PERSIST_BUILD: Partial<PersistConfig> = {
   mirrorReads: true,
   mirrorWrites: true,
   cachePayload: true,
+  clearConfirm: "CLEAR DATA",
 };

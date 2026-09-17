@@ -2,13 +2,17 @@ import { BasePlug } from ".";
 import { MediaIntent, MediaFeatures } from "@defs/contract";
 import type { OptRange } from "@defs/generics";
 import { capitalize } from "@utils/str";
-import { silence } from "sia-reactor/modules";
+import { silence, startTx, endTx, Transaction } from "sia-reactor/modules";
 
 export interface SliderState {
   aptValue: number;
 }
 
 export abstract class BaseSliderPlug<Config extends OptRange, State extends SliderState> extends BasePlug<Config, State> {
+  protected tx: Transaction | null = null;
+  protected useTx(bool = false): void {
+    bool ? (this.tx = startTx(`${this.name} slider`)) : this.tx && (endTx(this.tx!), (this.tx = null));
+  }
   public shouldToggle = false;
   public sliderAptValue = 100;
   public useAptValue = false;
@@ -17,16 +21,16 @@ export abstract class BaseSliderPlug<Config extends OptRange, State extends Slid
   // ABSTRACT HOOKS: The Child classes will define these to route the math to the right place
   protected get prefix(): keyof MediaIntent {
     return this.name as keyof MediaIntent;
-  } // e.g., "volume" or "brightness"
+  } // num keys e.g., "volume" or "brightness"
   protected abstract get toggleKey(): keyof MediaIntent; // e.g., "muted" or "dark"
 
   // --- 1. Shared CSS Boost & Limits Math ---
   protected handleMin(min: number): void {
-    if (this.media.state[this.prefix] < min) this.media.intent[this.prefix] = min as never;
+    if ((this.media.state[this.prefix] as number) < min) this.media.intent[this.prefix] = min as never;
     if (this.state.aptValue < min) this.state.aptValue = min;
   }
   protected handleMax(max: number): void {
-    if (this.media.state[this.prefix] > max) this.media.intent[this.prefix] = max as never;
+    if ((this.media.state[this.prefix] as number) > max) this.media.intent[this.prefix] = max as never;
     if (this.state.aptValue > max) this.state.aptValue = max;
     this.media.container.classList.toggle(`tmg-media-${this.prefix}-boost`, max > 100);
     this.settings.css[`current${capitalize(this.prefix)}SliderPercent`] = Math.round((100 / max) * 100);
@@ -55,11 +59,11 @@ export abstract class BaseSliderPlug<Config extends OptRange, State extends Slid
   }
   protected setToggleState(toggled: boolean, isNext = this.nextToggle === toggled): void {
     if (toggled) {
-      if (this.media.state[this.prefix]) (this.state.aptValue = this.media.state[this.prefix]), (this.useAptValue = true);
+      if (this.media.state[this.prefix]) (this.state.aptValue = this.media.state[this.prefix] as number), (this.useAptValue = true);
       this.shouldToggle = true;
       if (!isNext && this.media.state[this.prefix]) silence(() => (this.media.intent[this.prefix] = (this.nextLevel = 0) as never));
     } else {
-      const restore = this.useAptValue ? this.state.aptValue : this.media.state[this.prefix];
+      const restore = this.useAptValue ? this.state.aptValue : (this.media.state[this.prefix] as number);
       if (!isNext) silence(() => (this.media.intent[this.prefix] = (this.nextLevel = restore ? restore : this.sliderAptValue) as never));
       this.shouldToggle = this.useAptValue = false;
     }
@@ -75,10 +79,9 @@ export abstract class BaseSliderPlug<Config extends OptRange, State extends Slid
     this.media.intent[this.toggleKey] = !(this.media.state[this.toggleKey] || !this.media.state[this.prefix]) as never;
   }
   // --- 4. The Mathematical Grid Snapping ---
-  public changeAptValue(value: number): void {
-    const sign = value >= 0 ? "+" : "-";
+  public changeAptValue(value: number, sign = value >= 0 ? "+" : "-"): void {
     value = Math.abs(value);
-    let level = Math.round(this.useAptValue ? this.state.aptValue : this.media.state[this.prefix]);
+    let level = Math.round(this.useAptValue ? this.state.aptValue : (this.media.state[this.prefix] as number));
     if (sign === "-") {
       if (level > this.config.min) level -= level % value || value;
       this.media.features[this.prefix as keyof MediaFeatures] && this.ctlr.plug("settings.notifiers")?.notify(level === 0 ? `${this.prefix}${capitalize(this.toggleKey)}` : `${this.prefix}Down`);

@@ -14,7 +14,7 @@
   height: var(--tmg-media-big-controls-size);
   scale: var(--tmg-media-current-big-controls-scale);
   display: flex;
-  white-space: nowrap;
+  white-space: pre;
   opacity: 0;
   animation-duration: var(--tmg-media-notifiers-animation-time);
   animation-timing-function: ease;
@@ -23,6 +23,7 @@
 .tmg-media-text-notifier {
   width: fit-content;
   height: fit-content;
+  min-width: calc(var(--tmg-media-current-unit) * 1.3);
   min-height: calc(var(--tmg-media-current-unit) * 0.8);
   padding: calc(var(--tmg-media-current-unit) / 7.5) calc(var(--tmg-media-current-unit) / 2.5);
   font-weight: 700;
@@ -30,7 +31,6 @@
 }
 .tmg-media-top-text-notifier {
   top: min(var(--tmg-media-current-unit), 5%);
-  min-width: calc(var(--tmg-media-current-unit) * 1.3);
 }
 .tmg-media-notifier-content {
   position: absolute;
@@ -53,18 +53,18 @@
 [data-notify="capture"] .tmg-media-capture-notifier,
 [data-notify="captions"] .tmg-media-captions-notifier,
 [data-notify="timer"] .tmg-media-timer-notifier {
-  animation-name: tmg-show, tmg-scale-up;
+  animation-name: tmg-hide, tmg-scale-up;
 }
 :is([data-notify="playbackRateUp"], [data-notify="playbackRateDown"]) .tmg-media-playback-rate-notifier-content,
 :is([data-notify="volumeUp"], [data-notify="volumeDown"]) .tmg-media-volume-notifier-content,
 :is([data-notify="brightnessUp"], [data-notify="brightnessDown"]) .tmg-media-brightness-notifier-content,
 [data-notify^="objectFit"] .tmg-media-object-fit-notifier-content {
-  animation-name: tmg-show-alt;
+  animation-name: tmg-hide-alt;
 }
 :is([data-notify="fwd"] .tmg-media-fwd-notifier, [data-notify="bwd"] .tmg-media-bwd-notifier),
 [data-notify="chapter"] .tmg-media-chapter-notifier,
 .tmg-media-notifier.tmg-media-control-persist {
-  animation-name: tmg-stay-visible;
+  animation-name: tmg-hide-alt;
 }
 .tmg-media-notifiers-container :is(.tmg-media-text-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active {
   opacity: 1;

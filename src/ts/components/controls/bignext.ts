@@ -19,11 +19,11 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("playlist", this.syncUI, { signal: this.signal, init: true, depth: 1 });
+    this.ctlr.config.on("playlist.content", this.syncUI, { signal: this.signal, init: true, depth: 1 });
     this.ctlr.config.on("settings.keys.shortcuts.next", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.next", this.syncARIA, { signal: this.signal });
   }

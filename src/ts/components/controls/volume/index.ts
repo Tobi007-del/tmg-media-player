@@ -37,7 +37,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.volume", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.volume", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.button.addEventListener("click", this.handleClick, { signal: this.signal });
     this.el.addEventListener("mousemove", this.startActive, { signal: this.signal });
@@ -45,7 +45,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     // State Listeners
     this.slider.config.on("value", this.delayActive, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.volume", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.volume", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.muted", this.syncARIA, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.mute", this.syncARIA, { signal: this.signal });

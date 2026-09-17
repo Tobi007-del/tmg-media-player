@@ -4,7 +4,7 @@ import { IS_MOBILE } from "@utils/env";
 
 export const ROWS_ARR = [1, 2, 3] as const;
 
-export const CONTROLS = ["bigPrevious", "bigPlayPause", "bigNext", "expandMiniplayer", "removeMiniplayer", "meta", "timeline", "capture", "fullscreenOrientation", "fullscreenLock", "backward10", "previous", "playPause", "next", "forward10", "brightness", "volume", "time", "duration", "timeAndDuration", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen", "cast", "airplay", "chapter"] as const;
+export const CONTROLS = ["bigPrevious", "bigPlayPause", "bigNext", "expandMiniplayer", "removeMiniplayer", "meta", "timeline", "capture", "fullscreenOrientation", "fullscreenLock", "backward10", "previous", "playPause", "next", "forward10", "brightness", "volume", "time", "duration", "timeAndDuration", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen", "cast", "airplay", "voice", "chapter"] as const;
 
 export const CONTROL_PANEL_DRAGGABLE_BUILD: ControlPanelDraggable = ["", "big", "wrapper"];
 
@@ -17,7 +17,7 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
   bottom: {
     1: [],
     2: ["spacer", "timeline", "spacer"],
-    3: [...(!IS_MOBILE ? (["previous", "playPause", "next"] as const) : []), "brightness", "volume", "timeAndDuration", "chapter", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen"] as const,
+    3: [...(!IS_MOBILE ? (["previous", "playPause", "next"] as const) : []), "brightness", "volume", "timeAndDuration", "chapter", "spacer", "voice", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen"] as const,
   },
   buffer: {
     value: "eclipse",
@@ -52,6 +52,7 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
     autopause: true,
     bufferMarks: false,
     playedMarks: false,
+    advertMarks: true,
     formatTooltip: (v: number) => `${Math.round(v)}%`,
   },
   progressBar: true,

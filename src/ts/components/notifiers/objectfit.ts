@@ -23,7 +23,7 @@ export class ObjectFitNotifier extends BaseNotifier<undefined, ComponentState, H
   public override wire(): void {
     super.wire();
     // Ctlr Media Listeners
-    this.media.on("state.objectFit", this.handleObjectFitState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.objectFit", this.handleObjectFitState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handleObjectFitState({ value }: REvent<CtlrMedia, "state.objectFit">): void {

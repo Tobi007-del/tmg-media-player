@@ -27,7 +27,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
       widget: "group",
       getValue: () => (plug.config.module.limit ? "On" : "Off"),
       configPaths: ["settings.timeTravel.module.limit"],
-      getTipHTML: () => "🌌 Step through the space-time continuum of your player's state. Rewind mistakes, replay interactions, and witness the magic firsthand.",
+      getTipHTML: () => "🌌 Step through the space-time continuum. Rewind mistakes, replay interactions, and witness the magic firsthand.",
       actions: [{ id: "toggleConsole", getLabel: () => (plug.config.console.disabled ? "Show console" : "Hide console"), onClick: () => (plug.config.console.disabled = !plug.config.console.disabled), hidden: () => !plug.ctlr.config.devMode }],
       onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravel"))) => {
         for (const k of ["devMode", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
@@ -37,6 +37,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
           id: "timeTravelHistory",
           label: "History",
           widget: "select",
+          closeOnSelect: false,
           getValue: () => (plug.module.state.history.length ? `(${plug.module.state.currentFrame}) of ${plug.module.state.history.length}` : "Empty"),
           getDisabled: () => false,
           getOptions() {

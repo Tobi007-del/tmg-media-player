@@ -27,10 +27,10 @@ export class SleepTimerPlug extends BasePlug<SleepTimerConfig, SleepTimerState> 
     this.state.ms = ms;
     clearTimeout(this.timeoutId);
     this.targetTime = ms < 0 ? -1 : 0;
-    if (ms === 0) return void this.ctlr.plug("settings.toasts")?.toast?.("Sleep timer turned off", { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
-    if (ms === -1) return void this.ctlr.plug("settings.toasts")?.toast?.("Sleep timer set to end of video", { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
+    if (ms === 0) return void this.ctlr.toast?.("Sleep timer turned off", { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
+    if (ms === -1) return void this.ctlr.toast?.("Sleep timer set to end of video", { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
     this.timeoutId = setTimeout(this.triggerSleep, ms, this.signal);
-    this.ctlr.plug("settings.toasts")?.toast?.(`Sleep timer set for ${formatUITime(ms, true)}`, { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
+    this.ctlr.toast?.(`Sleep timer set for ${formatUITime(ms, true)}`, { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
   }
 
   protected checkTimer(): void {

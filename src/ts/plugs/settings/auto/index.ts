@@ -3,7 +3,7 @@ import type { AutoConfig } from "./types";
 import { AUTO_BUILD } from "./build";
 import { type REvent } from "sia-reactor";
 import { CtlrConfig } from "@defs/config";
-import { clamp, safeNum } from "@utils/num";
+import { safeNum } from "@utils/num";
 import { addSources } from "@utils/media";
 import { silence } from "sia-reactor/modules";
 import { MenuRegistry } from "@core/registries";
@@ -19,14 +19,14 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   protected canMovePlaylist = true;
 
   public override wire(): void {
-    // Plug Watchers
+    // Ctlr Media Watchers
     this.media.watch("state.currentItem", () => ((this.canMovePlaylist = true), this.nextClup?.()), { signal: this.signal });
-    // Ctlr Config Watchers
-    this.ctlr.config.watch("settings.auto.play.value", (value) => silence(() => (this.media.intent.autoplay = value === true)), { init: "auto", signal: this.signal });
+    // ---- Config -------
+    this.ctlr.config.watch("settings.auto.play.value", (value) => silence(() => (this.media.intent.autoplay = value === true)), { init: true, signal: this.signal });
     // ---- Media Listeners
-    this.media.on("state.currentTime", ({ value }, st = this.media.status) => value && this.ctlr.payload.wired && st.readyState && (st.isLive ? st.ended : this.toNextTime() <= this.nextTime) && this.autonextMedia(), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.currentTime", ({ value }, st = this.media.status) => value && this.ctlr.flags.wired && st.readyState && (st.isLive ? st.ended : this.toNextTime() <= this.nextTime) && this.autonextMedia(), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State ---------
-    this.ctlr.state.on("mediaParentIntersecting", () => (this.aptAutoplay(this.config.pause.value, false), this.aptAutoplay()), { signal: this.signal });
+    this.ctlr.state.on("parentIntersecting", () => (this.aptAutoplay(this.config.pause.value, false), this.aptAutoplay()), { signal: this.signal });
     this.ctlr.state.on("docVisibilityState", this.handleDocVisibilityState, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.auto.next.preview.usePoster", this.handleNextPreviewUsePoster, { signal: this.signal });
@@ -58,7 +58,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
     this.nextPreview.currentTime = Number(value);
   }
 
-  protected aptAutoplay(auto = this.config.play.value, bool = true, p = this.ctlr.state.mediaParentIntersecting ? ("in" as const) : ("out" as const)): void {
+  protected aptAutoplay(auto = this.config.play.value, bool = true, p = this.ctlr.state.parentIntersecting ? ("in" as const) : ("out" as const)): void {
     if (!isArr(auto)) return;
     if (auto.includes(`${p}-view-always`)) this.media.intent.paused = !bool;
     else if (auto.includes(`${p}-view`) && this.ctlr.state.readyState < 3) this.media.intent.paused = !bool; // #PATIENT: only before first play
@@ -67,10 +67,10 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   protected autonextMedia(): void {
     if (!this.canMovePlaylist || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.value < 0 || this.media.state.currentItem >= this.ctlr.config.playlist.content.length - 1 || this.media.state.paused || this.media.status.waiting) return;
     this.canMovePlaylist = false;
-    const count = clamp(1, this.toNextTime("round"), this.nextTime),
+    const count = Math.max(1, this.toNextTime("round")),
       m = this.ctlr.config.playlist.content[this.media.state.currentItem + 1].media,
       type = m.intent.src && AUDIO_EXTENSIONS.test(m.intent.src) ? "audio" : "video";
-    const nVTId = this.ctlr.plug("settings.toasts")?.toast?.("", {
+    const nVTId = this.ctlr.toast?.("", {
       autoClose: count * 1000,
       hideProgressBar: false,
       position: "bottom-right",

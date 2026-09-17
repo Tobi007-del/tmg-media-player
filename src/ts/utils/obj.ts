@@ -1,8 +1,7 @@
 import { camelize } from "./str";
 import type { AnyControl, Control, ControlPanelBottomTuple, ControlPanelConfig } from "@plugs/settings/controlPanel/types";
-import { type Paths } from "sia-reactor";
 import { setPath } from "sia-reactor/utils";
-import type { UIObject, UISettings, UIOption, UITuple } from "@defs/UIOptions";
+import type { UISettings, UIOption, UITuple } from "@defs/UIOptions";
 import { isObj, isArr, isStr } from "@t007/utils";
 
 export { isArr, isObj };
@@ -17,11 +16,10 @@ export function isUIOption<T>(opt: UIOption<T>): opt is UITuple<T> {
 }
 
 // Assignment & Derivation
-export function setHTMLConfig<T extends object>(target: T, attr: `tmg--${Paths<T, "--">}`, value: string): void {
-  value = value.trim();
-  const path = attr.replace("tmg--", "") as any,
-    parsed = (() => (value.includes(",") ? value.split(",")?.map((v: string) => v.trim()) : value === "true" ? true : value === "false" ? false : value === "null" ? null : /^\d+$/.test(value) ? Number(value) : value))() as any;
-  setPath(target, path, parsed, "--", (p) => camelize(p));
+export function setHTMLConfig<T extends object>(target: T, attr: string, value: string): void {
+  const v = value.trim(),
+    parsed = v.includes(",") ? v.split(",").map((p) => p.trim()) : v === "true" ? true : v === "false" ? false : v === "null" ? null : /^\d+$/.test(v) ? Number(v) : v;
+  setPath(target, attr.replace("tmg--", "") as any, parsed, "--", (p) => camelize(p));
 }
 
 export function getBoolOrStr(value: string | boolean): string | boolean {
@@ -60,18 +58,6 @@ export function parseUIOpts<T = unknown>(opts: UIOption<T>[]): T[] {
 }
 export function parseUIBadge(badge?: string | { label?: string; value?: string } | null): { label?: string; value?: string } | undefined {
   return isStr(badge) ? { value: badge } : badge || undefined;
-}
-
-export function parseUIObj<T extends Record<string, any>>(obj: T): UIObject<T> {
-  const result: any = {} as UIObject<T>,
-    keys = Object.keys(obj);
-  for (let i = 0; i < keys.length; i++) {
-    const entry = obj[keys[i]];
-    if (!isObj(entry)) continue;
-    if (isUISetting(entry)) result[keys[i]] = { values: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).value), displays: entry.options.map((opt: UIOption<unknown>) => parseUIOpt(opt).display) };
-    else result[keys[i]] = parseUIObj(entry); // recurse on sub-branch
-  }
-  return result;
 }
 
 // Control Panel Utilities
@@ -113,14 +99,11 @@ export function inPanel(b: ControlPanelConfig, id: AnyControl): boolean {
 
 export function insertPanelCtrl(current: AnyControl[], defaults: readonly AnyControl[], id: AnyControl, _didx = defaults.indexOf(id)): void {
   let s = 0;
-  for (let i = 0; i < _didx; i++) if (defaults[i] === "spacer") s++;
+  for (let i = 0; i < _didx; i++) defaults[i] === "spacer" && s++;
   for (let i = _didx + 1; i < defaults.length; i++)
-    if (defaults[i] === "spacer") {
-      let c = 0;
-      for (let j = 0; j < current.length; j++) if (current[j] === "spacer" && ++c === s + 1) return void current.splice(j, 0, id);
-    } else {
+    if (defaults[i] !== "spacer") {
       const idx = current.indexOf(defaults[i]);
       if (idx !== -1) return void current.splice(idx, 0, id);
-    }
+    } else for (let c = 0, j = 0; j < current.length; j++) if (current[j] === "spacer" && ++c === s + 1) return void current.splice(j, 0, id);
   current.push(id);
 }

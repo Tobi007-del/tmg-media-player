@@ -39,7 +39,6 @@ export const getSettingsFastPlayMenu = (plug: FastPlayPlug): SettingsMenuItem =>
               },
               onChange: (val: number) => (plug.config.playbackRate = val),
               configPaths: ["settings.fastPlay.playbackRate", "settings.playbackRate.min", "settings.playbackRate.max"],
-              getTipHTML: () => "Playback speed multiplier when fast play is active",
             },
             {
               id: "fastPlayPointer",

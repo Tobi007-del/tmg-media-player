@@ -18,11 +18,11 @@ interface DashMediaPlayer extends dashjs.MediaPlayerClass {
 
 export class DashTech extends HTML5Tech {
   public static readonly techName: string = "dash";
-  public host: DashMediaPlayer | null = null;
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && DASH_EXTENSIONS.test(src);
   }
-  protected hostSrc: string | null = null;
+  public host: DashMediaPlayer | null = null;
+  public hostSrc: string | null = null;
   protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     const isVid = ctlr.media.type === "video";
@@ -33,7 +33,7 @@ export class DashTech extends HTML5Tech {
       // States & Currents (DASH.js specific)
       currentAudioTrack: true, currentVideoTrack: isVid, currentLevel: true, autoLevel: true, 
       // Status & Settings
-      bandwidth: true, protection: true, srcObject: false, ...features
+      bandwidth: true, protection: true, ...features
     });
     ctlr.media.status.hostReady = false;
   }
@@ -45,7 +45,7 @@ export class DashTech extends HTML5Tech {
       const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
       if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!DASHJS?.supportsMediaSource()) return this.ctlr.notice("DASH is not supported in this browser", "error", null);
-      const truth = this.config[this.ctlr.techTruth];
+      const truth = this.config[this.ctlr.gospel];
       this.hostSrc = src;
       this.host = DASHJS.MediaPlayer().create() as DashMediaPlayer;
       if (this.config.type === "audio") this.host.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace", video: "alwaysReplace" }, buffer: { fastSwitchEnabled: true } } }); // DASH.js to replace the audio to avoid buffer finish delays
@@ -79,7 +79,7 @@ export class DashTech extends HTML5Tech {
         for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
       }); // Dynamic Track List Updates (Mid-stream changes, e.g. multi-period live streams)
       this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
-        if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`);
+        if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`, true);
         ev.error === "mediasource" && this.handleHostError(ev);
       });
       this.config.settings.protection && this.host.setProtectionData(this.config.settings.protection);

@@ -21,7 +21,7 @@ export class VolumeSlider extends RangeInput<RangeInputConfig, RangeState> {
     this.config.set("value", (v) => Math.max(this.plug?.shouldToggle ? 0 : this.settings.volume.min, v), { signal: this.signal }); // #VALIDATOR: rules enforcement
     this.config.set("previewValue", (v) => Math.max(this.plug?.shouldToggle ? 0 : this.settings.volume.min, v), { signal: this.signal }); // #VALIDATOR: rules enforcement
     // Ctlr Media Listeners
-    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.volume.max", this.handleVolumeMax, { init: true, signal: this.signal });
   }

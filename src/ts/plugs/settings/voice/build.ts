@@ -1,6 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { VoiceConfig } from "./types";
-import { TOAST_UI_POSITIONS } from "@t007/toast";
+
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {
@@ -12,9 +12,30 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     ],
   },
   muted: false,
-  wakeWord: "player",
-  timeout: 15000,
-  inputs: {
+  process: {
+    accuracy: 0.75,
+    allowCommands: true,
+    stage: {
+      value: "post-route",
+      options: [
+        { value: "", display: "Default" },
+        { value: "anytime", display: "Awake or Asleep" },
+        { value: "pre-route", display: "Awake pre-route" },
+        { value: "post-route", display: "Awake post-route" },
+        { value: "never", display: "Never" },
+      ],
+    },
+    match: {
+      value: "blob",
+      options: [
+        { value: "", display: "Default" },
+        { value: "blob", display: "Full speech" },
+        { value: "chunk", display: "Partial speech" },
+      ],
+    },
+  },
+  routing: {
+    timeout: 15000,
     direct: true,
     strict: {
       value: "auto",
@@ -24,20 +45,18 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
         { value: "auto", display: "Auto (On for text)" },
       ],
     },
-    accuracy: 0.75,
     autoToggles: false,
-    allowCommands: true,
   },
   commands: {
-    voiceQuit: ["bye bye", "exit", "quit"],
+    skipAd: ["skip ad"], // speech bait
+    voiceWake: ["player"],
+    voiceQuit: ["quit"],
     voiceMute: ["snub"],
     voiceSleep: ["sleep"],
-    voiceSubmit: ["submit", "enter", "confirm"],
-    voiceCtxFirst: ["start", "first", "root"],
+    voiceSubmit: ["submit", "confirm", "enter"],
     voiceCtxPrevious: ["go back", "back", "previous"],
     voiceCtxNext: ["go front", "front", "go forward", "forward", "next"],
-    voiceCtxLast: ["end", "last", "leaf"],
-    voiceCtxReset: ["reset", "clear"],
+    voiceCtxClear: ["reset", "clear"],
     voiceToggleOn: ["on", "yes", "true", "enable", "start"],
     voiceToggleOff: ["off", "no", "false", "disable", "stop"],
   },
@@ -46,17 +65,19 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
       value: "persistent",
       options: [
         { value: "persistent", display: "Persistent" },
-        { value: "auto", display: "Auto (Show on speech)" },
-        { value: "strict", display: "Strict (Show after wake)" },
+        { value: "auto", display: "Auto (On speech)" },
+        { value: "strict", display: "Strict (Only when awake)" },
       ],
     },
-    listenerPos: {
-      value: "top-center",
-      options: TOAST_UI_POSITIONS,
+    router: {
+      position: "top-center",
+      icon: "🎙️",
+      compact: true,
     },
-    predictorPos: {
-      value: "bottom-left",
-      options: TOAST_UI_POSITIONS,
+    helper: {
+      position: "bottom-left",
+      icon: "✨",
+      autoClose: false,
     },
   },
 };

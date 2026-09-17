@@ -22,7 +22,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
 
   public override mount(): void {
     this.closeBtn = this.ctlr.queryDOM(".tmg-media-settings-close-btn")!;
-    !this.config.menu.disabled && this.menu.mount(this.toggleView);
+    this.menu.onViewClick = this.toggleView;
   }
   public override unmount(): void {
     this.media.container.classList.remove("tmg-media-settings-view");
@@ -35,7 +35,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
     // Ctlr Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("settings", { fn: () => this.menu.toggle(undefined, true), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("settings", { fn: () => this.menu.toggle(undefined, true) }, this.signal);
     !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 
@@ -75,12 +75,12 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
       cTField = t007.field({ type: "color" }),
       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
-    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
-    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), cTField.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
     this.ctlr.DOM.settingsBottomPanel?.append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
     const id = { theme: "", brand: "" },
       sync = (cb: any, req = true, type = "brand") => ((this.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),
-      assert = (opts: any, type: "brand" | "theme" = "brand") => this.ctlr.plug("settings.toasts")?.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }),
+      assert = (opts: any, type: "brand" | "theme" = "brand") => this.ctlr.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }),
       onBColorChange = ({ target: { value: val } }: any) =>
         this.ctlr.throttle(
           "brandColorPicking",
@@ -89,12 +89,12 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
             let col;
             if (val === "custom") return cBField.inputEl.click();
             if (val !== "auto") col = this.settings.css.brandColor = val;
-            else col = this.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.brandColor!;
+            else col = this.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?.build.brandColor!;
             const cb = (s: any) => (bField.inputEl.value = defs.bcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false), assert({ actions: { Yes } })),
               Yes = () => (sync(cb, true), assert({ actions: { No } }));
             sync(cb, val === "auto");
-            val === "auto" && (id.brand = this.ctlr.plug("settings.toasts")?.toast?.("Should the brand color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = ""), signal: this.signal }) || "");
+            val === "auto" && (id.brand = this.ctlr.toast?.("Should the brand color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = ""), signal: this.signal }) || "");
           },
           150
         ),
@@ -106,17 +106,17 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
             let col;
             if (val === "custom") return cTField.inputEl.click();
             if (val !== "auto") col = this.settings.css.themeColor = val;
-            else col = this.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?._cache.themeColor!;
+            else col = this.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?.build.themeColor!;
             const cb = (s: any) => (tField.inputEl.value = defs.tcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")),
               Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
             sync(cb, val === "auto", "theme");
-            val === "auto" && (id.theme = this.ctlr.plug("settings.toasts")?.toast?.("Should the theme color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = ""), signal: this.signal }) || "");
+            val === "auto" && (id.theme = this.ctlr.toast?.("Should the theme color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = ""), signal: this.signal }) || "");
           },
           150
         );
-    bField.inputEl.addEventListener("input", onBColorChange), cBField.inputEl.addEventListener("input", onBColorChange);
-    tField.inputEl.addEventListener("input", onTColorChange), cTField.inputEl.addEventListener("input", onTColorChange);
+    bField.inputEl.addEventListener("input", onBColorChange, { signal: this.signal }), cBField.inputEl.addEventListener("input", onBColorChange, { signal: this.signal });
+    tField.inputEl.addEventListener("input", onTColorChange, { signal: this.signal }), cTField.inputEl.addEventListener("input", onTColorChange, { signal: this.signal });
     // Helpful Tips
     const tipsBtn = createEl("button", { className: "tmg-media-settings-tips-btn", innerHTML: `<span>💡 Did You Know?</span>` });
     this.closeBtn?.insertAdjacentElement("afterend", tipsBtn);
@@ -162,7 +162,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
           <li><strong>Custom picture-in-picture:</strong> We bypassed standard browser limits to give you a floating player that actually keeps all your custom UI controls intact.</li>
         </ul>
         <div style="text-align: center; margin-top: 30px; padding: 15px; border-radius: 8px; background: rgba(128, 128, 128, 0.1);">
-          <p style="margin: 0 0 10px 0;"><strong>Enjoy the engine.</strong> We're still in active development, but already miles ahead. Welcome to the bleeding edge.</p>
+          <p style="margin: 0 0 10px 0;"><strong>Enjoy the player.</strong> We're still in active development, but already miles ahead. Welcome to the bleeding edge.</p>
           <p style="margin: 0; opacity: 0.8;">🧪 <strong>beta tester?</strong> Check the bottom of the page to find the hidden button to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
           </div>
         </div>

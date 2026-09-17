@@ -19,7 +19,6 @@ export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
           label: "Poster",
           widget: "group",
           getValue: () => (plug.state.visible && plug.media.state.poster ? "On" : "Off"),
-          getTipHTML: () => "Configure how the poster image is displayed and generated",
           onWire: (syncUI, signal) => plug.state.on("visible", syncUI, { signal }),
           mediaPaths: ["state.poster"],
           items: [

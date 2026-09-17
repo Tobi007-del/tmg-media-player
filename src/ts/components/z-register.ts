@@ -32,6 +32,7 @@ import { ScreenLockButton } from "./screenLock";
 import { ChapterButton } from "./controls/chapter";
 import { CastButton } from "./controls/cast";
 import { AirPlayButton } from "./controls/airplay";
+import { VoiceButton } from "./controls/voice";
 import { PiPPlaceholder } from "./holders/pipPlaceholder";
 import { CastPlaceholder } from "./holders/castPlaceholder";
 import { AirPlayPlaceholder } from "./holders/airplayPlaceholder";
@@ -72,6 +73,7 @@ for (const Comp of [
   ChapterButton,
   CastButton,
   AirPlayButton,
+  VoiceButton,
   PiPPlaceholder,
   CastPlaceholder,
   AirPlayPlaceholder,

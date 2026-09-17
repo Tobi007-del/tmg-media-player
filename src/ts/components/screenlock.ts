@@ -11,12 +11,12 @@ export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentS
   }
 
   public override create() {
-    return (this.element = createEl("button", { type: "button", className: "tmg-media-screen-locked-btn", tabIndex: -1, innerHTML: `${IconRegistry.get("lock")}${IconRegistry.get("unlock")}<p>Unlock controls?</p>` }));
+    return (this.element = createEl("button", { type: "button", className: "tmg-media-screen-lock-btn", tabIndex: -1, innerHTML: `${IconRegistry.get("lock")}${IconRegistry.get("unlock")}<p>Unlock controls?</p>` }));
   }
 
   public override mount(): void {
     // DOM Injection
-    this.plug?.wrapper.prepend(this.el);
+    this.plug?.wrapper?.prepend(this.el);
   }
 
   public override wire(): void {

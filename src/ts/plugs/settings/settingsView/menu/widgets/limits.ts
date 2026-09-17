@@ -19,7 +19,7 @@ export class LimitsWidget extends BaseWidget<Record<string, number>> {
     this.form.append(createEl("button", { className: "tmg-media-smenu-limits-btn", type: "submit", textContent: "Save Limits" }));
     (this.form as any).onSubmit = () => {
       const val = [...this.form.elements].filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && !!el.name).reduce((acc, el) => ((acc[el.name] = Number(el.value)), acc), {} as Record<string, number>);
-      setTimeout(() => (this.item.onChange?.(val), this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
+      setTimeout(() => (this.item.onChange?.(val), this.item.closeOnSelect !== false && this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
     };
     return t007.handleFormValidation?.(this.form), this.element.append(this.form), this.syncUI(), this.element;
   }

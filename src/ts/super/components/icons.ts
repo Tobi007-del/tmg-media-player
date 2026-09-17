@@ -34,6 +34,7 @@ export * from "@components/icons/leavePip";
 export * from "@components/icons/leaveTheater";
 export * from "@components/icons/lock";
 export * from "@components/icons/loop";
+export * from "@components/icons/mic";
 export * from "@components/icons/next";
 export * from "@components/icons/objectFitContain";
 export * from "@components/icons/objectFitCover";

@@ -178,9 +178,9 @@
 
 /* Row Anatomy */
 :is(.tmg-media-smenu-row-label, .tmg-media-smenu-group-label, .tmg-media-smenu-select-label, .tmg-media-smenu-row-info, .tmg-media-smenu-group-info, .tmg-media-smenu-select-info, .tmg-media-smenu-group-value, .tmg-media-smenu-text) {
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: pre;
+  overflow: hidden;
 }
 .tmg-media-smenu-row-label,
 .tmg-media-smenu-group-label,
@@ -401,7 +401,7 @@
 }
 .tmg-media-limits-row-legend {
   min-width: calc(var(--tmg-media-current-unit) * 3);
-  white-space: nowrap;
+  white-space: pre;
   font-size: 85%;
   font-weight: bold;
   margin-bottom: calc(var(--tmg-media-current-unit) / 4);

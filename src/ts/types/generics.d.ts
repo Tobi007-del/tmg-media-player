@@ -2,13 +2,14 @@ export type MediaType = "video" | "audio";
 
 export type Dimensions = Record<"width" | "height", number>;
 
+export type SrcObject = MediaProvider | null;
+
 export interface Source {
   src: string;
   type: string;
   media: string;
 }
-export type Sources = Source[];
-export type SrcObject = MediaProvider | null;
+export type Sources = Array<Source>;
 
 export interface Track {
   kind: string;
@@ -18,21 +19,14 @@ export interface Track {
   default: boolean;
   id: string;
 }
-export type Tracks = Track[];
+export type Tracks = Array<Track>;
 
 export interface Metadata extends MediaMetadata {
-  id: string;
-  title: string;
-  artist: string;
+  id?: string;
   profile: string;
-  album: string;
   artwork: Array<Artwork>;
-  chapterInfo: Array<{
-    title?: string;
-    startTime: number;
-    artwork?: Array<Artwork>;
-  }>;
-  links: Partial<Record<"title" | "artist" | "profile", string>>;
+  chapterInfo: Array<ChapterInfo>;
+  links: Record<"title" | "artist" | "profile", string>; // | "album"
   allowMediaOverride: boolean; // Lets YouTube/Vimeo/Parsers inject data
 }
 
@@ -40,6 +34,12 @@ export interface Artwork {
   src: string;
   sizes?: string;
   type?: string;
+}
+
+export interface ChapterInfo {
+  title?: string;
+  startTime: number;
+  artwork?: Array<Artwork>;
 }
 
 export interface PosterPreview {

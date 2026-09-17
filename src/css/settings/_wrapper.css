@@ -1,17 +1,17 @@
 .tmg-media-container.tmg-media-settings-view {
   --tmg-media-current-global-safe-inset-top: calc(var(--tmg-media-current-unit) * 2);
 }
-.tmg-media-container.tmg-media-settings-view .tmg-media-container-content-wrapper {
+.tmg-media-container.tmg-media-settings-view .tmg-media-content-wrapper {
   transform: rotateY(180deg);
 }
-.tmg-media-container.tmg-media-settings-view .tmg-media-container-content :is(.tmg-media, .tmg-media-filtered) {
+.tmg-media-container.tmg-media-settings-view .tmg-media-content :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-settings-filter);
 }
 .tmg-media-container.tmg-media-settings-view .tmg-media-settings-btn svg {
   transform: rotate(30deg);
 }
-.tmg-media-container-content-wrapper,
-.tmg-media-container-content,
+.tmg-media-content-wrapper,
+.tmg-media-content,
 .tmg-media-settings {
   position: relative;
   max-width: inherit;
@@ -20,13 +20,13 @@
   min-height: inherit;
   border-radius: inherit;
 }
-.tmg-media-container-content-wrapper {
+.tmg-media-content-wrapper {
   width: inherit;
   height: inherit;
   transform-style: preserve-3d;
   transition: transform var(--tmg-media-settings-view-transition-time) var(--tmg-media-bounce-timing);
 }
-.tmg-media-container-content,
+.tmg-media-content,
 .tmg-media-settings {
   width: 100%;
   height: 100%;
@@ -34,7 +34,7 @@
   transition: inherit;
   overflow: hidden;
 }
-.tmg-media-container-content {
+.tmg-media-content {
   display: flex;
   justify-content: center;
   background: var(--tmg-media-background);

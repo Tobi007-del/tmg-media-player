@@ -17,17 +17,15 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
 
   public override wire(): void {
     // Feature Gating
-    this.media.on("features.live", (e) => this[e.value ? "hide" : "show"](), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.live", (e) => this[e.value ? "hide" : "show"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     addSafeClicks(this.element, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("state.currentTime", this.syncUI, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.time.mode", this.syncUI, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.time.format", this.syncUI, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeMode", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.timeMode", this.syncARIA, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
+    this.ctlr.config.on("settings.time.mode", () => (this.syncUI(), this.syncARIA()), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.time.format", () => (this.syncUI(), this.syncARIA()), { signal: this.signal });
+    for (const p of ["keys.shortcuts.timeMode", "voice.commands.timeMode", "keys.shortcuts.timeFormat", "voice.commands.timeFormat"] as const) this.ctlr.config.on(`settings.${p}`, this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -41,9 +39,9 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
     this.el.textContent = this.plug?.toTimeText(this.media.state.currentTime, true) || "";
   }
   public syncARIA(): void {
-    this.state.label = `Show ${this.plug?.nextMode} time`;
+    this.state.label = `Show ${this.plug?.nextMode}`;
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeMode), (this.state.voiceCommand = this.settings.voice.commands.timeMode));
-    this.el.title = `Switch (mode${this.state.cmd} / DblClick→format${formatActionForDisplay(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)})`;
+    this.el.title = this.state.label + this.state.cmd + ` / DblClick→ Show ${this.plug?.nextFormat} ${formatActionForDisplay(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)}`;
     this.setBtnARIA("Switch time format");
   }
 }

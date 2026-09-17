@@ -27,7 +27,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.canvas = createEl("canvas", { className: "tmg-media-ambience-canvas" });
     this.ctx = this.canvas.getContext("2d", { alpha: false });
     // DOM Injection
-    this.ctlr.DOM.containerContent?.prepend((this.wrapper.append(this.canvas), this.wrapper));
+    this.wrapper.append(this.canvas), this.ctlr.DOM.containerContent?.prepend(this.wrapper);
   }
   public override unmount(): void {
     this.canvas.remove();
@@ -40,14 +40,14 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.state.on("snubbingAmbience", ({ value }) => this.syncDisplay(!value), { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
-    // --------- Listeners
+    this.media.watch("state.poster", this.syncFeatures, { signal: this.signal });
+    // ---- State --------
+    for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSize, { init: p === "width", signal: this.signal });
+    // ---- Media Listeners
     this.media.on("type", () => this.syncGlow(), { signal: this.signal });
     this.media.on("features.ambience", ({ value }) => this.syncDisplay(!!value), { signal: this.signal });
-    this.media.on("intent.ambience", this.handleAmbienceIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.currentTime", this.pulseGlow, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.poster", this.syncFeatures, { init: this.ctlr.payload.wired, signal: this.signal });
-    // ---- State ---------
-    for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSize, { init: p === "width", signal: this.signal });
+    this.media.on("intent.ambience", this.handleAmbienceIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("state.currentTime", this.pulseGlow, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.ambience.opacity", this.syncFilter, { init: true, signal: this.signal });
     // Post Wiring
@@ -74,7 +74,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
       } else if (!this.ctlr.isNativeEl || this.media.element.readyState < 1) return;
       else this.ctx.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
     } catch (e) {
-      this.ctlr.log(e, "error", true);
+      this.ctlr.log(e, "error", true); // #LESS: error not worth notifying
     }
   }
   private posterImg?: HTMLImageElement;
@@ -94,7 +94,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   }
 
   public syncFeatures(): void {
-    this.media.features.ambience ||= !this.canPulse ? !!this.media.state.poster : true;
+    this.media.tech.polyfill("ambience", !this.canPulse ? !!this.media.state.poster : true);
   }
 
   protected override registerMenu(): void {

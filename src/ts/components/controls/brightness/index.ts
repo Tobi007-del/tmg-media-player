@@ -43,12 +43,12 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
     // State Listeners
     this.slider.config.on("value", this.delayActive, { signal: this.signal });
     // ---- Media Listeners
-    this.media.on("state.brightness", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.brightness", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.dark", this.syncARIA, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.dark", this.syncARIA, { signal: this.signal });
     // Features Gating
-    this.media.on("features.brightness", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.brightness", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handleClick(): void {

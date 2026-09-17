@@ -9,18 +9,18 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   public static readonly isControl: boolean = true;
 
   public override create() {
-    this.element = createEl("button", { type: "button", className: "tmg-media-fullscreen-locked-btn", innerHTML: IconRegistry.get("lock") }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { type: "button", className: "tmg-media-fullscreen-screen-lock-btn", innerHTML: IconRegistry.get("lock") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("features.locked", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.locked", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.fullscreen", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.fullscreen", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     this.syncARIA();
   }

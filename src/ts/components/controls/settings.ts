@@ -48,7 +48,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   public syncARIA(): void {
     this.state.label = "Settings";
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.settings), (this.state.voiceCommand = this.settings.voice.commands.settings));
-    this.el.title = `Settings (open${this.state.cmd} / DblClick→last history)`;
+    this.el.title = this.state.label + this.state.cmd + ` ↔ DblClick→ with history`;
     this.setBtnARIA("Open last history");
   }
 }

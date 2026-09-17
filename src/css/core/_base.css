@@ -42,7 +42,7 @@
 :is(.tmg-media-voice-path-input, .tmg-media-voice-exact-input):is(:focus-visible, #o#o#o#o#o) {
   outline-offset: calc(var(--tmg-media-current-unit) / -13);
 }
-.tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, .tmg-media-big-controls-wrapper > *, .tmg-media-next-preview-wrapper > button):focus-visible, #o#o#o#o#o) {
+.tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, :is(.tmg-media-big-controls-wrapper, .tmg-media-next-preview-wrapper) > *, .tmg-media-voice-link):focus-visible, #o#o#o#o#o) {
   outline-offset: 0px;
 }
 .tmg-host-container :is(:is(.tmg-media-range-container, .tmg-media-range-mark):focus-visible, #o#o#o#o#o) {
@@ -65,7 +65,7 @@
   display: none;
 }
 :is(.tmg-media-settings-content, .tmg-media-smenu-overlay) *,
-:is(.tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-screen-locked-wrapper, .tmg-media-placeholder),
+:is(.tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-locked-wrapper, .tmg-media-placeholder),
 .tmg-media-touch-vb-notifier,
 .tmg-media-control-badge,
 .tmg-host-container [data-badge]::before {
@@ -125,7 +125,7 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   align-items: center;
   justify-content: center;
   font-size: calc(var(--tmg-media-current-unit) / 1.4);
-  opacity: 0.9;
+  opacity: 0.95;
   transition: opacity var(--tmg-media-fade-transition-time) ease-in-out;
 }
 :where(.tmg-host-container button):is(:hover, :focus-visible) {
@@ -148,16 +148,16 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   inset: 0;
   margin: auto;
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-container-content,
-.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-container-content,
-.tmg-media-container-content:has(:modal) {
+.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-content,
+.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content,
+.tmg-media-content:has(:modal) {
   cursor: auto;
 }
-.tmg-media-container.tmg-media-miniplayer :is(.tmg-media-container-content, .tmg-media-settings),
+.tmg-media-container.tmg-media-miniplayer :is(.tmg-media-content, .tmg-media-settings),
 .tmg-media-captions-container {
   cursor: grab;
 }
-.tmg-media-container.tmg-media-miniplayer:active :is(.tmg-media-container-content, .tmg-media-settings),
+.tmg-media-container.tmg-media-miniplayer:active :is(.tmg-media-content, .tmg-media-settings),
 .tmg-media-captions-container:active {
   cursor: grabbing;
 }

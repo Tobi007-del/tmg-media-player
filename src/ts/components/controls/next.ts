@@ -19,7 +19,7 @@ export class NextButton extends BaseComponent<NextConfig, ComponentState, HTMLBu
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.nextItem", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.nextItem", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners

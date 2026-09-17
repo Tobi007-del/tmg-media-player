@@ -24,8 +24,8 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
     this.media.on("state.live", (e) => (this.el.classList.toggle("tmg-media-control-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     this.media.on("status.isLive", (e) => (this.el.classList.toggle("tmg-media-live-badge", e.value), this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     // ---- Config --------
-    this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.time.format", () => (this.syncUI(), this.syncARIA()), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.timeFormat", this.syncARIA, { signal: this.signal });
   }
 
@@ -37,7 +37,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
     this.el.textContent = !this.media.status.isLive ? this.plug?.toTimeText(this.media.status.duration) || "" : "Live";
   }
   public syncARIA(): void {
-    this.state.label = "Switch time format";
+    this.state.label = `Show ${this.plug?.nextFormat}`;
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeFormat), (this.state.voiceCommand = this.settings.voice.commands.timeFormat));
     this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd : "Skip ahead to live broadcast";
     this.setBtnARIA();

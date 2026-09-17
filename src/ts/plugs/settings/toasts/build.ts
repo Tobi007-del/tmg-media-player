@@ -1,11 +1,11 @@
 import { ToastsConfig } from "./types";
 
 export const TOASTS_BUILD = {
-  disabled: false,
   limit: 7,
   position: "bottom-left",
+  compact: false,
   hideProgressBar: true,
   closeButton: false,
-  animation: "slide-up",
+  animation: "slide",
   dragToCloseDir: "x||y",
 } satisfies ToastsConfig;

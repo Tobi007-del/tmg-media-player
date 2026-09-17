@@ -1,49 +1,57 @@
-import { BasePlug } from "../../base";
+﻿import { BasePin } from "../../base";
 import { type REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { loadResource } from "@utils/dom";
-import { CastConfig } from "./types";
-import { CAST_BUILD } from "./build";
 import { ComponentRegistry } from "@core/registries";
 import { silence } from "sia-reactor/modules";
 import { CastPlaceholder } from "@components/holders/castPlaceholder";
 import { getMimeTypeFromExtension } from "@utils/file";
+import { MODES_CAST_BUILD, ModesPlug } from "./index";
+import { ModesCastConfig, ModesCastState } from "./types";
+import { Controller } from "@core/controller";
 
-export class CastPlug extends BasePlug<CastConfig> {
-  public static readonly plugName = "cast";
-  public static readonly BUILD = CAST_BUILD;
+export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastState> {
+  public static readonly pinName = "cast";
+  public static get Plug() {
+    return ModesPlug;
+  }
+  public static readonly BUILD = MODES_CAST_BUILD;
   public ctx: cast.framework.CastContext | null = null;
   public remotePlyr: cast.framework.RemotePlayer | null = null;
   public remoteCtlr: cast.framework.RemotePlayerController | null = null;
-  public apiSetup = false;
   protected placeholder: CastPlaceholder | null = null;
 
-  public override mount(): void {
-    this.ctlr.payload.wired ? this.initApi() : this.ctlr.state.wonce("readyState", this.initApi, { signal: this.signal }); // #HEAVY: waits for !lightState
+  constructor(ctlr: Controller, config = ctlr.settings.modes.cast) {
+    super(ctlr, config, { APIReady: false });
   }
-  protected async initApi(): Promise<void> {
-    if (this.apiSetup || location.protocol === "file:") return;
+
+  protected async initAPI(): Promise<void> {
+    if (this.state.APIReady || location.protocol === "file:") return;
     try {
-      if (typeof cast === "undefined") {
+      if ("undefined" === typeof cast) {
         const prev = (window as any).__onGCastApiAvailable;
-        ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupApi())), await loadResource(window.TMG_CAST_SENDER_SRC!, "script");
-      } else this.setupApi();
+        ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupAPi())), await loadResource(window.TMG_CAST_API_SRC!, "script");
+      } else this.setupAPi();
     } catch (err) {
       this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
     }
   }
 
   public override wire(): void {
+    // State Watchers
+    this.state.watch("APIReady", this.syncFeatures, { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal }); // no YT or Vimeo until d custom client
-    // --------- Listeners
-    this.media.on("intent.cast", this.handleCastIntent, { capture: true, init: this.ctlr.payload.wired, initType: "set", signal: this.signal });
+    // ---- Config -------
+    this.ctlr.config.watch("settings.modes.cast.disabled", this.syncFeatures, { signal: this.signal });
+    // ---- Media Listeners
+    this.media.on("intent.cast", this.handleCastIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal });
     this.media.on("intent.paused", this.handlePausedIntent, { capture: true, signal: this.signal });
     this.media.on("intent.currentTime", this.handleCurrentTimeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.muted", this.handleMutedIntent, { capture: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("cast", { fn: () => (this.media.intent.cast = !this.media.state.cast), keyboard: { phase: "keyup" } }, this.signal), super.wire();
+    this.ctlr.learn("cast", undefined, this.signal);
   }
 
   protected handleCastIntent(e: REvent<CtlrMedia, "intent.cast">): void {
@@ -87,27 +95,27 @@ export class CastPlug extends BasePlug<CastConfig> {
     e.resolve(this.name);
   }
 
-  protected setupApi(): void {
-    if (!chrome.cast) return;
+  protected setupAPi(): void {
+    if (this.state.APIReady || !chrome?.cast) return;
     this.ctx = cast.framework.CastContext.getInstance();
+    this.ctx.setOptions(Object.assign({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED }, this.config.options));
     this.ctx.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this.syncFeatures);
-    this.ctx.setOptions({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED, ...this.config.options });
     this.remotePlyr = new cast.framework.RemotePlayer();
     this.remoteCtlr = new cast.framework.RemotePlayerController(this.remotePlyr);
     this.remoteCtlr.addEventListener(cast.framework.RemotePlayerEventType.ANY_CHANGE, this.syncRemoteState);
-    this.placeholder ??= ComponentRegistry.init("castPlaceholder", this.ctlr);
-    (this.apiSetup = true), this.syncFeatures();
+    this.state.APIReady = true;
   }
 
   protected async loadMediaSession(): Promise<void> {
     const session = cast.framework.CastContext.getInstance().getCurrentSession();
     if (!session) return;
     silence(() => (this.media.intent.paused = true)); // pause local playback to avoid double audio
+    this.placeholder ??= ComponentRegistry.init("castPlaceholder", this.ctlr);
     const textEl = this.placeholder?.el.querySelector("p"),
       request = new chrome.cast.media.LoadRequest(new chrome.cast.media.MediaInfo(this.media.state.src, getMimeTypeFromExtension(this.media.state.src)));
     if (textEl) textEl.textContent = `Casting to ${session.getCastDevice().friendlyName || "External display"}`;
     await session.loadMedia(((request.currentTime = this.media.state.currentTime), request));
-    this.media.container.classList.add("tmg-media-cast"), this.ctlr.log(`${this.ctlr.config.id} Casting → ${this.media}`); // dev
+    this.media.container.classList.add("tmg-media-cast"), this.ctlr.log(`${this.ctlr.config.id} Casting -> ${this.media}`); // dev
     this.media.state.cast = true;
   } // #STANDALONE: needs scoped behavior
 
@@ -126,8 +134,10 @@ export class CastPlug extends BasePlug<CastConfig> {
         return void (this.media.status.duration = this.remotePlyr![field]);
     }
   }
+
   public syncFeatures(): void {
-    this.media.features.cast ||= this.ctlr.isNativeEl && this.apiSetup && this.ctx!.getCastState() !== cast.framework.CastState.NO_DEVICES_AVAILABLE;
+    if (!this.config.disabled && this.ctlr.isNativeEl) this.ctlr.flags.wired ? this.initAPI() : this.ctlr.state.wonce("readyState", this.initAPI, { signal: this.signal }); // #HEAVY: waits for !lightState
+    this.media.tech.polyfill("cast", this.ctlr.isNativeEl && this.state.APIReady && this.ctx!.getCastState() !== cast.framework.CastState.NO_DEVICES_AVAILABLE, this.config.disabled);
   }
 
   protected override onDestroy(): void {
@@ -139,7 +149,7 @@ export class CastPlug extends BasePlug<CastConfig> {
 }
 
 declare module "@defs/registries" {
-  interface PlugRegistryMap {
-    "settings.cast": typeof CastPlug;
+  interface PinRegistryMap {
+    "modes.cast": typeof ModesCastPin;
   }
 }

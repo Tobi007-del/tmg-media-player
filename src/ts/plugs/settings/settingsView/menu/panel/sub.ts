@@ -35,8 +35,8 @@ export class SubMenuPanel extends BaseMenuPanel {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
     this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
-    this.backBtn.addEventListener("click", (e) => (e.stopPropagation(), this.onBack?.()));
-    header.addEventListener("click", () => this.onBack?.());
+    this.backBtn.addEventListener("click", (e) => (e.stopPropagation(), this.onBack?.()), { signal: this.signal });
+    header.addEventListener("click", () => this.onBack?.(), { signal: this.signal });
     this.headerActions = createEl("div", { className: "tmg-media-smenu-sub-actions" });
     header.append(this.backBtn, this.headerLabel, this.headerActions);
     this.widgetSlot = createEl("div", { className: "tmg-media-smenu-widget-slot" });
@@ -68,7 +68,7 @@ export class SubMenuPanel extends BaseMenuPanel {
         action.icon ? (btn.innerHTML = IconRegistry.get(action.icon, true) || label) : (btn.textContent = label);
         if (action.getDisabled) btn.disabled = action.getDisabled();
         if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
-        btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()));
+        btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()), { signal: this.signal });
         this.headerActions.append(btn);
       }
     }
@@ -81,7 +81,7 @@ export class SubMenuPanel extends BaseMenuPanel {
         const btn = createEl("button", { className: "tmg-media-smenu-input-btn", type: "button", textContent: action.getLabel() });
         if (action.getDisabled) btn.disabled = action.getDisabled();
         if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
-        btn.addEventListener("click", () => action.onClick()), actionsWrap.append(btn);
+        btn.addEventListener("click", () => action.onClick(), { signal: this.signal }), actionsWrap.append(btn);
       }
       this.footerSlot.append(actionsWrap);
     }

@@ -9,7 +9,7 @@ import type { ComponentRegistryMap } from "@defs/registries";
 import { type REvent } from "sia-reactor";
 import { BaseComponent } from "@components/base";
 import { ComponentRegistry, PinRegistry } from "@core/registries";
-import { createEl, createListRenderer, observeResize } from "@utils/dom";
+import { createEl, createListRenderer, observeMutation, observeResize } from "@utils/dom";
 import { getPanelSplitCtrls, parsePanelBottomObj } from "@utils/obj";
 import { initScrollAssist, removeScrollAssist } from "@t007/utils/hooks/vanilla";
 import { createReactorSync } from "sia-reactor/utils";
@@ -78,11 +78,11 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   protected handleTop({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.top">): void {
     const { left, center, right } = getPanelSplitCtrls((value ||= []) as AnyControl[]);
     this.fillWrapper(this.topWrapper, [(this.slots.top.left = this.getSlot(left, this.shells.top.left)), (this.slots.top.center = this.getSlot(center, this.shells.top.center)), (this.slots.top.right = this.getSlot(right, this.shells.top.right))]);
-    this.fillSlot(this.slots.top.left, left), this.fillSlot(this.slots.top.center, center), this.fillSlot(this.slots.top.right, right), this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
+    this.fillSlot(this.slots.top.left, left), this.fillSlot(this.slots.top.center, center), this.fillSlot(this.slots.top.right, right), this.ctlr.flags.wired && this.config.draggable && this.draggable?.setListeners("add");
   }
 
   protected handleCenter({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.center">): void {
-    this.fillSlot(this.slots.center, (value ||= [])), this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
+    this.fillSlot(this.slots.center, (value ||= [])), this.ctlr.flags.wired && this.config.draggable && this.draggable?.setListeners("add");
   }
 
   protected handleBottom({ currentTarget: { value } }: REvent<CtlrConfig, "settings.controlPanel.bottom">): void {
@@ -91,7 +91,7 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
       this.fillWrapper(this.bottomWrapper.children[i - 1] as HTMLElement, [(this.slots.bottom[i].left = this.getSlot(left, this.shells.bottom[i].left)), (this.slots.bottom[i].center = this.getSlot(center, this.shells.bottom[i].center)), (this.slots.bottom[i].right = this.getSlot(right, this.shells.bottom[i].right))]);
       this.fillSlot(this.slots.bottom[i].left, left), this.fillSlot(this.slots.bottom[i].center, center), this.fillSlot(this.slots.bottom[i].right, right);
     }
-    this.ctlr.payload.wired && this.config.draggable && this.draggable?.setEventListeners("add");
+    this.ctlr.flags.wired && this.config.draggable && this.draggable?.setListeners("add");
   }
 
   protected handleBuffer({ value }: REvent<CtlrConfig, "settings.controlPanel.buffer.value">): void {
@@ -143,33 +143,30 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
     for (const el of [...this.zoneEls, this.shells.center.zone]) {
       this.handleCompsView(el);
       this.scrollers.push((initScrollAssist(el, { pxPerSecond: el.dataset.dragId === "big" ? 120 : 60 }), el));
-      observeResize(el, () => this.handleCompsView(el), this.signal);
+      observeResize(el, () => this.handleCompsView(el), this.signal), observeMutation(el, (m) => m.attributeName && (m.target as HTMLElement).dataset?.controlId && this.handleCompsFlex(el), { attributes: true, subtree: true, attributeFilter: ["class"] }, this.signal);
       el.addEventListener("scroll", this.handleDirtyScroll, { passive: true, signal: this.signal });
     }
   }
-  public handleDirtyScroll(e: globalThis.Event): void {
-    const el = e.currentTarget as HTMLElement;
-    if (el.scrollLeft > 0) el.dataset.hasScrolled = "true";
-    el.dataset.resetScrolled = String(el.scrollLeft === (el.dataset.scroller === "reverse" ? el.scrollWidth - el.clientWidth : 0));
-  }
 
-  public handleCompsView(w: HTMLElement): void {
-    if (!w.isConnected) return;
+  public handleCompsFlex(w: HTMLElement): void {
     let spacer: HTMLElement | undefined,
-      c: HTMLElement | null = w.firstElementChild as HTMLElement | null;
-    do {
-      c?.setAttribute("data-displayed", getComputedStyle(c).display !== "none" ? "true" : "false");
-      c?.setAttribute("data-spacer", "false");
-      if (c?.dataset.displayed === "true" && !spacer) spacer = c;
-    } while ((c = (c?.nextElementSibling ?? null) as HTMLElement | null));
-    this.settings.css.currentTopWrapperHeight = `${this.topWrapper.offsetHeight}px`;
-    this.settings.css.currentBottomWrapperHeight = `${this.bottomWrapper.offsetHeight}px`;
-    if (w.dataset.scroller !== "reverse") return;
-    spacer?.setAttribute("data-spacer", "true");
+      c = w.firstElementChild as HTMLElement | null;
+    if (!c || !w.isConnected) return;
+    do c.setAttribute("data-displayed", String(getComputedStyle(c).display !== "none")), c.setAttribute("data-spacer", "false"), c.dataset.displayed === "true" && (spacer ||= c);
+    while ((c = c?.nextElementSibling as HTMLElement));
+    if (w.dataset.scroller === "reverse" && spacer) spacer.dataset.spacer = "true";
+  }
+  public handleCompsView(w: HTMLElement): void {
+    this.handleCompsFlex(w), (this.settings.css.currentTopWrapperHeight = `${this.topWrapper.offsetHeight}px`), (this.settings.css.currentBottomWrapperHeight = `${this.bottomWrapper.offsetHeight}px`);
+    if (!w.isConnected || w.dataset.scroller !== "reverse") return;
     if (w.dataset.resetScrolled === "true") w.dataset.hasScrolled = "false";
     if (w.dataset.hasScrolled === "true" || w.scrollWidth <= w.clientWidth || w.scrollLeft === w.scrollWidth - w.clientWidth) return void (w.scrollWidth <= w.clientWidth && (w.dataset.hasScrolled = "false"));
     w.addEventListener("scroll", () => (w.dataset.hasScrolled = "false"), { once: true, signal: this.signal });
     w.scrollLeft = w.scrollWidth - w.clientWidth;
+  }
+  public handleDirtyScroll(e: globalThis.Event, el = e.currentTarget as HTMLElement): void {
+    if (el.scrollLeft > 0) el.dataset.hasScrolled = "true";
+    el.dataset.resetScrolled = String(el.scrollLeft === (el.dataset.scroller === "reverse" ? el.scrollWidth - el.clientWidth : 0));
   }
 
   protected override onDestroy(): void {

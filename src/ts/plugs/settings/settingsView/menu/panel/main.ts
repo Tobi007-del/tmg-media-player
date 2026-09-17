@@ -34,7 +34,7 @@ export class MainMenuPanel extends BaseMenuPanel {
     this.content.append(list);
     if (this.menuConfig.showView) {
       this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
-      this.viewBtn.addEventListener("click", () => this.onViewClick?.()), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
+      this.viewBtn.addEventListener("click", () => this.onViewClick?.(), { signal: this.signal }), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
       this.ctlr.plug("settings.settingsView")?.state.on("viewOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
     }
   }
@@ -67,7 +67,7 @@ export class MainMenuPanel extends BaseMenuPanel {
         if (badge?.value) el.dataset.badge = badge.value;
         item.inline && item.widget !== "toggle" ? (li.removeAttribute("tabindex"), li.classList.replace("tmg-media-smenu-row", "tmg-media-smenu-inline-wrapper"), li.append(el), item.widget === "range" && li.classList.add("tmg-media-smenu-row-inline-block")) : (li.append(lbl, el), li.classList.add("tmg-media-smenu-row-inline"));
         li.widget = widget;
-        li.addEventListener("click", (e) => !item.getDisabled?.() && (e.target === li || e.target === lbl) && li.querySelector<HTMLElement>("input, button")?.click());
+        li.addEventListener("click", (e) => !item.getDisabled?.() && (e.target === li || e.target === lbl) && li.querySelector<HTMLElement>("input, button")?.click(), { signal: this.signal });
       } else li.append(lbl);
     } else {
       const value = item.getValue?.(),
@@ -82,7 +82,7 @@ export class MainMenuPanel extends BaseMenuPanel {
         info.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isFunc(item.infoText) ? item.infoText() : item.infoText }));
         li.append(lbl, info, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       } else li.append(lbl, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
-      li.addEventListener("click", () => !item.getDisabled?.() && this.onItemClick?.(item));
+      li.addEventListener("click", () => !item.getDisabled?.() && this.onItemClick?.(item), { signal: this.signal });
       if (item.mediaPaths || item.configPaths || item.onWire) {
         const ac = new AbortController(),
           syncUI = () => {

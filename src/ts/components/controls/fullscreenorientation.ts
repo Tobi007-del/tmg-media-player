@@ -18,18 +18,18 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("features.fullscreenOrientation", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.fullscreenOrientation", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.fullscreen", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.fullscreen", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     this.syncARIA();
   }
 
   protected handleClick(): void {
-    this.media.intent.fullscreenOrientation = (this.media.state.fullscreenOrientation || this.ctlr.state.screenOrientation.type).startsWith("portrait") ? "landscape-primary" : "portrait-primary";
+    this.media.intent.fullscreenOrientation = (this.media.state.fullscreenOrientation || this.ctlr.state.screenOrientation.type).startsWith("portrait") ? "landscape" : "portrait";
   }
 
   public syncARIA(): void {

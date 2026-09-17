@@ -8,40 +8,37 @@ import { camelize, capitalize, uncamelize } from "@utils/str";
 export class CSSPlug extends BasePlug<CssConfig> {
   public static readonly plugName = "css";
   public static readonly BUILD = CSS_BUILD;
-  public classKeys: string[] = ["captionsCharacterEdgeStyle"]; // #DEFAULT: build privilege
-  public _cache: Record<string, string | number | undefined> = {};
+  public classList: string[] = ["captionsCharacterEdgeStyle"]; // #DEFAULT: build privilege
+  public build: Record<string, string | number | undefined> = {};
 
   public override wire(): void {
     // Variables Assignment
     const entries = Object.entries(this.config);
     this.settings.css.altImgUrl = `url(${window.TMG_MEDIA_ALT_IMG_SRC})`;
     // Blackbox Handlers
-    this.ctlr.config.get("*", (val, { target: { key, path } }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : (this._cache[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
+    this.ctlr.config.get("*", (val, { target: { key, path } }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : (this.build[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !banRgx.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     // ---- Media Watchers
     for (const p of ["videoWidth", "videoHeight"] as const) this.media.watch(`status.${p}`, this.syncAspectRatio, { init: p === "videoWidth", signal: this.signal });
     // ---- State --------
-    for (const p of ["container.width", "container.height", "object.width", "object.height", "object.top", "object.left", "poster.width", "poster.height", "poster.top", "poster.left"] as const) {
-      const cammed = capitalize(camelize(p, /\./));
-      this.ctlr.state.watch(`dimensions.${p}`, (v) => (this.config[`current${cammed}`] = `${v || 0}px`), { signal: this.signal });
-    }
+    (["container.width", "container.height", "object.width", "object.height", "object.top", "object.left", "poster.width", "poster.height", "poster.top", "poster.left"] as const).forEach((p, _, __, camped = capitalize(camelize(p, /\./))) => this.ctlr.state.watch(`dimensions.${p}`, (v) => (this.config[`current${camped}`] = `${v || 0}px`), { init: true, signal: this.signal }));
     // ---- Media Listeners
-    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State ----------
     for (const p of ["container", "pseudoContainer"] as const) this.ctlr.state.on(`dimensions.${p}.tier`, ({ value: tier }) => (this.media[p].dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
     // Post Wiring
-    for (const [k, v] of entries) k !== "syncWithMedia" && ((this._cache[k] ??= this.ctlr._build.settings.css[k]), this.set(k, v));
+    for (const [k, v] of entries) k !== "syncWithMedia" && ((this.build[k] ??= this.ctlr.build.settings.css[k]), this.set(k, v));
     super.wire();
   }
 
   protected async handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): Promise<void> {
     if (!value) return;
     const color = await this.ctlr.plug("settings.frame")?.getMainColor();
-    for (const k of Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k])) this.settings.css[k] = String(color ?? this._cache[k]);
+    for (const k of Object.keys(this.settings.css.syncWithMedia)) if (this.settings.css.syncWithMedia[k]) this.settings.css[k] = String(color ?? this.build[k]);
   }
 
   public getCSSKey(key: string): { isClass: boolean; id: string } {
-    return { isClass: this.classKeys.includes(key), id: `tmg-media-${uncamelize(key, "-")}` };
+    return { isClass: this.classList.includes(key), id: `tmg-media-${uncamelize(key, "-")}` };
   }
   protected getCSSValue(id: string): string {
     return getComputedStyle(this.media.container).getPropertyValue(`--${id}`) || "";

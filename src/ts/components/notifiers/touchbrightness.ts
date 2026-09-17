@@ -20,7 +20,7 @@ export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentSt
     this.upSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessHigh") });
     this.lowSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessLow") });
     this.darkSpan = createEl("span", { innerHTML: IconRegistry.get("brightnessDark") });
-    const spanWrapper = createEl("span")
+    const spanWrapper = createEl("span");
     this.element = createEl("div", { className: "tmg-media-touch-brightness-notifier tmg-media-touch-vb-notifier" });
     this.el.append(this.content, this.slider, (spanWrapper.append(this.upSpan, this.lowSpan, this.darkSpan), spanWrapper));
     return this.element;
@@ -31,7 +31,7 @@ export class TouchBrightnessNotifier extends BaseNotifier<undefined, ComponentSt
     // Plug Listeners
     this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessState, { init: true, signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness"> | REvent<BrightnessState, "aptValue">): void {

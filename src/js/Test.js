@@ -1,3 +1,40 @@
+const ap = new tmg.Player({
+  "settings.controlPanel.timeline.previews": true,
+  "media.settings.metadata": { title: "Justice League Teaser", artist: "Warner Bros. Pictures", profile: "../assets/icons/tmg-icon.jpeg", links: { artist: "https://www.warnerbros.com/movies/justice-league", profile: "https://github.com/Tobi007-del/tmg-media-player" } },
+  "media.intent.src": "../assets/media/justice_league_preview.mp4",
+  "ads.rolls": [
+    {
+      url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_preroll_skippable&sz=640x480&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+      time: 0,
+      badge: "Advertisement",
+      "media.settings.metadata.links.title": "https://www.doubleclickbygoogle.com/",
+      "media.settings.metadata.artist": "DoubleClick by Google",
+      "toasts.meta": { actions: { "Learn More": () => window.open("https://www.doubleclickbygoogle.com/", "_blank", "noopener,noreferrer") }, image: "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-color-icon.png" },
+    }, // Skippable Linear Ad (Allows skipping after 5 seconds)
+    {
+      url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+      time: "25%",
+      badge: "Sponsored",
+      "media.settings.metadata.links.title": "https://www.doubleclickbygoogle.com/",
+      "toasts.meta": { actions: { "Visit Site": () => window.open("https://www.doubleclickbygoogle.com/", "_blank", "noopener,noreferrer") }, image: "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-color-icon.png" },
+    }, // Standard 10s Linear Ad (Your working link)
+    {
+      url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dredirectlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+      time: "-50%", // flexing
+      badge: "Premium Partner",
+      "media.settings.metadata.links.title": "https://www.doubleclickbygoogle.com/",
+      "media.settings.metadata.profile": "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-color-icon.png",
+      "media.settings.metadata.artist": "DoubleClick by Google",
+      "toasts.meta": { actions: { Explore: () => window.open("https://www.doubleclickbygoogle.com/", "_blank", "noopener,noreferrer") }, image: undefined }, // override default "use profile"
+    }, // VAST Redirect Wrapper (Tests if your engine can follow VAST wrappers)
+    {
+      url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dnull&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+      time: -5,
+    }, // Empty VAST Response (Returns no ad - use this to test your error/fallback pipeline)
+  ],
+});
+ap.attach(document.getElementById("adstest"));
+
 const vp = new tmg.Player({
   playlist: {
     content: [

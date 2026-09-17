@@ -194,7 +194,7 @@ export class MyComp extends BaseComponent<MyConfig, MyState, HTMLButtonElement> 
 - `.watch()` - sync, fires before `.on()` listeners
 - `.on()` - async batched; use `{ init: true }` to also fire on wire
 - Always use `{ signal: this.signal }` - auto-cleanup on destroy
-- **Never add `window`/`document` event listeners when the state is already tracked in `ctlr.state`** (e.g. `screenOrientation`, `docInFullscreen`, `mediaParentIntersecting`, `docVisibilityState`). Use `ctlr.state.watch()`/`.on()` instead.
+- **Never add `window`/`document` event listeners when the state is already tracked in `ctlr.state`** (e.g. `screenOrientation`, `docInFullscreen`, `parentIntersecting`, `docVisibilityState`). Use `ctlr.state.watch()`/`.on()` instead.
 
 ---
 

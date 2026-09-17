@@ -9,7 +9,6 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
   icon: "autoplay",
   widget: "group",
   getValue: () => (plug.config.play.value === false ? "Off" : "On"),
-  getTipHTML: () => "Configure automatic playback settings and transitions",
   configPaths: ["settings.auto.play.value"],
   items: [
     {
@@ -60,8 +59,8 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
           widget: "group",
           getValue: () => "",
           items: [
-            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], getTipHTML: () => "Display the next video's poster during the countdown" },
-            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], getTipHTML: () => "Play a short silent preview of the next when no poster is present" },
+            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], title: "Display the next video's poster during the countdown" },
+            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], title: "Play a short silent preview of the next when no poster is present" },
             { id: "autoNextPreviewTime", label: "Preview time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "4000", helperText: { info: "The poster fallback preview time in ms in the next video, where the tease ends" }, type: "number", min: "0", value: () => plug.config.next.preview.time * 1000 }], getValue: () => formatUITime(plug.config.next.preview.time * 1000), onChange: (val: Record<string, any>) => (plug.config.next.preview.time = val.time / 1000), configPaths: ["settings.auto.next.preview.time"] },
           ],
         },

@@ -21,6 +21,8 @@ export function formatMenuPx(v: string | number, long = false): string {
 }
 
 // Checkers
+export const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
 export { cleanURL, isSameURL } from "@t007/utils";
 
 // Fuzzy String Matching

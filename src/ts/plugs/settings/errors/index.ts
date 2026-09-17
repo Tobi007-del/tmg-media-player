@@ -20,14 +20,14 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
 
   public override wire(): void {
     // Ctlr Media Listeners
-    this.media.on("status.error", this.handleErrorStatus, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.error", this.handleErrorStatus, { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     this.ctlr.learn("reload", { fn: this.reloadTech }, this.signal), super.wire();
   }
 
   protected async handleErrorStatus({ value }: REvent<CtlrMedia, "status.error">): Promise<void> {
     if (!value) return (this.state.code = this.state.message = null), this.ctlr.plug("disabled")?.reactivate();
-    this.ctlr.log(value, "error"); // no `.notice` since that's our job, no "swallow" since we breaking the player anyways
+    this.ctlr.log(value, "error"); // no `.notice` since that's our job, no "swallow" since we breaking the player
     let { code = 5, message = "" } = value;
     code = this.state.code = code > 5 ? (!message.includes(`${code}`) || this.config[code] ? code : 5) : code;
     message = this.state.message = this.config[code]?.replace(/media/g, this.media.type) || message || "";

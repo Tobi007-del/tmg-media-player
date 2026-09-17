@@ -18,10 +18,10 @@ export class FramePlug extends BasePlug<FrameConfig> {
   public override wire(): void {
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
-    // ---- Config Listeners
-    this.ctlr.config.on("settings.frame.disabled", this.syncFeatures, { init: true, signal: this.signal });
+    // ---- Config --------
+    this.ctlr.config.watch("settings.frame.disabled", this.syncFeatures, { signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("capture", { fn: () => this.capture(""), keyboard: { phase: "keyup" } }, this.signal);
+    this.ctlr.learn("capture", { fn: () => this.capture("") }, this.signal);
     this.ctlr.learn("timeStepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeStepBwd", { fn: () => this.moveFrame("backwards"), keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
@@ -30,7 +30,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   public async extract(display: "" | "monochrome", time?: number, raw?: false, min?: number, video?: HTMLVideoElement): Promise<{ blob: Blob | null; url: string }>;
   public async extract(display: "" | "monochrome", time?: number, raw?: true, min?: number, video?: HTMLVideoElement): Promise<{ canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }>;
   public async extract(display: string = "", time = safeNum(this.media.state.currentTime), raw = false, min = 0, video = this.media.pseudoElement as HTMLVideoElement): Promise<any> {
-    if (!this.media.features.frameCapture) return raw ? { canvas: this.exportCanvas, context: this.exportCtx } : { blob: null, url: "" };
+    if (!this.media.features.frameCapture) return raw ? { canvas: this.exportCanvas, context: (this.exportCtx.clearRect(0, 0, this.exportCanvas.width, this.exportCanvas.height), this.exportCtx) } : { blob: null, url: "" };
     if (video !== this.media.element) {
       if (this.ctlr.state.frameReadyPromise) await this.ctlr.state.frameReadyPromise; // wait for it to get set by last getter 5 lines below
       if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
@@ -47,8 +47,8 @@ export class FramePlug extends BasePlug<FrameConfig> {
     let blob: Blob | null | false | 0 = null;
     try {
       blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));
-    } catch (e) {
-      this.ctlr.log(e, "error", true);
+    } catch (err) {
+      this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
     }
     return { blob: blob || null, url: blob ? URL.createObjectURL(blob) : "" };
   }
@@ -56,7 +56,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   public async capture(display: "" | "monochrome" = "", time = safeNum(this.media.state.currentTime)): Promise<void> {
     if (!this.media.features.frameCapture) return;
     this.ctlr.plug("settings.notifiers")?.notify("capture"); // #STALLING: necessary optimistic distraction
-    const toast = this.ctlr.plug("settings.toasts")?.toast,
+    const toast = this.ctlr.toast,
       tTxt = formatMediaTime({ time, format: "human", showMs: true }),
       fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,
       tId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.media.settings.metadata.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
@@ -77,20 +77,20 @@ export class FramePlug extends BasePlug<FrameConfig> {
     frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, autoClose: this.config.captureAutoClose, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url) }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
   }
 
-  public async findGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | null> {
+  public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | undefined> {
     const end = clamp(getMediaMin(this.media), t + s, getMediaMax(this.media)),
       seq = ++this.findSeq;
     for (; t <= end; t += 0.333) {
-      if (seq !== this.findSeq) return null;
+      if (seq !== this.findSeq) return;
       const rgb = await getDominantColor((await this.extract("", t, true, 1)).canvas, "rgb", true);
       if (rgb && getRGBBri(rgb) > bri && getRGBSat(rgb) > sat) return t; // <= FIRST legit content frame
     }
-    return null;
+    return;
   }
   private findSeq = 0;
 
-  public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config = {}): Promise<string | null> {
-    return getDominantColor(poster ? poster : (await this.extract("", time ? time : (await this.findGoodTime(config)) ?? undefined, true, 1)).canvas);
+  public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
+    return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas);
   }
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
@@ -98,7 +98,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   }
 
   public syncFeatures(): void {
-    this.media.features.frameCapture = this.ctlr.isNativeEl && this.media.type === "video" && !this.config.disabled;
+    this.media.tech.polyfill("frameCapture", this.ctlr.isNativeEl && this.media.type === "video", this.config.disabled);
   }
 } // Video only
 
@@ -118,7 +118,7 @@ declare module "@defs/config" {
 }
 
 declare module "@defs/contract" {
-  interface MediaExtraFeatures {
+  interface MediaFeaturesExt {
     frameCapture: boolean;
   }
 }

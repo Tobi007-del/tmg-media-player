@@ -32,6 +32,7 @@ export * from "@components/controls/settings";
 export * from "@components/controls/theater";
 export * from "@components/controls/time";
 export * from "@components/controls/timeAndDuration";
+export * from "@components/controls/voice";
 export * from "@components/holders/airplayPlaceholder";
 export * from "@components/holders/castPlaceholder";
 export * from "@components/holders/errorPlaceholder";

@@ -1,5 +1,5 @@
 import { createTimeRanges } from "@utils/time";
-import type { MediaIntent, MediaState, MediaStatus, MediaSettings } from "@defs/contract";
+import type { MediaIntent, MediaState, MediaStatus, MediaSettings, MediaReport } from "@defs/contract";
 import { DeepPartial } from "sia-reactor";
 
 // DEFAULT STATE (The Reality)
@@ -56,7 +56,6 @@ export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   crossOrigin: null,
   controls: false, // We disable native controls
   controlsList: "",
-  disablePictureInPicture: false,
   // HTML Lists
   sources: [],
   tracks: [],
@@ -105,10 +104,14 @@ export const MEDIA_STATUS_BUILD: Partial<MediaStatus> = {
   // Live Content
   isLive: false,
   canSeekLive: false,
+  // Misc
+  ads: false,
+  adPoints: [],
+  // alienated: false,
 };
 
 // DEFAULT SETTINGS (The Config)
-export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
+export const MEDIA_SETTINGS_BUILD: Partial<MediaSettings> = {
   // Streams
   srcObject: null,
   // Metadata
@@ -136,9 +139,22 @@ export const MEDIA_SETTINGS_BUILD: DeepPartial<MediaSettings> = {
   // Lifecycles
   idleWaiting: false,
   timePlayedMin: 3,
-  timeUpdateInterval: 250, // 4 times a second
-  transientPaths: {
-    status: ["error", "activeCues", "duration", "waiting", "buffered", "seekable", "readyState", "ended", "stalled", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough"],
+  timeShiftPoll: 250, // 4 times a second
+  flushKeys: {
+    status: ["error", "duration", "ended", "activeCues", "readyState", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough", "seekable", "waiting", "buffered", "stalled"], // "alienated"
     state: ["currentTime"],
+  },
+};
+
+// DEFAULT ITEM REPORT (The Playlist Item)
+export const MEDIA_ITEM_BUILD: DeepPartial<MediaReport> = {
+  intent: {
+    src: MEDIA_STATE_BUILD.src,
+    poster: MEDIA_STATE_BUILD.poster,
+    tracks: MEDIA_INTENT_BUILD.tracks,
+  },
+  status: {},
+  settings: {
+    metadata: MEDIA_SETTINGS_BUILD.metadata as any,
   },
 };

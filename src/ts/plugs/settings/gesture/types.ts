@@ -32,5 +32,5 @@ export type GestureConfig = GestureGeneralConfig & {
 };
 
 export interface GestureState {
-  skipPersist: boolean;
+  skipping: boolean;
 }

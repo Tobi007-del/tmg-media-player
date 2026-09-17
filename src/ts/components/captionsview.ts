@@ -3,8 +3,8 @@ import type { CueLike } from "@plugs/settings/captions";
 import { capitalize } from "@utils/str";
 import { clamp, parseIfPercent, safeNum } from "@utils/num";
 import { createEl } from "@utils/dom";
-import { formatVttLine, parseVttText } from "@utils/media";
-import { isDef, isObj, isStr } from "@utils/obj";
+import { formatVttLine, parseVttText } from "@utils/text";
+import { isDef, isObj } from "@utils/obj";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
 
 export type CaptionsViewConfig = {
@@ -14,9 +14,8 @@ export type CaptionsViewConfig = {
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
   public static readonly componentName: string = "captionsView";
-  protected prevCues: CueLike[] | null = null;
-  protected karaokeNodes: KaraokeNode[] | null = null;
-  protected lastPreview = "";
+  protected cues: CueLike[] | null = null;
+  protected timeNodes: timeNode[] | null = null;
   protected timeoutId = -1;
   protected charW = 0;
   protected lineHPx = 0;
@@ -51,43 +50,38 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
 
   public syncSize(): void {
     this.el.style.setProperty("display", "block", "important");
-    const measurer = createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" });
-    this.el.append(measurer);
-    this.charW = measurer.offsetWidth / 52;
-    const { lineHeight, fontSize } = getComputedStyle(measurer);
-    (this.fontSize = safeNum(parseFloat(fontSize), 16)), (this.lineHPx = !safeNum(parseFloat(lineHeight), 0) ? this.fontSize * 1.2 : parseFloat(lineHeight));
-    measurer.remove(), this.el.style.removeProperty("display"), this.preview("");
+    const measurer = this.el.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" })),
+      { lineHeight, fontSize } = getComputedStyle(measurer);
+    (this.charW = measurer.offsetWidth / 52), (this.fontSize = safeNum(parseFloat(fontSize), 16)), (this.lineHPx = !safeNum(parseFloat(lineHeight), 0) ? this.fontSize * 1.2 : parseFloat(lineHeight));
+    measurer.remove(), this.el.style.removeProperty("display"), this.cues && this.render(this.cues, this.previewing);
   }
 
-  public preview(cue: CueLike | string = `${capitalize(this.media.status.trackKind || "captions")} look like this`, flush = this.isPreviewing()): void {
-    const text = isStr(cue) ? cue : cue.text || "",
-      should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
-    should && this.media.container.classList.add("tmg-media-captions-preview");
-    this.render(should ? [isObj(cue) ? cue : { text: cue }] : this.prevCues);
-    clearTimeout(this.timeoutId);
-    this.timeoutId = setTimeout((flush = this.isPreviewing(text)) => (this.media.container.classList.remove("tmg-media-captions-preview"), flush && (this.el.innerHTML = "")), this.settings.captions.previewTimeout, this.signal);
-    this.lastPreview = text;
+  public preview(cue: CueLike | string = `${capitalize(this.media.status.textKind || "captions")} look like this`, flush = this.previewing): void {
+    const should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
+    this.render(should ? [isObj(cue) ? cue : { text: cue }] : this.cues, should), should && clearTimeout(this.timeoutId);
+    if (should) this.timeoutId = setTimeout(() => (this.previewing && ((this.el.innerHTML = ""), (this.cues = null)), this.el.classList.remove("tmg-media-captions-preview")), this.settings.captions.previewTimeout, this.signal);
   }
-  public isPreviewing(text = this.lastPreview): boolean {
-    return !!this.el.innerHTML && this.el.textContent.replace(/\s/g, "") === text?.replace(/\s/g, "");
+  public get previewing(): boolean {
+    return this.el.classList.contains("tmg-media-captions-preview");
   }
 
-  public render(cues: CueLike[] | null): void {
+  public render(cues: CueLike[] | null, isPreview = false): void {
+    this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!cues?.length) return existing?.remove();
     for (const attr of ["style", "data-active", "data-scroll"]) this.el.removeAttribute(attr);
-    const wrapper = existing ?? createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }),
+    const wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" })),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
       allowOverride = this.settings.captions.allowMediaOverride || !this.config.isMain,
       wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2; // Padding allowance
     if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
-    (wrapper.innerHTML = ""), (this.prevCues = cues);
-    for (const cue of cues) {
+    wrapper.innerHTML = "";
+    for (const cue of (this.cues = cues)) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
       const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
       for (const p of lines) for (const l of formatVttLine(p, Math.floor(wrapWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, allowOverride && cue.align && cue.align !== "center" ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
     }
-    !existing && this.el.append(wrapper), this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
+    this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
     this.config.isMain ? (this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`) : this.el.style.setProperty("--cmptd-cue-box-height", `${cHeight}px`);
     this.config.isMain ? (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`) : this.el.style.setProperty("--cmptd-cue-box-width", `${cWidth}px`);
@@ -119,21 +113,14 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       if (isDef(cue.size) && cue.size !== 100) this.el.style.width = `${cue.size}%`;
       if (cues[0].vertical) this.el.style.writingMode = cues[0].vertical === "lr" ? "vertical-lr" : "vertical-rl";
     }
-    this.karaokeNodes = Array.from(wrapper.querySelectorAll<HTMLElement>("[data-part='timed']"), (el) => {
-      const [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || [];
-      return { el, time: m ? +m * 60 + +s + +ms / 1000 : 0 };
-    });
+    this.timeNodes = Array.from(wrapper.querySelectorAll("[data-part='timed']"), (el, _, [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || []) => ({ el, time: m ? +m * 60 + +s + +ms / 1000 : 0 }));
     this.syncKaraoke();
   }
   protected dragX?: string;
   protected dragY?: string;
 
   public syncKaraoke(): void {
-    if (!this.karaokeNodes) return;
-    for (const { el, time } of this.karaokeNodes) {
-      const isPast = safeNum(this.media.state.currentTime) > time;
-      el.toggleAttribute("data-past", isPast), el.toggleAttribute("data-future", !isPast);
-    }
+    if (this.timeNodes) for (const { el, time } of this.timeNodes) el.toggleAttribute("data-past", safeNum(this.media.state.currentTime) > time), el.toggleAttribute("data-future", !el.hasAttribute("data-past"));
   }
 
   protected handleDragStart(e: PointerEvent): void {
@@ -175,7 +162,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   }
 }
 
-type KaraokeNode = {
+type timeNode = {
   el: HTMLElement;
   time: number;
 };

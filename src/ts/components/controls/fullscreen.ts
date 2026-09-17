@@ -15,11 +15,11 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.fullscreen", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.fullscreen", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.fullscreen", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.fullscreen", this.syncARIA, { signal: this.signal });

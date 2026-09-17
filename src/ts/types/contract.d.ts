@@ -71,7 +71,6 @@ export interface MediaState {
   crossOrigin: "anonymous" | "use-credentials" | string | null;
   controls: boolean; // Native controls enabled?
   controlsList: Inert<DOMTokenList> | string | null; // Native controls disabled (e.g. "nodownload")
-  disablePictureInPicture: boolean;
   // ---  HTML Lists ---
   sources: Sources; // HTML courtesy
   tracks: Tracks; // HTML courtesy
@@ -84,8 +83,9 @@ export interface MediaState {
 
 export type MediaIntent = Omit<
   MediaState,
-  "currentChapter" | "currentTextTrack" | "currentAudioTrack" | "currentVideoTrack" | "currentLevel"
+  "fullscreenOrientation" | "currentItem" | "currentChapter" | "currentTextTrack" | "currentAudioTrack" | "currentVideoTrack" | "currentLevel"
 > & {
+  fullscreenOrientation: OrientationLockType | false;
   currentItem: unknown;
   currentChapter: unknown;
   currentTextTrack: unknown;
@@ -129,6 +129,10 @@ export interface MediaStatus {
   // --- Live Content ---
   isLive: boolean;
   canSeekLive: boolean;
+  // --- Misc ---
+  ads: boolean;
+  adPoints: number[];
+  // alienated: boolean; // Not wat u seem, e.g, IMA using iframe even wit a video
 }
 
 export interface MediaSettings {
@@ -137,27 +141,18 @@ export interface MediaSettings {
   // --- Metadata ---
   metadata: Metadata;
   protection: Record<string, { serverURL: string }> | null; // { "com.widevine.alpha": { serverURL: "https://..." } }
-  // --- Live Content ---
-  liveTolerance: number; // seconds
-  minDVRWindow: number; // seconds
   // --- Defaults (Startup values) ---
   defaultMuted: boolean;
   defaultPlaybackRate: number;
+  // --- Live Content ---
+  liveTolerance: number; // seconds
+  minDVRWindow: number; // seconds
   // --- Lifecycles ---
   idleWaiting: boolean;
   timePlayedMin: number; // seconds
-  timeUpdateInterval: number; // time shift polling, e.g. in YT tech
-  transientPaths: { status: (keyof MediaStatus)[]; state: (keyof MediaState)[] }; // reset on `src` change
+  timeShiftPoll: number; // time shift polling ms, e.g. in YT tech
+  flushKeys: { status: Array<keyof MediaStatus>; state: Array<keyof MediaState> }; // reset on `src` change
 }
-
-export interface MediaExtraFeatures {} // for external but custom usecases
-export type MediaFeatures = {
-  [K in Exclude<keyof MediaState, keyof MediaContract>]?: boolean;
-} & {
-  [K in Exclude<keyof MediaStatus, keyof MediaContract>]?: boolean;
-} & {
-  [K in Exclude<keyof MediaSettings, keyof MediaContract>]?: boolean;
-} & Partial<MediaExtraFeatures>;
 
 export interface MediaReport {
   state: State<MediaState>;
@@ -165,6 +160,17 @@ export interface MediaReport {
   status: State<MediaStatus>;
   settings: Volatile<Intent<MediaSettings>>;
 }
+
+export interface MediaFeaturesExt {
+  adSkip: boolean;
+} // for custom usecases
+export type MediaFeatures = {
+  [K in Exclude<keyof MediaState, keyof MediaContract>]?: boolean;
+} & {
+  [K in Exclude<keyof MediaStatus, keyof MediaContract>]?: boolean;
+} & {
+  [K in Exclude<keyof MediaSettings, keyof MediaContract>]?: boolean;
+} & Partial<MediaFeaturesExt>;
 
 export type CtlrMedia = MediaReport & {
   tech: Inert<BaseTech>;

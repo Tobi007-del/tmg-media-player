@@ -19,11 +19,11 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.objectFit", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.objectFit", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.objectFit", this.syncARIA, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.objectFit", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.objectFit", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.objectFit", this.syncARIA, { signal: this.signal });

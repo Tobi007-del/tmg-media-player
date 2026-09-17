@@ -25,7 +25,7 @@
   cursor: not-allowed;
 }
 .tmg-host-container.tmg-media-disabled *,
-.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) > *:not(.tmg-media-screen-locked-wrapper, [class$="toast-container"]) {
+.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) > *:not(.tmg-media-locked-wrapper, [class$="toast-container"]) {
   pointer-events: none !important;
 }
 .tmg-host-container.tmg-media-disabled * {

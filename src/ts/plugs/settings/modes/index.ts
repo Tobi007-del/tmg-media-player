@@ -1,11 +1,13 @@
 import { Controller } from "@core/controller";
 import { BasePlug } from "../../base";
+import type { ModesConfig } from "./types";
+import { MODES_BUILD } from "./build";
 import { ModesFullscreenPin } from "./fullscreen";
 import { ModesTheaterPin } from "./theater";
 import { ModesPictureInPicturePin } from "./pictureInPicture";
 import { ModesMiniplayerPin } from "./miniplayer";
-import type { ModesConfig } from "./types";
-import { MODES_BUILD } from "./build";
+import { ModesCastPin } from "./cast";
+import { ModesAirPlayPin } from "./airplay";
 import { PinRegistry } from "@core/registries";
 
 export class ModesPlug extends BasePlug<ModesConfig> {
@@ -15,24 +17,24 @@ export class ModesPlug extends BasePlug<ModesConfig> {
   public theater?: ModesTheaterPin;
   public pictureInPicture?: ModesPictureInPicturePin;
   public miniplayer?: ModesMiniplayerPin;
+  public cast?: ModesCastPin;
+  public airplay?: ModesAirPlayPin;
 
   constructor(ctlr: Controller, config = ctlr.settings.modes) {
     super(ctlr, config);
-    const FullscreenPin = PinRegistry.get("modes.fullscreen"),
-      TheaterPin = PinRegistry.get("modes.theater"),
-      PictureInPicturePin = PinRegistry.get("modes.pictureInPicture"),
-      MiniplayerPin = PinRegistry.get("modes.miniplayer");
-    FullscreenPin && (this.fullscreen = new FullscreenPin(this.ctlr, this.config.fullscreen)), TheaterPin && (this.theater = new TheaterPin(this.ctlr, this.config.theater)), PictureInPicturePin && (this.pictureInPicture = new PictureInPicturePin(this.ctlr, this.config.pictureInPicture)), MiniplayerPin && (this.miniplayer = new MiniplayerPin(this.ctlr, this.config.miniplayer));
+    // prettier-ignore
+    const FP = PinRegistry.get("modes.fullscreen"), TP = PinRegistry.get("modes.theater"), PP = PinRegistry.get("modes.pictureInPicture"), MP = PinRegistry.get("modes.miniplayer"), CP = PinRegistry.get("modes.cast"), AP = PinRegistry.get("modes.airplay");
+    FP && (this.fullscreen = new FP(this.ctlr, this.config.fullscreen)), TP && (this.theater = new TP(this.ctlr, this.config.theater)), PP && (this.pictureInPicture = new PP(this.ctlr, this.config.pictureInPicture)), MP && (this.miniplayer = new MP(this.ctlr, this.config.miniplayer)), CP && (this.cast = new CP(this.ctlr, this.config.cast)), AP && (this.airplay = new AP(this.ctlr, this.config.airplay));
   }
 
   public override mount(): void {
     // Utility Injection
-    this.fullscreen?.mount?.(), this.theater?.mount?.(), this.pictureInPicture?.mount?.(), this.miniplayer?.mount?.();
+    for (const pin of [this.fullscreen, this.theater, this.pictureInPicture, this.miniplayer, this.cast, this.airplay]) pin?.mount?.();
   }
 
   public override wire(): void {
     // Utility Injection
-    this.fullscreen?.wire(), this.theater?.wire(), this.pictureInPicture?.wire(), this.miniplayer?.wire();
+    for (const pin of [this.fullscreen, this.theater, this.pictureInPicture, this.miniplayer, this.cast, this.airplay]) pin?.wire();
     // Post Wiring
     this.ctlr.learn("escape", { fn: this.closePopUps, keyboard: { phase: "keydown" } }, this.signal), super.wire();
   }
@@ -43,7 +45,8 @@ export class ModesPlug extends BasePlug<ModesConfig> {
   }
 
   protected override onDestroy(): void {
-    this.fullscreen?.destroy(), this.theater?.destroy(), this.pictureInPicture?.destroy(), this.miniplayer?.destroy(), super.onDestroy();
+    for (const pin of [this.fullscreen, this.theater, this.pictureInPicture, this.miniplayer, this.cast, this.airplay]) pin?.destroy();
+    super.onDestroy();
   }
 }
 

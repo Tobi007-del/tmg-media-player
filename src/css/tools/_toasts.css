@@ -1,0 +1,26 @@
+.tmg-media-toasts-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  isolation: isolate;
+}
+.tmg-media-toasts-container > * {
+  pointer-events: auto;
+}
+.t007-toast .t007-toast-action-button > span,
+.t007-toast .t007-toast-action-button > span > span {
+  display: contents;
+}
+.t007-toast .t007-toast-action-button > span:has(span) {
+  display: flex;
+  gap: 0.5ch;
+  line-height: 1.2;
+}
+.t007-toast .t007-toast-action-button svg {
+  width: calc(var(--t007-toast-unit) * 1.25);
+  height: calc(var(--t007-toast-unit) * 1.25);
+}

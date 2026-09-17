@@ -31,10 +31,10 @@
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) :is(.tmg-media-notifier-content, .tmg-media-touch-vb-content) {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
-.tmg-media-top-text-notifier {
+.tmg-media-text-notifier {
   font-size: calc(var(--tmg-media-current-unit) / 2.4);
 }
-.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-top-text-notifier {
+.tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-text-notifier {
   font-size: calc(var(--tmg-media-current-unit) / 1.65);
 }
 .tmg-media-touch-timeline-notifier {

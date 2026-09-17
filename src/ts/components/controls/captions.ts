@@ -18,15 +18,15 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.textVisible", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.textVisible", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Plug Listeners
     this.plug?.state.on("secondaryTracks", this.syncBadge, { signal: this.signal });
     // Ctlr Media Listeners
-    for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.payload.wired, signal: this.signal });
+    for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.captions", this.syncARIA, { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.keys.shortcuts.captions", this.syncARIA, { signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.captions", this.syncARIA, { signal: this.signal });
   }
 

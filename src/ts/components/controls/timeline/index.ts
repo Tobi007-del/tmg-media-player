@@ -5,7 +5,7 @@ import type { REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { formatMediaTime } from "@utils/time";
 import { IS_MOBILE } from "@utils/env";
-import { getMediaMax, getMediaProgress, getMediaTime } from "@utils/time";
+import { getMediaMax as getMax, getMediaProgress as getProgress, getMediaTime as getTime } from "@utils/time";
 import { createEl } from "@utils/dom";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
 import { safeNum } from "@utils/num";
@@ -30,11 +30,8 @@ export class Timeline extends RangeInput<TimelineConfig> {
   protected get plug() {
     return this.ctlr.plug("settings.time");
   }
-  protected getTime(percent: number) {
-    return getMediaTime(this.media, percent);
-  }
 
-  constructor(ctlr: Controller, config?: Partial<TimelineConfig>) {
+  constructor(ctlr: Controller, config = ctlr.settings.controlPanel.timeline as Partial<TimelineConfig>) {
     super(ctlr, config);
   }
 
@@ -63,30 +60,30 @@ export class Timeline extends RangeInput<TimelineConfig> {
   public override wire(): void {
     super.wire();
     // Event Listeners
-    this.media.pseudoElement.addEventListener("timeupdate", this.syncCanvasPreviews, { signal: this.signal });
+    this.media.pseudoElement.addEventListener("timeupdate", this.syncCanvases, { signal: this.signal });
     // State Listeners
     this.state.on("scrubbing", this.handleScrubbing, { signal: this.signal });
-    this.state.on("previewing", ({ value }) => (value ? (this.clearCanvasPreviews(), this.media.container.classList.add("tmg-media-previewing")) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
+    this.state.on("previewing", ({ value }) => (value ? (this.clearCanvases(), this.media.container.classList.add("tmg-media-previewing")) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
     this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelScrubNotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
     // Config --------
     this.config.on("previewValue", this.syncPreviewText, { init: true, signal: this.signal });
     this.config.on("previews", this.syncPreviews, { init: true, signal: this.signal });
     this.config.on("autopause", ({ value }) => [this.thumbnailCanvas, this.thumbnailImg].forEach((el) => el.classList.toggle("tmg-media-control-hidden", !value)), { init: true, signal: this.signal });
     this.config.on("compact", ({ value }) => this.el.classList.toggle("tmg-media-control-compact", value), { init: true, signal: this.signal });
-    this.config.on("bufferMarks", () => this.syncMarks(this.config.marks, true), { init: true, signal: this.signal });
-    this.config.on("playedMarks", () => this.syncMarks(this.config.marks, true), { init: true, signal: this.signal });
+    for (const p of ["bufferMarks", "playedMarks", "advertMarks"] as const) this.config.on(p, () => this.syncMarks(), { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("type", this.syncPreviews, { signal: this.signal });
-    this.media.on("state.paused", ({ value }) => (!value ? this.ctlr.RAFLoop(`${this.config.label}Updating`, this.syncValue, this.signal) : this.ctlr.cancelRAFLoop(`${this.config.label}Updating`)), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("state.currentTime", this.handleCurrentTime, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.paused", ({ value }) => (!value ? this.ctlr.RAFLoop(`${this.config.label}Updating`, this.syncValue, this.signal) : this.ctlr.cancelRAFLoop(`${this.config.label}Updating`)), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.currentTime", this.handleCurrentTime, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("intent.currentTime", this.handleCurrentTime, { signal: this.signal }); // #APPRENTICE: folklore embodiment
-    this.media.on("status.buffered", this.handleBufferedStatus, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.played", () => this.config.playedMarks && this.syncMarks(this.config.marks, true), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.duration", ({ value }) => (this.el.ariaValueMax = String(Math.floor(value))), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.error", ({ value }) => value && this.syncChunks("buffer", 0), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.isLive", ({ value }) => (this.config.readonly = value && !this.media.status.canSeekLive), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("status.canSeekLive", ({ value }) => (this.config.readonly = !value && !!this.media.status.isLive), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("settings.metadata.chapterInfo", this.handleMetadataChapterInfoSetting, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("status.buffered", this.handleBufferedStatus, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.played", () => this.config.playedMarks && this.syncMarks(), { signal: this.signal });
+    this.media.on("status.adPoints", () => this.config.advertMarks && this.syncMarks(), { signal: this.signal });
+    this.media.on("status.duration", ({ value }) => (this.el.ariaValueMax = String(Math.floor(value))), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.error", ({ value }) => value && this.syncChunks("buffer", 0), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.isLive", ({ value }) => (this.config.readonly = value && !this.media.status.canSeekLive), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.canSeekLive", ({ value }) => (this.config.readonly = !value && !!this.media.status.isLive), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.chapterInfo", (e) => (e.currentTarget.value.length < 2 ? (this.config.divs = []) : this.ctlr.when("loadedMetadata", e, this.syncChapters, this.signal)), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State --------
     for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.object.${p}`, ({ value }) => (this.thumbnailCanvas[p] = value), { init: true, signal: this.signal });
     // ---- Config --------
@@ -94,7 +91,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.ctlr.config.on("settings.time.mode", this.syncPreviewText, { signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
-    return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(this.getTime(value / 100))), true) : false;
+    return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(getTime(this.media, value / 100))), true) : false;
   }
 
   protected handleCurrentTime({ target, rejectable, resolved }: REvent<CtlrMedia, "state.currentTime" | "intent.currentTime">): void {
@@ -104,12 +101,12 @@ export class Timeline extends RangeInput<TimelineConfig> {
   } // !(a full embodiment) for near native range perf but close enough
 
   protected handleBufferedStatus({ value }: REvent<CtlrMedia, "status.buffered">): void {
-    this.config.bufferMarks && this.syncMarks(this.config.marks, true);
-    for (let i = 0; i < value.length; i++) if (value.start(value.length - 1 - i) < this.media.state.currentTime) return void this.syncChunks("buffer", this.getPosValue(safeNum(value.end(value.length - 1 - i) / getMediaMax(this.media))));
+    this.config.bufferMarks && this.syncMarks();
+    for (let i = 0; i < value.length; i++) if (value.start(value.length - 1 - i) < this.media.state.currentTime) return void this.syncChunks("buffer", this.getPosValue(safeNum(value.end(value.length - 1 - i) / getMax(this.media))));
   }
 
   public syncValue(auto = true, value = this.media.state.currentTime): void {
-    if ((!auto || this.ctlr.state.mediaIntersecting) && !this.state.scrubbing) this.config.value = safeNum(getMediaProgress(this.media, value)) * 100; // (value / safeNum(this.media.status.duration, 60))
+    if ((!auto || this.ctlr.state.mediaIntersecting) && !this.state.scrubbing) this.config.value = safeNum(getProgress(this.media, value)) * 100; // (value / safeNum(this.media.status.duration, 60))
   }
 
   protected handleScrubbing({ value }: REvent<RangeState, "scrubbing">): void {
@@ -117,19 +114,12 @@ export class Timeline extends RangeInput<TimelineConfig> {
     if (!value) return this.config.autopause && silence(() => (this.media.intent.paused = this.wasPaused)), cancelAnimationFrame(this.scrubbingId), this.ctlr.plug("settings.notifiers")?.comp("scrubNotifier")?.inactive();
     this.wasPaused = this.media.state.paused;
     this.scrubbingId = requestAnimationFrame(() => (this.config.autopause && silence(() => (this.media.intent.paused = true)), IS_MOBILE && this.ctlr.plug("settings.notifiers")?.comp("scrubNotifier")?.active()), this.signal);
-    this.clearCanvasPreviews();
-  }
-
-  protected handleMetadataChapterInfoSetting({ currentTarget: { value } }: REvent<CtlrMedia, "settings.metadata.chapterInfo">): void {
-    if (!value || value.length < 2) return void (this.config.divs = []);
-    const divs: RangeInputDiv[] = [];
-    for (let i = 0, len = value.length; i < len; i++) divs.push({ value: (value[i].startTime / getMediaMax(this.media)) * 100, label: value[i].title });
-    this.config.divs = divs;
+    this.clearCanvases();
   }
 
   public override stopScrubbing(): void {
     if (!this.state.scrubbing) return;
-    if (!this.state.cancelScrub) this.media.intent.currentTime = this.getTime(this.config.value / 100);
+    if (!this.state.cancelScrub) this.media.intent.currentTime = getTime(this.media, this.config.value / 100);
     super.stopScrubbing();
   }
 
@@ -141,7 +131,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
         const previews = this.config.previews,
           type = this.media.container.dataset.previewType;
         if (type === "sprite" && previews && !isBool(previews) && previews.cols && previews.rows) {
-          const frameIndex = Math.floor((pos * getMediaMax(this.media)) / (previews.spf || 1)) || 1,
+          const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
             { cols, rows } = previews,
             clampedI = Math.min(frameIndex, cols * rows - 1),
             xPercent = ((clampedI % cols) * 100) / (cols - 1 || 1),
@@ -149,17 +139,23 @@ export class Timeline extends RangeInput<TimelineConfig> {
           if (!this.config.compact) this.settings.css.currentPreviewPosition = `${xPercent}% ${yPercent}%`;
           if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailPosition = `${xPercent}% ${yPercent}%`;
         } else if (type === "image" && previews && !isBool(previews) && previews.address) {
-          const frameIndex = Math.floor((pos * getMediaMax(this.media)) / (previews.spf || 1)) || 1,
+          const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
             url = `url(${previews.address.replace("$", String(frameIndex))})`;
           if (!this.config.compact) this.settings.css.currentPreviewUrl = url;
           if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailUrl = url;
-        } else if (previews && !this.ctlr.state.frameReadyPromise) this.media.pseudoElement.currentTime = safeNum(this.getTime(pos));
+        } else if (previews && !this.ctlr.state.frameReadyPromise) this.media.pseudoElement.currentTime = safeNum(getTime(this.media, pos));
       },
       30
     );
   }
 
-  protected syncPreviews(): void {
+  public syncChapters(): void {
+    const divs: RangeInputDiv[] = [],
+      chaps = this.media.settings.metadata.chapterInfo;
+    for (let i = 0, len = chaps.length; i < len; i++) divs.push({ value: (chaps[i].startTime / getMax(this.media)) * 100, label: chaps[i].title });
+    this.config.divs = divs;
+  }
+  public syncPreviews(): void {
     const value = this.config.previews === true ? {} : this.config.previews,
       manual = value && value.address && (value.spf || (value.cols && value.rows)),
       type = manual ? (value.cols && value.rows ? "sprite" : "image") : value ? "canvas" : "none";
@@ -169,9 +165,9 @@ export class Timeline extends RangeInput<TimelineConfig> {
     else if (type !== "none") this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
   }
   public syncPreviewText(): void {
-    if (this.plug) this.previewContainer.dataset.previewText = `${this.plug.toTimeText(this.getTime(this.config.previewValue / 100), true)}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
+    if (this.plug) this.previewContainer.dataset.previewText = `${this.plug.toTimeText(getTime(this.media, this.config.previewValue / 100), true)}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
   }
-  public syncCanvasPreviews(): void {
+  public syncCanvases(): void {
     if (!this.previewCtx || !this.thumbnailCtx || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 1) return;
     this.ctlr.throttle(
       "canvasPreviewSync",
@@ -184,7 +180,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
       33
     );
   }
-  public clearCanvasPreviews(bool = this.media.container.dataset.previewType === "canvas" && this.media.pseudoElement.readyState < 1): void {
+  public clearCanvases(bool = this.media.container.dataset.previewType === "canvas" && this.media.pseudoElement.readyState < 1): void {
     if (bool) this.ctlr.setCanvasFallback(this.previewCanvas, this.previewCtx), this.ctlr.setCanvasFallback(this.thumbnailCanvas, this.thumbnailCtx);
   }
 
@@ -197,24 +193,29 @@ export class Timeline extends RangeInput<TimelineConfig> {
     }
     this.handleBufferedStatus({ value: this.media.status.buffered } as REvent<CtlrMedia, "status.buffered">);
   }
-  protected override syncMarks(marks = this.config.marks, extras = false): void {
-    if (extras && !this.ctlr.payload.wired) return;
-    const agg = [...marks],
-      { buffered: buf, played: ply } = this.media.status,
-      max = getMediaMax(this.media) || 1;
-    if (this.config.bufferMarks)
-      for (let i = 0, len = buf.length; i < len; i++) {
-        const start = buf.start(i),
-          end = buf.end(i);
-        agg.push({ start: (start / max) * 100, end: (end / max) * 100, label: `${formatMediaTime({ time: start })}${end > start + 1 ? ` - ${formatMediaTime({ time: end })}` : ""}  Loaded`, type: "buffered" });
-      }
-    if (this.config.playedMarks)
-      for (let i = 0, len = ply.length; i < len; i++) {
-        const start = ply.start(i),
-          end = ply.end(i);
-        agg.push({ start: (start / max) * 100, end: (end / max) * 100, label: `${formatMediaTime({ time: start })}${end > start + 1 ? ` - ${formatMediaTime({ time: end })}` : ""}  Played`, type: "played" });
-      }
-    super.syncMarks(agg); // all weightless logic
+  protected override syncMarks(marks = this.config.marks): void {
+    if (!this.hasExtMarks) return super.syncMarks(marks);
+    !this.media.status.loadedMetadata && super.syncMarks(marks); // immediacy
+    const handle = (agg = [...marks], { buffered: bufs, played: plys, adPoints: pnts } = this.media.status, max = getMax(this.media)) => {
+      if (this.config.playedMarks)
+        for (let i = 0, len = plys.length; i < len; i++) {
+          const start = plys.start(i),
+            end = plys.end(i);
+          agg.push({ start: (start / max) * 100, end: (end / max) * 100, label: `${formatMediaTime({ time: start })}${end > start + 1 ? ` - ${formatMediaTime({ time: end })}` : ""}  Played`, type: "played" });
+        }
+      if (this.config.bufferMarks)
+        for (let i = 0, len = bufs.length; i < len; i++) {
+          const start = bufs.start(i),
+            end = bufs.end(i);
+          agg.push({ start: (start / max) * 100, end: (end / max) * 100, label: `${formatMediaTime({ time: start })}${end > start + 1 ? ` - ${formatMediaTime({ time: end })}` : ""}  Loaded`, type: "buffered" });
+        }
+      if (this.config.advertMarks) for (let i = 0, len = pnts.length; i < len; i++) agg.push({ start: (pnts[i] / max) * 100, label: `Advert at ${formatMediaTime({ time: pnts[i] })}`, type: "advert" });
+      super.syncMarks(agg); // all weightless logic
+    };
+    this.ctlr.when("loadedMetadata", undefined, handle, this.signal);
+  }
+  public get hasExtMarks(): boolean {
+    return this.config.bufferMarks || this.config.playedMarks || this.config.advertMarks;
   }
 }
 

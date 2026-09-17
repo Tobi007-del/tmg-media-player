@@ -43,8 +43,8 @@
 .tmg-media-timeline-played-bar {
   background: var(--tmg-media-timeline-played-bar-background);
 }
-.tmg-media-container.tmg-media-ads-view .tmg-media-timeline-played-bar {
-  background: var(--tmg-media-timeline-played-bar-ads-background);
+.tmg-media-container.tmg-media-ads .tmg-media-timeline-played-bar {
+  background: var(--tmg-media-advert-bar-background);
 }
 .tmg-media-container:not(.tmg-media-overlay, :has(:focus-visible, .tmg-media-fast-play-notifier.tmg-media-control-active)).tmg-media-progress-bar .tmg-media-timeline-played-bar {
   background: var(--tmg-media-progress-bar-background);
@@ -56,10 +56,13 @@
   transform: scale(0);
 }
 .tmg-media-range-buffered-mark {
-  background: var(--tmg-media-timeline-buffered-mark-background);
+  background: var(--tmg-media-range-buffered-mark-background);
 }
 .tmg-media-range-played-mark {
-  background: var(--tmg-media-timeline-played-mark-background);
+  background: var(--tmg-media-range-played-mark-background);
+}
+.tmg-media-range-advert-mark {
+  background: var(--tmg-media-range-advert-mark-background);
 }
 .tmg-media-preview-container {
   position: absolute;
@@ -104,11 +107,11 @@
   translate: -50% 0;
   color: var(--tmg-media-text-color);
   font-weight: 500;
-  white-space: pre;
+  font-variant-numeric: tabular-nums;
   text-align: center;
   text-overflow: ellipsis;
+  white-space: pre;
   overflow: hidden;
-  font-variant-numeric: tabular-nums;
 }
 .tmg-host-container:is([data-size-tier^="xxxx"], .tmg-media-no-previews) .tmg-media-preview-container::after,
 .tmg-media-timeline-container.tmg-media-control-compact .tmg-media-preview-container::after {

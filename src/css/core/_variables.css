@@ -78,6 +78,7 @@
   --tmg-media-buffer-animation-time: 1250ms;
   --tmg-media-bounce-timing: cubic-bezier(0.68, -0.55, 0.27, 1.55);
   --tmg-media-motion-timing: cubic-bezier(0.1, 0, 0, 1);
+  --tmg-media-easing-timing: cubic-bezier(0.215, 0.61, 0.355, 1); /* ease-out-cubic (slow it downn) */
   --tmg-media-motion-transition: top var(--tmg-media-motion-transition-time) var(--tmg-media-motion-timing), bottom var(--tmg-media-motion-transition-time) var(--tmg-media-motion-timing), left var(--tmg-media-motion-transition-time) var(--tmg-media-motion-timing), right var(--tmg-media-motion-transition-time) var(--tmg-media-motion-timing);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -115,19 +116,20 @@
   --tmg-media-range-track-boost-color: #ff5722;
   --tmg-media-range-track-preview-boost-color: rgb(from var(--tmg-media-range-track-boost-color) r g b / 0.6);
   --tmg-media-range-mark-background: var(--tmg-media-theme-inverse-color);
+  --tmg-media-range-played-mark-background: rgb(from var(--tmg-media-brand-color) calc(r - 226) calc(g - 110) calc(b + 248));
+  --tmg-media-range-buffered-mark-background: rgb(from var(--tmg-media-brand-color) calc(r + 24) calc(g - 110) calc(b - 2));
+  --tmg-media-range-advert-mark-background: yellow;
   --tmg-media-timeline-thumb-background: var(--tmg-media-brand-color);
   --tmg-media-timeline-base-bar-background: hsl(from var(--tmg-media-theme-color) h s l / 0.25);
   --tmg-media-timeline-played-bar-background: linear-gradient(to right, var(--tmg-media-brand-color) 80%, var(--tmg-media-brand-accent-color));
-  --tmg-media-timeline-played-bar-ads-background: rgb(from var(--tmg-media-brand-color) calc(r + 24) calc(g + 145) calc(b - 2));
   --tmg-media-timeline-preview-bar-background: hsl(from var(--tmg-media-theme-color) h s l / 0.4);
   --tmg-media-timeline-buffered-bar-background: hsl(from var(--tmg-media-theme-color) h s calc(l + 20) / 0.25);
-  --tmg-media-timeline-played-mark-background: rgb(from var(--tmg-media-brand-color) calc(r - 226) calc(g - 110) calc(b + 248));
-  --tmg-media-timeline-buffered-mark-background: rgb(from var(--tmg-media-brand-color) calc(r + 24) calc(g - 110) calc(b - 2));
-  --tmg-media-progress-bar-background: var(--tmg-media-theme-color);
-  --tmg-media-progress-bar-opacity: 0.5;
   --tmg-media-timeline-previews-border-color: var(--tmg-media-current-control-color);
   --tmg-media-timeline-no-previews-background: var(--tmg-media-notifier-color);
   --tmg-media-timeline-no-previews-pointer-color: var(--tmg-media-notifier-color);
+  --tmg-media-progress-bar-background: var(--tmg-media-theme-color);
+  --tmg-media-progress-bar-opacity: 0.5;
+  --tmg-media-advert-bar-background: #ffcc00;
   --tmg-media-dbc-backdrop-color: var(--tmg-media-notifier-color);
 }
 :is(:root, .tmg-host-container) {
@@ -197,13 +199,16 @@
   --t007-scroll-assist-inset-x: calc(var(--tmg-media-current-unit) * -0.25);
 }
 .tmg-media-container .t007-toast {
-  --t007-toast-type-color: var(--tmg-media-theme-inverse-color);
-  --t007-toast-background: rgb(from var(--tmg-media-theme-color) r g b / 0.4);
+  --t007-toast-type-color: var(--tmg-media-theme-color);
+  --t007-toast-background: var(--tmg-media-notifier-color);
+  --t007-toast-background-blur: none;
   --t007-toast-no-image-background: var(--tmg-media-image-background);
   --t007-toast-image-background: var(--tmg-media-background);
   --t007-toast-progress-background: var(--tmg-media-timeline-played-bar-background);
   --t007-toast-progress-backdrop-background: var(--tmg-media-timeline-base-bar-background);
   --t007-toast-action-button-color: var(--tmg-media-theme-inverse-color);
+  --t007-toast-action-button-background: var(--tmg-media-theme-color);
+  --t007-toast-action-button-active-background: var(--tmg-media-theme-accent-color);
 }
 .tmg-media-container .t007-toast-container {
   --t007-toast-container-margin-left: var(--tmg-media-current-safe-inset-x);
@@ -219,6 +224,7 @@
   --t007-toast-max-lines: 3;
   --t007-toast-border-radius: calc(var(--t007-toast-unit) / 1.5);
   --t007-toast-animation-duration: var(--tmg-media-motion-transition-time);
+  --t007-toast-animation-timing-function: var(--tmg-media-easing-timing);
 }
 .tmg-media-container .t007-toast-container[data-position^="top"] {
   --t007-toast-container-margin-top: var(--tmg-media-current-global-safe-inset-top);
@@ -257,7 +263,6 @@
   --t007-dialog-unit: calc(var(--tmg-media-current-unit) / 1.8);
   --t007-dialog-border: 0.8px solid rgb(from var(--tmg-media-theme-color) r g b / 0.25);
   --t007-dialog-background: rgb(from var(--tmg-media-theme-inverse-color) calc(r + 20) calc(g + 20) calc(b + 20) / 0.75);
-  --t007-dialog-box-shadow: 2px 2px 6px rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.5), -2px -2px 6px rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.5);
   --t007-dialog-message-color: var(--tmg-media-theme-color);
   --t007-dialog-confirm-button-color: rgb(from var(--tmg-media-theme-color) calc(r - 100) calc(g - 100) calc(b - 100));
   --t007-dialog-cancel-button-color: var(--tmg-media-brand-color);

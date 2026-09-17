@@ -1,6 +1,6 @@
 import type { MediaType } from "./generics";
 import type { MediaReport } from "./contract";
-import type { Action } from "./actions";
+import type { Action } from "./action";
 import type { LightStateConfig } from "@plugs/main/lightState";
 import type { PlaylistConfig } from "@plugs/main/playlist";
 import type { TechRegistryMap, PlugRegistryMap } from "@defs/registries";
@@ -15,14 +15,11 @@ export interface CtlrConfig {
   settings: Settings;
   actions: {
     entries: Record<string, Action>;
-    logicBlacklist: string[];
+    blacklist: Array<string>;
   };
-  noPlugList: "*" | Array<keyof PlugRegistryMap>; // for non-core plugs
-  mediaPlayer: string; // external media player courtesy, e.g. youtube, vimeo, etc.
-  debug: boolean;
   devMode: boolean;
   disabled: boolean;
-  cloneOnDetach: boolean; // stateful issues, src resets - freezing, etc.
-}
-
-// Use Deep Partial Util where applicable
+  courtesy: string; // media player courtesy, e.g. YouTube, Vimeo, etc.
+  safeDetach: boolean; // detach issues, e.g src reset -> freezing, etc.
+  noPlugList: "*" | Array<keyof PlugRegistryMap>; // for non-core plugs
+} // Use Deep Partial Util where applicable

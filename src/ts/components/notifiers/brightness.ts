@@ -26,7 +26,7 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
     // Plug Listeners
     this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessState, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness"> | REvent<BrightnessState, "aptValue">): void {

@@ -5,92 +5,72 @@ import { queryFullscreen, observeMutation } from "@utils/dom";
 import { NOOP } from "sia-reactor";
 const win = "undefined" !== typeof window ? window : undefined;
 
-// --- GLOBAL STATE ---
-const flagMutationSet = new WeakSet<HTMLElement>(); // weak set for true magic
-let flagMutationId: number | undefined;
 // --- EXPORTS ---
+export const ATTR = "tmgcontrols";
+export const controllers: Controller[] = [];
 export let AUDIO_CONTEXT: AudioContext | null = null;
 export let AUDIO_LIMITER: DynamicsCompressorNode | null = null;
 export let IS_DOC_TRANSIENT = false;
-export const Controllers: Controller[] = [];
+// --- LOCAL STATE ---
+const mutSet = new WeakSet<HTMLElement>(), // weak set for true magic
+  mutOpts: MutationObserverInit = { attributes: true, attributeFilter: [ATTR, "controls"] };
 
 export function init(): void {
   mountMedia();
-  for (const e of ["click", "pointerdown", "keydown"]) document.addEventListener(e, () => ((IS_DOC_TRANSIENT = true), startAudioManager()), true);
-  for (const medium of document.querySelectorAll<HTMLMediaElement>("video,audio")) {
-    observeMutation(medium, handleMediaMutation, { attributes: true });
-    medium.tmgcontrols = medium.hasAttribute("tmgcontrols");
-  }
+  for (const evt of ["click", "pointerdown", "keydown"]) document.addEventListener(evt, () => ((IS_DOC_TRANSIENT = true), startAudioManager()), true);
+  for (const medium of document.querySelectorAll<HTMLMediaElement>("video,audio")) observeMutation(medium, handleMediaMutation, mutOpts), (medium[ATTR] = medium.hasAttribute(ATTR));
   observeMutation(document.documentElement, handleDOMMutation, { childList: true, subtree: true });
   win!.addEventListener("resize", () => {
-    for (const c of Controllers) if (c.state) (c.state.dimensions.window.width = win!.innerWidth), (c.state.dimensions.window.height = win!.innerHeight);
+    for (const c of controllers) if (c.state) (c.state.dimensions.window.width = win!.innerWidth), (c.state.dimensions.window.height = win!.innerHeight);
   });
   document.addEventListener("visibilitychange", () => {
-    for (const c of Controllers) if (c.state) c.state.docVisibilityState = document.visibilityState;
+    for (const c of controllers) if (c.state) c.state.docVisibilityState = document.visibilityState;
   });
   for (const e of ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"])
     document.addEventListener(e, (_, inFs = queryFullscreen()) => {
-      for (const c of Controllers) if (c.state) c.state.docInFullscreen = inFs;
+      for (const c of controllers) if (c.state) c.state.docInFullscreen = inFs;
     });
   win?.screen.orientation.addEventListener("change", ({ target }, t = target as ScreenOrientation) => {
-    for (const c of Controllers) if (c.state && !c.state.screenOrientation.locked) (c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle);
+    for (const c of controllers) if (c.state) (c.state.screenOrientation.type = t.type), (c.state.screenOrientation.angle = t.angle);
   });
 }
 
-export function handleMediaMutation(mutations: MutationRecord[]): void {
-  for (const mutation of mutations) {
-    if (mutation.type !== "attributes") continue;
-    const target = mutation.target as HTMLMediaElement;
-    if (mutation.attributeName === "tmgcontrols") !flagMutationSet.has(target) && (target.tmgcontrols = target.hasAttribute("tmgcontrols"));
-    else if (mutation.attributeName?.startsWith("tmg")) target.hasAttribute(mutation.attributeName) && target.tmgPlayer?.fetchOptions();
-    else if (mutation.attributeName === "controls") target.hasAttribute("tmgcontrols") && target.removeAttribute("controls");
-  }
+export function handleMediaMutation({ target, attributeName: attr }: MutationRecord, _: MutationRecord[], t = target as HTMLMediaElement): void {
+  if (attr === ATTR) !mutSet.has(t) && (t[ATTR] = t.hasAttribute(ATTR));
+  else if (attr === "controls" && !(t as HTMLMediaElement).tmgPlayer?.ctlr?.media.intent.controls) t.hasAttribute(ATTR) && t.removeAttribute("controls"); // UX boost
 }
 
-export function handleDOMMutation(mutations: MutationRecord[]): void {
-  for (const mutation of mutations) {
-    for (const node of mutation.addedNodes) {
-      if (!(node instanceof HTMLElement)) continue;
-      const els = node.matches(":is(video,audio):not(.tmg-host)") ? [node] : node.querySelectorAll(":is(video,audio):not(.tmg-host)");
-      for (const el of els) {
-        observeMutation(el, handleMediaMutation, { attributes: true });
-        (el as HTMLMediaElement).tmgcontrols = el.hasAttribute("tmgcontrols");
-      }
-    }
-    for (const node of mutation.removedNodes) {
-      if (!(node instanceof HTMLElement)) continue;
-      const els = node.matches(".tmg-host") ? [node] : node.querySelectorAll(".tmg-host");
-      for (const el of els) !(el as HTMLMediaElement).tmgPlayer?.Controller?.mutatingDOMM && (el as HTMLMediaElement).tmgPlayer?.detach();
-    }
+export function handleDOMMutation({ addedNodes, removedNodes }: MutationRecord): void {
+  for (const node of addedNodes as NodeListOf<HTMLElement>) {
+    if (!node?.tagName) continue;
+    const els = node.matches(":is(video,audio):not(.tmg-host)") ? [node] : node.querySelectorAll(":is(video,audio):not(.tmg-host)");
+    for (const el of els) observeMutation(el, handleMediaMutation, mutOpts), ((el as HTMLMediaElement)[ATTR] = el.hasAttribute(ATTR));
   }
-}
-
-function flagMutation(m: HTMLElement, check = true): void {
-  !flagMutationSet.has(m) && check && flagMutationSet.add(m);
-}
-function freeMutation(m: HTMLElement): void {
-  clearTimeout(flagMutationId);
-  flagMutationId = setTimeout(() => !(flagMutationId = undefined) && flagMutationSet.delete(m));
+  for (const node of removedNodes as NodeListOf<HTMLElement>) {
+    if (!node?.tagName || node.isConnected) continue;
+    const els = node.matches(".tmg-host") ? [node] : node.querySelectorAll(".tmg-host");
+    for (const el of els) !(el as HTMLMediaElement).tmgPlayer?.ctlr?.mutating && (el as HTMLMediaElement).tmgPlayer?.detach();
+  }
 }
 
 export function mountMedia() {
   if ("undefined" === typeof HTMLMediaElement) return;
   for (const el of [HTMLVideoElement, HTMLAudioElement])
-    Object.defineProperty(el.prototype, "tmgcontrols", {
+    Object.defineProperty(el.prototype, ATTR, {
       get: function () {
-        return this.hasAttribute("tmgcontrols");
+        return this.hasAttribute(ATTR);
       },
       set: async function (value) {
         if (value) {
-          flagMutation(this);
-          await ((this as HTMLMediaElement).tmgPlayer || new Player()).attach(this);
-          this.setAttribute("tmgcontrols", "");
-          freeMutation(this);
+          !mutSet.has(this) && mutSet.add(this);
+          await ((this as HTMLMediaElement).tmgPlayer ?? new Player()).attach(this);
+          this.setAttribute(ATTR, "");
+          setTimeout(() => mutSet.delete(this));
         } else {
-          flagMutation(this, this.hasAttribute("tmgcontrols"));
-          this.removeAttribute("tmgcontrols");
+          this.hasAttribute(ATTR) && !mutSet.has(this) && mutSet.add(this);
+          this.removeAttribute(ATTR);
           (this as HTMLMediaElement).tmgPlayer?.detach();
-          freeMutation(this);
+          setTimeout(() => mutSet.delete(this));
         }
       },
       enumerable: true,
@@ -98,7 +78,7 @@ export function mountMedia() {
     });
 }
 export function unmountMedia(): void {
-  for (const el of [HTMLVideoElement, HTMLAudioElement]) delete (el.prototype as any).tmgcontrols;
+  for (const el of [HTMLVideoElement, HTMLAudioElement]) delete (el.prototype as any)[ATTR];
 }
 
 export function startAudioManager(): void {
@@ -106,7 +86,7 @@ export function startAudioManager(): void {
     AUDIO_CONTEXT = new (win!.AudioContext || (win as any).webkitAudioContext)() as AudioContext;
     const L = (AUDIO_LIMITER = AUDIO_CONTEXT!.createDynamicsCompressor());
     (L.threshold.value = -1.0), (L.knee.value = 0.0), (L.ratio.value = 20), (L.attack.value = 0.001), (L.release.value = 0.05); // peak logic = peak sound
-    for (const c of Controllers) if (c.state) c.state.audioCtxReady = true;
+    for (const c of controllers) if (c.state) c.state.audioCtxReady = true;
   } else if (AUDIO_CONTEXT?.state === "suspended") AUDIO_CONTEXT.resume();
 }
 export function connectToAudioManager(medium: HTMLMediaElement) {
@@ -146,7 +126,7 @@ export function handleOrientation({ beta: b, gamma: g }: DeviceOrientationEvent)
   aG > 50 && aB < 35 ? (type = g > 0 ? "landscape-secondary" : "landscape-primary") : aB > 50 && aG < 35 && (type = b > 0 ? "portrait-primary" : "portrait-secondary");
   if (type === prevScreenType || !type) return;
   prevScreenType = type;
-  for (const c of Controllers) if (c.media) c.media.state.fullscreenOrientation = type;
+  for (const c of controllers) if (c.media) c.media.state.fullscreenOrientation = type;
 }
 
 export * from "./types";

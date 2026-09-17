@@ -17,7 +17,7 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.miniplayer", this.gate, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("features.miniplayer", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Post Wiring

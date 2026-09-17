@@ -36,11 +36,9 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
     this.media.on("status.duration", this.syncDuration, { signal: this.signal });
     this.media.on("status.isLive", (e) => (this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     // ---- Config --------
-    this.ctlr.config.on("settings.time.format", this.syncUI, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.time.mode", this.syncTime, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeMode", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.timeMode", this.syncARIA, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
+    this.ctlr.config.on("settings.time.format", () => (this.syncUI(), this.syncARIA()), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.time.mode", () => (this.syncTime(), this.syncARIA()), { signal: this.signal });
+    for (const p of ["keys.shortcuts.timeMode", "voice.commands.timeMode", "keys.shortcuts.timeFormat", "voice.commands.timeFormat"] as const) this.ctlr.config.on(`settings.${p}`, this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -61,9 +59,9 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
     this.duration.textContent = this.plug?.toTimeText(this.media.status.duration) || "";
   }
   public syncARIA(): void {
-    this.state.label = `Show ${this.plug?.nextMode} time`;
+    this.state.label = `Show ${this.plug?.nextMode}`;
     this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeMode), (this.state.voiceCommand = this.settings.voice.commands.timeMode));
-    this.el.title = !this.media.status.isLive || this.media.state.live ? `Switch (mode${this.state.cmd} / DblClick→format${formatActionForDisplay(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)})` : "Skip ahead to live broadcast";
+    this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd + ` / DblClick→ Show ${this.plug?.nextFormat} ${formatActionForDisplay(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)}` : "Skip ahead to live broadcast";
     this.setBtnARIA("Switch time format");
   }
 }

@@ -8,7 +8,8 @@ export const KEY_SHORTCUT_MOD_ACTIONS = ["timeSkip", "volume", "brightness", "pl
 
 export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   disabled: false,
-  strictMatches: false,
+  strictMatch: false,
+  rankedMatch: true,
   overrides: ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
   shortcuts: {
     previous: "Shift+p",
@@ -20,6 +21,8 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     timeSkipFwd: "l",
     timeStart: ["Home", "0"],
     timeEnd: ["End"],
+    timePreviousChapter: "p",
+    timeNextChapter: "n",
     volumeUp: "ArrowUp",
     volumeDown: "ArrowDown",
     brightnessUp: "y",
@@ -30,7 +33,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     timeStepBwd: ",",
     timeFormat: "z",
     timeMode: "q",
-    capture: "s",
+    capture: "s", // screenshot
     objectFit: "a",
     pictureInPicture: "i",
     theater: "t",
@@ -39,17 +42,22 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     captionsFontSizeUp: ["+", "="],
     captionsFontSizeDown: ["-", "_"],
     captionsFontFamily: "u",
-    captionsFontWeight: "g",
+    captionsFontWeight: "g", // g in weight or gravity
     captionsFontVariant: "v",
     captionsFontOpacity: "o",
     captionsBackgroundOpacity: "b",
     captionsWindowOpacity: "w",
-    captionsCharacterEdgeStyle: "e",
-    captionsTextAlignment: "x",
+    captionsCharacterEdgeStyle: "e", // edges
+    captionsTextAlignment: "r", // shift 'r'ight
     settings: "?",
-    cast: "Shift+r",
-    airplay: "Shift+r",
+    cast: "Shift+c",
+    airplay: "Shift+a",
     escape: "Escape",
+    skipAd: "x", // like pushing an "x" button
+    voiceWake: "Shift+v",
+    voiceQuit: "Shift+q",
+    voiceSleep: "Shift+z", // zz
+    voiceMute: "Shift+m",
   },
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
@@ -69,7 +77,16 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     },
     playbackRate: {
       ctrl: 1,
-    },
+    }, // ">|<" has shift
     captionsFontSize: {},
+  },
+  phase: {
+    value: "keyup",
+    options: [
+      { value: "", display: "Default" },
+      { value: "keydown", display: "Key down" },
+      { value: "keyup", display: "Key up" },
+      { value: "none", display: "None" },
+    ],
   },
 };

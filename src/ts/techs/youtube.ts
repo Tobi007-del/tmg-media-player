@@ -6,7 +6,7 @@ import { createEl, enterFullscreen, exitFullscreen, loadResource, queryFullscree
 import { createTimeRanges } from "@utils/time";
 import { MATCH_ID_YOUTUBE, MATCH_URL_YOUTUBE } from "@utils/match";
 import { isSameURL } from "@utils/str";
-import { isBool, isFunc, isNum } from "@utils/obj";
+import { isFunc, isNum } from "@utils/obj";
 import { setTimeout, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { silence } from "sia-reactor/modules";
@@ -18,10 +18,10 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     return MATCH_URL_YOUTUBE.test(src);
   }
   public host: YT.Player | null = null;
+  public hostSrc: string | null = null;
   public hostDiv: HTMLDivElement;
   public hostHTML = `<iframe class="tmg-foreign-host tmg-youtube-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share;"></iframe>`;
-  protected hostSrc: string | null = null;
-  protected intervalId = -1;
+  public intervalId = -1;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {
@@ -29,26 +29,26 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       volume: true, muted: true, playbackRate: true,
       // Modes
       fullscreen: supportsFullscreen(),
-      // States (YouTube loads these via intent, but we claim support)
-      autoplay: true, loop: true, playsInline: true, controls: true, crossOrigin: true, live: false,
+      // States
+      autoplay: true, loop: true, playsInline: true, controls: true, crossOrigin: true,
       // Lists
       textTracks: true, levels: true, 
       // Currents
-      currentTextTrack: true, currentLevel: true, textVisible: true, autoLevel: true,
+      currentChapter: true, currentTextTrack: true, currentLevel: true, textVisible: true, autoLevel: true,
       // Infos
       readyState: true, error: true, waiting: true, seeking: true, buffered: true, seekable: true,
       loadedMetadata: true, loadedData: true, canPlay: true, 
       // Settings
-      liveTolerance: true, minDVRWindow: true, ...features
+      liveTolerance: true, minDVRWindow: true, idleWaiting: true, timeShiftPoll: true, ...features
     });
-    ctlr.config.mediaPlayer = "YouTube"; // Don't say, I never did nothing for you
+    ctlr.config.courtesy = "YouTube"; // Don't say, I never did nothing for you
     this.element = this.hostDiv = createEl("div", { className: `tmg-host-div ${this.el.className}`, innerHTML: `<div class="tmg-host-content">${this.hostHTML}</div>` }) as HTMLIFrameElement; // for tech.element replaceWith
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
   protected async initHost(url: string, id = "", retries = 0): Promise<void> {
     try {
-      const truth = this.config[this.ctlr.techTruth];
+      const truth = this.config[this.ctlr.gospel];
       if (!isFunc(this.host?.loadVideoById)) this.destroyHost();
       else return (this.hostSrc = url), (this.reInitInfo = this.config.status.hostReady = true), this.host.loadVideoById(id, truth.currentTime, this.config.status.levels[truth.currentLevel as number] || "default");
       // Setup & Bulk Wiring
@@ -61,7 +61,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.host = new window.YT.Player(this.el, {
         events: {
           onReady: () => {
-            if (!isFunc(this.host?.getPlayerState) && retries < this.hostAttempts) return this.ctlr.log(`Retrying host load for "${url}" (${++retries}/${this.hostAttempts})`, "warn"), this.initHost(url, id, retries); // pampering observed quirk where YT API is broken
+            if (!isFunc(this.host?.getPlayerState) && retries < this.hostAttempts) return this.ctlr.log(`Retrying host load for "${url}" (${++retries}/${this.hostAttempts})`, "warn"), this.initHost(url, id, retries); // #PAMPERING: observed quirk where YT API is broken
             this.config.status.hostReady = true;
             this.setInitInfo();
           },
@@ -93,7 +93,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.src", this.handleSrcIntent, this.evtOpts.CONFIG);
   }
   protected override wireCurrentTime(): void {
-    this.config.get("state.currentTime", (v) => (this.config.status.readyState < 1 || this.config.status.ended ? v : this.host?.getCurrentTime?.()), { signal: this.signal }); // #VIRTUAL: reliable return value, for those faster than the poll
+    this.config.get("state.currentTime", (v) => (this.config.status.readyState < 1 || this.config.status.ended ? v : this.host?.getCurrentTime?.()), { signal: this.signal }); // #VIRTUAL: reliable return value, if faster than poll
     this.config.on("intent.currentTime", this.handleCurrentTimeIntent, this.evtOpts.CONFIG);
   }
   protected override wireDuration(): void {} // Polled dynamically in sync loop; YT emits no explicit duration event
@@ -141,11 +141,6 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected wireAutoLevel(): void {
     this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
-  // --- Live Content Wiring ---
-  protected wireLive(): void {
-    this.config.on("intent.live", this.handleLiveIntent, this.evtOpts.CONFIG);
-    this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG);
-  }
   // ===========================================================================
   // HANDLERS (The Logic - Auto-Guarded)
   // ===========================================================================
@@ -154,24 +149,24 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
     const id = e.value.match(MATCH_ID_YOUTUBE)?.[1];
     this.setAutoResPoster(id);
-    this.resetLoadInfo(); // Optimistic UI
+    this.flush(); // Optimistic UI
     this.initHost(e.value, id);
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val), prev = this.config.state.currentTime) => {
+    this.ctlr.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val), prev = this.config.state.currentTime) => {
       this.config.status.seeking = true;
       if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
       if (!finite) return;
-      this.host!.seekTo(val, true), this.config.state.paused && this.host!.pauseVideo(); // pampering observed quirk
-      const check = setInterval(() => (!this.config.state.paused || this.config.state.currentTime !== prev) && (clearInterval(check), this.syncCurrentStats(), (this.config.status.seeking = false)), this.config.settings.timeUpdateInterval, this.signal); // YT has no "seeked" event, so we poll for the time shift
+      this.host!.seekTo(val, true), this.config.state.paused && this.host!.pauseVideo(); // #PAMPERING: observed quirk
+      const check = setInterval(() => (!this.config.state.paused || this.config.state.currentTime !== prev) && (clearInterval(check), this.syncCurrentStats(), (this.config.status.seeking = false)), this.config.settings.timeShiftPoll, this.signal); // YT has no "seeked" event, so we poll for the time shift
     });
     e.resolve(this.name);
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => (e.value ? this.host!.pauseVideo() : this.host!.playVideo(), this.config.status.ended && setTimeout(() => this.host!.playVideo(), 0, this.signal))); // #PAMPERING: observed quirk
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.host!.pauseVideo() : this.host!.playVideo(), this.config.status.ended && setTimeout(() => this.host!.playVideo(), 0, this.signal))); // #PAMPERING: observed quirk
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -182,7 +177,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
     if (e.resolved) return;
     if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds
-    this.when("hostReady", e, () => {
+    this.ctlr.when("hostReady", e, () => {
       this.host!.setVolume(clamp(0, e.value, 100));
       this.config.state.volume = clamp(0, e.value, 100);
     });
@@ -190,7 +185,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
+    this.ctlr.when("hostReady", e, () => {
       e.value ? this.host!.mute() : this.host!.unMute();
       this.config.state.muted = e.value;
     });
@@ -199,7 +194,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected handlePlaybackRateIntent(e: REvent<CtlrMedia, "intent.playbackRate">): void {
     if (e.resolved) return;
     if (e.value < 0.25 || e.value > 2) e.reject(this.name); // Out of bounds
-    this.when("hostReady", e, () => {
+    this.ctlr.when("hostReady", e, () => {
       this.host!.setPlaybackRate(clamp(0.25, e.value, 2));
       this.config.state.playbackRate = clamp(0.25, e.value, 2);
     });
@@ -212,7 +207,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleLoopIntent(e: REvent<CtlrMedia, "intent.loop">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => {
+    this.ctlr.when("hostReady", e, () => {
       this.host!.setLoop(e.value);
       this.config.state.loop = e.value;
     });
@@ -220,7 +215,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleCurrentTextTrackIntent(e: REvent<CtlrMedia, "intent.currentTextTrack">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => {
+    this.ctlr.when("loadedMetadata", e, () => {
       e.value === -1 ? (this.host as any).unloadModule("captions") : (this.host as any).loadModule("captions");
       if (e.value === -1) (this.config.state.currentTextTrack = -1), (this.config.state.textVisible = false);
       this.el.toggleAttribute("data-hide-ui", !this.config.state.textVisible);
@@ -231,12 +226,12 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (quality = (this.config.status.levels as YT.SuggestedVideoQuality[])[e.value as number]) => quality && (this.useAutoLevel(), this.host!.setPlaybackQuality(quality))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch
+    this.ctlr.when("loadedMetadata", e, (quality = (this.config.status.levels as YT.SuggestedVideoQuality[])[e.value as number]) => quality && (this.useAutoLevel(), this.host!.setPlaybackQuality(quality))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch
     e.resolve(this.name);
   }
   protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, (should = (this.host as any).getOptions().includes("captions") && e.value) => {
+    this.ctlr.when("loadedMetadata", e, (should = (this.host as any).getOptions().includes("captions") && e.value) => {
       this.el.toggleAttribute("data-hide-ui", !should);
       this.config.state.textVisible = should;
     });
@@ -244,22 +239,13 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("loadedMetadata", e, () => this.useAutoLevel(e.value));
+    this.ctlr.when("loadedMetadata", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
   }
   protected useAutoLevel(value = false): void {
     this.host!.setPlaybackQuality((this.ABRFlag = value) ? "default" : (this.config.status.levels as YT.SuggestedVideoQuality[])[0]);
   }
   private ABRFlag = true;
-  protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
-    if (e.resolved) return;
-    this.when("loadedMetadata", e, () => e.value && (this.config.intent.currentTime = this.config.status.duration - 1)); // #FACADED: silenced intent actual op, yt uses a shifting duration
-    e.resolve(this.name);
-  }
-  // --- Dog Feeders ---
-  protected onIsLiveStatus(v: boolean): void {
-    this.config.features.live = v;
-  }
   protected onTracksStatus(v: ArrayLike<any>): void {
     this.config.features.textVisible = v.length > 0;
   }
@@ -285,10 +271,10 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         st.error = null; // UX boost
         st.ended = st.seeking = st.waiting = s.paused = false;
         st.duration = this.host!.getDuration();
-        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // pampering observed quirk
+        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // #PAMPERING: observed quirk
         st.canPlay = st.loadedData = true;
         st.readyState = 4; // HAVE ENOUGH DATA
-        this.syncMetadata(), clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentStats, set.timeUpdateInterval, this.signal)); // updates 10 times a sec
+        this.syncMetadata(), clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentStats, set.timeShiftPoll, this.signal)); // updates 10 times a sec
         break;
       case STATE.PAUSED:
       case STATE.ENDED:
@@ -330,7 +316,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     if (!this.host || !data || (this.reInitInfo = false)) return;
     // Status (Infos & Lists)
     this.config.status.duration = this.host.getDuration();
-    this.config.status.isLive = isBool((data as any).isLive) ? (data as any).isLive : this.config.status.duration === 0; // pampering observed quirk
+    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // #PAMPERING: observed quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;

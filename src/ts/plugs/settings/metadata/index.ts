@@ -12,16 +12,16 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
 
   public override wire(): void {
     // Ctlr Media Watchers
-    this.media.watch("settings.metadata.title", (v) => (this.settings.controlPanel.title = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
-    this.media.watch("settings.metadata.artist", (v) => (this.settings.controlPanel.artist = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
-    this.media.watch("settings.metadata.profile", (v) => (this.settings.controlPanel.profile = v), { init: this.ctlr.payload.wired && "auto", signal: this.signal });
+    this.media.watch("settings.metadata.title", (v) => (this.settings.controlPanel.title = v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+    this.media.watch("settings.metadata.artist", (v) => (this.settings.controlPanel.artist = v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+    this.media.watch("settings.metadata.profile", (v) => (this.settings.controlPanel.profile = v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
     // --------- Listeners
     this.media.on("state.paused", ({ value }) => !value && this.syncSession(), { signal: this.signal });
-    this.media.on("state.poster", ({ value }) => this.media.settings.metadata.allowMediaOverride && !this.media.settings.metadata.artwork.some((w) => isSameURL(w.src, value)) && (this.media.settings.metadata.artwork = value ? [{ src: value }] : []), { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("settings.metadata.links.title", this.handleMetadataLinksSetting, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("settings.metadata.links.artist", this.handleMetadataLinksSetting, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("settings.metadata.links.profile", this.handleMetadataLinksSetting, { init: this.ctlr.payload.wired, signal: this.signal });
-    this.media.on("settings.metadata", () => !this.media.state.paused && this.syncSession(), { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.poster", ({ value }) => this.media.settings.metadata.allowMediaOverride && !this.media.settings.metadata.artwork.some((w) => isSameURL(w.src, value)) && (this.media.settings.metadata.artwork = value ? [{ src: value }] : []), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.links.title", this.handleMetadataLinksSetting, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.links.artist", this.handleMetadataLinksSetting, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.links.profile", this.handleMetadataLinksSetting, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata", () => !this.media.state.paused && this.syncSession(), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     super.wire();
   }

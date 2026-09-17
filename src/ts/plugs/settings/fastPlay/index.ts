@@ -22,7 +22,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
 
   public override wire(): void {
     const run = () => this.ctlr.DOM.controlsContainer?.addEventListener("pointerdown", this.handlePointerDown, { capture: true, signal: this.signal });
-    this.ctlr.payload.wired ? run() : this.ctlr.state.wonce("readyState", run, { signal: this.signal }); // #HEAVY: waits for !lightState
+    this.ctlr.flags.wired ? run() : this.ctlr.state.wonce("readyState", run, { signal: this.signal }); // #HEAVY: waits for !lightState
     // Post Wiring
     super.wire();
   }
@@ -85,7 +85,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
         this.media.container.removeEventListener("touchmove", this.handlePointerUp);
         this.state.ptrActive = true;
         const { width, left } = this.media.container.getBoundingClientRect(),
-          rLeft = (e.clientX ?? (e as unknown as TouchEvent).targetTouches?.[0]?.clientX) - left;
+          rLeft = (e.clientX ?? (e as unknown as TouchEvent).targetTouches[0].clientX) - left;
         this.direction = rLeft >= width / 2 ? "forwards" : "backwards";
         if (rLeft < this.config.pointer.inset || rLeft > width - this.config.pointer.inset) return;
         if (this.config.allowRewind) for (const evt of ["mousemove", "touchmove"]) this.media.container.addEventListener(evt, this.handlePointerMove, { signal: this.signal });
@@ -102,7 +102,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
       "speedPointerMove",
       () => {
         const { width, left } = this.media.container.getBoundingClientRect(),
-          pos = ((e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches?.[0]?.clientX) - left >= width / 2 ? "forwards" : "backwards";
+          pos = ((e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches[0].clientX) - left >= width / 2 ? "forwards" : "backwards";
         if (pos !== this.direction) this.slowDown(), this.speedUp((this.direction = pos), true);
       },
       200
@@ -112,7 +112,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
   protected handlePointerUp(): void {
     clearTimeout(this.ptrTimeoutId!);
     this.state.ptrActive = false;
-    if (this.state.active && (this.ctlr.plug("settings.keys")?.playTriggerSeq ?? 0) < 1) setTimeout(this.slowDown, 350, this.signal); // safe dbl clicks need 300ms wait for singles
+    if (this.state.active && (this.ctlr.plug("settings.keys")?.playKeySeq ?? 0) < 1) setTimeout(this.slowDown, 350, this.signal); // safe dbl clicks need 300ms wait for singles
     for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container.removeEventListener(evt, this.handlePointerUp);
     for (const evt of ["mousemove", "touchmove"]) this.media.container.removeEventListener(evt, this.handlePointerMove);
     this.media.container.removeEventListener("mouseleave", this.handlePointerOut);

@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.26
+
+### Patch Changes
+
+- Styling updates nd bug fixes
+
+## 0.0.25
+
+### Patch Changes
+
+- Ads feature init and bug fixes with repo wide optimizations
+
 ## 0.0.24
 
 ### Patch Changes

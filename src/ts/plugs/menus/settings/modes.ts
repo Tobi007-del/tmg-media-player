@@ -18,7 +18,6 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
       label: "Modes",
       widget: "group",
       getValue: () => (plug.config.fullscreen.disabled && plug.config.pictureInPicture.disabled && plug.config.theater.disabled && plug.config.miniplayer.disabled ? "Off" : "On"),
-      getTipHTML: () => "Configure fullscreen, picture-in-picture, and display modes",
       configPaths: ["settings.modes.fullscreen.disabled", "settings.modes.pictureInPicture.disabled", "settings.modes.theater.disabled", "settings.modes.miniplayer.disabled"],
       items: [
         {
@@ -29,7 +28,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
           configPaths: ["settings.modes.fullscreen.disabled"],
           items: [
             { id: "modesFullscreenDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.fullscreen.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.fullscreen.disabled = val), configPaths: ["settings.modes.fullscreen.disabled"] },
-            { id: "modesFullscreenPseudo", label: "Pseudo (Full Window)", widget: "toggle", getValue: () => (plug.config.fullscreen.pseudo ? "On" : "Off"), onChange: (val: boolean) => (plug.config.fullscreen.pseudo = val), configPaths: ["settings.modes.fullscreen.pseudo"], getTipHTML: () => "Fill the browser window instead, useful when the real deal is unavailable or restricted" },
+            { id: "modesFullscreenPseudo", label: "Pseudo (Full Window)", widget: "toggle", getValue: () => (plug.config.fullscreen.pseudo ? "On" : "Off"), onChange: (val: boolean) => (plug.config.fullscreen.pseudo = val), configPaths: ["settings.modes.fullscreen.pseudo"], title: "Fill the browser window instead, useful when the real deal is unavailable or restricted" },
             {
               id: "modesFullscreenOrientation",
               label: "Orientation",
@@ -51,7 +50,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   getOptions: () =>
                     plug.config.fullscreen.orientation.options!.map((o, _, __, opt = parseUIOpt(o), d = "") => {
                       if (opt.value === "auto" && plug.media.state.autoFullscreenOrientation) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.media.state.fullscreenOrientation && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
-                      if (opt.value === false) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.ctlr.state.screenOrientation.type && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                      if (opt.value === false && !plug.media.state.fullscreenOrientation) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.ctlr.state.screenOrientation.type && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
                       return opt;
                     }),
                   onChange: (val: string) => (val === "auto" ? (plug.media.intent.autoFullscreenOrientation = true) : (plug.media.intent.fullscreenOrientation = val as typeof plug.media.intent.fullscreenOrientation)),
@@ -75,24 +74,8 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value", "settings.modes.fullscreen.orientation.rotationToggle.off.value"],
                   getTipHTML: () => "Automatically toggle fullscreen when the device is rotated to a specific orientation",
                   items: [
-                    {
-                      id: "modesFullscreenOnRotate",
-                      label: "Auto-enter",
-                      widget: "select",
-                      getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.on.options, plug.config.fullscreen.orientation.rotationToggle.on.value),
-                      getOptions: () => plug.config.fullscreen.orientation.rotationToggle.on.options!,
-                      onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.on.value = val),
-                      configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value"],
-                    },
-                    {
-                      id: "modesFullscreenOffRotate",
-                      label: "Auto-exit",
-                      widget: "select",
-                      getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.off.options, plug.config.fullscreen.orientation.rotationToggle.off.value),
-                      getOptions: () => plug.config.fullscreen.orientation.rotationToggle.off.options!,
-                      onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.off.value = val),
-                      configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.off.value"],
-                    },
+                    { id: "modesFullscreenOnRotate", label: "Auto-enter", widget: "select", getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.on.options, plug.config.fullscreen.orientation.rotationToggle.on.value), getOptions: () => plug.config.fullscreen.orientation.rotationToggle.on.options!, onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.on.value = val), configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value"] },
+                    { id: "modesFullscreenOffRotate", label: "Auto-exit", widget: "select", getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.off.options, plug.config.fullscreen.orientation.rotationToggle.off.value), getOptions: () => plug.config.fullscreen.orientation.rotationToggle.off.options!, onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.off.value = val), configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.off.value"] },
                   ],
                 },
               ],
@@ -162,14 +145,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
             },
           ],
         },
-        {
-          id: "modesTheater",
-          label: "Theater",
-          widget: "group",
-          getValue: () => (plug.config.theater.disabled ? "Off" : "On"),
-          configPaths: ["settings.modes.theater.disabled"],
-          items: [{ id: "modesTheaterDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.theater.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.theater.disabled = val), configPaths: ["settings.modes.theater.disabled"] }],
-        },
+        { id: "modesTheater", label: "Theater", widget: "group", getValue: () => (plug.config.theater.disabled ? "Off" : "On"), configPaths: ["settings.modes.theater.disabled"], items: [{ id: "modesTheaterDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.theater.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.theater.disabled = val), configPaths: ["settings.modes.theater.disabled"] }] },
         {
           id: "modesMiniplayer",
           label: "Miniplayer",
@@ -226,13 +202,53 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   widget: "button",
                   getValue: () => "",
                   onChange: () => {
-                    const sache = plug.ctlr.plug("settings.css")?._cache;
+                    const sache = plug.ctlr.plug("settings.css")?.build;
                     if (sache) (plug.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (plug.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!), (plug.settings.css.currentMiniplayerX = sache.currentMiniplayerX!), (plug.settings.css.currentMiniplayerY = sache.currentMiniplayerY!);
                   },
                 },
               ],
             },
             { id: "modesMiniplayerMinWidth", label: "Min window width", widget: "range", getValue: () => formatMenuPx(plug.config.miniplayer.minWindowWidth, true), getRange: () => ({ min: 160, max: plug.ctlr.state.dimensions.window.width, step: 10, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.miniplayer.minWindowWidth = val), configPaths: ["settings.modes.miniplayer.minWindowWidth"] },
+          ],
+        },
+        {
+          id: "modesCast",
+          label: "Chromecast",
+          widget: "group",
+          getValue: () => (plug.config.cast?.disabled ? "Off" : "On"),
+          getTipHTML: () => "Stream media to compatible TVs and devices on your network. Requires a supported browser.",
+          configPaths: ["settings.modes.cast.disabled"],
+          items: [
+            {
+              id: "modesCastDisabled",
+              label: "Disable",
+              widget: "toggle",
+              getValue: () => (plug.config.cast?.disabled ? "On" : "Off"),
+              onChange: (val: boolean) => {
+                if (plug.config.cast) plug.config.cast.disabled = val;
+              },
+              configPaths: ["settings.modes.cast.disabled"],
+            },
+          ],
+        },
+        {
+          id: "modesAirPlay",
+          label: "AirPlay",
+          widget: "group",
+          getValue: () => (plug.config.airplay?.disabled ? "Off" : "On"),
+          getTipHTML: () => "Stream media to an Apple TV, HomePod, or AirPlay-enabled device on your network.",
+          configPaths: ["settings.modes.airplay.disabled"],
+          items: [
+            {
+              id: "modesAirPlayDisabled",
+              label: "Disable",
+              widget: "toggle",
+              getValue: () => (plug.config.airplay?.disabled ? "On" : "Off"),
+              onChange: (val: boolean) => {
+                if (plug.config.airplay) plug.config.airplay.disabled = val;
+              },
+              configPaths: ["settings.modes.airplay.disabled"],
+            },
           ],
         },
       ],

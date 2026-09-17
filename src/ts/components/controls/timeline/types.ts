@@ -19,4 +19,5 @@ export interface TimelineConfig extends RangeInputConfig {
   autopause: boolean;
   bufferMarks: boolean;
   playedMarks: boolean;
+  advertMarks: boolean;
 }

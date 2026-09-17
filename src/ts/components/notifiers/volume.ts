@@ -26,7 +26,7 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
     // Plug Listeners
     this.ctlr.plug("settings.volume")?.state.on("aptValue", this.handleVolumeState, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.payload.wired, signal: this.signal });
+    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
   protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume"> | REvent<VolumeState, "aptValue">): void {

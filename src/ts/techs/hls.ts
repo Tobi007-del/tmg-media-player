@@ -14,11 +14,11 @@ import { silence } from "sia-reactor/modules";
 
 export class HLSTech extends HTML5Tech {
   public static readonly techName: string = "hls";
-  public host: Hls | null = null;
   public static override canPlaySource(src: string): boolean {
     return MSE_ENABLED && HLS_EXTENSIONS.test(src);
   }
-  protected hostSrc: string | null = null;
+  public host: Hls | null = null;
+  public hostSrc: string | null = null;
   protected readonly isAlien: boolean = true;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
@@ -28,7 +28,7 @@ export class HLSTech extends HTML5Tech {
       // States & Currents (HLS.js specific)
       currentAudioTrack: true, currentLevel: true, autoLevel: true,
       // Status & Settings
-      bandwidth: true, srcObject: false, ...features
+      bandwidth: true, ...features
     });
     ctlr.media.status.hostReady = false;
   }
@@ -42,7 +42,7 @@ export class HLSTech extends HTML5Tech {
       if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
       if (!HLS?.isSupported()) return this.ctlr.notice("HLS is not supported in this browser", "error", null);
       this.hostSrc = src;
-      this.host = new HLS({ autoStartLoad: true, startPosition: this.config[this.ctlr.techTruth].currentTime, enableWorker: isAudio, defaultAudioCodec: isAudio ? "mp4a.40.2" : undefined }); // tells hls.js to behave if it's an audio-only manifest
+      this.host = new HLS({ autoStartLoad: true, startPosition: this.config[this.ctlr.gospel].currentTime, enableWorker: isAudio, defaultAudioCodec: isAudio ? "mp4a.40.2" : undefined }); // tells hls.js to behave if it's an audio-only manifest
       if (this.config.settings.metadata.allowMediaOverride) this.config.settings.metadata.chapterInfo = [];
       // Status & State (Bulk Wiring)
       this.host.on(HLS.Events.MEDIA_ATTACHED, () => this.host!.loadSource(src));
