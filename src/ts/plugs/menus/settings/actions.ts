@@ -1,6 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import { Controller } from "@core/controller";
-import { TOAST_FORM_INPUTS, getToastFormVal, parseToastVal } from "./toasts";
+import { TOAST_FORM_INPUTS, getToastFormVal, syncToastConfig } from "./toasts";
 import { capitalize, camelize, uncamelize } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
 import { getPath } from "sia-reactor/utils";
@@ -329,13 +329,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           },
           inputs: [{ name: "message", label: "Message", type: "text", value: (_live = live()) => (isFunc(_live.toast?.render) ? (_live.toast!.render as Function)?.() : _live.toast?.render) ?? "", placeholder: "Action triggered!", required: true, helperText: { info: "The message to display in the notification" } }, ...TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(live().toast?.[input.name], input.name) }))],
           onChange: (val: any) => {
-            if (!val.message) return void (live().toast = undefined);
-            const rawOpts: any = { render: val.message };
-            for (const { name } of TOAST_FORM_INPUTS) {
-              const parsed = parseToastVal(val[name], name);
-              if (parsed !== undefined) rawOpts[name] = parsed;
-            }
-            live().toast = rawOpts;
+            live().toast = !val.message ? undefined : syncToastConfig(val, { render: val.message });
           },
         },
         {

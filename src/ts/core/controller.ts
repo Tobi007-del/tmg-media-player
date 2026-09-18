@@ -128,7 +128,7 @@ export class Controller {
 
   public guard = <Fn extends Function>(fn: Fn, silent = false) => guardMethod(fn, (e) => this.notice(e, "error", !silent)); // `()=>{}`: bounded even before init
   public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null, swallow = true): void {
-    this.log(mssg, type, swallow), toast !== false && ((type = type === "error" && swallow ? "warn" : type) === "log" ? this.toast : this.toast?.[type])?.(toast === null || this.config.devMode ? mssg : isStr(toast) ? toast : "Something went wrong", { tag: "tmg-stwr" });
+    this.log(mssg, type, swallow), toast !== false && ((type = type === "error" && swallow ? "warn" : type) === "log" ? this.toast : this.toast?.[type])?.(toast === null || this.config.devMode ? mssg : isStr(toast) ? toast : "Something went wrong", { tag: "tmg-swrg" });
   }
   public log(mssg: any, type: "error" | "warn" | "log" = "log", swallow = false): void {
     if (this.config.devMode) type === "error" ? (swallow ? console.warn(`[TMG Controller] Error swallowed →`, mssg) : console.error(`[TMG Controller] Error occurred →`, mssg)) : type === "warn" ? console.warn(`[TMG Controller] Warning →`, mssg) : console.log(`[TMG Controller] Log →`, mssg); // swallow = errors that don't leave cracks

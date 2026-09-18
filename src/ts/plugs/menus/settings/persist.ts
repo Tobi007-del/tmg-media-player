@@ -29,7 +29,7 @@ export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => (
             const ok = await t007.confirm?.("Are you sure you want to clear all saved data? This cannot be undone.", { id: `${plug.ctlr.config.id}-clear-dialog`, rootElement: plug.ctlr.DOM.containerContent, confirmText: "Proceed" });
             if (!ok) return;
             const typed = await t007.prompt("This permanently deletes all saved settings, preferences and state from your storage. It cannot be undone.", "", { id: `${plug.ctlr.config.id}-clear-prompt`, rootElement: plug.media.container, confirmText: "Clear", placeholder: plug.config.clearConfirm, label: "Confirmation", required: true, pattern: plug.config.clearConfirm });
-            if (typed?.trim() === plug.config.clearConfirm) plug.module.clear(), plug.ctlr.toast?.success("Storage cleared successfully!", { tag: "tmg-persist", signal: plug.signal, autoClose: 10000, actions: { "Restart now": () => (plug.module.clear(), window.location.reload()) } });
+            if (typed?.trim() === plug.config.clearConfirm) plug.module.clear(), plug.ctlr.toast?.success("Storage cleared successfully!", { tag: "tmg-prst", signal: plug.signal, autoClose: 10000, actions: { "Restart now": () => (plug.module.clear(), window.location.reload()) } });
           },
         },
       ],

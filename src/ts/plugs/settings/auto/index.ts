@@ -84,7 +84,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       </span>`,
       onTimeUpdate: (time: number, el = this.ctlr.queryDOM(".tmg-media-next-countdown")) => el && (el.textContent = String(Math.round((count * 1000 - time) / 1000) || 1)),
       onClose: (elapsed?: boolean) => void (removeListeners(), elapsed && this.ctlr.plug("playlist")?.next()),
-      tag: "tmg-anvi",
+      tag: "tmg-anma",
       signal: this.signal,
     });
     const clup = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextClup = this.nextPreview = null), (this.canMovePlaylist = !permanent)),

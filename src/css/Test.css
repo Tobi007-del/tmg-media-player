@@ -1,0 +1,60 @@
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('../../assets/fonts/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-family: "Google Sans Flex", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #141414;
+}
+body {
+  margin: 0;
+  min-height: 400vh;
+}
+.container {
+  position: relative;
+  padding-top: 50px;
+  color: white;
+}
+.container > h2 {
+  margin-top: 0;
+  text-align: center;
+}
+/* VTT cue class styles — matched to parseVttText output: <c.red> → <span class="vtt-c red"> */
+.vtt-c.red {
+  color: red;
+}
+.vtt-c.blue {
+  color: blue;
+}
+.vtt-c.green {
+  color: green;
+}
+.vtt-c.warning {
+  color: yellow;
+}
+.vtt-c.bold {
+  font-weight: bold;
+}
+.vtt-c.shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+.vtt-c.bg-yellow {
+  background: rgba(255, 225, 0, var(--tmg-media-captions-background-opacity));
+}
+.vtt-c.highlight {
+  background: rgba(255, 255, 255, var(--tmg-media-captions-background-opacity));
+}
+.vtt-c.rainbow {
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

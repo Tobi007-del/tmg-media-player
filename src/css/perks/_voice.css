@@ -5,12 +5,9 @@
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-body-text {
   display: block;
 }
-.tmg-media-voice-routing .t007-toast[id^="tmg-media-voice-"] .t007-toast-actions-wrapper {
+.tmg-media-voice-routing .t007-toast[id^="tmg-media-voice-helper-"] .t007-toast-actions-wrapper {
   flex-shrink: 0;
-  width: calc(var(--t007-toast-unit) * 3);
-}
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-actions-wrapper {
-  gap: calc(var(--t007-toast-unit) / 4);
+  width: calc(var(--t007-toast-unit) * 3.1);
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button {
   padding-inline: calc(var(--t007-toast-unit) / 2.25);

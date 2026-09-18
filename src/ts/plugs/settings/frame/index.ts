@@ -59,22 +59,22 @@ export class FramePlug extends BasePlug<FrameConfig> {
     const toast = this.ctlr.toast,
       tTxt = formatMediaTime({ time, format: "human", showMs: true }),
       fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,
-      tId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.media.settings.metadata.title ?? "Video"}fcpa${tTxt}${display}` }) as string,
+      tId = toast?.loading(`Capturing ${fTxt}...`, { delay: parseCSSTime(this.settings.css.notifiersAnimationTime), image: window.TMG_MEDIA_ALT_IMG_SRC, tag: `tmg-${this.media.settings.metadata.title ?? "Video"}fcpa${tTxt}${display}`, ...this.config.toast }) as string,
       frame = await this.extract(display, time, false, 0, this.media.element as HTMLVideoElement),
       filename = `${this.media.settings.metadata.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_"); // system filename safe
     const Save = () => {
-      toast?.loading(tId, { render: `Saving ${fTxt}`, actions: {} });
+      toast?.loading(tId, { render: `Saving ${fTxt}`, actions: false });
       createEl("a", { href: frame.url as string, download: filename })?.click?.();
-      toast?.success(tId, { delay: 1000, render: `Saved ${fTxt}`, actions: {} });
+      toast?.success(tId, { delay: 1000, render: `Saved ${fTxt}`, actions: false });
     };
     const Share = () => {
-      toast?.loading(tId, { render: `Sharing ${fTxt}`, actions: {} });
+      toast?.loading(tId, { render: `Sharing ${fTxt}`, actions: false });
       navigator.share?.({ title: this.media.settings.metadata.title ?? "Video", text: `Captured ${fTxt}`, files: [new File([frame.blob!], filename, { type: frame.blob!.type })] }).then(
-        () => toast?.success(tId, { render: `Shared ${fTxt}`, actions: {} }),
+        () => toast?.success(tId, { render: `Shared ${fTxt}`, actions: false }),
         () => toast?.error(tId, { render: `Failed sharing ${fTxt}`, actions: { Save } })
       ) || toast?.warn(tId, { delay: 1000, render: `Couldn't share ${fTxt}`, actions: { Save } });
     };
-    frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, autoClose: this.config.captureAutoClose, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url) }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
+    frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url), autoClose: this.config.toast.autoClose }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
   }
 
   public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | undefined> {

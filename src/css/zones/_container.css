@@ -74,13 +74,12 @@ body:has(.tmg-host-container.tmg-media-fullscreen:not(:fullscreen)) {
   transition: none;
 }
 body:where(:has(.tmg-media-floating-player)) {
-  font-family: system-ui, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0;
   margin: 0;
-  background-color: black;
+  background: black;
   overflow: hidden;
 }
 .tmg-media-container.tmg-media-floating-player {

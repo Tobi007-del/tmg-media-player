@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.27
+
+### Patch Changes
+
+- Voice UX boost and bug fixes
+
 ## 0.0.26
 
 ### Patch Changes

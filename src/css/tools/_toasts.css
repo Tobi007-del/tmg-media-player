@@ -18,7 +18,6 @@
 .t007-toast .t007-toast-action-button > span:has(span) {
   display: flex;
   gap: 0.5ch;
-  line-height: 1.2;
 }
 .t007-toast .t007-toast-action-button svg {
   width: calc(var(--t007-toast-unit) * 1.25);

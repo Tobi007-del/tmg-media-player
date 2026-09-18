@@ -39,7 +39,7 @@ export const MODES_PICTURE_IN_PICTURE_BUILD: Partial<ModesPictureInPictureConfig
     disallowReturnToOpener: false,
     preferInitialWindowPlacement: false,
     css: {
-      whitelist: { url: [], token: [":root", "tmg", "t007", "sia"] },
+      whitelist: { url: [], token: [":root", "tmg", "t007", "sia", "@font-face", "GoogleSansFlex"] },
       blacklist: { url: [], token: [] },
     },
   },

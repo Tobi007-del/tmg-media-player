@@ -3,7 +3,7 @@ import type { VoicePlug } from "@plugs/settings/voice";
 import { formatAction } from "@utils/keys";
 import { getUIOpt } from "@utils/obj";
 import { formatUITime } from "@utils/time";
-import { TOAST_FORM_INPUTS, parseToastVal, getToastFormVal } from "./toasts";
+import { TOAST_FORM_INPUTS, getToastFormVal, syncToastConfig } from "./toasts";
 export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
   id: "advanced",
   label: "Advanced",
@@ -66,9 +66,7 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
                   widget: "input",
                   getValue: () => "",
                   inputs: TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(plug.config.toasts.router[input.name as keyof typeof plug.config.toasts.router], input.name) })),
-                  onChange: (val: any) => {
-                    for (const key in val) plug.config.toasts.router[key as keyof typeof plug.config.toasts.router] = parseToastVal(val[key], key);
-                  },
+                  onChange: (val: any) => syncToastConfig(val, plug.config.toasts.router),
                   configPaths: ["settings.voice.toasts.router"],
                   title: "Where the main microphone transcript appears when routing",
                 },
@@ -78,9 +76,7 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
                   widget: "input",
                   getValue: () => "",
                   inputs: TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(plug.config.toasts.helper[input.name as keyof typeof plug.config.toasts.router], input.name) })),
-                  onChange: (val: any) => {
-                    for (const key in val) plug.config.toasts.helper[key as keyof typeof plug.config.toasts.helper] = parseToastVal(val[key], key);
-                  },
+                  onChange: (val: any) => syncToastConfig(val, plug.config.toasts.helper),
                   configPaths: ["settings.voice.toasts.helper"],
                   title: "Where the word hints appear, or transcript when passive",
                 },
