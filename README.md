@@ -1,6 +1,6 @@
 # TMG Media Player
 
-> The browser's `controls` attribute, but actually good. A plug-based, reactive HTML5 media player for [The Movie Garden](https://tobi007-del.github.io/TMG.com/) initiative.
+> The browser's `controls` attribute, but actually good. A plug-based, reactive HTML5 media player.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![NPM Version](https://img.shields.io/npm/v/tmg-media-player.svg)](https://www.npmjs.com/package/tmg-media-player)

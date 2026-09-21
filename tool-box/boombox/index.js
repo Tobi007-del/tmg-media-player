@@ -188,7 +188,7 @@ class Boombox {
     if (muted) {
       this.lastVolume = this.settings.volume.value;
       sia.inert(() => (this.settings.volume.value = 0));
-    } else if (tmg.utils.isSafeNum(this.lastVolume)) sia.inert(() => (this.settings.volume.value = this.lastVolume)); // dummy
+    } else if (Number.isFinite(this.lastVolume)) sia.inert(() => (this.settings.volume.value = this.lastVolume)); // dummy
     // this.ctlr.media.intent.muted = muted; // real
   }
   handleMuted({ value: muted }) {

@@ -68,7 +68,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   public render(cues: CueLike[] | null, isPreview = false): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
-    if (!cues?.length) return existing?.remove();
+    if (!(this.cues = cues)?.length) return existing?.remove();
     for (const attr of ["style", "data-active", "data-scroll"]) this.el.removeAttribute(attr);
     const wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" })),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
@@ -76,7 +76,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2; // Padding allowance
     if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
     wrapper.innerHTML = "";
-    for (const cue of (this.cues = cues)) {
+    for (const cue of cues!) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
       const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
       for (const p of lines) for (const l of formatVttLine(p, Math.floor(wrapWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, allowOverride && cue.align && cue.align !== "center" ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
@@ -85,7 +85,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
     this.config.isMain ? (this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`) : this.el.style.setProperty("--cmptd-cue-box-height", `${cHeight}px`);
     this.config.isMain ? (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`) : this.el.style.setProperty("--cmptd-cue-box-width", `${cWidth}px`);
-    const regionCue = cues.find((c) => c.region);
+    const regionCue = cues!.find((c) => c.region);
     if (regionCue?.region) {
       this.el.setAttribute("data-active", "");
       const { width, lines: rines, viewportAnchorX: vpAnX, viewportAnchorY: vpAnY, scroll } = regionCue.region;
@@ -95,7 +95,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       if (isDef(rines)) this.el.style.height = `${Number(rines) * ((this.lineHPx / vCHeight) * 100)}%`;
       if (scroll === "up") (this.el.dataset.scroll = scroll), this.ctlr.config.stall(() => (this.el.scrollTop = wrapper.scrollHeight));
     } else if (allowOverride) {
-      const cue = cues[0];
+      const cue = cues![0];
       if (isDef(cue.position) && cue.position !== "auto") {
         const elHalfWPct = ((cWidth / vCWidth) * 100) / 2,
           posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elHalfWPct : -elHalfWPct;
@@ -111,7 +111,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
         this.el.style.setProperty("--tmg-media-current-captions-y", `calc(${topVal}% + ${lineOffset}% + ${elHalfHPct}%)`);
       }
       if (isDef(cue.size) && cue.size !== 100) this.el.style.width = `${cue.size}%`;
-      if (cues[0].vertical) this.el.style.writingMode = cues[0].vertical === "lr" ? "vertical-lr" : "vertical-rl";
+      if (cues![0].vertical) this.el.style.writingMode = cues![0].vertical === "lr" ? "vertical-lr" : "vertical-rl";
     }
     this.timeNodes = Array.from(wrapper.querySelectorAll<HTMLElement>("[data-part='timed']"), (el, _, [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || []) => ({ el, time: m ? +m * 60 + +s + +ms / 1000 : 0 }));
     this.syncKaraoke();
