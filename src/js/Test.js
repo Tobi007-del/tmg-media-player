@@ -1,3 +1,5 @@
+tmg.consts.CONFIG_BUILD.noPlugList = [];
+
 const ap = new tmg.Player({
   "settings.controlPanel.timeline.previews": true,
   "media.settings.metadata": { title: "Justice League Teaser", artist: "Warner Bros. Pictures", profile: "../assets/icons/tmg-icon.jpeg", links: { artist: "https://www.warnerbros.com/movies/justice-league", profile: "https://github.com/Tobi007-del/tmg-media-player" } },
@@ -25,7 +27,7 @@ const ap = new tmg.Player({
       "media.settings.metadata.links.title": "https://www.doubleclickbygoogle.com/",
       "media.settings.metadata.profile": "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/google-color-icon.png",
       "media.settings.metadata.artist": "DoubleClick by Google",
-      "toasts.meta": { actions: { Explore: () => window.open("https://www.doubleclickbygoogle.com/", "_blank", "noopener,noreferrer") }, image: undefined }, // override default "use profile"
+      "toasts.meta": { actions: { Explore: () => window.open("https://www.doubleclickbygoogle.com/", "_blank", "noopener,noreferrer") }, image: false }, // override default "use profile"
     }, // VAST Redirect Wrapper (Tests if your engine can follow VAST wrappers)
     {
       url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dnull&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",

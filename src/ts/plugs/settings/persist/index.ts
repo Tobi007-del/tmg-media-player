@@ -17,10 +17,16 @@ export class PersistPlug extends BasePlug<PersistConfig> {
   }
 
   public override wire(): void {
-    // Ctlr Config Listeners
+    // Utility Injection
     createReactorSync(this.module.config, this.ctlr.config, "", "settings.persist", this.signal);
+    // Ctlr Config Setters
+    this.ctlr.config.set("settings.persist.beforeSave", this.beforeSaveHook, { init: true, signal: this.signal });
     // Post Wiring
     this.module.clearCache(), super.wire();
+  }
+
+  protected beforeSaveHook(v?: (payload: any) => any) {
+    return (payload: any, cache = this.media.tech.cache) => (cache && Object.assign(payload.media, cache), v ? v(payload) : payload);
   }
 
   protected override onDestroy(): void {

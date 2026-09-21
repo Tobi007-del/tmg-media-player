@@ -24,6 +24,7 @@ export const getSettingsTimeMenu = (plug: TimePlug): SettingsMenuItem => ({
           widget: "limits",
           configPaths: ["settings.time.min", "settings.time.max", "settings.time.skip", "settings.time.start", "settings.time.end"],
           getValue: () => "",
+          getTipHTML: () => "<b>End</b> allows negative values. <b>Start</b> and <b>end</b> are preferences (e.g. for autoplay), not strict locks.",
           getLimits: () => [
             { name: "time", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip },
             { name: "time", label: "Start and end", start: plug.config.start ?? 0, end: plug.config.end },

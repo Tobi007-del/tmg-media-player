@@ -80,6 +80,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     }, // ">|<" has shift
     captionsFontSize: {},
   },
+  showOverlay: true,
   phase: {
     value: "keyup",
     options: [

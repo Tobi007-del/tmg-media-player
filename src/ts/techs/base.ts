@@ -28,11 +28,13 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   public get el() {
     return this.element;
   }
-  public wired = false; // for light status checks where needed
+  public wired = false; // for light checks where needed
+  public cache?: Pick<CtlrMedia, CacheKey> | null; // for pseudo media, e.g. ads
+  public readonly caching: boolean = false; // turn on for caching logic
   public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptionsTuple } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } };
   public readonly features!: MediaFeatures;
   public readonly wiredSet: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
-  public autoChapters: boolean = false;
+  public autoChapters: boolean = false; // turn on if handling `currentChapter`
 
   constructor(ctlr: Controller, features: MediaFeatures = {}) {
     ctlr.media.tech.wired && ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`); // kill if listening
@@ -52,14 +54,17 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     this.mount(), this.onAwaken();
   }
   protected override onDestroy(): void {
-    this.unmount(), (this.config.status.hostReady = false);
+    this.unmount(), this.onHibernate();
+    this.config.status.hostReady = false;
   }
   protected onAwaken(): void {
+    if (this.caching) for (const key of cacheKeys) (this.cache ??= {} as any)[key] = this.config.snapshot(false, this.config[key]); // all that once was
     this.evtOpts.CONFIG.signal = this.evtOpts.EL.signal = this.signal;
     this.ctlr.state.readyState ? this.wire() : this.ctlr.state.wonce("readyState", this.wire, { signal: this.signal }); // wire after all plugs setup
   }
   protected onHibernate(): void {
     this.wiredSet.clear(), (this.wired = false);
+    if (this.cache) silence(() => fanout(this.config, this.cache!)), (this.cache = null); // all that will be
   }
 
   public mount(): void {
@@ -150,6 +155,10 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     return !isArr(feature) ? apply(feature) : feature.forEach((f) => apply(f));
   } // #EXTRA-MILE: doing the most with the least
 }
+
+export const cacheKeys = ["state", "status", "settings", "features"] as const;
+
+export type CacheKey = (typeof cacheKeys)[number];
 
 declare module "@defs/contract" {
   interface MediaStatus {

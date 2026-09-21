@@ -1,6 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import { Controller } from "@core/controller";
-import { TOAST_FORM_INPUTS, getToastFormVal, syncToastConfig } from "./toasts";
+import { syncToastConfig, getToastMenuInputs } from "./toasts";
 import { capitalize, camelize, uncamelize } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
 import { getPath } from "sia-reactor/utils";
@@ -327,7 +327,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
             const r = live().toast?.render;
             return r ? (isFunc(r) ? "Dynamic text" : capitalize(r)) : "None";
           },
-          inputs: [{ name: "message", label: "Message", type: "text", value: (_live = live()) => (isFunc(_live.toast?.render) ? (_live.toast!.render as Function)?.() : _live.toast?.render) ?? "", placeholder: "Action triggered!", required: true, helperText: { info: "The message to display in the notification" } }, ...TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(live().toast?.[input.name], input.name) }))],
+          inputs: [{ name: "message", label: "Message", type: "text", value: (_live = live()) => (isFunc(_live.toast?.render) ? (_live.toast!.render as Function)?.() : _live.toast?.render) ?? "", placeholder: "Action triggered!", required: true, helperText: { info: "The message to display in the notification" } }, ...getToastMenuInputs(live().toast || {})],
           onChange: (val: any) => {
             live().toast = !val.message ? undefined : syncToastConfig(val, { render: val.message });
           },

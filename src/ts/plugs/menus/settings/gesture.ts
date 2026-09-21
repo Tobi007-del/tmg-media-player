@@ -28,7 +28,7 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
       items: [
         {
           id: "gestures",
-          label: "Gestures",
+          label: "Gesture",
           widget: "group",
           getValue: () => (plug.config.click === false && plug.config.dblClick === false && !plug.config.touch.volume && !plug.config.touch.brightness && !plug.config.touch.timeline && !plug.config.wheel.volume && !plug.config.wheel.brightness && !plug.config.wheel.timeline ? "Off" : "On"),
           configPaths: ["settings.gesture.click", "settings.gesture.dblClick", "settings.gesture.touch.volume", "settings.gesture.touch.brightness", "settings.gesture.touch.timeline", "settings.gesture.wheel.volume", "settings.gesture.wheel.brightness", "settings.gesture.wheel.timeline"],
@@ -50,12 +50,22 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                   widget: "group",
                   getValue: () => (plug.config.touch.xRatio && plug.config.touch.yRatio ? "On" : "Off"),
                   items: [
-                    { id: "gestureTouchXRatio", label: "Horizontal", widget: "range", getValue: () => String(plug.config.touch.xRatio), getRange: () => ({ min: 0, max: 10, step: 0.25, formatTooltip: (v: number) => v.toFixed(1) }), onChange: (val: number) => (plug.config.touch.xRatio = val), configPaths: ["settings.gesture.touch.xRatio"] },
-                    { id: "gestureTouchYRatio", label: "Vertical", widget: "range", getValue: () => String(plug.config.touch.yRatio), getRange: () => ({ min: 0, max: 10, step: 0.25, formatTooltip: (v: number) => v.toFixed(1) }), onChange: (val: number) => (plug.config.touch.yRatio = val), configPaths: ["settings.gesture.touch.yRatio"] },
-                    { id: "gestureTouchAxesRatio", label: "Axis dominance", widget: "range", getValue: () => String(plug.config.touch.axesRatio), getRange: () => ({ min: 0, max: 10, step: 0.25, formatTooltip: (v: number) => v.toFixed(1) }), onChange: (val: number) => (plug.config.touch.axesRatio = val), configPaths: ["settings.gesture.touch.axesRatio"], getTipHTML: () => "Multiplier for vertical vs horizontal swipe dominance" },
+                    {
+                      id: "gestureTouchRatio",
+                      label: "Swipe ratio (X, Y)",
+                      widget: "input",
+                      inputs: [
+                        { name: "x", label: "Horizontal", type: "number", min: "0", max: "10", step: "0.25", value: () => plug.config.touch.xRatio },
+                        { name: "y", label: "Vertical", type: "number", min: "0", max: "10", step: "0.25", value: () => plug.config.touch.yRatio }
+                      ],
+                      getValue: () => `${plug.config.touch.xRatio}, ${plug.config.touch.yRatio}`,
+                      onChange: (val: any) => (val.x && (plug.config.touch.xRatio = Number(val.x)), val.y && (plug.config.touch.yRatio = Number(val.y))),
+                      configPaths: ["settings.gesture.touch.xRatio", "settings.gesture.touch.yRatio"]
+                    },
+                    { id: "gestureTouchAxesRatio", label: "Axis dominance", widget: "range", getValue: () => String(plug.config.touch.axesRatio), getRange: () => ({ min: 0, max: 10, step: 0.25, formatTooltip: (v: number) => v.toFixed(1) }), onChange: (val: number) => (plug.config.touch.axesRatio = val), configPaths: ["settings.gesture.touch.axesRatio"], getTipHTML: () => "Minimum ratio of vertical to horizontal movement. Higher values require straighter swipes." },
                     { id: "gestureTouchThreshold", label: "Hold duration", widget: "input", inputs: [{ label: "ms", placeholder: "200", helperText: { info: "How long before a touch starts a swipe gesture, provided it did not move during the hold" }, type: "number", min: "0", max: "10000", value: () => plug.config.touch.threshold }], getValue: () => formatUITime(plug.config.touch.threshold), onChange: (val: Record<string, any>) => (plug.config.touch.threshold = val["ms"]), configPaths: ["settings.gesture.touch.threshold"] },
                     { id: "gestureTouchInset", label: "Edge inset", widget: "range", getValue: () => formatMenuPx(plug.config.touch.inset, true), getRange: () => ({ min: 0, max: 100, step: 5, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.touch.inset = val), configPaths: ["settings.gesture.touch.inset"], getTipHTML: () => "Distance from the screen edges to ignore swipes (prevents accidental gestures)" },
-                  ],
+                  ]
                 },
                 { id: "gestureTouchSliderTimeout", label: "Slider timeout", widget: "input", inputs: [{ label: "ms", placeholder: "2500", helperText: { info: "How long the gesture indicator stays on screen after swiping" }, type: "number", min: "0", value: () => plug.config.touch.sliderTimeout }], getValue: () => formatUITime(plug.config.touch.sliderTimeout), onChange: (val: Record<string, any>) => (plug.config.touch.sliderTimeout = val["ms"]), configPaths: ["settings.gesture.touch.sliderTimeout"] },
               ],
@@ -70,14 +80,16 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                 { id: "gestureWheelBrightness", label: "Brightness scroll", widget: "toggle", getValue: () => (plug.config.wheel.brightness ? "On" : "Off"), onChange: (val: boolean) => (plug.config.wheel.brightness = val), configPaths: ["settings.gesture.wheel.brightness"] },
                 { id: "gestureWheelTimeline", label: "Seek scroll", widget: "toggle", getValue: () => (plug.config.wheel.timeline ? "On" : "Off"), onChange: (val: boolean) => (plug.config.wheel.timeline = val), configPaths: ["settings.gesture.wheel.timeline"] },
                 {
-                  id: "gestureWheelSensitivityGroup",
-                  label: "Sensitivity",
-                  widget: "group",
-                  getValue: () => (plug.config.wheel.xRatio && plug.config.wheel.yRatio ? "On" : "Off"),
-                  items: [
-                    { id: "gestureWheelXRatio", label: "Horizontal", widget: "range", getValue: () => String(plug.config.wheel.xRatio), getRange: () => ({ min: 1, max: 50, step: 1 }), onChange: (val: number) => (plug.config.wheel.xRatio = val), configPaths: ["settings.gesture.wheel.xRatio"] },
-                    { id: "gestureWheelYRatio", label: "Vertical", widget: "range", getValue: () => String(plug.config.wheel.yRatio), getRange: () => ({ min: 1, max: 50, step: 1 }), onChange: (val: number) => (plug.config.wheel.yRatio = val), configPaths: ["settings.gesture.wheel.yRatio"] },
+                  id: "gestureWheelRatio",
+                  label: "Scroll ratio (X, Y)",
+                  widget: "input",
+                  inputs: [
+                    { name: "x", label: "Horizontal", type: "number", min: "1", max: "50", value: () => plug.config.wheel.xRatio },
+                    { name: "y", label: "Vertical", type: "number", min: "1", max: "50", value: () => plug.config.wheel.yRatio }
                   ],
+                  getValue: () => `${plug.config.wheel.xRatio}, ${plug.config.wheel.yRatio}`,
+                  onChange: (val: any) => (val.x && (plug.config.wheel.xRatio = Number(val.x)), val.y && (plug.config.wheel.yRatio = Number(val.y))),
+                  configPaths: ["settings.gesture.wheel.xRatio", "settings.gesture.wheel.yRatio"]
                 },
                 { id: "gestureWheelTimeout", label: "Scroll timeout", widget: "input", inputs: [{ label: "ms", placeholder: "2500", type: "number", min: "0", required: true, value: () => plug.config.wheel.timeout }], getValue: () => formatUITime(plug.config.wheel.timeout), onChange: (val: Record<string, any>) => (plug.config.wheel.timeout = val["ms"]), configPaths: ["settings.gesture.wheel.timeout"] },
               ],

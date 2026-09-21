@@ -1,6 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { FramePlug } from "@plugs/settings/frame";
-import { TOAST_FORM_INPUTS, getToastFormVal, syncToastConfig } from "./toasts";
+import { getToastMenuInputs, syncToastConfig } from "./toasts";
 
 export const getSettingsFrameMenu = (plug: FramePlug): SettingsMenuItem => ({
   id: "advanced",
@@ -28,7 +28,7 @@ export const getSettingsFrameMenu = (plug: FramePlug): SettingsMenuItem => ({
               label: "Notification",
               widget: "input",
               getValue: () => "",
-              inputs: TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(plug.config.toast[input.name as keyof typeof plug.config.toast], input.name) })),
+              inputs: getToastMenuInputs(plug.config.toast, ["type", "compact"]),
               onChange: (val: any) => syncToastConfig(val, plug.config.toast),
               configPaths: ["settings.frame.toast"],
             },

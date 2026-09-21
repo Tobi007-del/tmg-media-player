@@ -13,6 +13,7 @@ import { tutorialOpts } from "../toasts";
 import { Action } from "@defs/action";
 import { IconRegistry } from "@core/registries";
 import { isArr } from "@utils/obj";
+import { IS_MOBILE } from "@utils/env";
 
 export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   public static readonly plugName = "voice";
@@ -100,15 +101,15 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return this.ctlr.flags.wired && (this.ctlr.state.mediaIntersecting || this.config.muted) && !this.ctlr.config.disabled;
   }
 
-  protected async request(): Promise<"granted" | "denied" | "cancelled"> {
+  protected async request(): Promise<"granted" | "denied" | "cancelled" | "nuked"> {
     const state = (await navigator.permissions?.query({ name: "microphone" }).catch(() => null))?.state ?? "prompt";
     if (state === "granted" || state === "denied") return state;
     // prettier-ignore
-    return t007.toast?.dismiss(this.IDS.HELPER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.info("Voice control requires mic access", { id: this.IDS.ROUTER,...this.config.toasts.router, autoClose: false,  actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.IDS.ROUTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions() }, onClose: () => res("cancelled") }) || res("cancelled"))())); // #EXTRA-MILE: doing the most with the least
+    return t007.toast?.dismiss(this.IDS.HELPER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.info("Voice control requires mic access", { id: this.IDS.ROUTER, signal: this.signal, ...this.config.toasts.router, autoClose: false, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.IDS.ROUTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions() }, onClose: (_, user) => res(user ? "cancelled" : "nuked") }) || res("nuked"))())); // #EXTRA-MILE: doing the most with the least
   }
   public async start(): Promise<void> {
     let state = this.config.muted ? "granted" : await this.request();
-    if (!this.signal || this.signal?.aborted) return;
+    if (state === "nuked" || !this.signal || this.signal?.aborted) return;
     state === "granted" && (this.config.toasts.behavior.value === "persistent" || t007.toast.isActive(this.IDS.ROUTER)) && this.view?.(this.getRouterSpeech(), this.getRouterOptions());
     this.state.routing && this.goTo();
     try {
@@ -257,15 +258,15 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   protected getHelperOptions(actions: ToastOptions["actions"]): ToastOptions {
-    return { id: this.IDS.HELPER, actions, onClose: (_, clicked) => clicked && (this.config.active.value = "passive"), signal: this.signal, ...this.config.toasts.helper };
+    return { id: this.IDS.HELPER, actions, onClose: (_, user) => user && (this.config.active.value = "passive"), signal: this.signal, ...this.config.toasts.helper };
   }
   protected getRouterOptions(full = true): ToastOptions {
-    return full ? { id: this.IDS.ROUTER, actions: this.getRouterActions(), onClose: (_, clicked) => clicked && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
+    return full ? { id: this.IDS.ROUTER, actions: this.getRouterActions(), onClose: (_, user) => user && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
   }
   protected getRouterActions(): Record<string, () => void> {
     return { [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionForDisplay(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
-  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? "Tap" : "Say"} ${!this.state.routing ? `${this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ")} to wake me up!` : "a path or command!"}`): string {
+  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ")} to wake me up!` : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;
   }
   protected get container() {

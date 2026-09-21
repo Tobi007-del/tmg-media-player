@@ -22,7 +22,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
   },
   devMode: CTX.isDevEnv,
   courtesy: "TMG",
-  noPlugList: [], // dev: "settings.persist"
+  noPlugList: ["settings.persist"], // dev: "settings.persist"
 };
 
 export const STATE_BUILD = (): CtlrState => ({

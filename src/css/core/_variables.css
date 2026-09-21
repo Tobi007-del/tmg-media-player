@@ -199,7 +199,7 @@
   --t007-scroll-assist-inset-x: calc(var(--tmg-media-current-unit) * -0.25);
 }
 .tmg-media-container .t007-toast {
-  --t007-toast-type-color: var(--tmg-media-theme-color);
+  --t007-toast-color: var(--tmg-media-theme-color);
   --t007-toast-background: var(--tmg-media-notifier-color);
   --t007-toast-background-blur: none;
   --t007-toast-no-image-background: var(--tmg-media-image-background);

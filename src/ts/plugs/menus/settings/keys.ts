@@ -26,6 +26,7 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
           items: [
             { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
             { id: "keyboardStrictMatch", label: "Strict match", widget: "toggle", getValue: () => (plug.config.strictMatch ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatch = val), configPaths: ["settings.keys.strictMatch"], title: "Require exact key combo match for actions (e.g., Shift+f will not trigger the action for f)." },
+            { id: "keyboardShowOverlay", label: "Show overlay", widget: "toggle", getValue: () => (plug.config.showOverlay ? "On" : "Off"), onChange: (val: boolean) => (plug.config.showOverlay = val), configPaths: ["settings.keys.showOverlay"], title: "Force the player controls overlay to appear when pressing keys." },
             { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase (keydown/keyup) to trigger actions when not explicitly specified" },
             {
               id: "keyboardMods",
@@ -37,18 +38,20 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
                 ...KEY_SHORTCUT_MOD_ACTIONS.map((mod) => ({
                   id: `keyboardMod-${mod}`,
                   label: `${capitalize(uncamelize(mod))}`,
-                  widget: "group" as const,
+                  widget: "input" as const,
                   getValue: () => "",
-                  items: [
-                    { id: `keyboardMod-${mod}-ctrl`, label: "Ctrl amount", widget: "input" as const, inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl }], getValue: () => String(plug.config.mods[mod].ctrl ?? ""), onChange: (val: any) => (plug.config.mods[mod].ctrl = val["Amount"]), configPaths: [`settings.keys.mods.${mod}` as const] },
-                    { id: `keyboardMod-${mod}-shift`, label: "Shift amount", widget: "input" as const, inputs: [{ label: "Amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift }], getValue: () => String(plug.config.mods[mod].shift ?? ""), onChange: (val: any) => (plug.config.mods[mod].shift = val["Amount"]), configPaths: [`settings.keys.mods.${mod}` as const] },
+                  inputs: [
+                    { name: "ctrl", label: "Ctrl amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl },
+                    { name: "shift", label: "Shift amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift }
                   ],
+                  onChange: (val: any) => (val.ctrl !== undefined && (plug.config.mods[mod].ctrl = val.ctrl === "" ? undefined : Number(val.ctrl)), val.shift !== undefined && (plug.config.mods[mod].shift = val.shift === "" ? undefined : Number(val.shift))),
+                  configPaths: [`settings.keys.mods.${mod}` as const]
                 })),
               ],
             },
             {
               id: "keyboardLists",
-              label: "Overrides and lists",
+              label: "Constraints",
               widget: "group",
               getValue: () => (plug.config.overrides.length || plug.config.blocks.length || plug.config.whitelist.length ? "On" : "Off"),
               configPaths: ["settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],

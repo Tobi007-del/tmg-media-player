@@ -22,5 +22,9 @@ export const AUTO_BUILD: DeepPartial<AutoConfig> = {
       time: 4,
       tease: true,
     },
+    toast: {
+      position: "bottom-right",
+      hideProgressBar: false,
+    },
   },
 };

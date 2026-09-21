@@ -26,7 +26,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   }
 
   protected canHandle(e: TouchEvent): boolean {
-    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.active;
+    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.active && !this.media.state.miniplayer;
   }
 
   protected handleStart(e: TouchEvent): void {

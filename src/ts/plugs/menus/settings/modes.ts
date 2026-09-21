@@ -56,16 +56,8 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   onChange: (val: string) => (val === "auto" ? (plug.media.intent.autoFullscreenOrientation = true) : (plug.media.intent.fullscreenOrientation = val as typeof plug.media.intent.fullscreenOrientation)),
                   mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
                   onWire: (syncUI, signal) => plug.ctlr.state.on("screenOrientation.type", syncUI, { signal }),
-                  getTipHTML: () => "Lock the device orientation to a specific layout when entering fullscreen",
                 },
-                {
-                  id: "modesFullscreenAllowMediaOverride",
-                  label: "Allow media override",
-                  widget: "toggle",
-                  getValue: () => (plug.config.fullscreen.orientation.allowMediaOverride ? "On" : "Off"),
-                  onChange: (val: boolean) => (plug.config.fullscreen.orientation.allowMediaOverride = val),
-                  configPaths: ["settings.modes.fullscreen.orientation.allowMediaOverride"],
-                },
+                { id: "modesFullscreenAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => (plug.config.fullscreen.orientation.allowMediaOverride ? "On" : "Off"), onChange: (val: boolean) => (plug.config.fullscreen.orientation.allowMediaOverride = val), configPaths: ["settings.modes.fullscreen.orientation.allowMediaOverride"] },
                 {
                   id: "modesFullscreenRotation",
                   label: "Rotation toggle",
@@ -96,51 +88,21 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
               widget: "group",
               getValue: () => "",
               items: [
+                { id: "modesPipFloatingDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.pictureInPicture.floatingPlayer.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.disabled = val), configPaths: ["settings.modes.pictureInPicture.floatingPlayer.disabled"], title: "The floating player allows keeping the custom player UI in the Picture-in-Picture window" },
+                { id: "modesPipFloatingDisallowReturn", label: "Disallow return to opener", widget: "toggle", getValue: () => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener ? "On" : "Off"), onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener = val), configPaths: ["settings.modes.pictureInPicture.floatingPlayer.disallowReturnToOpener"], title: "Hide the 'Back to tab' button in the floating window on next open" },
+                { id: "modesPipFloatingPreferInitial", label: "Prefer initial placement", widget: "toggle", getValue: () => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement ? "On" : "Off"), onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement = val), configPaths: ["settings.modes.pictureInPicture.floatingPlayer.preferInitialWindowPlacement"], title: "Don't open the floating window in the same screen position & size it was previously closed" },
                 {
-                  id: "modesPipFloatingDisabled",
-                  label: "Disable",
-                  widget: "toggle",
-                  getValue: () => (plug.config.pictureInPicture.floatingPlayer.disabled ? "On" : "Off"),
-                  onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.disabled = val),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.disabled"],
-                  title: "The floating player allows keeping the custom player UI in the Picture-in-Picture window",
-                },
-                {
-                  id: "modesPipFloatingDisallowReturn",
-                  label: "Disallow return to opener",
-                  widget: "toggle",
-                  getValue: () => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener ? "On" : "Off"),
-                  onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.disallowReturnToOpener = val),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.disallowReturnToOpener"],
-                  title: "Hide the 'Back to tab' button in the floating window on next open",
-                },
-                {
-                  id: "modesPipFloatingPreferInitial",
-                  label: "Prefer initial placement",
-                  widget: "toggle",
-                  getValue: () => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement ? "On" : "Off"),
-                  onChange: (val: boolean) => (plug.config.pictureInPicture.floatingPlayer.preferInitialWindowPlacement = val),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.preferInitialWindowPlacement"],
-                  title: "Don't open the floating window in the same screen position & size it was previously closed",
-                },
-                {
-                  id: "modesPipFloatingWidth",
-                  label: "Initial width",
-                  widget: "range",
-                  getValue: () => formatMenuPx(plug.config.pictureInPicture.floatingPlayer.width, true),
-                  getRange: () => ({ min: 160, max: plug.ctlr.state.dimensions.window.width, step: 10, formatTooltip: formatMenuPx }),
-                  onChange: (val: number) => (plug.config.pictureInPicture.floatingPlayer.width = val),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.width"],
-                },
-                {
-                  id: "modesPipFloatingHeight",
-                  label: "Initial height",
-                  widget: "range",
-                  getValue: () => formatMenuPx(plug.config.pictureInPicture.floatingPlayer.height, true),
-                  getRange: () => ({ min: 90, max: plug.ctlr.state.dimensions.window.height, step: 10, formatTooltip: formatMenuPx }),
-                  onChange: (val: number) => (plug.config.pictureInPicture.floatingPlayer.height = val),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.height"],
-                },
+                  id: "modesPipFloatingSize",
+                  label: "Initial size (W x H)",
+                  widget: "input",
+                  inputs: [
+                    { name: "w", label: "Width (px)", type: "number", required: true, min: "160", max: () => String(plug.ctlr.state.dimensions.window.width), value: () => plug.config.pictureInPicture.floatingPlayer.width },
+                    { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(plug.ctlr.state.dimensions.window.height), value: () => plug.config.pictureInPicture.floatingPlayer.height }
+                  ],
+                  getValue: () => `${formatMenuPx(plug.config.pictureInPicture.floatingPlayer.width, true)} × ${formatMenuPx(plug.config.pictureInPicture.floatingPlayer.height, true)}`,
+                  onChange: (val: any) => (val.w !== undefined && (plug.config.pictureInPicture.floatingPlayer.width = val.w), val.h !== undefined && (plug.config.pictureInPicture.floatingPlayer.height = val.h)),
+                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.width", "settings.modes.pictureInPicture.floatingPlayer.height"]
+                }
               ],
             },
           ],
@@ -154,61 +116,32 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
           configPaths: ["settings.modes.miniplayer.disabled"],
           items: [
             { id: "modesMiniplayerDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.miniplayer.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.miniplayer.disabled = val), configPaths: ["settings.modes.miniplayer.disabled"] },
+            { id: "modesMiniplayerLock", label: "Lock to window", widget: "toggle", getValue: () => (plug.config.miniplayer.lockToWindow ? "On" : "Off"), onChange: (val: boolean) => (plug.config.miniplayer.lockToWindow = val), configPaths: ["settings.modes.miniplayer.lockToWindow"], title: "Prevent dragging the miniplayer outside the browser boundaries" },
             {
-              id: "modesMiniplayerLayout",
-              label: "Layout",
-              widget: "group",
-              getValue: () => "",
-              items: [
-                {
-                  id: "modesMiniplayerPosX",
-                  label: "X position",
-                  widget: "input",
-                  inputs: [{ name: "pos", label: "%", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100) }],
-                  getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100)}%`,
-                  onChange: (val: any) => (plug.settings.css.currentMiniplayerX = `${val.pos}%`),
-                  configPaths: ["settings.css.currentMiniplayerX"],
-                },
-                {
-                  id: "modesMiniplayerPosY",
-                  label: "Y position",
-                  widget: "input",
-                  inputs: [{ name: "pos", label: "%", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100) }],
-                  getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100)}%`,
-                  onChange: (val: any) => (plug.settings.css.currentMiniplayerY = `${val.pos}%`),
-                  configPaths: ["settings.css.currentMiniplayerY"],
-                },
-                {
-                  id: "modesMiniplayerWidth",
-                  label: "Width",
-                  widget: "input",
-                  inputs: [{ name: "size", label: "px", type: "number", required: true, min: "160", max: () => String(getClientWH(plug.media.container.parentElement).clientWidth), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth) }],
-                  getValue: () => formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth), true),
-                  onChange: (val: any) => (plug.settings.css.currentMiniplayerWidth = `${val.size}px`),
-                  configPaths: ["settings.css.currentMiniplayerWidth"],
-                },
-                {
-                  id: "modesMiniplayerHeight",
-                  label: "Height",
-                  widget: "input",
-                  inputs: [{ name: "size", label: "px", type: "number", required: true, min: "90", max: () => String(getClientWH(plug.media.container.parentElement).clientHeight), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight) }],
-                  getValue: () => formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight), true),
-                  onChange: (val: any) => (plug.settings.css.currentMiniplayerHeight = `${val.size}px`),
-                  configPaths: ["settings.css.currentMiniplayerHeight"],
-                },
-                {
-                  id: "modesMiniplayerReset",
-                  label: "Reset",
-                  widget: "button",
-                  getValue: () => "",
-                  onChange: () => {
-                    const sache = plug.ctlr.plug("settings.css")?.build;
-                    if (sache) (plug.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (plug.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!), (plug.settings.css.currentMiniplayerX = sache.currentMiniplayerX!), (plug.settings.css.currentMiniplayerY = sache.currentMiniplayerY!);
-                  },
-                },
+              id: "modesMiniplayerPos",
+              label: "Position (X, Y)",
+              widget: "input",
+              inputs: [
+                { name: "x", label: "X (%)", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100) },
+                { name: "y", label: "Y (%)", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100) }
               ],
+              getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100)}%, ${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100)}%`,
+              onChange: (val: any) => (val.x !== undefined && (plug.settings.css.currentMiniplayerX = `${val.x}%`), val.y !== undefined && (plug.settings.css.currentMiniplayerY = `${val.y}%`)),
+              configPaths: ["settings.css.currentMiniplayerX", "settings.css.currentMiniplayerY"]
             },
-            { id: "modesMiniplayerMinWidth", label: "Min window width", widget: "range", getValue: () => formatMenuPx(plug.config.miniplayer.minWindowWidth, true), getRange: () => ({ min: 160, max: plug.ctlr.state.dimensions.window.width, step: 10, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.miniplayer.minWindowWidth = val), configPaths: ["settings.modes.miniplayer.minWindowWidth"] },
+            {
+              id: "modesMiniplayerSize",
+              label: "Size (W x H)",
+              widget: "input",
+              inputs: [
+                { name: "w", label: "Width (px)", type: "number", required: true, min: "160", max: () => String(getClientWH(plug.media.container.parentElement).clientWidth), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth) },
+                { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(getClientWH(plug.media.container.parentElement).clientHeight), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight) }
+              ],
+              getValue: () => `${formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth), true)} × ${formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight), true)}`,
+              onChange: (val: any) => (val.w !== undefined && (plug.settings.css.currentMiniplayerWidth = `${val.w}px`), val.h !== undefined && (plug.settings.css.currentMiniplayerHeight = `${val.h}px`)),
+              configPaths: ["settings.css.currentMiniplayerWidth", "settings.css.currentMiniplayerHeight"]
+            },
+            { id: "modesMiniplayerMinWidth", label: "Min window width", widget: "range", getValue: () => formatMenuPx(plug.config.miniplayer.minWindowWidth, true), getRange: () => ({ min: 160, max: plug.ctlr.state.dimensions.window.width, step: 10, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.miniplayer.minWindowWidth = val), configPaths: ["settings.modes.miniplayer.minWindowWidth"], getTipHTML: () => "The minimum width the browser must be to allow the miniplayer to appear" },
           ],
         },
         {

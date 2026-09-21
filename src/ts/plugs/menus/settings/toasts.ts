@@ -1,7 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { ToastsPlug } from "@plugs/settings/toasts";
 import { capitalize, uncamelize } from "@utils/str";
-import { isStr } from "@utils/obj";
 import { TOAST_UI_POSITIONS, TOAST_UI_ANIMATIONS, TOAST_UI_TYPES, TOAST_UI_DRAG_OPTIONS, TOAST_UI_DRAG_DIRECTIONS } from "@t007/toast";
 import { formatUITime } from "@utils/time";
 
@@ -21,7 +20,7 @@ export const TOAST_FORM_INPUTS = [
   { name: "autoClose", label: "Auto close (ms)", type: "number", helperText: { info: "Blank for Default, -1 for None" }, min: "-1" },
 ] as const;
 
-export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v === "" ? undefined : Number(v)) : v === "" || v === "default" ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : !isNaN(v) && isStr(v) ? Number(v) : v);
+export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v === "" ? undefined : Number(v)) : v === "" || v === "default" ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
 export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v === undefined || v === true ? "" : v) : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
 export const syncToastConfig = (val: any, target: any) => {
   for (const key in val) {
@@ -30,8 +29,12 @@ export const syncToastConfig = (val: any, target: any) => {
   }
   return target;
 };
-
-const getActionLogicOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.logicActions.map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const;
+export const getToastMenuInputs = (configObj: any, blacklist?: string[]) => {
+  const inputs = [];
+  for (const input of TOAST_FORM_INPUTS) !blacklist?.includes(input.name) && inputs.push({ ...input, value: () => getToastFormVal(configObj[input.name], input.name) });
+  return inputs;
+};
+const getActionOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.logicActions.map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const;
 
 export const getSettingsToastsMenu = (plug: ToastsPlug): SettingsMenuItem => ({
   id: "advanced",
@@ -41,7 +44,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug): SettingsMenuItem => ({
   items: [
     {
       id: "toasts",
-      label: "Notifications",
+      label: "Notification",
       widget: "group",
       getValue: () => "On",
       items: [
@@ -50,7 +53,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug): SettingsMenuItem => ({
           label: "My reminders",
           widget: "drag-select",
           getValue: () => `${plug.state.reminders.length}`,
-          getTipHTML: () => "Create personalized alerts or automation triggers that fire after a specific delay",
+          getTipHTML: () => "Create personalized alerts or automation triggers that fire after a provided delay",
           getDisabled: () => false,
           onWire: (syncUI, signal) => plug.state.on("reminders", syncUI, { signal }),
           getOptions: () => plug.state.reminders.map((r) => ({ value: r.id, display: r.message, infoText: formatUITime(r.delay, true) + (r.actionId && r.actionId !== "none" ? ` -> ${plug.ctlr.actions.entries[r.actionId]?.label || capitalize(uncamelize(r.actionId))}` : "") })),
@@ -62,16 +65,16 @@ export const getSettingsToastsMenu = (plug: ToastsPlug): SettingsMenuItem => ({
               label: "Create reminder",
               widget: "input",
               getValue: () => "",
-              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true }, { name: "delay", label: "Delay (ms)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", value: 0 }, { name: "actionId", label: "Action", value: "none", type: "select", options: getActionLogicOpts(plug) as unknown as { option: string; value: string }[] }, ...TOAST_FORM_INPUTS],
+              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true }, { name: "delay", label: "Delay (ms)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", value: 0 }, { name: "actionId", label: "Action", value: "none", type: "select", options: getActionOpts(plug) as unknown as { option: string; value: string }[] }, ...TOAST_FORM_INPUTS],
               onChange: (val: any) => plug.addReminder({ ...syncToastConfig(val, {}), message: val.message, delay: val.delay, actionId: val.actionId } as Parameters<typeof plug.addReminder>[0]),
             },
           ],
         },
-        { id: "toastsCloseButton", label: "Close button", widget: "toggle", getValue: () => (plug.config.closeButton ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.closeButton = val), plug.toast?.("Close button updated!", { tag: "tmg-tstu", closeButton: val })), configPaths: ["settings.toasts.closeButton"] },
-        { id: "toastsProgressBar", label: "Hide progress bar", widget: "toggle", getValue: () => (plug.config.hideProgressBar ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.hideProgressBar = val), plug.toast?.("Progress bar updated!", { tag: "tmg-tstu", hideProgressBar: val })), configPaths: ["settings.toasts.hideProgressBar"] },
-        { id: "toastsCompact", label: "Compact view", widget: "toggle", getValue: () => (plug.config.compact ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.compact = val), plug.toast?.("Compact view updated!", { tag: "tmg-tstu", compact: val })), configPaths: ["settings.toasts.compact"] },
-        { id: "toastsPosition", label: "Position", widget: "select", getOptions: () => TOAST_UI_POSITIONS, getValue: () => TOAST_UI_POSITIONS.find((o) => o.value === plug.config.position)?.display, onChange: (val: string) => ((plug.config.position = val as typeof plug.config.position), plug.toast?.("Position updated!", { tag: "tmg-tstu", position: val as typeof plug.config.position })), configPaths: ["settings.toasts.position"] },
-        { id: "toastAnimation", label: "Animation", widget: "select", getOptions: () => TOAST_UI_ANIMATIONS, getValue: () => TOAST_UI_ANIMATIONS.find((o) => o.value === plug.config.animation)?.display, onChange: (val: string) => ((plug.config.animation = val as typeof plug.config.animation), plug.toast?.("Animation updated!", { tag: "tmg-tstu", animation: val as typeof plug.config.animation })), configPaths: ["settings.toasts.animation"] },
+        { id: "toastsCloseButton", label: "Close button", widget: "toggle", getValue: () => (plug.config.closeButton ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.closeButton = val), plug.toast?.success?.("Close button updated!", { tag: "tmg-tstu", closeButton: val })), configPaths: ["settings.toasts.closeButton"] },
+        { id: "toastsProgressBar", label: "Hide progress bar", widget: "toggle", getValue: () => (plug.config.hideProgressBar ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.hideProgressBar = val), plug.toast?.success?.("Progress bar updated!", { tag: "tmg-tstu", hideProgressBar: val })), configPaths: ["settings.toasts.hideProgressBar"] },
+        { id: "toastsCompact", label: "Compact view", widget: "toggle", getValue: () => (plug.config.compact ? "On" : "Off"), onChange: (val: boolean) => ((plug.config.compact = val), plug.toast?.success?.("Compact view updated!", { tag: "tmg-tstu", compact: val })), configPaths: ["settings.toasts.compact"] },
+        { id: "toastsPosition", label: "Position", widget: "select", getOptions: () => TOAST_UI_POSITIONS, getValue: () => TOAST_UI_POSITIONS.find((o) => o.value === plug.config.position)?.display, onChange: (val: string) => ((plug.config.position = val as typeof plug.config.position), plug.toast?.success?.("Position updated!", { tag: "tmg-tstu", position: val as typeof plug.config.position })), configPaths: ["settings.toasts.position"] },
+        { id: "toastAnimation", label: "Animation", widget: "select", getOptions: () => TOAST_UI_ANIMATIONS, getValue: () => TOAST_UI_ANIMATIONS.find((o) => o.value === plug.config.animation)?.display, onChange: (val: string) => ((plug.config.animation = val as typeof plug.config.animation), plug.toast?.success?.("Animation updated!", { tag: "tmg-tstu", animation: val as typeof plug.config.animation })), configPaths: ["settings.toasts.animation"] },
         { id: "toastsPauseOnHover", label: "Pause on hover", widget: "toggle", getValue: () => (plug.config.pauseOnHover ? "On" : "Off"), onChange: (val: boolean) => (plug.config.pauseOnHover = val), configPaths: ["settings.toasts.pauseOnHover"] },
         { id: "toastsPauseOnFocusLoss", label: "Pause on page hide", widget: "toggle", getValue: () => (plug.config.pauseOnFocusLoss ? "On" : "Off"), onChange: (val: boolean) => (plug.config.pauseOnFocusLoss = val), configPaths: ["settings.toasts.pauseOnFocusLoss"] },
         { id: "toastsCloseOnClick", label: "Close on click", widget: "toggle", getValue: () => (plug.config.closeOnClick ? "On" : "Off"), onChange: (val: boolean) => (plug.config.closeOnClick = val), configPaths: ["settings.toasts.closeOnClick"] },

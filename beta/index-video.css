@@ -190,7 +190,7 @@
 }
 /* overrides for lib variables */
 .tmg-video-container .t007-toast {
-  --t007-toast-type-color: var(--tmg-video-theme-inverse-color);
+  --t007-toast-color: var(--tmg-video-theme-inverse-color);
   --t007-toast-background: rgb(from var(--tmg-video-theme-color) r g b / 0.4);
   --t007-toast-no-image-background: var(--tmg-video-img-background);
   --t007-toast-image-background: var(--tmg-video-background);

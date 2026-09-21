@@ -2,6 +2,7 @@ import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
 import type { AutoPlug } from "@plugs/settings/auto";
 import { getUIOpt, isArr } from "@utils/obj";
 import { formatUITime } from "@utils/time";
+import { getToastMenuInputs, syncToastConfig } from "./toasts";
 
 export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
   id: "autoplay",
@@ -52,7 +53,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
       getValue: () => formatUITime(plug.config.next.value),
       configPaths: ["settings.auto.next.value"],
       items: [
-        { id: "autoNextTime", label: "Countdown time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "20000", helperText: { info: "Time in ms to wait before automatically playing the next item in the playlist. Set to -1 to disable." }, type: "number", min: "-1", required: true, value: () => plug.config.next.value }], getValue: () => formatUITime(plug.config.next.value), onChange: (val: Record<string, any>) => (plug.config.next.value = val.time), configPaths: ["settings.auto.next.value"] },
+        { id: "autoNextTime", label: "Countdown", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "20000", helperText: { info: "Time to end before automatically playing the next playlist item. Set to -1 to disable." }, type: "number", min: "-1", required: true, value: () => plug.config.next.value }], getValue: () => formatUITime(plug.config.next.value), onChange: (val: Record<string, any>) => (plug.config.next.value = val.time), getTipHTML: () => (plug.ctlr.config.devMode ? "Customize the Time limits to adjust when this countdown begins" : ""), actions: [{ id: "autoNextGoToTimeLimits", getLabel: () => "Time limits", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("timeLimits"), hidden: () => !plug.ctlr.config.devMode }], configPaths: ["settings.auto.next.value"] },
         {
           id: "autoNextPreview",
           label: "Preview",
@@ -63,6 +64,15 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
             { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], title: "Play a short silent preview of the next when no poster is present" },
             { id: "autoNextPreviewTime", label: "Preview time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "4000", helperText: { info: "The poster fallback preview time in ms in the next video, where the tease ends" }, type: "number", min: "0", value: () => plug.config.next.preview.time * 1000 }], getValue: () => formatUITime(plug.config.next.preview.time * 1000), onChange: (val: Record<string, any>) => (plug.config.next.preview.time = val.time / 1000), configPaths: ["settings.auto.next.preview.time"] },
           ],
+        },
+        {
+          id: "autoNextToast",
+          label: "Notification",
+          widget: "input",
+          getValue: () => "",
+          inputs: getToastMenuInputs(plug.config.next.toast, ["icon", "type", "autoClose"]),
+          onChange: (val: any) => syncToastConfig(val, plug.config.next.toast),
+          configPaths: ["settings.auto.next.toast"],
         },
       ],
     },

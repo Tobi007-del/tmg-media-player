@@ -4,7 +4,7 @@ import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import { type REvent } from "sia-reactor";
 import { silence } from "sia-reactor/modules";
-import { fanout, deepClone, clamp } from "sia-reactor/utils";
+import { fanout, clamp } from "sia-reactor/utils";
 import { formatActionForDisplay } from "@utils/keys";
 
 export class IMATech extends BaseTech<HTMLIFrameElement> {
@@ -15,8 +15,8 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   public get host() {
     return this.plug.manager!;
   }
-  public cache: Partial<CtlrMedia> | null = null;
-  public activeAd: google.ima.Ad | null = null;
+  public ad: google.ima.Ad | null = null;
+  public readonly caching = true;
   protected readonly TIDS = { SKIP: `tmg-media-ads-skip-for-${this.ctlr.config.id}`, SITE: `tmg-media-ads-site-for-${this.ctlr.config.id}` };
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
@@ -36,12 +36,12 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   public override mount(): void {}
   public override unmount(): void {}
   protected override onAwaken(): void {
-    this.cache = deepClone({ state: this.config.state, status: this.config.status, settings: this.config.settings, features: this.config.features }); // all that once was
-    super.onAwaken(), silence(() => fanout(this.config, this.plug.state.roll!.media, { cloneSets: true }));
+    super.onAwaken();
+    silence(() => fanout(this.config, this.plug.state.roll!.media, { cloneSets: true }));
   }
   protected override onHibernate(): void {
-    super.onHibernate(), this.cache && silence(() => fanout(this.config, this.cache!)); // all that will be
-    this.skipBtn = this.activeAd = this.cache = null;
+    super.onHibernate();
+    this.skipBtn = this.ad = null;
   }
   // ===========================================================================
   // WIRING (Connections Only)
@@ -93,7 +93,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Feature States ---
   protected setVolumeChangeState(): void {
-    this.config.state.muted = this.cache!.state!.muted = (this.config.state.volume = this.cache!.state!.volume = this.host.getVolume() * 100) === 0;
+    this.config.state.muted = this.cache!.state.muted = (this.config.state.volume = this.cache!.state.volume = this.host.getVolume() * 100) === 0;
   }
   // --- Feature Intents ---
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
@@ -108,17 +108,17 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
     e.resolve(this.name);
   }
   // --- API Logic ---
-  protected handleStarted(e: google.ima.AdEvent, ad = (this.activeAd = e.getAd()), title = ad?.getTitle() || this.config.settings.metadata.title, advertiser = ad?.getAdvertiserName() || this.config.settings.metadata.artist, url = ad?.getSurveyUrl() || this.config.settings.metadata.links.title): void {
+  protected handleStarted(e: google.ima.AdEvent, ad = (this.ad = e.getAd()), title = ad?.getTitle() || this.config.settings.metadata.title, advertiser = ad?.getAdvertiserName() || this.config.settings.metadata.artist, url = ad?.getSurveyUrl() || this.config.settings.metadata.links.title): void {
     if (!ad) return;
     this.config.status.duration = ad.getDuration();
     this.config.status.canPlay = this.config.status.loadedData = this.config.status.loadedMetadata = true;
     this.config.status.readyState = 4;
     this.config.settings.metadata.allowMediaOverride && silence(() => fanout(this.config.settings.metadata, { title, artist: advertiser, links: { title: url } } as any));
-    this.config.state.paused = this.cache!.state!.paused = false;
+    this.config.state.paused = this.cache!.state.paused = false;
     this.plug.state.roll!.played = true;
     this.ctlr.toast?.(`<span class="tmg-media-ads-toast-title">${title || advertiser || ""}</span>${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>` : ""}`, { id: this.TIDS.SITE, signal: this.signal, image: this.config.settings.metadata.profile, ...this.plug.state.roll!.toasts.meta });
   }
-  protected handleProgress(e: google.ima.AdEvent, ad = e.getAd() ?? this.activeAd, data = e.getAdData() as google.ima.AdProgressData | null, offset = ad?.getSkipTimeOffset() ?? -1): void {
+  protected handleProgress(e: google.ima.AdEvent, ad = e.getAd() ?? this.ad, data = e.getAdData() as google.ima.AdProgressData | null, offset = ad?.getSkipTimeOffset() ?? -1): void {
     if (!ad || !data) return t007.toast?.dismiss(this.TIDS.SKIP);
     this.config.state.currentTime = data.currentTime;
     const render = `<span class="tmg-media-ads-toast-meta">${this.plug.state.roll!.badge}<span class="tmg-media-ads-toast-count"> • ${data.adPosition} of ${data.totalAds}</span></span>`;

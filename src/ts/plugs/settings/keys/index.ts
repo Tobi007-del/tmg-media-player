@@ -31,11 +31,11 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   }
 
   protected handleKeyDown(e: KeyboardEvent, action = allowed(e, this.config)): void {
-    action !== false && this.ctlr.throttle("keyDown", () => (this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keydown", action), e, this.getMod(e))), 30);
+    action !== false && this.ctlr.throttle("keyDown", () => (this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keydown", action), e, this.getMod(e))), 30);
   }
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
     if (action === false) !getActiveEl(this.media.container.ownerDocument) && this.teachBasics();
-    else this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
+    else this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
   }
 
   protected handlePlayKeyDown(e?: KeyboardEvent): void {
@@ -46,7 +46,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   }
 
   protected handlePlayKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
-    action && this.ctlr.plug("settings.overlay")?.show();
+    action && this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show();
     if (action !== false && /^( |playPause)$/.test(action)) {
       e.stopImmediatePropagation();
       if (this.playKeySeq === 1) this.media.intent.paused = !this.media.state.paused;

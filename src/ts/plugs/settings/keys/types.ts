@@ -16,6 +16,7 @@ export interface KeyShortcuts extends Record<Action["id"], string | string[]> {}
 export interface KeysConfig extends Required<KeysSettings> {
   shortcuts: KeyShortcuts;
   mods: { disabled: boolean } & KeyShortcutMods;
+  showOverlay: boolean;
   phase: UISettings<KeyPhase>;
 }
 

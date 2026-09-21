@@ -6,6 +6,7 @@
     <title>TMG Media Player (Standalone)</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico" />
     <link rel="stylesheet" href="./css/Test.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tmg-media-player@latest/dist/index.min.css" />
     <script>
       window.TMG_MEDIA_ALT_IMG_SRC = "/assets/icons/movie-tape.png";
     </script>
@@ -15,7 +16,7 @@
   <body>
     <div class="container">
       <h2>Single Media</h2>
-      <video id="single" poster="../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--settings--metadata--title="Justice League Teaser" tmg--settings--control-panel--timeline--previews--address="../assets/images/previews/preview$.jpg" tmg--settings--control-panel--timeline--previews--spf="10" tmg--settings--overlay--behavior--value="auto" class="tmg-media">
+      <video id="single" poster="../assets/images/justice-league-b.jpeg" tmgcontrols muted src="../assets/media/justice_league_preview.mp4" type="video/mp4" tmg--media--settings--metadata--title="Justice League Teaser" tmg--settings--control-panel--timeline--previews--address="../assets/images/previews/preview$.jpg" tmg--settings--control-panel--timeline--previews--spf="10" tmg--settings--overlay--behavior--value="auto" tmg--no-plug-list="," class="tmg-media">
         <track kind="captions" src="../assets/tracks/test-captions-ultimate.vtt" />
         <track default kind="subtitles" srclang="en" src="../assets/tracks/justice_league_preview.vtt" label="English" />
         <track kind="chapters" srclang="en" src="../assets/tracks/justice_league_chapters.vtt" label="English" />

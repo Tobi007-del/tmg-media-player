@@ -28,6 +28,7 @@ export interface ModesTheaterConfig {
 export interface ModesMiniplayerConfig {
   disabled: boolean;
   minWindowWidth: number;
+  lockToWindow: boolean;
 }
 
 export interface ModesFloatingPlayerConfig {

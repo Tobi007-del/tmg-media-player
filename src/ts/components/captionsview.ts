@@ -113,7 +113,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       if (isDef(cue.size) && cue.size !== 100) this.el.style.width = `${cue.size}%`;
       if (cues[0].vertical) this.el.style.writingMode = cues[0].vertical === "lr" ? "vertical-lr" : "vertical-rl";
     }
-    this.timeNodes = Array.from(wrapper.querySelectorAll("[data-part='timed']"), (el, _, [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || []) => ({ el, time: m ? +m * 60 + +s + +ms / 1000 : 0 }));
+    this.timeNodes = Array.from(wrapper.querySelectorAll<HTMLElement>("[data-part='timed']"), (el, _, [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || []) => ({ el, time: m ? +m * 60 + +s + +ms / 1000 : 0 }));
     this.syncKaraoke();
   }
   protected dragX?: string;

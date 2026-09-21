@@ -72,8 +72,6 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       type = m.intent.src && AUDIO_EXTENSIONS.test(m.intent.src) ? "audio" : "video";
     const nVTId = this.ctlr.toast?.("", {
       autoClose: count * 1000,
-      hideProgressBar: false,
-      position: "bottom-right",
       bodyHTML: `<span title="Play next ${type}" class="tmg-media-next-preview-wrapper">
         <button type="button"><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></button>
         <video class="tmg-media-next-preview" poster="${m.intent.poster || m.settings.metadata.artwork?.[0]?.src || window.TMG_MEDIA_ALT_IMG_SRC || ""}" src="${m.intent.src || ""}" muted playsinline webkit-playsinline preload="metadata"></video>
@@ -86,6 +84,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       onClose: (elapsed?: boolean) => void (removeListeners(), elapsed && this.ctlr.plug("playlist")?.next()),
       tag: "tmg-anma",
       signal: this.signal,
+      ...this.config.next.toast,
     });
     const clup = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextClup = this.nextPreview = null), (this.canMovePlaylist = !permanent)),
       autoClup = () => this.toNextTime() > this.nextTime && clup();
@@ -101,9 +100,9 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   }
   private nextClup?: (() => void) | null;
 
-  public toNextTime(method: "ceil" | "floor" | "round" = "floor", time = this.media.state.currentTime): number {
-    return Math[method](safeNum((this.settings.time.end ?? this.media.status.duration) - time)) / this.media.state.playbackRate;
-  }
+  public toNextTime(method: "ceil" | "floor" | "round" = "round", time = this.media.state.currentTime): number {
+    return Math[method](safeNum((this.ctlr.plug("settings.time")?.actualEnd ?? this.media.status.duration) - time)) / this.media.state.playbackRate;
+  } // u can't have missed anything in the last second
   private get nextTime(): number {
     return this.config.next.value / 1000;
   }

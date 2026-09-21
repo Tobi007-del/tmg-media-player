@@ -3,7 +3,7 @@ import type { VoicePlug } from "@plugs/settings/voice";
 import { formatAction } from "@utils/keys";
 import { getUIOpt } from "@utils/obj";
 import { formatUITime } from "@utils/time";
-import { TOAST_FORM_INPUTS, getToastFormVal, syncToastConfig } from "./toasts";
+import { getToastMenuInputs, syncToastConfig } from "./toasts";
 export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
   id: "advanced",
   label: "Advanced",
@@ -55,31 +55,13 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
             },
             {
               id: "voiceToastsGroup",
-              label: "Notifications",
+              label: "Notification",
               widget: "group",
               getValue: () => "On",
               items: [
                 { id: "voiceBehavior", label: "Behavior", widget: "select", getOptions: () => plug.config.toasts.behavior.options!, getValue: () => getUIOpt(plug.config.toasts.behavior.options, plug.config.toasts.behavior.value), onChange: (val: string) => (plug.config.toasts.behavior.value = val as typeof plug.config.toasts.behavior.value), configPaths: ["settings.voice.toasts.behavior.value"], getTipHTML: () => "Determines how and when the voice listening toast appears on screen" },
-                {
-                  id: "voiceToastsRouter",
-                  label: "Router",
-                  widget: "input",
-                  getValue: () => "",
-                  inputs: TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(plug.config.toasts.router[input.name as keyof typeof plug.config.toasts.router], input.name) })),
-                  onChange: (val: any) => syncToastConfig(val, plug.config.toasts.router),
-                  configPaths: ["settings.voice.toasts.router"],
-                  title: "Where the main microphone transcript appears when routing",
-                },
-                {
-                  id: "voiceToastsHelper",
-                  label: "Helper",
-                  widget: "input",
-                  getValue: () => "",
-                  inputs: TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal(plug.config.toasts.helper[input.name as keyof typeof plug.config.toasts.router], input.name) })),
-                  onChange: (val: any) => syncToastConfig(val, plug.config.toasts.helper),
-                  configPaths: ["settings.voice.toasts.helper"],
-                  title: "Where the word hints appear, or transcript when passive",
-                },
+                { id: "voiceToastsRouter", label: "Router", widget: "input", getValue: () => "", inputs: getToastMenuInputs(plug.config.toasts.router, ["type"]), onChange: (val: any) => syncToastConfig(val, plug.config.toasts.router), configPaths: ["settings.voice.toasts.router"], title: "Where the main microphone transcript appears when routing" },
+                { id: "voiceToastsHelper", label: "Helper", widget: "input", getValue: () => "", inputs: getToastMenuInputs(plug.config.toasts.helper, ["type"]), onChange: (val: any) => syncToastConfig(val, plug.config.toasts.helper), configPaths: ["settings.voice.toasts.helper"], title: "Where the word hints appear, or transcript when passive" },
               ],
             },
             {

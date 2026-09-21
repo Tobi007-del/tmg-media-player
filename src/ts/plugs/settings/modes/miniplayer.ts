@@ -26,6 +26,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.ctlr.state.watch("dimensions.container.height", (h, { target: { object } }) => this.handleResize(object.width, h), { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.watch("settings.modes.miniplayer.disabled", this.syncFeatures, { signal: this.signal });
+    this.ctlr.config.on("settings.modes.miniplayer.lockToWindow", ({ value }) => this.media.container.classList.toggle("tmg-media-miniplayer-lock-to-window", value), { init: true, signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.flags.wired, signal: this.signal });
@@ -109,8 +110,8 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
         { width: w, height: h } = this.ctlr.state.dimensions.container,
         newX = this.lastMiniplayerPosX + (x - this.lastMiniplayerPtrX),
         newY = this.lastMiniplayerPosY + (y - this.lastMiniplayerPtrY),
-        posX = clamp(w / 2, newX, ww - w / 2),
-        posY = clamp(h / 2, newY, wh - h / 2);
+        posX = this.config.lockToWindow ? clamp(w / 2, newX, ww - w / 2) : newX,
+        posY = this.config.lockToWindow ? clamp(h / 2, newY, wh - h / 2) : newY;
       this.media.container.style.setProperty("transform", `translate(${x - this.lastMiniplayerPtrX}px, ${y - this.lastMiniplayerPtrY}px)`, "important");
       (this.nextMiniplayerX = `${(posX / ww) * 100}%`), (this.nextMiniplayerY = `${(posY / wh) * 100}%`), (this.wildMiniplayerX = `${(newX / ww) * 100}%`), (this.wildMiniplayerY = `${(newY / wh) * 100}%`);
     });

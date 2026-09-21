@@ -48,6 +48,7 @@ export const MODES_PICTURE_IN_PICTURE_BUILD: Partial<ModesPictureInPictureConfig
 export const MODES_MINIPLAYER_BUILD: Partial<ModesMiniplayerConfig> = {
   disabled: false,
   minWindowWidth: 240,
+  lockToWindow: true,
 };
 
 export const MODES_CAST_BUILD: Partial<ModesCastConfig> = {

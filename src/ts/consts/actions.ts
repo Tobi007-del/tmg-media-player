@@ -40,7 +40,7 @@ export const ACTIONS_BUILD = {
   theater: { label: "Modes: Toggle theater", notify: "theater", logic: [{ path: "media.intent.theater", op: "toggle" }], gates: ["theater"] },
   pictureInPicture: { label: "Modes: Toggle picture in picture", notify: "pictureInPicture", logic: [{ path: "media.intent.pictureInPicture", op: "toggle" }], gates: ["pictureInPicture"] },
   cast: { label: "Modes: Toggle cast", notify: "cast", logic: [{ path: "media.intent.cast", op: "toggle" }], gates: ["cast"] },
-  airplay: { label: "Modes: Toggle airplay", notify: "airplay", logic: [{ path: "media.intent.airplay", op: "toggle" }], notify: "airplay", gates: ["airplay"] },
+  airplay: { label: "Modes: Toggle airplay", notify: "airplay", logic: [{ path: "media.intent.airplay", op: "toggle" }], gates: ["airplay"] },
   escape: { label: "Modes: Escape pop-up", zen: true },
   timeFormat: { label: "Time: Rotate format" },
   timeMode: { label: "Time: Switch mode" },

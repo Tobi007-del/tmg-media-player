@@ -26,10 +26,11 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   public override wire(): void {
+    // Utility Injection
+    createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     // Ctlr Media Listeners
     for (const p of this.dockList) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
     // ---- Config --------
-    createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     this.ctlr.config.on("settings.timeTravel.console.disabled", this.handleConsoleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.timeTravel.persist", this.handlePersist, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.timeTravel.console", (e) => this.console && fanout(this.console.config, e.currentTarget.value), { signal: this.signal }); // #FLEX: needs no standard stress
