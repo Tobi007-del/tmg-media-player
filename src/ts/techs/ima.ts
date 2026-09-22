@@ -85,7 +85,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   // --- Core Intents ---
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.host[e.value ? "pause" : "resume"]();
+    // this.host[e.value ? "pause" : "resume"](); // replay not working
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -93,13 +93,14 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Feature States ---
   protected setVolumeChangeState(): void {
-    this.config.state.muted = this.cache!.state.muted = (this.config.state.volume = this.cache!.state.volume = this.host.getVolume() * 100) === 0;
+    this.config.state.volume = this.cache!.state.volume = this.host.getVolume() * 100;
+    this.config.state.muted = this.cache!.state.muted = this.config.state.volume === 0;
   }
   // --- Feature Intents ---
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
     if (e.resolved) return;
     if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds
-    this.host.setVolume(clamp(0, e.value, 100) / 100);
+    this.host.setVolume(clamp(0, e.value / 100, 1));
     e.resolve(this.name);
   }
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">): void {

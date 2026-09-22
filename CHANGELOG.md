@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.30
+
+### Patch Changes
+
+- Deps update nd bug fixes
+
 ## 0.0.29
 
 ### Patch Changes

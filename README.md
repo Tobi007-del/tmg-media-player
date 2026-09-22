@@ -277,7 +277,7 @@ The controller avoids flooding the DOM with events (that's what the Reactor is f
 - `tmgcreate` (ReadyState 0): The controller is attached, but plugins are not yet connected.
 - `tmginit` (ReadyState 1): All DOM elements are mounted, but reactive listeners are deferred.
 - **`tmgwire`** (ReadyState 2): Reactive listeners are wired and active. **The controller is now fully safe to use.**
-- `tmgfirstplay` (ReadyState 3): Fired the first time the user interacts or plays the media.
+- `tmgplay` (ReadyState 3): Fired the first time the user interacts or plays the media.
 - `tmgdestroy`: Fired when the controller is destroyed and cleans up its memory.
 
 ```javascript

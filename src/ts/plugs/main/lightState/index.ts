@@ -15,13 +15,7 @@ export class LightStatePlug extends BasePlug<LightStateConfig> {
   protected shadowTime?: number;
 
   public override wire(): void {
-    // Ctlr Media Setters
-    this.media.set("state.currentTime", (v) => (v === this.shadowTime && !this.config.disabled ? TERMINATOR : v), { signal: this.signal }); // #DICTATOR: reliable authority
-    // ---- State -------
-    this.ctlr.state.set("readyState", (v) => (v === 2 && !this.config.disabled ? ((this.hasStalled = true), TERMINATOR) : v), { signal: this.signal }); // #DICTATOR: reliable authority
-    // ---- Media Listeners
-    this.media.on("intent.currentTime", this.handleCurrentTimeIntent, { capture: true, signal: this.signal }); // #ISOLATION: peak compromise
-    // ---- Config --------
+    // Ctlr Config Listeners
     this.ctlr.config.on("lightState.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("lightState.preview.usePoster", this.handlePreviewUsePoster, { signal: this.signal });
     this.ctlr.config.on("lightState.preview.time", this.preview, { signal: this.signal });
@@ -31,36 +25,41 @@ export class LightStatePlug extends BasePlug<LightStateConfig> {
     super.wire();
   }
 
-  protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
-    if (e.resolved || this.config.disabled || e.value === this.shadowTime) return;
-    this.actualTime = e.value;
-    e.resolve(this.name); // tech will get it later, no fear
-  }
-
   protected handleDisabled({ value }: REvent<CtlrConfig, "lightState.disabled">): void {
     if (value) {
       if (isDef(this.actualTime)) this.media.intent.currentTime = this.actualTime!;
       this.media.container.classList.remove("tmg-media-light");
-      this.media.nowatch("state.paused", this.eject);
+      this.media.noset("state.currentTime", this.currentTimeStateHook), this.ctlr.state.noset("readyState", this.readyStateHook);
+      this.media.nowatch("state.paused", this.eject), this.media.off("intent.currentTime", this.handleCurrentTimeIntent);
       this.ctlr.DOM.controlsContainer?.removeEventListener("click", this.handleClick);
       !this.ctlr.flags.wired && this.hasStalled && this.ctlr.setReadyState(2); // restoring order
     } else {
       this.actualTime = undefined;
       this.config.preview.usePoster = this.config.preview.usePoster;
       this.media.container.classList.add("tmg-media-light");
+      this.media.set("state.currentTime", this.currentTimeStateHook, { signal: this.signal }); // #DICTATOR: reliable authority
+      this.ctlr.state.set("readyState", this.readyStateHook, { signal: this.signal }); // #DICTATOR: reliable authority
       this.media.watch("state.paused", this.eject, { signal: this.signal });
+      this.media.on("intent.currentTime", this.handleCurrentTimeIntent, { capture: true, signal: this.signal }); // #ISOLATION: peak compromise
       this.ctlr.DOM.controlsContainer?.addEventListener("click", this.handleClick, { signal: this.signal });
     }
+  }
+
+  protected currentTimeStateHook(v: number): number | typeof TERMINATOR {
+    return v === this.shadowTime ? TERMINATOR : v;
+  }
+  protected readyStateHook(v: number): number | typeof TERMINATOR {
+    return v === 2 ? ((this.hasStalled = true), TERMINATOR) : v;
+  }
+  protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
+    if (e.resolved || e.value === this.shadowTime) return;
+    this.actualTime = e.value;
+    e.resolve(this.name); // tech will get it later, no fear
   }
 
   protected handlePreviewUsePoster(e: REvent<CtlrConfig, "lightState.preview.usePoster">): void {
     this.preview() && !this.media.status.loadedMetadata && this.ctlr.when("loadedMetadata", e, this.preview, this.signal); // in case time is a percentage
   }
-
-  protected handleClick({ target }: MouseEvent): void {
-    target === this.ctlr.DOM.controlsContainer && this.eject();
-  }
-
   protected preview(): boolean {
     if (this.config.disabled || (this.config.preview.usePoster && this.media.state.poster)) return false;
     this.actualTime ??= this.media[this.ctlr.gospel].currentTime;
@@ -72,6 +71,9 @@ export class LightStatePlug extends BasePlug<LightStateConfig> {
     this.config.disabled = true;
     inBoolArrOpt(this.config.controls, this.config.stallControl) && this.stall();
     this.media.intent.paused = false;
+  }
+  protected handleClick({ target }: MouseEvent): void {
+    target === this.ctlr.DOM.controlsContainer && this.eject();
   }
 
   protected stall(btn = this.ctlr.plug("settings.controlPanel")?.compEl(this.config.stallControl)): void {

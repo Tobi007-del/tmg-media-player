@@ -41,7 +41,7 @@ export class Controller {
     return this.flags.wired ? "state" : "intent";
   } // "gospel" truth, init edgecases
   // --- MEMORY ---
-  public flags: { readyState: number; initialized: boolean; wired: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any;
+  public flags: { readyState: number; initialized: boolean; wired: boolean; played: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any;
   public build: CtlrConfig; // Build Cache
   // --- DOM ---
   public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
@@ -54,7 +54,7 @@ export class Controller {
     const defs = mergeObjs(getMediaReport(medium), build.media); // returns defaults and initials
     this.config = reactive(volatile(build), { referenceTracking: true, smartCloning: true }); // `lineageTracing: false` so clone before reassigning "already in state" objects
     this.state = reactive<CtlrState>(STATE_BUILD());
-    this.state.watch("readyState", (v) => ((this.flags.readyState = v), (this.flags.initialized = v > 0), (this.flags.wired = v > 1), (this.flags.destroyed = v < 0)), { signal: this.signal });
+    this.state.watch("readyState", (v) => ((this.flags.readyState = v), (this.flags.initialized = v > 0), (this.flags.wired = v > 1), (this.flags.played = v > 2), (this.flags.destroyed = v < 0)), { signal: this.signal });
     this.media = reactive({ intent: volatile(intent(defs.intent)), state: defs.state, status: defs.status, settings: volatile(intent(defs.settings)), type: medium.tagName.toLowerCase() as MediaType, tech: inert({}), features: {}, element: medium, pseudoElement: createEl(medium.tagName.toLowerCase()), container: createEl("div"), pseudoContainer: createEl("div") }, { crossRealms: true }) as any;
     this.media.set("tech", (t) => inert(t!), { signal: this.signal });
     this.log((this.build = this.config.snapshot())), delete this.config.media; // clone for resets and fast subsequents
@@ -123,7 +123,7 @@ export class Controller {
   public setReadyState(state?: number): void {
     this.state.readyState = !this.state ? 0 : state ?? this.state.readyState + 1;
     const rS = this.state.readyState; // incase of blocked sets, e.g. lightState
-    this.fire("tmgreadystatechange", this.flags), this.fire(rS === 0 ? "tmgcreate" : rS === 1 ? "tmginit" : rS === 2 ? "tmgwire" : rS === 3 ? "tmgfirstplay" : rS === -1 ? "tmgdestroy" : "", this.flags);
+    this.fire("tmgreadystatechange", this.flags), this.fire(rS === 0 ? "tmgcreate" : rS === 1 ? "tmginit" : rS === 2 ? "tmgwire" : rS === 3 ? "tmgplay" : rS === -1 ? "tmgdestroy" : "", this.flags);
   }
 
   public guard = <Fn extends Function>(fn: Fn, silent = false) => guardMethod(fn, (e) => this.notice(e, "error", !silent)); // `()=>{}`: bounded even before init

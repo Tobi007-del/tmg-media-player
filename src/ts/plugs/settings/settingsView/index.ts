@@ -7,6 +7,7 @@ import { createEl } from "@utils/dom";
 import { mockAsync } from "@utils/fn";
 import { parseCSSTime } from "@utils/str";
 import type { Controller } from "@core/controller";
+import { isPOJO } from "@utils/obj";
 
 export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewState> {
   public static readonly plugName = "settingsView";
@@ -43,17 +44,17 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
     if (this.ctlr.isUIActive("settings")) return;
     if (!this.viewReady) this.initView(), (this.viewReady = true);
     (this.wasPaused = this.media.state.paused), this.config.autoPause && silence(() => (this.media.intent.paused = true));
-    this.menu.close(), this.media.container.classList.add("tmg-media-settings-view"), (this.state.viewOpen = true);
+    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.add("tmg-media-settings-view"), (this.state.viewOpen = true);
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
-    this.closeBtn?.focus();
+    !isPOJO(this.menu.anchor) && this.closeBtn?.focus();
   } // #STANDALONE: needs scoped behavior
   private viewReady = false;
 
   public async leaveView(): Promise<void> {
     if (!this.ctlr.isUIActive("settings")) return;
-    this.media.container.classList.remove("tmg-media-settings-view"), (this.state.viewOpen = false);
+    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.remove("tmg-media-settings-view"), (this.state.viewOpen = false);
     await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
     this.config.autoPause && silence(() => (this.media.intent.paused = this.wasPaused));
     this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");

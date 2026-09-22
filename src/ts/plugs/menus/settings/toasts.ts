@@ -3,6 +3,7 @@ import type { ToastsPlug } from "@plugs/settings/toasts";
 import { capitalize, uncamelize } from "@utils/str";
 import { TOAST_UI_POSITIONS, TOAST_UI_ANIMATIONS, TOAST_UI_TYPES, TOAST_UI_DRAG_OPTIONS, TOAST_UI_DRAG_DIRECTIONS } from "@t007/toast";
 import { formatUITime } from "@utils/time";
+import { isBool } from "@utils/obj";
 
 export const TOAST_BOOLEAN_OPTS = [
   { option: "Default", value: "" },
@@ -20,8 +21,8 @@ export const TOAST_FORM_INPUTS = [
   { name: "autoClose", label: "Auto close (ms)", type: "number", helperText: { info: "Blank for Default, -1 for None" }, min: "-1" },
 ] as const;
 
-export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v === "" ? undefined : Number(v)) : v === "" || v === "default" ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
-export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v === undefined || v === true ? "" : v) : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
+export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v) : k === "icon" ? (v === "" ? false : v) : v === "" || v === "default" ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
+export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v === undefined || v === true ? "" : v) : k === "icon" && isBool(v) ? "" : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
 export const syncToastConfig = (val: any, target: any) => {
   for (const key in val) {
     const parsed = parseToastVal(val[key], key);

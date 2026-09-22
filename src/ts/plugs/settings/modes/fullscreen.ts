@@ -109,7 +109,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
 
   protected onScreenOrientation(type: OrientationType | false): void {
     !this.state.snubbingAutoFullscreenOrientation && this.media.state.autoFullscreenOrientation && this.changeScreenOrientation(type);
-    if ((!this.media.state.fullscreen && (this.ctlr.state.readyState < 3 || !this.ctlr.state.parentIntersecting)) || this.media.state.miniplayer) return; // #PATIENT: only after first play
+    if ((!this.media.state.fullscreen && (!this.ctlr.flags.played || !this.ctlr.state.parentIntersecting)) || this.media.state.miniplayer) return; // #PATIENT: only after first play
     const target = !this.media.state.fullscreen ? this.config.orientation.rotationToggle.on.value : this.config.orientation.rotationToggle.off.value;
     if (target && type === target) this.media.intent.fullscreen = !this.media.state.fullscreen;
   }

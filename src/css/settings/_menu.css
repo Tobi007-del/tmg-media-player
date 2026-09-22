@@ -8,23 +8,30 @@
   background-color: var(--tmg-media-settings-menu-background-color);
   border-radius: calc(var(--tmg-media-current-unit) / 2);
   color: var(--tmg-media-settings-text-color);
+  scale: 0.95;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
   box-shadow: inset 0 0 var(--tmg-media-settings-menu-width) rgba(0, 0, 0, 0.1), 0 calc(var(--tmg-media-current-unit) / 6.5) calc(var(--tmg-media-current-unit) / 1.3) rgba(0, 0, 0, 0.5);
-  transform: scale(0.985) translate(0, calc(-100% - var(--tmg-media-current-unit)));
-  transition: height var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), width var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), opacity var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing), transform var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
+  transform: translate(0, calc(-100% - var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / -5));
+  transition: height var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), width var(--tmg-media-fade-transition-time) var(--tmg-media-motion-timing), opacity var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing), transform var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing), scale var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
+}
+.tmg-media-smenu-overlay.tmg-media-smenu-drop-down {
+  transform: translate(0, calc(var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / 5));
 }
 .tmg-host-container[data-size-tier^="xx"] .tmg-media-smenu-overlay {
   max-height: min(calc(100% - var(--tmg-media-current-bottom-wrapper-height)), calc(var(--tmg-media-current-unit) * 13));
 }
 .tmg-media-smenu-overlay-open {
+  scale: 1;
   opacity: 1;
   pointer-events: auto;
-  transform: translate(0, calc(-100% - var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / -5));
 }
-.tmg-media-smenu-overlay-open.tmg-media-smenu-drop-down {
-  transform: translate(0, calc(var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / 5));
+.tmg-media-smenu-overlay.tmg-media-smenu-context {
+  transform: translateY(-100%);
+}
+.tmg-media-smenu-overlay.tmg-media-smenu-drop-down.tmg-media-smenu-context {
+  transform: none;
 }
 
 .tmg-media-smenu-overlay svg {

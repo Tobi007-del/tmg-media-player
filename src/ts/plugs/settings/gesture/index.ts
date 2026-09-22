@@ -28,10 +28,10 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   public override wire(): void {
     const run = () => {
       // Event Listeners
+      this.media.container.addEventListener("contextmenu", this.handleRightClick, { signal: this.signal });
       addSafeClicks(this.ctlr.DOM.controlsContainer, this.handleClick, this.handleDblClick, { capture: true, signal: this.signal });
       for (const el of [this.ctlr.DOM.controlsContainer, this.ctlr.DOM.bottomControlsWrapper]) {
         el?.addEventListener("click", this.handleAnyClick, { capture: true, signal: this.signal });
-        el?.addEventListener("contextmenu", this.handleRightClick, { signal: this.signal });
         el?.addEventListener("focusin", this.handleFocusIn, { capture: true, signal: this.signal });
         el?.addEventListener("keydown", this.handleKeyFocusIn, { capture: true, signal: this.signal });
         for (const evt of ["pointermove", "dragenter", "scroll"]) el?.addEventListener(evt, this.handleHoverPointerActive, { capture: true, signal: this.signal });
@@ -53,7 +53,7 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
     this.ctlr.plug("settings.overlay")?.delay();
   }
   protected handleRightClick(e: MouseEvent): void {
-    e.preventDefault();
+    e.preventDefault(), e.stopImmediatePropagation(), this.ctlr.plug("settings.settingsView")?.menu.open({ x: e.clientX, y: e.clientY });
   }
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return;

@@ -53,7 +53,7 @@ export class TimePlug extends BasePlug<TimeConfig> {
   }
 
   protected handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): void {
-    if (value && this.config.start != null && !this.media.status.ads) this.media.intent.currentTime = this.actualStart;
+    if (value && this.config.start != null && !this.media.status.ads) silence(() => (this.media.intent.currentTime = this.actualStart), this.media.intent.currentTime !== this.actualStart); // #I/S EXCEPTION: state is not desire
   }
 
   protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), { intent: int, status: st, settings: set } = this.media, pmin = this.toTime(set.timePlayedMin)): void {

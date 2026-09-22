@@ -125,7 +125,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
     if (e.resolved || !this.wired) return;
     const chapter = this.config.settings.metadata.chapterInfo[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-    if (chapter) (this.config.intent.currentTime = chapter.startTime), (this.config.state.currentChapter = e.value as number); // #FACADED: silenced intent actual op // #NEED FOR SPEED: optimistic but eventual
+    chapter && silence(() => ((this.config.intent.currentTime = chapter.startTime), (this.config.state.currentChapter = e.value as number))); // #FACADED: silenced intent actual op // #NEED FOR SPEED: optimistic but eventual
     this.ctlr.plug("settings.notifiers")?.notify("chapter");
     e.resolve(this.name);
   }

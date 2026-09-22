@@ -61,7 +61,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   protected aptAutoplay(auto = this.config.play.value, bool = true, p = this.ctlr.state.parentIntersecting ? ("in" as const) : ("out" as const)): void {
     if (!isArr(auto)) return;
     if (auto.includes(`${p}-view-always`)) this.media.intent.paused = !bool;
-    else if (auto.includes(`${p}-view`) && this.ctlr.state.readyState < 3) this.media.intent.paused = !bool; // #PATIENT: only before first play
+    else if (auto.includes(`${p}-view`) && !this.ctlr.flags.played) this.media.intent.paused = !bool; // #PATIENT: only before first play
   }
 
   protected autonextMedia(): void {

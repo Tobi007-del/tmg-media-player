@@ -118,21 +118,26 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
 
+  public anchor?: HTMLElement | { x: number; y: number };
+  private lastAnchorX = 0;
+  private lastAnchorY = 0;
+  private anchorIntervalId = -1;
   private lastClosedTime = 0;
-  public toggle(anchorEl?: HTMLElement, preserveStack = false): void {
-    this.menuOpen ? this.close() : this.open(anchorEl, preserveStack);
+
+  public toggle(anchor?: typeof this.anchor, preserveStack = false): void {
+    this.menuOpen ? this.close() : this.open(anchor, preserveStack);
   }
 
-  public open(anchorEl = this.ctlr.plug("settings.controlPanel")?.compEl("settings") ?? this.media.container, preserveStack = false): void {
-    if (!(this.anchorEl = anchorEl) || this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
-    (this.menuOpen = true), !this.mainPanel && this.mount();
+  public open(anchor: typeof this.anchor = this.ctlr.plug("settings.controlPanel")?.compEl("settings"), preserveStack = false): void {
+    if (this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
+    (this.anchor = anchor), (this.menuOpen = true), !this.mainPanel && this.mount();
     if (!preserveStack) this.navStack = [];
     if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
-    this.anchorIntervalId = setInterval(() => this.reposition(this.anchorEl), 250, this.signal); // 4 times a second
-    this.reposition(anchorEl), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
-    this.media.container.classList.add("tmg-media-settings-menu");
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !this.anchorEl?.contains(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: SettingsMenu.focusSelector });
+    if (!this.isContext) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
+    this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
+    this.media.container.classList.add("tmg-media-settings-menu"), this.el.classList.toggle("tmg-media-smenu-context", this.isContext);
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: SettingsMenu.focusSelector });
     initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: `.tmg-media-smenu-panel-active ${SettingsMenu.focusSelector}` });
   }
   public close(): void {
@@ -142,10 +147,13 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     clearInterval(this.anchorIntervalId);
     this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-overlay-open", "tmg-media-smenu-drop-down"), this.media.container.classList.remove("tmg-media-settings-menu");
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element);
-    this.anchorEl?.focus(), (this.anchorEl = undefined);
+    (this.anchor as HTMLElement)?.focus?.(), (this.anchor = undefined);
   }
   public get isOpen(): boolean {
     return this.menuOpen;
+  }
+  public get isContext(): boolean {
+    return !!this.anchor && !("getBoundingClientRect" in this.anchor);
   }
 
   private getSubPanel(depth: number): SubMenuPanel {
@@ -191,26 +199,21 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     requestAnimationFrame(() => this.menuOpen && height && (this.el.style.height = `${height}px`), this.signal);
   }
 
-  private reposition(anchorEl?: HTMLElement): void {
-    if (!anchorEl && !this.menuOpen) return;
-    const { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
-      { top: aTop, right: aRight } = anchorEl ? anchorEl.getBoundingClientRect() : this.el.getBoundingClientRect(),
-      y = aTop - cTop,
-      menuWidth = this.el.offsetWidth || 320;
-    let xPos = aRight - cLeft - menuWidth + 10; // Shift logic: align right by default, but clamp rigidly to container bounds
+  private reposition(anchor = this.anchor): void {
+    if (!anchor && !this.menuOpen) return;
+    const { top: cTop, left: cLeft, width: cWidth, height: cHeight, bottom: cBottom, right: cRight } = this.media.container.getBoundingClientRect(),
+      menuWidth = this.el.offsetWidth || 320,
+      { top: aTop, right: aRight } = !anchor ? { top: cBottom - (this.ctlr.DOM.bottomControlsWrapper?.offsetHeight || this.safeMargin), right: cRight - this.safeMargin - 10 } : this.isContext ? { top: (anchor as any).y, right: (anchor as any).x + menuWidth - 10 } : (anchor as any).getBoundingClientRect(),
+      y = aTop - cTop;
+    let xPos = aRight - cLeft - menuWidth + 10;
     if (xPos < this.safeMargin) xPos = this.safeMargin;
     if (xPos + menuWidth > cWidth - this.safeMargin) xPos = cWidth - menuWidth - this.safeMargin;
-    if (this.lastAnchorX !== xPos || this.lastAnchorY !== y) {
-      (this.lastAnchorX = xPos), (this.lastAnchorY = y);
-      this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
-      this.el.classList.toggle("tmg-media-smenu-drop-down", y < cHeight / 2);
-    }
+    if (this.lastAnchorX === xPos && this.lastAnchorY === y) return;
+    (this.lastAnchorX = xPos), (this.lastAnchorY = y);
+    this.el.style.setProperty("--tmg-smenu-anchor-x", `${xPos}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", `${y}px`);
+    this.el.classList.toggle("tmg-media-smenu-drop-down", y < cHeight / 2);
   }
   public safeMargin = 12;
-  private anchorEl?: HTMLElement;
-  private lastAnchorX = 0;
-  private lastAnchorY = 0;
-  private anchorIntervalId = -1;
 }
 
 export type * from "../types";

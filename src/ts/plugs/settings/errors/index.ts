@@ -32,7 +32,7 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
     code = this.state.code = code > 5 ? (!message.includes(`${code}`) || this.config[code] ? code : 5) : code;
     message = this.state.message = this.config[code]?.replace(/media/g, this.media.type) || message || "";
     this.placeholder ??= ComponentRegistry.init("errorPlaceholder", this.ctlr);
-    if (this.ctlr.state.readyState < 3) return this.ctlr.plug("disabled")?.deactivate(); // #PATIENT: only after first play
+    if (!this.ctlr.flags.played) return this.ctlr.plug("disabled")?.deactivate(); // #PATIENT: only after first play
     const id = `${this.ctlr.config.id}-error-dialog`;
     if (!t007.dialog?.isActive(id)) (await t007.confirm?.(message, { id, rootElement: this.ctlr.DOM.containerContent, confirmText: "Try Again", cancelText: "Dismiss" })) ? this.reloadTech() : this.ctlr.plug("disabled")?.deactivate();
   }

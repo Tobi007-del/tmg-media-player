@@ -73,7 +73,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   protected handleAdsStatus({ value }: REvent<CtlrMedia, "status.ads">): void {
-    this.media.container.classList.toggle("tmg-media-ads", value);
+    this.media.container.classList.toggle("tmg-media-ads", value); //, this.media.container.classList.toggle("tmg-media-ima", value); // replay or link awayy?
     const tl = this.ctlr.plug("settings.controlPanel")?.comp("timeline");
     if (tl) value ? ((this.prevReadonly = tl.config.readonly), (tl.config.readonly = true)) : (tl.config.readonly = this.prevReadonly);
   }
@@ -104,7 +104,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     this.manager.addEventListener(google.ima.AdEvent.Type.ALL_ADS_COMPLETED, this.handleAllCompleted);
     this.manager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, this.handleError);
     const start = () => (this.manager.init(this.ctlr.state.dimensions.container.width, this.ctlr.state.dimensions.container.height), this.manager.start()); // #HEAVY: waits for lightState
-    this.handleRolls(), this.ctlr.when("IMAInitialized", undefined, () => (this.ctlr.flags.wired ? start() : this.ctlr.state.wonce("readyState", start, { signal: this.signal })), this.signal); // your wish; my command
+    this.handleRolls(), this.ctlr.when("IMAInitialized", undefined, () => (this.ctlr.flags.played ? start() : this.ctlr.state.wonce("readyState", start, { signal: this.signal })), this.signal); // #PATIENT: only after first play
   }
 
   protected handlePauseRequest(): void {
@@ -153,7 +153,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
       }
       max !== -1 && this.playRoll(this.points.get(max));
     }
-    this.prevTime = time;
+    this.prevTime = time < this.prevTime ? time - 0.001 : time;
   }
   private prevTime = -1;
 

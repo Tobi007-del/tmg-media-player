@@ -39,7 +39,7 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     this.media.on("intent.poster", this.handlePosterIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.src", (e) => e.resolved && this.syncState(true), { signal: this.signal });
     this.media.on("state.paused", ({ value }) => !value && this.config.eager && this.syncState(false), { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("state.currentTime", ({ value }) => (!this.config.eager || value) && this.media.status.loadedData && this.syncState(false), { init: this.ctlr.flags.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
+    this.media.on("state.currentTime", (e) => (!this.config.eager || e.value) && this.ctlr.when("loadedData", e, () => this.syncState(false), this.signal), { init: this.ctlr.flags.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
     this.media.on("status.ended", this.syncView, { signal: this.signal });
     this.media.on("state.poster", ({ value }) => this.syncSrc(value), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("status.loadedMetadata", this.autoGenerate, { init: this.ctlr.flags.wired, signal: this.signal });
