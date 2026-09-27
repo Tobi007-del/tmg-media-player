@@ -16,15 +16,18 @@ export const AUTO_BUILD: DeepPartial<AutoConfig> = {
     options: AUTOPLAY_UI_OPTIONS,
   },
   next: {
-    value: 20000,
+    countdown: 20,
     preview: {
       usePoster: true,
-      time: 4,
       tease: true,
+      loop: false,
+      min: 0,
+      max: 4,
     },
     toast: {
       position: "bottom-right",
       hideProgressBar: false,
+      tag: "tmg-anma",
     },
   },
 };

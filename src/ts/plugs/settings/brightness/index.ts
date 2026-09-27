@@ -60,14 +60,14 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
 
   protected handleKeyDark(): void {
     this.toggle("auto");
-    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessUp"), { signal: this.signal });
+    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessUp"), { signal: this.signal });
   }
   protected handleKeyBrightnessUp(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip);
   }
   protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
-    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.plug("settings.notifiers")?.notify("brightnessDark") : this.media.wonce("state.brightness", (v) => this.ctlr.plug("settings.notifiers")?.notify(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.notify?.("brightnessDark") : this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
   }
 }
 

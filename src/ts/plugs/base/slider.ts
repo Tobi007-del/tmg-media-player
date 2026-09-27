@@ -84,10 +84,10 @@ export abstract class BaseSliderPlug<Config extends OptRange, State extends Slid
     let level = Math.round(this.useAptValue ? this.state.aptValue : (this.media.state[this.prefix] as number));
     if (sign === "-") {
       if (level > this.config.min) level -= level % value || value;
-      this.media.features[this.prefix as keyof MediaFeatures] && this.ctlr.plug("settings.notifiers")?.notify(level === 0 ? `${this.prefix}${capitalize(this.toggleKey)}` : `${this.prefix}Down`);
+      this.media.features[this.prefix as keyof MediaFeatures] && this.ctlr.notify?.(level === 0 ? `${this.prefix}${capitalize(this.toggleKey)}` : `${this.prefix}Down`);
     } else {
       if (level < this.config.max) level += level % value ? value - (level % value) : value;
-      this.media.features[this.prefix as keyof MediaFeatures] && this.ctlr.plug("settings.notifiers")?.notify(`${this.prefix}Up`);
+      this.media.features[this.prefix as keyof MediaFeatures] && this.ctlr.notify?.(`${this.prefix}Up`);
     }
     this.useAptValue ? (this.state.aptValue = level) : (this.media.intent[this.prefix] = level as never);
   }

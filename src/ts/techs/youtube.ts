@@ -11,6 +11,8 @@ import { setTimeout, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { silence } from "sia-reactor/modules";
 import { getMediaMax, getMediaMin } from "@utils/time";
+import { globalState } from "@tools/runtime";
+import { fanout } from "sia-reactor/utils";
 
 export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName: string = "youtube";
@@ -118,7 +120,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Presentation Modes Wiring ---
   protected wireFullscreen(): void {
-    this.ctlr.state.watch("docInFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
+    globalState.watch("inFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
     this.config.on("intent.fullscreen", this.handleFullscreenIntent, this.evtOpts.CONFIG);
   }
   // --- Attributes Wiring ---
@@ -146,11 +148,11 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   // ===========================================================================
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
+    if (e.resolved) return;
+    if (isSameURL(this.hostSrc, e.value)) return void e.resolve(this.name);
     const id = e.value.match(MATCH_ID_YOUTUBE)?.[1];
     this.setAutoResPoster(id);
-    this.flush(); // Optimistic UI
-    this.initHost(e.value, id);
+    this.flush(), this.initHost(e.value, id);
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -307,8 +309,8 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       s.live = st.duration - s.currentTime <= set.liveTolerance;
     } else if (st.duration) st.ended = s.currentTime === st.duration; // UX boost
   }
-  public syncMetadata(data = this.host!.getVideoData()): void {
-    if (data && this.config.settings.metadata.allowMediaOverride) data.title && (this.config.settings.metadata.title = data.title), data.author && (this.config.settings.metadata.artist = data.author);
+  public syncMetadata(data = this.host!.getVideoData(), meta = this.config.settings.metadata): void {
+    if (data && meta.allowMediaOverride) fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
   }
   // --- Lifecycle ---
   protected reInitInfo = false;

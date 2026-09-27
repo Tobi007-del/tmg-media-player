@@ -19,7 +19,7 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
 
   public override mount(): void {
     // Variables Assignment
-    this.ctlr.DOM.poster = this.element = this.ctlr.syncImgLoadState(createEl("img", { className: "tmg-media-poster tmg-media-filtered tmg-media-object", alt: "Poster Image" }));
+    this.ctlr.DOM.poster = this.element = this.ctlr.syncImgLoadState(createEl("img", { className: "tmg-media-poster tmg-media-no-pointer tmg-media-filtered tmg-media-object", alt: "Poster Image" }));
     // Event Listeners
     this.element.addEventListener("load", () => this.ctlr.plug("settings.objectFit")?.syncPosterSize(), { signal: this.signal });
     // DOM Injection
@@ -30,7 +30,9 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
   }
 
   public override wire(): void {
-    // State Listeners
+    // State Setters
+    this.state.set("visible", (v) => this.media.type === "audio" || v, { signal: this.signal });
+    // ---- Listeners
     this.state.on("visible", this.syncView, { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", () => (this.media.tech.polyfill("poster", true), this.syncView()), { init: true, signal: this.signal });
@@ -39,10 +41,10 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     this.media.on("intent.poster", this.handlePosterIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.src", (e) => e.resolved && this.syncState(true), { signal: this.signal });
     this.media.on("state.paused", ({ value }) => !value && this.config.eager && this.syncState(false), { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("state.currentTime", (e) => (!this.config.eager || e.value) && this.ctlr.when("loadedData", e, () => this.syncState(false), this.signal), { init: this.ctlr.flags.wired, signal: this.signal }); // if strict, sets hides like html5, lightState Plug blocks
-    this.media.on("status.ended", this.syncView, { signal: this.signal });
+    this.media.on("state.currentTime", (e) => (!this.config.eager || e.value) && this.ctlr.when("loadedData", e, () => this.syncState(false), this.signal), { init: this.ctlr.flags.wired, signal: this.signal }); // if strict, sets hides like html5, light Plug blocks
     this.media.on("state.poster", ({ value }) => this.syncSrc(value), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("status.loadedMetadata", this.autoGenerate, { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const k of ["ended", "teasing"] as const) this.media.on(`status.${k}`, this.syncView, { signal: this.signal });
     // Post Wiring
     super.wire();
   }
@@ -62,13 +64,13 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     this.media.container.classList.toggle("tmg-media-poster-visible", this.syncState());
   }
   protected syncState(bool = this.state.visible): boolean {
-    return (this.state.visible = bool || this.media.type === "audio" || (this.config.eager && this.media.status.ended));
+    return (this.state.visible = !this.media.status.teasing && (bool || (this.config.eager && this.media.status.ended)));
   }
 
   public async autoGenerate(): Promise<void> {
     const url = this.media.state.poster;
-    if (!this.config.allowAutoGen || !this.ctlr.isNativeEl || this.media.type === "audio" || (url && !url.endsWith(this.ctlr.hash))) return;
-    const frame = await this.ctlr.plug("settings.frame")?.extract("", this.ctlr.config.lightState.preview.time);
+    if (!this.config.allowAutoGenerate || !this.ctlr.isNativeEl || this.media.type === "audio" || (url && !url.endsWith(this.ctlr.hash))) return;
+    const frame = await this.ctlr.plug("settings.frame")?.extract("", this.ctlr.config.light.preview.max);
     silence(() => (this.media.intent.poster = frame?.url ? frame.url + this.ctlr.hash : "")), url && URL.revokeObjectURL(url.replace(this.ctlr.hash, ""));
   }
 }

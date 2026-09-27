@@ -230,7 +230,7 @@ class T_M_G_Video_Controller {
   initSettingsManager() {}
   getPlayerHTML() {
     const { ui } = this.settings.status,
-      keyShortcuts = this.fetchKeyShortcutsForDisplay();
+      keyShortcuts = this.fetchKeyShortcutsTooltip();
     return {
       pictureinpicturewrapper: `
         <div class="T_M_G-video-picture-in-picture-wrapper">
@@ -2854,7 +2854,7 @@ class T_M_G_Video_Controller {
     if (this.speedCheck && this.playTriggerCounter < 1) setTimeout(this.slowDown);
   }
   _handleSpeedPointerOut = (e) => !this.videoContainer.matches(":hover") && this._handleSpeedPointerUp(e);
-  fetchKeyShortcutsForDisplay = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyForDisplay(this.settings.keys.shortcuts[action])]));
+  fetchKeyShortcutsTooltip = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyTooltip(this.settings.keys.shortcuts[action])]));
   getTermsForCombo(combo) {
     const terms = { override: false, block: false, allowed: false, action: null };
     const { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
@@ -3575,7 +3575,7 @@ class T_M_G {
     };
     return tmg.isArr(required) ? required.some((req) => match(req, actual)) : match(required, actual);
   }
-  static formatKeyForDisplay = (combo) => ` ${(tmg.isArr(combo) ? combo : [combo]).map((c) => `(${c})`).join(" or ")}`;
+  static formatKeyTooltip = (combo) => ` ${(tmg.isArr(combo) ? combo : [combo]).map((c) => `(${c})`).join(" or ")}`;
   static createEl(tag, props = {}, dataset = {}, styles = {}) {
     const el = tag ? document.createElement(tag) : null;
     el && Object.entries(props).forEach(([k, v]) => tmg.assignDef(el, k, v));

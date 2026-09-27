@@ -1,6 +1,7 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { BrightnessPlug } from "@plugs/settings/brightness";
 import { fanout } from "sia-reactor/utils";
+import { isDef } from "@utils/obj";
 
 export const getSettingsBrightnessMenu = (plug: BrightnessPlug): SettingsMenuItem => ({
   id: "advanced",
@@ -8,7 +9,7 @@ export const getSettingsBrightnessMenu = (plug: BrightnessPlug): SettingsMenuIte
   icon: "settings",
   widget: "group",
   getValue: () => "",
-  items: [{ id: "limits", label: "Limits", getBadge: () => ({ label: "beta" }), widget: "group", hidden: () => !plug.ctlr.config.devMode, configPaths: ["devMode"], getValue: () => "On", items: [{ id: "brightnessLimits", label: "Brightness", widget: "limits", configPaths: ["settings.brightness.min", "settings.brightness.max", "settings.brightness.skip"], getValue: () => "", getLimits: () => [{ name: "brightness", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }], onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.brightness_min, max: val.brightness_max, skip: val.brightness_step }, { skipUndef: true }) }] }],
+  items: [{ id: "limits", label: "Limits", getBadge: () => ({ label: "beta" }), widget: "group", hidden: () => !plug.ctlr.config.devMode, configPaths: ["devMode"], getValue: () => "On", items: [{ id: "brightnessLimits", label: "Brightness", widget: "limits", configPaths: ["settings.brightness.min", "settings.brightness.max", "settings.brightness.skip"], getValue: ({ min, max, skip } = plug.config) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "brightness", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }], onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.brightness_min, max: val.brightness_max, skip: val.brightness_step }, { skipUndef: true }) }] }],
 });
 
 declare module "@defs/registries" {
@@ -16,3 +17,4 @@ declare module "@defs/registries" {
     "settings.brightness": typeof getSettingsBrightnessMenu;
   }
 }
+

@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import { formatMediaTime } from "@utils/time";
 import { capitalize } from "@utils/str";
 import { isStr, isNum, getUniqueOpts } from "@utils/obj";
@@ -9,7 +9,7 @@ import { UITuple } from "@defs/UIOptions";
 import { silence } from "sia-reactor/modules";
 
 export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] => [
-  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => (plug.media.state.loop ? "On" : "Off"), onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop"] },
+  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => (plug.media.state.loop ? "On" : "Off"), getDisabled: () => plug.media.status.isLive && !plug.ctlr.settings.time.max, onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop", "status.isLive"], configPaths: ["settings.time.max"] },
   {
     id: "quality",
     label: "Quality",

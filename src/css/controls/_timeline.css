@@ -73,7 +73,6 @@
   border: calc(var(--tmg-media-current-unit) / 12.5) solid var(--tmg-media-timeline-previews-border-color);
   border-radius: calc(var(--tmg-media-current-unit) / 2.5);
   background: var(--tmg-media-background);
-  pointer-events: none;
   transition: opacity var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing), transform var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
 }
 .tmg-media-container:not(.tmg-media-previewing) .tmg-media-preview-container {
@@ -144,7 +143,6 @@ div.tmg-media-preview {
 }
 .tmg-media-thumbnail {
   position: absolute;
-  pointer-events: none;
 }
 div.tmg-media-thumbnail {
   background: var(--tmg-media-current-thumbnail-url) var(--tmg-media-current-thumbnail-background-position) / 100% 100% no-repeat, var(--tmg-media-disabled-background);

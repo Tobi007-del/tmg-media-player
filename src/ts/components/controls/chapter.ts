@@ -30,13 +30,13 @@ export class ChapterButton extends BaseComponent<ChapterConfig, ComponentState, 
   }
 
   protected async handleClick(): Promise<void> {
-    const view = this.ctlr.plug("settings.settingsView");
+    const view = this.ctlr.plug("settings.panel");
     if (view) view.menu.open(this.el), view.menu.goTo("chapters");
   }
 
   protected syncUI(): void {
     const chapter = this.media.settings.metadata.chapterInfo[this.media.state.currentChapter];
-    this.textEl.textContent = !chapter ? "" : chapter.title || `Chapter ${this.media.state.currentChapter + 1}`;
+    this.textEl.textContent = chapter ? chapter.title || `Chapter ${this.media.state.currentChapter + 1}` : "";
     this[chapter ? "show" : "hide"]();
   }
 

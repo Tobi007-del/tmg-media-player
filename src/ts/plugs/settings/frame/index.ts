@@ -55,7 +55,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
 
   public async capture(display: "" | "monochrome" = "", time = safeNum(this.media.state.currentTime)): Promise<void> {
     if (!this.media.features.frameCapture) return;
-    this.ctlr.plug("settings.notifiers")?.notify("capture"); // #STALLING: necessary optimistic distraction
+    this.ctlr.notify?.("capture"); // #STALLING: necessary optimistic distraction
     const toast = this.ctlr.toast,
       tTxt = formatMediaTime({ time, format: "human", showMs: true }),
       fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,

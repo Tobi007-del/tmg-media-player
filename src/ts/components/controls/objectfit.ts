@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type ObjectFit = undefined;
 
@@ -35,7 +35,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
   public syncARIA(): void {
     this.state.label = this.plug?.toLabel(this.plug?.nextFit) || "";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.objectFit), (this.state.voiceCommand = this.settings.voice.commands.objectFit));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.objectFit), (this.state.voiceCommand = this.settings.voice.commands.objectFit));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -1,9 +1,9 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { CaptionsPlug } from "@plugs/settings/captions";
 import { getTrackLabel } from "@utils/media";
 import { STYLE_PATHS } from "@plugs/settings/captions/build";
 import { setPath, getPath, fanout } from "sia-reactor/utils";
-import { getUIOpt, isStr, isBool, parseUIOpt, getUniqueOpts } from "@utils/obj";
+import { getUIOpt, isStr, isBool, parseUIOpt, getUniqueOpts, isDef } from "@utils/obj";
 import type { UIOption, UITuple } from "@defs/UIOptions";
 import { camelize, capitalize, uncamelize } from "@utils/str";
 import { safeNum } from "@utils/num";
@@ -79,35 +79,36 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
       feature: "textTracks",
       mediaPaths: ["state.currentTextTrack", "status.textTracks"],
       configPaths: ["settings.captions.multiple"],
-      onWire: (syncUI, signal) => plug.state.on("secondaryTracks", syncUI, { signal }),
-      getBadge: () => (plug.config.multiple && plug.state.secondaryTracks.length ? { value: `+${plug.state.secondaryTracks.length}` } : undefined),
+      onWire: (syncUI, signal) => plug.ctlr.config.on("settings.captions.secondaryTracks", syncUI, { signal }),
+      getBadge: () => (plug.config.multiple && plug.config.secondaryTracks.length ? { value: `+${plug.config.secondaryTracks.length}` } : undefined),
       getValue() {
         if (plug.media.state.currentTextTrack === -1 || !plug.media.status.textTracks.length) return "Off";
         return (this.items![0].getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentTextTrack)?.display || "Off";
       }, // this = !()=>{}
-      actions: [{ id: "captionsGoToStyles", getLabel: () => "Styles", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("captionsSubtitleStyle") }],
+      actions: [{ id: "captionsGoToStyles", getLabel: () => "Styles", onClick: () => plug.ctlr.plug("settings.panel")?.menu.goTo("captionsSubtitleStyle") }],
       items: [
         {
           id: "captionsList",
           label: "Tracks",
           widget: "select",
           inline: true,
-          onWire: (syncUI, signal) => plug.state.on("secondaryTracks", syncUI, { signal }),
+          onWire: (syncUI, signal) => plug.ctlr.config.on("settings.captions.secondaryTracks", syncUI, { signal }),
           getMultiple: () => plug.config.multiple,
-          getValue: (curr = plug.media.state.currentTextTrack) => (!plug.config.multiple ? String(curr) : curr === -1 ? ["-1"] : [String(curr), ...plug.state.secondaryTracks.map(String)]),
-          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (_t, i) => ({ value: i, display: getTrackLabel(plug.media.status.textTracks, i), badge: plug.state.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
+          getValue: (curr = plug.media.state.currentTextTrack) => (!plug.config.multiple ? String(curr) : curr === -1 ? ["-1"] : [String(curr), ...plug.config.secondaryTracks.map(String)]),
+          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (_t, i) => ({ value: i, display: getTrackLabel(plug.media.status.textTracks, i), badge: plug.config.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
           onChange: (val: number) => {
-            if (val === -1) (plug.media.intent.currentTextTrack = -1), (plug.state.secondaryTracks = []);
-            else if (!plug.config.multiple) (plug.media.intent.currentTextTrack = val), (plug.state.secondaryTracks = []);
+            if (val === -1) (plug.media.intent.currentTextTrack = -1), (plug.config.secondaryTracks = []);
+            else if (!plug.config.multiple) (plug.media.intent.currentTextTrack = val), (plug.config.secondaryTracks = []);
             else if (plug.media.state.currentTextTrack === -1) plug.media.intent.currentTextTrack = val;
-            else if (val === plug.media.state.currentTextTrack) return;
-            const idx = plug.state.secondaryTracks.indexOf(val);
-            idx > -1 ? plug.state.secondaryTracks.splice(idx, 1) : plug.state.secondaryTracks.push(val);
+            else if (val !== plug.media.state.currentTextTrack) {
+              const idx = plug.config.secondaryTracks.indexOf(val);
+              idx > -1 ? plug.config.secondaryTracks.splice(idx, 1) : plug.config.secondaryTracks.push(val);
+            }
           },
           mediaPaths: ["status.textTracks", "state.currentTextTrack"],
           configPaths: ["settings.captions.multiple"],
         },
-        { id: "captionsMulti", label: "Multiple captions", widget: "toggle", inline: true, feature: "textsVisible", hidden: () => plug.media.status.textTracks.length < 2, getValue: () => (plug.config.multiple ? "On" : "Off"), onChange: (val: boolean) => !(plug.config.multiple = val) && (plug.state.secondaryTracks = []), mediaPaths: ["status.textTracks"], configPaths: ["settings.captions.multiple"] },
+        { id: "captionsMulti", label: "Multiple captions", widget: "toggle", inline: true, feature: "textsVisible", hidden: () => plug.media.status.textTracks.length < 2, getValue: () => (plug.config.multiple ? "On" : "Off"), onChange: (val: boolean) => !(plug.config.multiple = val) && (plug.config.secondaryTracks = []), mediaPaths: ["status.textTracks"], configPaths: ["settings.captions.multiple"] },
         {
           id: "captionsSubtitleStyle",
           label: "Styles",
@@ -145,7 +146,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
               label: "Text",
               widget: "group",
               getValue: () => "",
-              items: [...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle), { id: "captionsPreviewTimeout", label: "Preview timeout", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "1500", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "500", required: true, value: () => plug.config.previewTimeout }], getValue: () => formatUITime(plug.config.previewTimeout), onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.time), configPaths: ["settings.captions.previewTimeout"] }],
+              items: [...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle), { id: "captionsPreviewTimeout", label: "Preview timeout", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "1.5", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "0.5", required: true, value: () => plug.config.previewTimeout / 1000 }], getValue: () => formatUITime(plug.config.previewTimeout), onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.secs * 1000), configPaths: ["settings.captions.previewTimeout"] }],
             },
             { id: "captionsAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => (plug.config.allowMediaOverride ? "On" : "Off"), onChange: (val: boolean) => (plug.config.allowMediaOverride = val), configPaths: ["settings.captions.allowMediaOverride"], title: "Allow media content to override your custom caption styling with its own styling (if available)" },
             {
@@ -171,7 +172,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
       icon: "settings",
       widget: "group",
       getValue: () => "",
-      items: [{ id: "limits", label: "Limits", widget: "group", getValue: () => "On", items: [{ id: "captionsSizeLimits", label: "Caption size", widget: "limits", configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"], getValue: () => "", getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }], onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }, { skipUndef: true }) }] }],
+      items: [{ id: "limits", label: "Limits", widget: "group", getValue: () => "On", items: [{ id: "captionsSizeLimits", label: "Caption size", widget: "limits", configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"], getValue: ({ min, max, skip } = plug.config.font.size) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }], onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }, { skipUndef: true }) }] }],
     },
   ];
 };

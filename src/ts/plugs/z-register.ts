@@ -12,7 +12,7 @@ import { OverlayPlug } from "./settings/overlay";
 import { NotifiersPlug } from "./settings/notifiers";
 import { MetadataPlug } from "./settings/metadata";
 import { TimePlug } from "./settings/time";
-import { LightStatePlug } from "./main/lightState";
+import { LightPlug } from "./main/light";
 import { VolumePlug } from "./settings/volume";
 import { BrightnessPlug } from "./settings/brightness";
 import { PlaybackRatePlug } from "./settings/playbackRate";
@@ -28,7 +28,7 @@ import { LockedPlug } from "./settings/locked";
 import { FramePlug } from "./settings/frame";
 import { DisabledPlug } from "./main/disabled";
 import { ErrorsPlug } from "./settings/errors";
-import { SettingsViewPlug } from "./settings/settingsView";
+import { PanelPlug } from "./settings/panel";
 import { AmbiencePlug } from "./settings/ambience";
 import { SleepTimerPlug } from "./settings/sleepTimer";
 import { ControlPanelDraggablePin } from "./settings/controlPanel/draggable";
@@ -56,7 +56,7 @@ for (const Plug of [
   PlaylistPlug,
   AutoPlug,
   TimePlug,
-  LightStatePlug,
+  LightPlug,
   VolumePlug,
   BrightnessPlug,
   AdsPlug,
@@ -74,7 +74,7 @@ for (const Plug of [
   ErrorsPlug,
   AmbiencePlug,
   SleepTimerPlug,
-  SettingsViewPlug,
+  PanelPlug,
 ])
   PlugRegistry.register(Plug);
 

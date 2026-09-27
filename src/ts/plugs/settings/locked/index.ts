@@ -46,13 +46,12 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   }
 
   protected enter(): void {
-    this.ctlr.plug("settings.settingsView")?.leaveView();
-    this.wrapper ??= this.ctlr.DOM.containerContentWrapper?.appendChild(createEl("div", { className: "tmg-media-locked-wrapper", innerHTML: `<p>Screen Locked</p><p>Tap to Unlock</p>` }));
+    this.ctlr.plug("settings.panel")?.exitMore();
+    this.wrapper ??= this.ctlr.DOM.containerContentWrapper?.appendChild(createEl("div", { className: "tmg-media-locked-wrapper tmg-media-no-pointer", innerHTML: `<p>Screen Locked</p><p>Tap to Unlock</p>` }));
     this.control ??= ComponentRegistry.init("screenLock", this.ctlr);
     setTimeout(this.showOverlay, 0, this.signal);
     this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-locked"); // #TWINING
     this.media.state.locked = true;
-    // this.ctlr.plug("settings.overlay")?.hide("force"), this.ctlr.plug("settings.keys")?.setListeners("remove");
   } // #STANDALONE: suitable partner courtesy
 
   protected async exit(): Promise<void> {
@@ -61,7 +60,6 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-locked"), this.media.pseudoContainer.classList.remove("tmg-media-locked"); // #TWINING
     this.media.state.locked = false;
-    // this.ctlr.plug("settings.overlay")?.show(), this.ctlr.plug("settings.keys")?.setListeners();
   } // #STANDALONE: needs scoped behavior
 
   protected handleScreenClick(): void {

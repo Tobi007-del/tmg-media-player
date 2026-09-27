@@ -34,8 +34,8 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   public override create() {
     // Variables Assignments
     this.element = createEl("div", { className: "tmg-media-range-container", tabIndex: 0, role: "slider" });
-    this.barsWrapper = createEl("div", { className: "tmg-media-range-bars-wrapper" });
-    this.marksWrapper = createEl("div", { className: "tmg-media-range-marks-wrapper" });
+    this.barsWrapper = createEl("div", { className: "tmg-media-range-bars-wrapper tmg-media-no-pointer" });
+    this.marksWrapper = createEl("div", { className: "tmg-media-range-marks-wrapper tmg-media-no-pointer" });
     this.thumbEl = createEl("div", { className: "tmg-media-range-thumb" });
     this.tooltipEl = createEl("div", { className: "tmg-media-range-tooltip" });
     // DOM Injection
@@ -222,7 +222,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
       const start = stops[i], end = stops[i + 1], size = end.value - start.value;
       if (size <= 0) continue;
       const el = createEl("div", { className: "tmg-media-range-chunk" }, undefined, { cssText: `--tmg-media-current-chunk-st: ${(start.value - this.config.min) / range};` }),
-        chunk = { base: createEl("div", { className: "tmg-media-range-bar tmg-media-range-base-bar" }), preview: createEl("div", { className: "tmg-media-range-bar tmg-media-range-preview-bar" }), value: createEl("div", { className: "tmg-media-range-bar tmg-media-range-value-bar" }) };
+        chunk = { base: createEl("div", { className: "tmg-media-range-bar tmg-media-no-pointer tmg-media-range-base-bar" }), preview: createEl("div", { className: "tmg-media-range-bar tmg-media-no-pointer tmg-media-range-preview-bar" }), value: createEl("div", { className: "tmg-media-range-bar tmg-media-no-pointer tmg-media-range-value-bar" }) };
       this.syncElPos(el, size / range, true), fragment.append((el.append(chunk.base, chunk.preview, chunk.value), el)), this.chunks.push({ start: start.value, end: end.value, label: start.label, size, el, ...chunk });
     }
     this.barsWrapper.append(fragment), this.onValue(this.config.value), this.onPreviewValue(this.config.previewValue);

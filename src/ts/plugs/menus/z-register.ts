@@ -1,6 +1,7 @@
 import { MenuRegistry } from "@core/registries";
+import { getActionsMenu } from "./main/actions";
 import { getMainPlaylistMenu } from "./main/playlist";
-import { getSkeletonGeneralMenu } from "./main/skeleton";
+import { getSkeletonMenu } from "./main/skeleton";
 import { getSettingsAmbienceMenu } from "./settings/ambience";
 import { getSettingsAutoMenu } from "./settings/auto";
 import { getSettingsBrightnessMenu } from "./settings/brightness";
@@ -23,12 +24,11 @@ import { getSettingsVolumeMenu } from "./settings/volume";
 import { getSettingsVoiceMenu } from "./settings/voice";
 import { getSettingsFrameMenu } from "./settings/frame";
 import { getSettingsLockedMenu } from "./settings/locked";
-import { getSettingsSettingsViewMenu } from "./settings/settingsView";
-import { getActionsMenu } from "./settings/actions";
+import { getSettingspanelMenu } from "./settings/panel";
 
 for (const [key, menu] of [
   ["actions", getActionsMenu],
-  ["skeleton", getSkeletonGeneralMenu],
+  ["skeleton", getSkeletonMenu],
   ["playlist", getMainPlaylistMenu],
   ["settings.ambience", getSettingsAmbienceMenu],
   ["settings.auto", getSettingsAutoMenu],
@@ -52,6 +52,7 @@ for (const [key, menu] of [
   ["settings.voice", getSettingsVoiceMenu],
   ["settings.frame", getSettingsFrameMenu],
   ["settings.locked", getSettingsLockedMenu],
-  ["settings.settingsView", getSettingsSettingsViewMenu],
+  ["settings.panel", getSettingspanelMenu],
 ] as const)
   MenuRegistry.register(key, menu);
+

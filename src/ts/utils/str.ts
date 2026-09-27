@@ -1,4 +1,4 @@
-import { uid as _uid } from "@t007/utils";
+import { uid as _uid, isStr } from "@t007/utils";
 import { LUID_KEY } from "@consts/generics";
 
 // Case Conversion
@@ -16,7 +16,7 @@ export function luid(key = LUID_KEY, prefix = "tmg_local_"): string {
 export { remToPx, pxToRem, parseCSSTime, parseCSSSize } from "@t007/utils";
 
 export function formatMenuPx(v: string | number, long = false): string {
-  const num = typeof v === "string" ? parseFloat(v) : v;
+  const num = isStr(v) ? parseFloat(v) : v;
   return isNaN(num) ? `0${long ? " px" : "px"}` : `${Math.round(num)}${long ? " px" : "px"}`;
 }
 
@@ -53,18 +53,18 @@ export function getLevenshteinSimilarity(target: string, spoken: string): number
   return 1 - prev[sLen] / Math.max(tLen, sLen);
 } // For missy voice
 
-export function fuzzyBlobMatch(targets: string[], transcript: string, threshold: number): string | null {
+export function fuzzyBlobMatch(targets: string | string[], transcript: string, threshold: number): string | null {
   const chunkBlob = transcript.replace(/[-\s]/g, "");
-  for (const target of targets) {
+  for (const target of isStr(targets) ? [targets] : targets) {
     const targetBlob = target.replace(/[-\s]/g, "");
     if (chunkBlob === targetBlob || (Math.abs(chunkBlob.length - targetBlob.length) <= Math.max(chunkBlob.length, targetBlob.length) * (1 - threshold) && getLevenshteinSimilarity(targetBlob, chunkBlob) >= threshold)) return transcript; // skip levenshtein math if diff is too large to ever pass the threshold
   }
   return null;
 }
 
-export function fuzzyChunkMatch(targets: string[], transcript: string, threshold: number): string | null {
+export function fuzzyChunkMatch(targets: string | string[], transcript: string, threshold: number): string | null {
   const tokens = transcript.split(/\s+/);
-  for (const target of targets) {
+  for (const target of isStr(targets) ? [targets] : targets) {
     const targetBlob = target.replace(/[-\s]/g, "");
     for (let i = 0, tlen = tokens.length; i < tlen; i++) {
       let rawChunk = "", // The exact string with spaces

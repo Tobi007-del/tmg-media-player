@@ -9,16 +9,16 @@ import type { FieldOptions } from "@t007/input";
 
 export interface SettingsMenuConfig {
   disabled: boolean;
-  showView: boolean;
+  showMore: boolean;
   blacklist: string[];
 }
 
-export interface SettingsViewConfig {
+export interface panelConfig {
   autoPause: boolean;
   menu: SettingsMenuConfig;
 }
 
-export interface SettingsViewState {
+export interface panelState {
   viewOpen: boolean;
 }
 
@@ -66,7 +66,7 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   /** Whether this widget (e.g. select) supports selecting multiple options */
   getMultiple?(): boolean;
   /** For "limits" */
-  getLimits?(): { name: string; label: string; min?: number; max?: number; step?: number; start?: number; end?: number }[];
+  getLimits?(): { name: string; type?: string; label: string; min?: number; max?: number; step?: number; start?: number | null; end?: number | null }[];
   /** Called when a drag-select option is deleted */
   onDelete?(idx: number): void;
   /** Called when a drag-select option is edited */

@@ -28,7 +28,7 @@ export class TimePlug extends BasePlug<TimeConfig> {
     // --------- Watchers
     for (const p of ["state.currentChapter", "settings.metadata.chapterInfo"] as const) this.media.watch(p, this.syncFeatures, { init: p === "state.currentChapter", signal: this.signal });
     // ---- Config -------
-    this.ctlr.config.watch("settings.time.start", (v) => !this.writing && (this.actualStart = +v!), { signal: this.signal });
+    this.ctlr.config.watch("settings.time.start", () => !this.writing && (this.actualStart = +this.config.start!), { signal: this.signal });
     // ---- Media Listeners
     this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { signal: this.signal });
     this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.flags.wired, signal: this.signal });
@@ -49,16 +49,16 @@ export class TimePlug extends BasePlug<TimeConfig> {
   }
 
   protected handleWhitelist({ value: paths = [] }: REvent<CtlrConfig, "settings.time.whitelist">): void {
-    for (const path of paths) this.ctlr.config.get(path as any, this.toTime, { signal: this.signal });
+    for (const path of paths) this.ctlr.config.get(path as any, this.timeHook, { signal: this.signal });
   }
 
   protected handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">): void {
     if (value && this.config.start != null && !this.media.status.ads) silence(() => (this.media.intent.currentTime = this.actualStart), this.media.intent.currentTime !== this.actualStart); // #I/S EXCEPTION: state is not desire
   }
 
-  protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), { intent: int, status: st, settings: set } = this.media, pmin = this.toTime(set.timePlayedMin)): void {
+  protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), { intent: int, state: s, status: st, settings: set } = this.media, pmin = this.toTime(set.timePlayedMin)): void {
     if (st.ads) return;
-    (curr < this.config.min || curr > this.config.max) && silence(() => ((int.currentTime = this.config.loop ? this.config.min : curr), !this.config.loop && (int.paused = true))); // "Time Clamp Guard" if transaction
+    (curr < this.config.min || curr > this.config.max) && silence(() => (s.loop ? (int.currentTime = this.config.min) : (int.paused = true))); // "Time Clamp Guard" if transaction
     if (st.readyState && curr && this.ctlr.flags.wired) (this.writing = true), (this.config.start = curr > pmin && curr < this.actualEnd - pmin ? curr : this.config.min), (this.writing = false);
   }
   private writing = false;
@@ -101,10 +101,10 @@ export class TimePlug extends BasePlug<TimeConfig> {
   }
 
   public previousChapter(): void {
-    if (this.media.features.previousChapter) this.media.intent.currentChapter = this.media.state.currentChapter - 1;
+    this.media.features.previousChapter && silence(() => (this.media.intent.currentChapter = this.media.state.currentChapter - 1));
   }
   public nextChapter(): void {
-    if (this.media.features.nextChapter) this.media.intent.currentChapter = this.media.state.currentChapter + 1;
+    this.media.features.nextChapter && silence(() => (this.media.intent.currentChapter = this.media.state.currentChapter + 1));
   }
 
   public get nextMode(): TimeConfig["mode"] {
@@ -125,12 +125,13 @@ export class TimePlug extends BasePlug<TimeConfig> {
   public get actualEnd(): number {
     return this.config.end == null ? this.media.status.duration : this.config.end < 0 ? Math.max(0, this.media.status.duration + this.config.end) : this.config.end;
   }
-  public toTime(value?: any): number {
-    return parseIfPercent(value, this.media.status.duration, this.config.autoCap);
-  }
   public toTimeText(time = this.media.state.currentTime, useMode = false, showMs = false, elapsed = !useMode || this.config.mode !== "remaining"): string {
     return formatMediaTime({ time: elapsed ? time : this.media.status.duration - time, format: this.config.format, elapsed, showMs });
   }
+  public toTime(value?: any, duration = this.media.status.duration): any {
+    return !duration || value == null ? value : value === "" ? undefined : Number(parseIfPercent(value, duration, this.config.autoCap));
+  }
+  public timeHook = (value?: any) => this.toTime(value);
 
   public syncFeatures(): void {
     this.media.tech.polyfill("previousChapter", this.media.state.currentChapter > 0);

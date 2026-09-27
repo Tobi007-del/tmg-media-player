@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // ../sia-reactor/dist/chunk-JGEI2Q4M.js
+  // ../sia-reactor/dist/chunk-IZK2TOJP.js
   function clamp(min = 0, val, max = Infinity) {
     return Math.min(Math.max(val, min), max);
   }
@@ -13,7 +13,7 @@
     return sig.addEventListener("abort", kill, { once: true }), id;
   }
 
-  // ../sia-reactor/dist/chunk-ORK3EGB6.js
+  // ../sia-reactor/dist/chunk-U4SR3CZF.js
   function onAllMethods(owner, callback, skipOwn = true, nested = false) {
     let proto = owner;
     while (proto && proto !== Object.prototype) {
@@ -67,52 +67,57 @@
     }
     return el;
   }
-  function getActiveEl(root) {
+  function getActiveEl(root, noBody = true) {
     const activeEl = (root ?? document).activeElement;
-    return !activeEl ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
+    return !activeEl || noBody && activeEl === document.body ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
   }
   var KEYS_BLOCKS = ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"];
+  var KEYS_MODS = ["ctrl", "shift", "alt", "meta"];
+  var KEYS_CMODS = ["ctrl", "alt", "meta"];
+  var KEYS_ALIAS = { cmd: "meta", space: " " };
   function parseKeyCombo(combo) {
     const parts = cleanKeyCombo(combo).toLowerCase().split("+");
-    return { ctrlKey: parts.includes("ctrl"), shiftKey: parts.includes("shift"), altKey: parts.includes("alt"), metaKey: parts.includes("meta") || parts.includes("cmd"), key: parts.find((p) => !["ctrl", "shift", "alt", "meta", "cmd"].includes(p)) || "" };
+    return { ctrlKey: parts.includes("ctrl"), shiftKey: parts.includes("shift"), altKey: parts.includes("alt"), metaKey: parts.includes("meta") || parts.includes("cmd"), key: parts.find((p) => !/^(ctrl|shift|alt|meta|cmd)$/.test(p)) || "" };
   }
   function stringifyKeyEvent(e) {
     const parts = [];
-    if (e.ctrlKey) parts.push("ctrl");
-    if (e.altKey) parts.push("alt");
-    if (e.shiftKey) parts.push("shift");
-    if (e.metaKey) parts.push("meta");
-    parts.push(e.key?.toLowerCase() ?? "");
+    e.ctrlKey && parts.push("ctrl"), e.altKey && parts.push("alt"), e.shiftKey && parts.push("shift"), e.metaKey && parts.push("meta"), parts.push(e.key?.toLowerCase() ?? "");
     return parts.join("+");
   }
-  function cleanKeyCombo(combo) {
+  function cleanKeyCombo(combo, mods = KEYS_MODS) {
     const clean = (combo2) => {
-      const m = ["ctrl", "alt", "shift", "meta"], alias = { cmd: "meta", space: " " };
       if (combo2 === " " || combo2 === "+") return combo2;
       combo2 = combo2.replace(/\+\s*\+$/, "+plus");
-      const p = combo2.toLowerCase().split("+").filter((k) => k !== "").map((k) => alias[k] || (k === "plus" ? "+" : k.trim() || " "));
-      return [...p.filter((k) => m.includes(k)).sort((a, b) => m.indexOf(a) - m.indexOf(b)), ...p.filter((k) => !m.includes(k)) || ""].join("+");
+      const p = combo2.toLowerCase().split("+").filter((k) => k !== "").map((k, _, __, tk = k.trim()) => KEYS_ALIAS[tk] || (tk === "plus" ? "+" : tk || " "));
+      return [...p.filter((k) => mods.includes(k)).sort((a, b) => mods.indexOf(a) - mods.indexOf(b)), ...p.filter((k) => !mods.includes(k)) || ""].join("+");
     };
     return Array.isArray(combo) ? combo.map(clean) : clean(combo);
   }
-  function matchKeys(required, actual, strict = false) {
-    actual = cleanKeyCombo(actual);
-    const match = (required2, actual2) => {
-      required2 = cleanKeyCombo(required2);
-      if (strict) return required2 === actual2;
-      const reqKeys = required2.split("+"), actKeys = actual2.split("+");
-      return reqKeys.every((k) => actKeys.includes(k));
+  function matchKeys(required, actual, strict = false, clean = true) {
+    if (clean) actual = cleanKeyCombo(actual);
+    const match = (req, actual2) => {
+      req = cleanKeyCombo(req);
+      if (strict) return req === actual2;
+      const reqs = req.split("+"), reals = actual2.split("+");
+      for (const mod of KEYS_CMODS) if (reals.includes(mod) && !reqs.includes(mod)) return false;
+      return reqs.every((k) => reals.includes(k));
     };
     return Array.isArray(required) ? required.some((req) => match(req, actual)) : match(required, actual);
   }
   function getTermsForKey(combo, settings) {
-    const terms = { override: false, block: false, whitelisted: false, action: null }, { overrides = [], shortcuts = {}, blocks = [], strictMatches: s = false, whitelist = [] } = settings || {};
+    const terms = { override: false, block: false, whitelisted: false, action: null }, { overrides = [], shortcuts = {}, blocks = [], strictMatch: stm = false, rankedMatch: ram = true, whitelist = [] } = settings || {};
     combo = cleanKeyCombo(combo);
-    if (matchKeys(overrides, combo, s)) terms.override = true;
-    if (matchKeys(blocks, combo, s)) terms.block = true;
-    if (matchKeys(whitelist, combo)) terms.whitelisted = true;
-    terms.action = Object.keys(shortcuts).find((key) => matchKeys(shortcuts[key], combo, s)) || null;
-    return terms;
+    if (matchKeys(overrides, combo, stm, false)) terms.override = true;
+    if (matchKeys(blocks, combo, stm, false)) terms.block = true;
+    if (matchKeys(whitelist, combo, false)) terms.whitelisted = true;
+    if (!ram) return terms.action = Object.keys(shortcuts).find((id) => shortcuts[id] && matchKeys(shortcuts[id], combo, stm, false)) || null, terms;
+    let bestA = null, bestE = false, bestL = 0;
+    for (const id of Object.keys(shortcuts))
+      for (const c of Array.isArray(shortcuts[id]) ? shortcuts[id] : [shortcuts[id]]) {
+        const req = c && cleanKeyCombo(c), isE = req === combo, len = req ? req.split("+").length : 0;
+        if (c && matchKeys(req, combo, stm, false) && (!bestA || isE && !bestE || isE === bestE && len > bestL)) bestA = id, bestE = isE, bestL = len;
+      }
+    return terms.action = bestA, terms;
   }
   function keyEventAllowed(e, settings) {
     if (settings.disabled) return false;
@@ -126,13 +131,16 @@
     if (whitelisted) return e.key.toLowerCase();
     return false;
   }
-  var formatKeyForDisplay = (combo = "") => ` ${(Array.isArray(combo) ? combo : [combo]).map((c) => `(${cleanKeyCombo(c).replace(" ", "space")})`).join(" or ")}`;
-  function parseForARIAKS(s = "", formatted = true) {
+  var formatKeyTooltip = (combo = "", keyFn = (c = "") => cleanKeyCombo(c).replace(" ", "space")) => {
+    const combined = combo?.length ? Array.isArray(combo) ? combo.map(keyFn).join(" or ") : keyFn(combo) : "";
+    return combined ? ` (${combined})` : "";
+  };
+  function parseForARIAKS(s = "", format = true) {
     const m = { ctrl: "Control", cmd: "Meta", space: "Space", plus: "+" };
-    return (formatted && !Array.isArray(s) ? s : formatKeyForDisplay(s)).toLowerCase().replace(/[()]/g, "").replace(/\bor\b/g, " ").replace(/\w+/g, (k) => m[k] || k).replace(/\s+/g, " ").trim();
+    return (!format && !Array.isArray(s) ? s : formatKeyTooltip(s)).toLowerCase().replace(/[()]/g, "").replace(/\bor\b/g, " ").replace(/\w+/g, (k) => m[k] || k).replace(/\s+/g, " ").trim();
   }
 
-  // ../sia-reactor/dist/chunk-DCUPDG7B.js
+  // ../sia-reactor/dist/chunk-V2BMGJFQ.js
   var RAW = /* @__PURE__ */ Symbol.for("S.I.A_RAW");
   var INERTIA = /* @__PURE__ */ Symbol.for("S.I.A_INERTIA");
   var REJECTABLE = /* @__PURE__ */ Symbol.for("S.I.A_REJECTABLE");
@@ -148,7 +156,7 @@
   };
   var isDevEnv = false;
   try {
-    isDevEnv = true;
+    isDevEnv = false;
   } catch (e) {
   }
   var CTX_BUILD = {
@@ -207,12 +215,12 @@
     if (config.preserveContext) return !(obj instanceof String) && !(obj instanceof Number) && !(obj instanceof Function) && !(obj instanceof Date) && !(obj instanceof Error) && !(obj instanceof RegExp) && !(obj instanceof Promise) && !(obj instanceof Map) && !(obj instanceof WeakMap) && !(obj instanceof Set) && !(obj instanceof WeakSet) && !(obj instanceof EventTarget);
     return false;
   }
-  function getPath(source, key, separator = ".", keyFunc) {
+  function getPath(source, key, separator = ".", keyFn) {
     if (key === "*") return source;
     const keys2 = key.split(separator);
     let currObj = source;
     for (let i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return currObj[key3];
@@ -224,11 +232,11 @@
     }
     return currObj;
   }
-  function setPath(target, key, value, separator = ".", keyFunc) {
+  function setPath(target, key, value, separator = ".", keyFn) {
     if (key === "*") return Object.assign(target, value);
     const keys2 = key.split(separator);
     for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3])) currObj[key3] = [];
@@ -240,7 +248,7 @@
       }
     }
   }
-  function deletePath(target, key, separator = ".", keyFunc) {
+  function deletePath(target, key, separator = ".", keyFn) {
     if (key === "*") {
       const keys22 = Object.keys(target);
       for (let i = 0, len = keys22.length; i < len; i++) delete target[keys22[i]];
@@ -248,7 +256,7 @@
     }
     const keys2 = key.split(separator);
     for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return;
@@ -261,11 +269,11 @@
       }
     }
   }
-  function hasPath(source, key, separator = ".", keyFunc) {
+  function hasPath(source, key, separator = ".", keyFn) {
     if (key === "*") return true;
     const keys2 = key.split(separator);
     for (let currObj = source, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFunc ? keyFunc(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return false;
@@ -279,20 +287,20 @@
     }
     return true;
   }
-  function parsePathObj(obj, separator = ".", keyFunc = (p) => p, seen = /* @__PURE__ */ new WeakSet()) {
+  function parsePathObj(obj, separator = ".", keyFn = (p) => p, seen = /* @__PURE__ */ new WeakSet()) {
     if (!isPOJO(obj) || seen.has(obj)) return obj;
     seen.add(obj);
     const result = {}, keys2 = Object.keys(obj);
     for (let i = 0, len = keys2.length; i < len; i++) {
       const key = keys2[i], val = obj[key];
-      key === "*" || key.includes(separator) ? setPath(result, key, parsePathObj(val, separator, keyFunc, seen), separator, keyFunc) : result[key] = isPOJO(val) ? parsePathObj(val, separator, keyFunc, seen) : val;
+      key === "*" || key.includes(separator) ? setPath(result, key, parsePathObj(val, separator, keyFn, seen), separator, keyFn) : result[key] = isPOJO(val) ? parsePathObj(val, separator, keyFn, seen) : val;
     }
     return result;
   }
   function matchPaths(paths, target) {
     for (let i = 0, len = paths.length; i < len; i++) {
       const p = paths[i];
-      if (target === p || target.startsWith(p + ".")) return true;
+      if (typeof p !== "string" ? !!p?.test?.(target) : target === p || target.startsWith(p + ".")) return true;
     }
     return false;
   }
@@ -304,26 +312,27 @@
     return Object.assign(result, "boolean" === typeof options ? { [boolOpt]: options } : options), result;
   }
   function fanout(a, b, c, d) {
-    const isEvPd = !!a?.target, isPath = !isEvPd && "string" === typeof b, [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b, c || NIL, void 0], target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
+    const isEvPd = !!a?.target, isPath = !isEvPd && "string" === typeof b, [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b || a, c || NIL, void 0], target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
     if (isEvPd && type !== "set" && type !== "delete" || !target || !canHandle(news, opts)) return;
+    const { merge = false, depth, atomic = true, skipUndef = false, cloneSets = false, txLabel } = opts;
     const func = () => {
-      const walk = (target2, obj, depth = isEvPd ? 1 : Infinity, keys2 = Object.keys(obj)) => {
+      const walk = (target2, obj, depth2 = isEvPd ? 1 : Infinity, keys2 = Object.keys(obj)) => {
         for (let i = 0, len = keys2.length; i < len; i++) {
           const key = keys2[i], val = obj[key];
           try {
-            if ((opts.atomic ?? true) && Array.isArray(val)) target2[key] = val, target2[key].length = target2[key].length;
-            else depth > 1 && canHandle(val, opts) ? walk(target2[key] ||= {}, val, depth - 1) : (!opts.skipUndefined || val !== void 0) && (target2[key] = val);
+            if (atomic && Array.isArray(val)) target2[key] = cloneSets ? deepClone(val) : val, target2[key].length = target2[key].length;
+            else depth2 > 1 && canHandle(val, opts) ? walk(target2[key] ||= Array.isArray(val) ? [] : {}, val, depth2 - 1) : (!skipUndef || val !== void 0) && (target2[key] = cloneSets ? deepClone(val) : val);
           } catch (e) {
             if (e instanceof RangeError) throw e;
           }
         }
       };
-      if ((opts.atomic ?? true) && Array.isArray(news) && isPath) setPath(state2, path, news), getPath(state2, path).length = news.length;
-      else walk(target, opts.merge ? mergeObjs(olds, news, opts) : news, opts.depth === true ? Infinity : opts.depth);
+      if (atomic && Array.isArray(news) && isPath) setPath(state2, path, cloneSets ? deepClone(news) : news), getPath(state2, path).length = news.length;
+      else walk(target, merge ? mergeObjs(olds, news, opts) : news, depth === true ? Infinity : depth);
     };
-    force(() => transaction(func, opts.txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), CTX.usingForce || isEvPd);
+    force(() => transaction(func, txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), CTX.usingForce || isEvPd);
   }
-  var fanoutOptsArr = ["merge", "depth", "atomic", "skipUndefined"];
+  var fanoutOptsArr = ["merge", "depth", "atomic", "skipUndef"];
   function force(task, bool = true) {
     const prev = CTX.usingForce;
     CTX.usingForce = bool;
@@ -336,8 +345,8 @@
   function mergeObjs(o1, o2, config = NIL, pojocheck = true) {
     if (pojocheck && (!isPOJO(o1 || NIL, config) || !isPOJO(o2 || NIL, config))) return o2;
     o1 ||= {}, o2 ||= {};
-    const merged = config.skipUndefined ? { ...o1 } : { ...o1, ...o2 };
-    if (config.skipUndefined) {
+    const merged = config.skipUndef ? { ...o1 } : { ...o1, ...o2 };
+    if (config.skipUndef) {
       const keys22 = Object.keys(o1);
       for (let i = 0, len = keys22.length; i < len; i++) {
         const key = keys22[i], val = o2[key];
@@ -419,24 +428,24 @@
     eventPhase = _ReactorEvent.NONE;
     /** Current event type for the active propagation path, use immediately if async */
     type;
-    /** Current target context for the active propagation path, use immediately if async. Also use to survive future object shape changes from nesting for a path callback. */
     currentTarget;
-    /** Original event target context. */
+    /** Current target context for the active propagation path, use immediately if async. Also survives future shape changes from nesting for a path callback. */
     target;
-    /** Root reactive object for this event instance wave. */
+    /** Original event target context. */
     root;
-    /** The `Reactor` instance that dispatched this event instance. */
+    /** Root reactive object for this event instance wave. */
     reactor;
+    /** The `Reactor` instance that dispatched this event instance. */
     /** Whether resolve/reject intent semantics are allowed for this event instance. */
     rejectable;
     /** Original event type before propagation remapping. */
     staticType;
-    /** Original target path for this event instance wave. */
     path;
-    /** Current value at the event target path. */
+    /** Original target path for this event instance wave. */
     value;
-    /** Previous value at the event target path. */
+    /** Current value at the event target path. */
     oldValue;
+    /** Previous value at the event target path. */
     /** Whether this event instance wave can bubble back up to ancestors or just capture down. */
     bubbles = false;
     /** Whether this event instance wave can capture down to descendants or just bubble up. */
@@ -719,7 +728,7 @@
         if (cord._dead) continue;
         const response = isGet ? cord.cb(value, payload) : isSet ? cord.cb(value, terminated, payload) : cord.cb(terminated, payload);
         if (isGet || !(terminated ||= payload.terminated = response === TERMINATOR)) value = response;
-        if (cord.once) cord._dead = true, killed = true;
+        if (cord.once) killed = cord._dead = true;
       }
       if (killed) {
         for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && mediators.delete(path);
@@ -735,7 +744,7 @@
             const cord = scords[i];
             if (cord._dead) continue;
             cord.cb(payload.target.value, payload);
-            if (cord.once) cord._dead = true, killed = true;
+            if (cord.once) killed = cord._dead = true;
           }
           if (killed) {
             for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && this.watchers.delete(path);
@@ -747,7 +756,7 @@
             const wildcord = wildscords[i];
             if (wildcord._dead) continue;
             wildcord.cb(payload.target.value, payload);
-            if (wildcord.once) wildcord._dead = true, killed = true;
+            if (wildcord.once) killed = wildcord._dead = true;
           }
           if (killed) {
             for (let i = wildcords.length - 1; i >= 0; i--) if (wildcords[i]._dead) wildcords.splice(i, 1), !wildcords.length && this.watchers.delete("*");
@@ -803,7 +812,7 @@
           if (tDepth > cord.lDepth + cord.depth) continue;
         }
         cord.cb(e);
-        if (cord.once) cord._dead = true, killed = true;
+        if (cord.once) killed = cord._dead = true;
       }
       if (killed) {
         for (let i = cords.length - 1; i >= 0; i--) if (cords[i]._dead) cords.splice(i, 1), !cords.length && this.listeners.delete(path);
@@ -811,7 +820,7 @@
     }
     /**
      * Flushes queued listener payloads.
-     * @param paths Optional path (or paths) to flush.
+     * @param paths Optional path(s) to flush.
      * @example
      * rtr.tick(); // to flush all paths in batch or pass "*" wildcard
      * @example
@@ -1115,7 +1124,7 @@
     return target[RAW] || target;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-4S4VEQL7.js
+  // ../t007-tools/packages/utils/dist/chunk-YSWZTEYI.js
   var INTERACTIVE_SELECTOR = ":is(button,[href],input:not([type='hidden']),select,textarea,details>summary,[contenteditable],iframe,audio[controls],video[controls],[tabindex]):not([disabled],[tabindex='-1'],[data-focus-guard],[inert],[inert] *)";
   var isInteractive = (target) => target instanceof HTMLElement && target.matches(INTERACTIVE_SELECTOR);
   var VIRTUAL_RESOURCE = /* @__PURE__ */ Symbol.for("T007_VIRTUAL_RESOURCE");
@@ -1132,7 +1141,7 @@
           el?.remove?.();
           if (remaining > 1) {
             setTimeout(tryLoad, 1e3, remaining - 1);
-            console.warn(`Retrying ${type} load for "${src}" (${attempts - remaining + 1})...`);
+            console.warn(`Retrying ${type} load for "${src}" (${attempts - remaining + 1}/${attempts})...`);
           } else {
             delete win.t007._resourceCache[src];
             reject(new Error(`${capitalize(type)} load failed for "${src}"`));
@@ -1205,7 +1214,7 @@
     window.T007_DIALOG_CSS_SRC ??= `https://cdn.jsdelivr.net/npm/@t007/dialog@latest/dist/index.min.css`;
   }
 
-  // ../t007-tools/packages/utils/dist/chunk-7TIUDIEW.js
+  // ../t007-tools/packages/utils/dist/chunk-UM56ND7B.js
   function rippleHandler(e, { target, forceCenter = false, wrapperClassName = "t007-ripple-wrapper", className = "t007-ripple", holdClassName = "t007-ripple-hold", fadeClassName = "t007-ripple-fade", maxDuration = 1e3 } = NIL) {
     const el = target || e.currentTarget;
     if (!el || e.target !== e.currentTarget && isInteractive(e.target) || el.hasAttribute("disabled") || e.pointerType === "mouse" && e.button !== 0) return;
@@ -1301,7 +1310,7 @@
   }
   var removeScrollAssist = (el) => t007._scrollers.get(el)?.destroy();
 
-  // ../sia-reactor/dist/chunk-FOD32N6J.js
+  // ../sia-reactor/dist/chunk-C6VOBKMK.js
   var BaseReactorModule = class {
     static moduleName;
     get name() {
@@ -1679,9 +1688,9 @@
       for (const [rid, rtr] of this.deps) this.attachPaths(rtr, rid);
       value && this.adapter?.remove(this.config.key);
     }
-    hydrate(entry, rtr, rid = this.rids.get(rtr), { depth, merge = true, atomic, skipUndefined } = parseEvtOpts(this.config.fanout, fanoutOptsArr, "depth"), tick = true) {
+    hydrate(entry, rtr, rid = this.rids.get(rtr), { depth, merge = true, atomic, skipUndef } = parseEvtOpts(this.config.fanout, fanoutOptsArr, "depth"), tick = true) {
       if (!entry) return;
-      const whites = this.getPaths(rid), blacks = this.getPaths(rid, this.config.blacklist, true), set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev, rtr.config) : prev, depth ? { depth, atomic, skipUndefined, crossRealms: rtr.config.crossRealms } : void 0);
+      const whites = this.getPaths(rid), blacks = this.getPaths(rid, this.config.blacklist, true), set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev, rtr.config) : prev, depth ? { depth, atomic, skipUndef, crossRealms: rtr.config.crossRealms } : void 0);
       let ticks = this.tickMap.get(rid);
       for (let i = 0, len = blacks.length; i < len; i++) deletePath(entry, blacks[i]);
       for (let i = 0, len = whites.length; i < len; i++) {
@@ -1749,21 +1758,21 @@
       let en = { path: e.target.path, to: e.reactor.snapshot(false, e.target.value), from: !this.config.mirrorReads || !e.target.path.includes("intent") ? e.reactor.snapshot(false, e.target.oldValue) : getPath(e.reactor.core, e.target.path.replace("intent", "state")), type: e.staticType ?? e.type, rid, deltat: timestamp - this.lastTimestamp };
       !e.target.hadKey && (en.hadKey = false);
       if (this.config.beforeEntry) {
-        const res = this.config.beforeEntry(en, this.state.history);
+        const res = this.config.beforeEntry(en, this.state.history, e);
         if (res === false) return;
         if (res && res !== true) en = res;
       }
-      if (e.tx) {
-        let histTx = this.txMap.get(e.tx);
-        if (!histTx) {
-          this.txMap.set(e.tx, histTx = { id: e.tx.id, label: e.tx.label, nodes: [en], deltat: en.deltat, start: timestamp, end: timestamp });
-          const parentTx = e.tx.parent ? this.txMap.get(e.tx.parent) : null;
-          (parentTx ? parentTx.nodes : this.state.history).push(histTx);
-        } else histTx.nodes.push(en), histTx.end = timestamp;
-      } else this.state.history.push(en);
+      e.tx ? this.resolveTx(e.tx, timestamp, en.deltat).nodes.push(en) : this.state.history.push(en);
       force(() => this.state.currentFrame = this.state.history.length, !!e.tx);
       while (this.state.history.length > this.config.limit) this.state.history.shift(), this.state.currentFrame--;
       this.lastTimestamp = timestamp;
+    }
+    /** Resolves and constructs the hierarchical ancestry for nested transactions as they bubble up from the depths. */
+    resolveTx(tx, timestamp, deltat) {
+      let px = this.txMap.get(tx);
+      if (px) return px.end = timestamp, tx.parent && this.resolveTx(tx.parent, timestamp, deltat), px;
+      this.txMap.set(tx, px = { id: tx.id, label: tx.label, nodes: [], deltat: 0, start: timestamp, end: timestamp });
+      return tx.parent ? this.resolveTx(tx.parent, timestamp, deltat).nodes.push(px) : (px.deltat = deltat, this.state.history.push(px)), px;
     }
     /** Resumes the passive recording of state changes. */
     track() {
@@ -1915,11 +1924,11 @@
       this.state.currentFrame = 0, this.jumpTo(start), resume && this.automove(forward);
     }
   };
-  function silence(fn) {
-    return withMeta({ silent: true }, fn);
+  function silence(fn, bool = true) {
+    return withMeta({ silent: bool }, fn);
   }
 
-  // ../sia-reactor/dist/chunk-56H5BKHJ.js
+  // ../sia-reactor/dist/chunk-F3Y3BAZ2.js
   var Autotracker = class {
     proxy;
     deps = /* @__PURE__ */ new Map();
@@ -2077,7 +2086,7 @@
   var keys = {
     blocks: KEYS_BLOCKS,
     overrides: ["Ctrl+z", "Cmd+z", "Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z", "Home", "End", "ArrowLeft", "ArrowRight", "Space", "Alt+Space", "Escape", "Delete"],
-    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", prevFrame: ",", nextFrame: ".", skipBwd: "ArrowLeft", skipFwd: "ArrowRight", playPause: "Space", rewind: "Alt+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
+    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Cmd+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", prevFrame: ",", nextFrame: ".", playPause: "Space", rewind: "Alt+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
   };
   var TimeTravelConsole = class _TimeTravelConsole {
     static count = 0;
@@ -2098,13 +2107,13 @@
       this.config = reactive({ title: `Time Travel Console ${this.index = ++_TimeTravelConsole.count}`, ...build });
       this.state.open = !!this.config.startOpen;
       let wlLive = false, blLive = false;
-      const s = this.time.state, host = this.host = createEl("div", { className: "sia-tt-console-host" }), toggle = createEl("button", { className: "sia-tt-console-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "sia-tt-console", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyForDisplay(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory, false), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyForDisplay(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo, false), onclick: () => this.time.undo(this.state.stride) }), redo = createEl("button", { textContent: `Redo${formatKeyForDisplay(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo, false), onclick: () => this.time.redo(this.state.stride) }), genesis = createEl("button", { textContent: `Genesis${formatKeyForDisplay(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis, false), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause, false) }), rewind = createEl("button", { textContent: `Rewind${formatKeyForDisplay(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind, false), onclick: this.time.rewind }), trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack, false) }), range = createEl("input", { type: "range", min: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyForDisplay(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export, false), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyForDisplay(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import, false), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyForDisplay(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear, false), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "sia-tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "sia-tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "sia-tt-footnote", innerHTML: "<span>Want this in your app? </span>" }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "sia-tt-status-box" }), status = createEl("div", { className: "sia-tt-status-row" }), filters = createEl("div", { className: "sia-tt-status-row" }), filterBox = createEl("div", { className: "sia-tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), speed = createEl("select", { className: "sia-tt-speed", title: "Playback Speed", onchange: () => this.time.config.playbackRate = Number(speed.value) }), stride = createEl("input", { className: "sia-tt-stride sia-tt-button sia-tt-mini-input", type: "number", min: "1", title: "Skip Stride i.e. how many steps count as one unit", oninput: () => this.state.stride = Math.max(1, Number(stride.value) || 1) }), stats = createEl("span", { className: "sia-tt-stats" }), limit = createEl("input", { className: "sia-tt-limit sia-tt-mini-input sia-tt-button", type: "number", min: "1", title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => this.time.config.limit = Math.max(1, Number(limit.value) || 1) }), delay = createEl("input", { className: "sia-tt-delay sia-tt-mini-input sia-tt-button", type: "number", min: "0", step: "50", title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0) }), read = createEl("label", { className: "sia-tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }), readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReads, onchange: () => this.time.config.mirrorReads = readBox.checked }), write = createEl("label", { className: "sia-tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }), writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWrites, onchange: () => this.time.config.mirrorWrites = writeBox.checked }), filterRow1 = createEl("div", { className: "sia-tt-filter-row" }), filterRow2 = createEl("div", { className: "sia-tt-filter-row" }), row1 = createEl("div", { className: "sia-tt-row" }), row2 = createEl("div", { className: "sia-tt-row" }), row3 = createEl("div", { className: "sia-tt-row" }), row4 = createEl("div", { className: "sia-tt-row" }), row5 = createEl("div", { className: "sia-tt-row sia-tt-config-row" });
+      const s = this.time.state, host = this.host = createEl("div", { className: "sia-tt-console-host" }), toggle = createEl("button", { className: "sia-tt-console-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "sia-tt-console", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyTooltip(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyTooltip(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo), onclick: () => this.time.undo(this.state.stride) }), redo = createEl("button", { textContent: `Redo${formatKeyTooltip(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo), onclick: () => this.time.redo(this.state.stride) }), genesis = createEl("button", { textContent: `Genesis${formatKeyTooltip(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause) }), rewind = createEl("button", { textContent: `Rewind${formatKeyTooltip(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind), onclick: this.time.rewind }), trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack) }), range = createEl("input", { type: "range", min: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyTooltip(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyTooltip(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyTooltip(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "sia-tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "sia-tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "sia-tt-footnote", innerHTML: "<span>Try this in your app? </span>" }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "sia-tt-status-box" }), status = createEl("div", { className: "sia-tt-status-row" }), filters = createEl("div", { className: "sia-tt-status-row" }), filterBox = createEl("div", { className: "sia-tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), speed = createEl("select", { className: "sia-tt-speed", title: "Playback Speed", onchange: () => this.time.config.playbackRate = Number(speed.value) }), stride = createEl("input", { className: "sia-tt-stride sia-tt-button sia-tt-mini-input", type: "number", min: "1", title: "Skip Stride i.e. how many steps count as one unit", oninput: () => this.state.stride = Math.max(1, Number(stride.value) || 1) }), stats = createEl("span", { className: "sia-tt-stats" }), limit = createEl("input", { className: "sia-tt-limit sia-tt-mini-input sia-tt-button", type: "number", min: "1", title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => this.time.config.limit = Math.max(1, Number(limit.value) || 1) }), delay = createEl("input", { className: "sia-tt-delay sia-tt-mini-input sia-tt-button", type: "number", min: "0", step: "50", title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0) }), read = createEl("label", { className: "sia-tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }), readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReads, onchange: () => this.time.config.mirrorReads = readBox.checked }), write = createEl("label", { className: "sia-tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }), writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWrites, onchange: () => this.time.config.mirrorWrites = writeBox.checked }), filterRow1 = createEl("div", { className: "sia-tt-filter-row" }), filterRow2 = createEl("div", { className: "sia-tt-filter-row" }), row1 = createEl("div", { className: "sia-tt-row" }), row2 = createEl("div", { className: "sia-tt-row" }), row3 = createEl("div", { className: "sia-tt-row" }), row4 = createEl("div", { className: "sia-tt-row" }), row5 = createEl("div", { className: "sia-tt-row sia-tt-config-row" });
       speed.append(...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4, 8, 16, 32].map((v) => createEl("option", { value: String(v), textContent: `${v}x` })));
       status.append((box.append(frame), box), clrHistory);
       filters.append((filterBox.append((filterRow1.append(whitelistLabel, whitelist), filterRow1), (filterRow2.append(blacklistLabel, blacklist), filterRow2)), filterBox));
       panel.append(title, status, (row1.append(playPause, rewind, genesis), row1), (row2.append(undo, redo, trackUntrack, stride), row2), payload, (row3.append(speed, range), row3), filters, (row4.append(exp, imp, clr), row4), io, (row5.append(delay, limit, (read.append(readBox, " Read Mirror"), read), (write.append(writeBox, " Write Mirror"), write)), row5), (foot.prepend(stats), foot.append(link), foot));
       this.host.append(toggle, panel);
-      this.keydown = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => (a && e.stopImmediatePropagation(), a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "prevFrame" ? this.time.step(this.state.stride, false) : a === "nextFrame" ? this.time.step(this.state.stride, true) : a === "skipBwd" ? this.time.step(5 * this.state.stride, false) : a === "skipFwd" ? this.time.step(5 * this.state.stride, true) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export() : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = ""));
+      this.keydown = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => (a && e.stopImmediatePropagation(), a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "prevFrame" ? this.time.step(this.state.stride, false) : a === "nextFrame" ? this.time.step(this.state.stride, true) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export() : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = ""));
       this.keyup = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => a && e.stopImmediatePropagation();
       window.addEventListener("keydown", this.keydown), window.addEventListener("keyup", this.keyup);
       const sync = [
@@ -2115,8 +2124,8 @@
           if (host.parentNode !== dock) dock.appendChild(host);
         }),
         effect(() => toggle.textContent = `${(panel.hidden = !this.state.open) ? "Show" : "Hide"} ${title.textContent = this.config.title ?? ""}`),
-        effect(() => playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyForDisplay(keys.shortcuts.playPause)}`),
-        effect(() => trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyForDisplay(keys.shortcuts.trackUntrack)}`),
+        effect(() => playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyTooltip(keys.shortcuts.playPause)}`),
+        effect(() => trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyTooltip(keys.shortcuts.trackUntrack)}`),
         effect((sets = 0, txs = 0) => {
           range.max = String(s.history.length);
           range.disabled = clrHistory.disabled = !s.history.length;
@@ -2532,7 +2541,7 @@
     `;
     }
     getPlayerElements() {
-      const k = this.fetchKeyShortcutsForDisplay();
+      const k = this.fetchKeyShortcutsTooltip();
       const _batch = (...els) => els.filter(Boolean);
       return {
         pictureinpicturewrapper: tmg.createEl("div", {
@@ -4417,7 +4426,7 @@
     _handleSpeedPointerOut = (e) => !this.videoContainer.matches(":hover") && this._handleSpeedPointerUp(e);
     plugKeysSettings = () => this.config.on("settings.keys.disabled", ({ value }) => value ? (this.setKeyEventListeners("remove", true), this.setKeyEventListeners("remove", false)) : this.isIntersecting && this.setKeyEventListeners("add"));
     // devx shortcut
-    fetchKeyShortcutsForDisplay = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyForDisplay(this.settings.keys.shortcuts[action])]));
+    fetchKeyShortcutsTooltip = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyTooltip(this.settings.keys.shortcuts[action])]));
     getTermsForKey(combo) {
       const terms = { override: false, block: false, allowed: false, action: null }, { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
       if (tmg.matchKeys(overrides, combo, s)) terms.override = true;
@@ -5124,7 +5133,7 @@
     stringifyKeyEvent,
     cleanKeyCombo,
     matchKeys,
-    formatKeyForDisplay,
+    formatKeyTooltip,
     AsyncQueue: class AsyncQueue {
       constructor() {
         this.jobs = [], this.running = false;

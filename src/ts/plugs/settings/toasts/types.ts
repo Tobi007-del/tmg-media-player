@@ -1,15 +1,13 @@
 import { ToastOptions } from "@t007/toast";
 
-export interface ToastsConfig extends ToastOptions {}
-
 export interface ToastReminder extends ToastOptions {
   id: string;
   message: string;
-  delay: number;
-  actionId?: string; // action id to run via ctlr.execute when reminder fires
-  timeoutId?: number;
+  after: number;
+  target?: number;
+  actionId?: string; // run via ctlr.execute when reminder fires
 }
 
-export interface ToastsState {
-  reminders: ToastReminder[];
+export interface ToastsConfig extends ToastOptions {
+  reminders: Record<string, ToastReminder>;
 }

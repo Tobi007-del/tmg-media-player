@@ -1,6 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
+import { globalState } from "@tools/runtime";
 
 export type FullscreenOrientationConfig = undefined;
 
@@ -18,27 +19,20 @@ export class FullscreenOrientationButton extends BaseComponent<FullscreenOrienta
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("features.fullscreenOrientation", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    // Ctlr Media Listeners
-    this.media.on("state.fullscreen", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     this.syncARIA();
   }
 
   protected handleClick(): void {
-    this.media.intent.fullscreenOrientation = (this.media.state.fullscreenOrientation || this.ctlr.state.screenOrientation.type).startsWith("portrait") ? "landscape" : "portrait";
+    this.media.intent.fullscreenOrientation = (this.media.state.fullscreenOrientation || globalState.screenOrientation.type).startsWith("portrait") ? "landscape" : "portrait";
   }
 
   public syncARIA(): void {
     this.el.title = this.state.label = "Change fullscreen orientation";
     this.setBtnARIA();
-  }
-
-  protected override get canShow(): boolean {
-    return !!this.media.features.fullscreen && !!this.media.features.fullscreenOrientation; // this.media.state.fullscreen &&
   }
 }
 

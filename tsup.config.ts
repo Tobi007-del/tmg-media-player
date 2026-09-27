@@ -27,6 +27,7 @@ export default defineConfig([
     format: ["iife"],
     globalName: "tmg",
     noExternal: ["sia-reactor"], // /@t007/
+    env: { NODE_ENV: isProd ? "production" : "development" },
     ...config,
   },
 ]);

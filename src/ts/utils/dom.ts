@@ -11,11 +11,11 @@ export { initVScrollerator } from "@t007/utils/hooks/vanilla";
 export { loadResource } from "@t007/utils";
 
 // Fullscreen & Picture-in-Picture
-export const queryFullscreen = (): boolean => Boolean(queryFullscreenEl());
+export const queryFullscreen = (d = document): boolean => Boolean(queryFullscreenEl(d));
 export const queryFullscreenEl = (d = document as any): Element | null => d.fullscreenElement || d.webkitFullscreenElement || d.mozFullScreenElement || d.msFullscreenElement || null;
 
-export const queryPictureInPicture = (): boolean => Boolean(queryPictureInPictureEl());
-export const queryPictureInPictureEl = () => document.pictureInPictureElement;
+export const queryPictureInPicture = (d = document): boolean => Boolean(queryPictureInPictureEl(d));
+export const queryPictureInPictureEl = (d = document) => d.pictureInPictureElement;
 
 export const supportsFullscreen = (video = true, vp = HTMLVideoElement.prototype as any, d = document as any) => Boolean(d.fullscreenEnabled || d.mozFullscreenEnabled || d.msFullscreenEnabled || d.webkitFullscreenEnabled || d.webkitSupportsFullscreen || (video && vp.webkitEnterFullscreen));
 export const supportsPictureInPicture = (video = true, vp = HTMLVideoElement.prototype as any, d = document as any, w = window as any) => Boolean(video ? d.pictureInPictureEnabled || vp.requestPictureInPicture : w.documentPictureInPicture);
@@ -96,7 +96,7 @@ type SafeClickEl = HTMLElement & {
 };
 export function addSafeClicks(el?: SafeClickEl | null, onClick: (e: MouseEvent) => any = NOOP, onDblClick: (e: MouseEvent) => any = NOOP, options?: boolean | AddEventListenerOptions): void {
   el && removeSafeClicks(el);
-  el?.addEventListener("click", (el._clickHandler = (e: MouseEvent) => (clearTimeout(el._clickTimeoutId), (el._clickTimeoutId = setTimeout(() => onClick(e), 300)))), options);
+  el?.addEventListener("click", (el._clickHandler = (e: MouseEvent) => (clearTimeout(el._clickTimeoutId), (el._clickTimeoutId = setTimeout(() => onClick(e), 250)))), options);
   el?.addEventListener("dblclick", (el._dblClickHandler = (e: MouseEvent) => (clearTimeout(el._clickTimeoutId), onDblClick(e))), options);
 }
 export function removeSafeClicks(el?: SafeClickEl | null): void {
@@ -108,7 +108,7 @@ export function removeSafeClicks(el?: SafeClickEl | null): void {
 declare global {
   interface Node {
     _resizeCallbacks?: Set<(entry: ResizeObserverEntry, entries: ResizeObserverEntry[]) => void>;
-    _intersectCallbacks?: Set<(entry: IntersectionObserverEntry, entries: IntersectionObserverEntry[]) => void>;
+    _intersectionCallbacks?: Set<(entry: IntersectionObserverEntry, entries: IntersectionObserverEntry[]) => void>;
     _mutationCallbacks?: Set<(mutation: MutationRecord, mutations: MutationRecord[]) => void>;
   }
 }
@@ -116,7 +116,7 @@ declare global {
 export const intersectionObserver = win
   ? new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) if (entry.target._intersectCallbacks) for (const cb of entry.target._intersectCallbacks) cb(entry, entries);
+        for (const entry of entries) if (entry.target._intersectionCallbacks) for (const cb of entry.target._intersectionCallbacks) cb(entry, entries);
       },
       { root: null, rootMargin: "0px", threshold: 0.3 }
     )
@@ -135,20 +135,21 @@ export const mutationObserver = win
   : null;
 
 // --- PUBLIC API ---
-export function observeResize(el: Element, cb: (entry: ResizeObserverEntry, entries: ResizeObserverEntry[]) => void, sig?: AbortSignal) {
-  (el._resizeCallbacks ??= new Set()).add(cb);
-  resizeObserver?.observe(el);
+export function observeResize(el?: Element | null, cb?: (entry: ResizeObserverEntry, entries: ResizeObserverEntry[]) => void, sig?: AbortSignal) {
+  if (!el || !cb) return;
+  (el._resizeCallbacks ??= new Set()).add(cb), resizeObserver?.observe(el);
   return bindSig(() => (el._resizeCallbacks?.delete(cb), !el._resizeCallbacks?.size && resizeObserver?.unobserve(el)), sig);
 }
 
-export function observeIntersection(el: Element, cb: (entry: IntersectionObserverEntry, entries: IntersectionObserverEntry[]) => void, sig?: AbortSignal) {
-  (el._intersectCallbacks ??= new Set()).add(cb);
-  intersectionObserver?.observe(el);
-  return bindSig(() => (el._intersectCallbacks?.delete(cb), !el._intersectCallbacks?.size && intersectionObserver?.unobserve(el)), sig);
+export function observeIntersection(el?: Element | null, cb?: (entry: IntersectionObserverEntry, entries: IntersectionObserverEntry[]) => void, sig?: AbortSignal) {
+  if (!el || !cb) return;
+  (el._intersectionCallbacks ??= new Set()).add(cb), intersectionObserver?.observe(el);
+  return bindSig(() => (el._intersectionCallbacks?.delete(cb), !el._intersectionCallbacks?.size && intersectionObserver?.unobserve(el)), sig);
 }
 
-export function observeMutation(el: Element, cb: (mutation: MutationRecord, mutations: MutationRecord[]) => void, options: MutationObserverInit, sig?: AbortSignal) {
-  if (!options.subtree) return (el._mutationCallbacks ??= new Set()).add(cb), mutationObserver?.observe(el, options), bindSig(() => el._mutationCallbacks?.delete(cb), sig);
+export function observeMutation(el?: Element | null, cb?: (mutation: MutationRecord, mutations: MutationRecord[]) => void, options?: MutationObserverInit, sig?: AbortSignal) {
+  if (!el || !cb) return;
+  if (!options?.subtree) return (el._mutationCallbacks ??= new Set()).add(cb), mutationObserver?.observe(el, options), bindSig(() => el._mutationCallbacks?.delete(cb), sig);
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) cb(mutation, mutations);
   });

@@ -1,8 +1,6 @@
-import type { MediaType } from "./generics";
 import type { MediaReport } from "./contract";
 import type { Action } from "./action";
-import type { LightStateConfig } from "@plugs/main/lightState";
-import type { PlaylistConfig } from "@plugs/main/playlist";
+import type { Dimensions } from "./generics";
 import type { TechRegistryMap, PlugRegistryMap } from "@defs/registries";
 
 export interface Settings {
@@ -15,7 +13,8 @@ export interface CtlrConfig {
   settings: Settings;
   actions: {
     entries: Record<string, Action>;
-    blacklist: Array<string>;
+    devlist: Array<string | RegExp>;
+    blacklist: Array<string | RegExp>;
   };
   devMode: boolean;
   disabled: boolean;
@@ -23,3 +22,17 @@ export interface CtlrConfig {
   safeDetach: boolean; // detach issues, e.g src reset -> freezing, etc.
   noPlugList: "*" | Array<keyof PlugRegistryMap>; // for non-core plugs
 } // Use Deep Partial Util where applicable
+
+export interface CtlrState {
+  readyState: number;
+  mediaIntersecting: boolean;
+  parentIntersecting: boolean;
+  dimensions: {
+    container: Dimensions & { tier: string };
+    pseudoContainer: Dimensions & { tier: string };
+    object: Dimensions & { top: number; left: number };
+    poster: Dimensions & { top: number; left: number };
+  };
+  pseudoActive: boolean;
+  frameReadyPromise?: Promise<null> | null;
+}

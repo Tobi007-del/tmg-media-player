@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { LockedPlug } from "@plugs/settings/locked";
 
 export const getSettingsLockedMenu = (plug: LockedPlug): SettingsMenuItem => ({
@@ -15,3 +15,4 @@ declare module "@defs/registries" {
     "settings.locked": typeof getSettingsLockedMenu;
   }
 }
+

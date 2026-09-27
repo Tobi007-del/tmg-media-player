@@ -5,7 +5,7 @@ import { UISettings } from "@defs/UIOptions";
 export type VoiceStage = "anytime" | "pre-route" | "post-route" | "never" | "";
 export type VoiceMatch = "blob" | "chunk" | "";
 
-export interface VoiceCommands extends Record<Action["id"], string[]> {}
+export interface VoiceCommands extends Record<Action["id"], string | string[]> {}
 
 export interface VoiceConfig {
   active: UISettings<boolean | "passive">;

@@ -1,6 +1,6 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 import { silence } from "sia-reactor/modules";
 
 export type DurationConfig = undefined;
@@ -38,7 +38,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextFormat}`;
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.timeFormat), (this.state.voiceCommand = this.settings.voice.commands.timeFormat));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.timeFormat), (this.state.voiceCommand = this.settings.voice.commands.timeFormat));
     this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd : "Skip ahead to live broadcast";
     this.setBtnARIA();
   }

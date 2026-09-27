@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type BigNextConfig = undefined;
 
@@ -19,7 +19,7 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: this.ctlr.flags.wired || !("nextItem" in this.media.features), signal: this.signal }); // #SAFEGUARD: change is unguaranteed
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
@@ -37,7 +37,7 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
   }
   public syncARIA(): void {
     this.state.label = "Next";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.next), (this.state.voiceCommand = this.settings.voice.commands.next));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.next), (this.state.voiceCommand = this.settings.voice.commands.next));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

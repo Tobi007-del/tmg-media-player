@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import { formatActionForDisplay } from "../../super/utils";
+import { formatActionTooltip } from "../../super/utils";
 
 export type PiPPlaceholderConfig = undefined;
 
@@ -10,7 +10,7 @@ export class PiPPlaceholder extends BaseComponent<PiPPlaceholderConfig, Componen
   protected iconBtn!: HTMLButtonElement;
 
   public override create() {
-    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-picture-in-picture-placeholder", innerHTML: `<p>Playing in picture-in-picture</p>` });
+    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-flex-center tmg-media-no-pointer tmg-media-picture-in-picture-placeholder", innerHTML: `<p>Playing in picture-in-picture</p>` });
     this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-picture-in-picture-icon-btn", innerHTML: IconRegistry.get("pipPlaceholder") });
     return this.el.prepend(this.iconBtn), this.el;
   }
@@ -34,7 +34,7 @@ export class PiPPlaceholder extends BaseComponent<PiPPlaceholderConfig, Componen
 
   public syncARIA(): void {
     this.state.label = this.media.state.pictureInPicture ? "Exit picture in picture" : "Picture in picture";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

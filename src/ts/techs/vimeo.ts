@@ -127,9 +127,8 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   // ===========================================================================
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
-    this.flush(); // Optimistic UI
-    this.initHost(e.value);
+    if (e.resolved) return;
+    if (!isSameURL(this.hostSrc, e.value)) this.flush(), this.initHost(e.value);
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -315,7 +314,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     this.host.getPlayed().then((played) => (this.config.status.played = createTimeRanges(played)));
     this.host.getBuffered().then((buffered) => (this.config.status.buffered = createTimeRanges(buffered)));
     this.host.getSeekable().then((seekable) => (this.config.status.seekable = createTimeRanges(seekable)));
-    this.host.getChapters().then((chapters, _meta = this.config.settings.metadata) => _meta.allowMediaOverride && (_meta.chapterInfo = inert(chapters)));
+    this.host.getChapters().then((chapters, meta = this.config.settings.metadata) => meta.allowMediaOverride && chapters.length && ((meta.chapterInfo = inert(chapters)), (this.autoChapters = true))); // chapter "cuechange" over to u; truth
     this.host.getTextTracks().then((tracks) => (this.config.status.textTracks = inert(tracks)));
     this.host.getAudioTracks().then((tracks) => (this.config.status.audioTracks = inert(tracks)));
     this.host.getQualities().then((qualities) => {
@@ -324,12 +323,10 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       this.config.state.autoLevel = qualities.find((q) => q.active)?.id === "auto";
     });
     Promise.all([this.host.getVideoWidth().catch(() => 1920), this.host.getVideoHeight().catch(() => 1080)]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h)));
-    // Post Init
-    this.autoChapters = !this.config.settings.metadata.allowMediaOverride; // maybe chapter "cuechange" over to u; truth
   }
   protected destroyHost(): void {
     if (!this.host) return;
-    this.host.destroy(), (this.host = null), (this.config.status.hostReady = false);
+    this.host.destroy(), (this.host = null), (this.config.status.hostReady = this.autoChapters = false);
     (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = `<div class="tmg-host-content">${this.hostHTML}</div>`; // Reset to placeholder
   }
   protected override onDestroy(): void {

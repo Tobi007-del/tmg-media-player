@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { addSafeClicks, createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 import type { UITuple } from "@defs/UIOptions";
 
 export type SettingsConfig = undefined;
@@ -11,7 +11,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   public static readonly isControl: boolean = true;
 
   protected get plug() {
-    return this.ctlr.plug("settings.settingsView");
+    return this.ctlr.plug("settings.panel");
   }
   protected get menu() {
     return this.plug?.menu;
@@ -47,7 +47,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
 
   public syncARIA(): void {
     this.state.label = "Settings";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.settings), (this.state.voiceCommand = this.settings.voice.commands.settings));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.settings), (this.state.voiceCommand = this.settings.voice.commands.settings));
     this.el.title = this.state.label + this.state.cmd + ` ↔ DblClick→ with history`;
     this.setBtnARIA("Open last history");
   }
@@ -58,3 +58,4 @@ declare module "@defs/registries" {
     settings: typeof SettingsButton;
   }
 }
+

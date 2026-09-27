@@ -1,4 +1,4 @@
-tmg.consts.CONFIG_BUILD.noPlugList = [];
+// tmg.consts.CONFIG_BUILD.noPlugList = [];
 
 const ap = new tmg.Player({
   "settings.controlPanel.timeline.previews": true,

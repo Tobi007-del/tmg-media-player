@@ -1,6 +1,6 @@
 export interface PosterConfig {
   eager: boolean;
-  allowAutoGen: boolean;
+  allowAutoGenerate: boolean;
 }
 
 export interface PosterState {

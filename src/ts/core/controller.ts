@@ -1,8 +1,7 @@
-import type { CtlrConfig } from "@defs/config";
+import type { CtlrConfig, CtlrState } from "@defs/config";
 import type { CtlrMedia } from "@defs/contract";
 import type { Action } from "@defs/action";
 import { TechRegistry, PlugRegistry } from "./registries";
-import { type CtlrState } from "@tools/runtime";
 import { HTML5Tech } from "@techs/html5";
 import type { TechConstructor } from "@techs/base";
 import { PlugConstructor as PC, type BasePlug as Plug } from "@plugs/base";
@@ -13,7 +12,7 @@ import { createEl, observeIntersection, observeResize } from "@utils/dom";
 import { collator, capitalize, uncamelize } from "@utils/str";
 import { cloneMedia, getMediaReport, isFeatured, isSameSources } from "@utils/media";
 import { type Volatile, reactive, type Reactive, inert, intent, volatile, getRaw, NOOP, NIL } from "sia-reactor";
-import { fanout, getPath, getPaths, isLeafPath, mergeObjs, nuke, setPath } from "sia-reactor/utils";
+import { fanout, deepClone, getPath, getPaths, isLeafPath, matchPaths, mergeObjs, nuke, setPath, isObj } from "sia-reactor/utils";
 import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
 import { isArr, isFunc, isStr } from "@utils/obj";
 import { silence, transaction } from "sia-reactor/modules";
@@ -29,7 +28,7 @@ export class Controller {
   public plugs = new Map<string, Plug>();
   // --- RUNTIME ---
   public media: Reactive<CtlrMedia>;
-  public state: Reactive<CtlrState> & Record<string, any>; // runtime state and states to be populated for easy reach
+  public state: Reactive<CtlrState>;
   public config: Reactive<Volatile<CtlrConfig>>;
   public get settings() {
     return this.config.settings; // can change ref
@@ -43,17 +42,18 @@ export class Controller {
   // --- MEMORY ---
   public flags: { readyState: number; initialized: boolean; wired: boolean; played: boolean; destroyed: boolean; instance: Controller } = { instance: this } as any;
   public build: CtlrConfig; // Build Cache
+  public stall = new Map<string, () => void>();
   // --- DOM ---
   public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
   public hash = "#tmg-auto-gen";
+  public zenlist = ["moreSettings"]; // #DEFAULT: build privilege; block actions while UI is active
   public mutating = true; // for external watchers that need to know
-  public UIZenList = ["settings"]; // #DEFAULT: build privilege; block actions while UI is active
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
     guardAllMethods(this, this.guard);
     const defs = mergeObjs(getMediaReport(medium), build.media); // returns defaults and initials
     this.config = reactive(volatile(build), { referenceTracking: true, smartCloning: true }); // `lineageTracing: false` so clone before reassigning "already in state" objects
-    this.state = reactive<CtlrState>(STATE_BUILD());
+    this.state = reactive(deepClone(STATE_BUILD));
     this.state.watch("readyState", (v) => ((this.flags.readyState = v), (this.flags.initialized = v > 0), (this.flags.wired = v > 1), (this.flags.played = v > 2), (this.flags.destroyed = v < 0)), { signal: this.signal });
     this.media = reactive({ intent: volatile(intent(defs.intent)), state: defs.state, status: defs.status, settings: volatile(intent(defs.settings)), type: medium.tagName.toLowerCase() as MediaType, tech: inert({}), features: {}, element: medium, pseudoElement: createEl(medium.tagName.toLowerCase()), container: createEl("div"), pseudoContainer: createEl("div") }, { crossRealms: true }) as any;
     this.media.set("tech", (t) => inert(t!), { signal: this.signal });
@@ -64,7 +64,7 @@ export class Controller {
     this.connectPlugs(), this.wireTechHandler(), this.wireStateHandler();
     await mockAsync(0), this.setReadyState(1); // wiring the machinery
     this.state.wonce("readyState", () => (!this.media.state.paused ? this.setReadyState(3) : this.media.wonce("state.paused", () => this.setReadyState(3), { signal: this.signal })), { signal: this.signal }); // first play(ed), matters to some
-    await mockAsync(0), this.setReadyState(2); // block `set` to stall, e.g lightState
+    await mockAsync(0), this.setReadyState(2); // block `set` to stall, e.g light
     setTimeout(() => (this.mutating = false), 0, this.signal);
   }
 
@@ -115,14 +115,14 @@ export class Controller {
   }
 
   private wireStateHandler(): void {
-    observeIntersection(this.media.container.parentElement!, (entry) => (this.state.parentIntersecting = entry.isIntersecting), this.signal);
+    observeIntersection(this.media.container.parentElement, (entry) => (this.state.parentIntersecting = entry.isIntersecting), this.signal);
     observeIntersection(this.media.container, (entry) => (this.state.mediaIntersecting = entry.isIntersecting), this.signal);
     observeResize(this.media.container, () => fanout(this.state.dimensions.container, getSizeTier(this.media.container)), this.signal);
     observeResize(this.media.pseudoContainer, () => fanout(this.state.dimensions.pseudoContainer, getSizeTier(this.media.pseudoContainer)), this.signal);
   }
   public setReadyState(state?: number): void {
     this.state.readyState = !this.state ? 0 : state ?? this.state.readyState + 1;
-    const rS = this.state.readyState; // incase of blocked sets, e.g. lightState
+    const rS = this.state.readyState; // incase of blocked sets, e.g. light
     this.fire("tmgreadystatechange", this.flags), this.fire(rS === 0 ? "tmgcreate" : rS === 1 ? "tmginit" : rS === 2 ? "tmgwire" : rS === 3 ? "tmgplay" : rS === -1 ? "tmgdestroy" : "", this.flags);
   }
 
@@ -136,14 +136,16 @@ export class Controller {
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
   }
+  public when(status: keyof CtlrMedia["status"], e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
+    const callback = this.guard((v: any, __: any, stall = true) => v && (stall && this.stall.get(_key)?.(), this.stall.delete(_key), _log && this.log(`${e?.path || "-"} stall by ${status}: ${isObj(e?.value, false) ? "{-}" : e?.value ?? "-"}`), task())); // RS(${this.flags.readyState})
+    this.stall.get(_key)?.(), _value ? callback(_value, null, false) : this.stall.set(_key, this.media.watch(`status.${status}`, callback, { signal }));
+  } // #EXTRA-MILE: doing the most with the least
   public get toast() {
     return this.plug("settings.toasts")?.toast;
   }
-  public when(status: keyof CtlrMedia["status"], e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
-    const callback = this.guard((v: any, __: any, stalled = true) => v && (stalled && this.stalled.get(_key)?.(), this.stalled.delete(_key), _log && this.log(`${e?.path || "-"} stalled by ${status}: ${"object" === typeof e?.value ? "{-}" : e?.value ?? "-"}`), task())); // RS(${this.flags.readyState})
-    this.stalled.get(_key)?.(), _value ? callback(_value, null, false) : this.stalled.set(_key, this.media.watch(`status.${status}`, callback, { signal }));
-  } // #EXTRA-MILE: doing the most with the least
-  protected stalled = new Map<string, () => void>();
+  public get notify() {
+    return this.plug("settings.notifiers")?.notify;
+  }
 
   public learn(key: string, act: Omit<Action, "id"> = NIL, signal = this.signal, old = this.actions.entries[key] ?? {}): void {
     this.actions.entries[key] = { ...act, ...old, id: key as any, fn: act.fn }; // fn must comes from the registering plug (runtime source of truth), persisted fields (label, logic, notify) survive from old entry
@@ -151,16 +153,18 @@ export class Controller {
   }
   public perform(id?: string, ...args: any[]): boolean {
     const act = id && this.actions.entries[id];
-    if (!act || act.disabled || (!act.zen && this.UIZenList.some(this.isUIActive))) return false;
+    if (!act || act.disabled || (!act.zen && this.zenlist.some(this.isUIActive))) return false;
     const can = !act.gates?.some((g) => !this.media.features[g]);
     transaction((root = act.logic?.length ? (this.logicRoot as any) : undefined) => {
       if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, !path.includes("intent") ? path : path.replace("intent", "state")) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
-      can && act.notify && this.plug("settings.notifiers")?.notify(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: this.config.id + act.id, renotify: true, ...act.toast });
+      can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: this.config.id + act.id, renotify: true, ...act.toast });
     }, act.label ?? act.id);
     return can;
   }
-  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, path as any)): boolean {
-    return !leaf ? !(this.config.actions.blacklist.some((b) => path === b || path.startsWith(b + ".")) || (/^media\.(intent|settings)\./.test(path) && !isFeatured(this.media, path.slice(path.lastIndexOf(".") + 1)))) : isArr(value) || isLeafPath(this.logicRoot as any, path as any, undefined, value);
+  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, path as any), force = false): boolean {
+    if (matchPaths(this.actions.blacklist, path) || (!this.config.devMode && matchPaths(this.actions.devlist, path))) return false;
+    if (!force && /^media\.(intent|settings)\./.test(path) && !isFeatured(this.media, path.slice(path.lastIndexOf(".") + 1))) return false;
+    return !leaf || isArr(value) || isLeafPath(this.logicRoot as any, path as any, undefined, value);
   }
   public get logicRoot() {
     return { media: this.media, settings: this.config.settings };
@@ -168,9 +172,9 @@ export class Controller {
   public get logicActions() {
     return (Object.values(this.actions.entries) as Action[]).filter((a) => !a.system || this.config.devMode).sort((a, b) => collator.compare(a.label || "", b.label || ""));
   }
-  public getLogicPaths(path: string): string[] {
+  public getLogicPaths(path: string, force = false): string[] {
     // prettier-ignore
-    return getPaths(this.logicRoot as any, path, { depth: 1 }).filter((p) => this.isLogical(p)).sort();
+    return getPaths(this.logicRoot as any, path, { depth: 1 }).filter((p) => this.isLogical(p, false, undefined, force)).sort(collator.compare);
   }
 
   public throttle(key: string, fn: Function, delay = 30, strict: ((fn: Function) => number) | boolean = true, signal = this.signal) {
@@ -190,7 +194,7 @@ export class Controller {
   }
 
   public isUIActive(mode: string): boolean {
-    return this.media.container.classList.contains(`tmg-media-${uncamelize(mode === "settings" ? "settings-view" : mode, "-")}`);
+    return this.media.container.classList.contains(`tmg-media-${uncamelize(mode, "-")}`);
   }
   public queryDOM<K extends keyof HTMLElementTagNameMap>(query: K, all: true, isPseudo?: boolean): NodeListOf<HTMLElementTagNameMap[K]>;
   public queryDOM<E extends Element = HTMLElement>(query: string, all: true, isPseudo?: boolean): NodeListOf<E>;

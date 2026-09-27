@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { PersistPlug } from "@plugs/settings/persist";
 import { formatUITime } from "@utils/time";
 
@@ -17,7 +17,7 @@ export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => (
       hidden: () => !plug.ctlr.config.devMode,
       configPaths: ["devMode"],
       items: [
-        { id: "persistThrottle", label: "Save throttle", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "2500", helperText: { info: "How often the player saves state changes. Higher numbers = fewer saves but less accurate resumption." }, type: "number", min: "0", required: true, value: () => plug.module.config.throttle }], getValue: () => formatUITime(plug.module.config.throttle), onChange: (val: Record<string, any>) => (plug.config.throttle = val.time), configPaths: ["settings.persist.throttle"] },
+        { id: "persistThrottle", label: "Save throttle", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "2.5", helperText: { info: "How often the player saves state changes. Higher numbers = fewer saves but less accurate resumption." }, type: "number", min: "0", required: true, value: () => plug.module.config.throttle / 1000 }], getValue: () => formatUITime(plug.module.config.throttle), onChange: (val: Record<string, any>) => (plug.config.throttle = val.secs * 1000), configPaths: ["settings.persist.throttle"] },
         { id: "persistStrict", label: "Strict resume", widget: "toggle", getValue: () => (plug.module.config.strict ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strict = val), configPaths: ["settings.persist.strict"], title: "Force save immediately before page closes or reloads for accurate resumption, might restore cleared data." },
         {
           id: "persistClearStorage",
@@ -42,3 +42,4 @@ declare module "@defs/registries" {
     "settings.persist": typeof getSettingsPersistMenu;
   }
 }
+

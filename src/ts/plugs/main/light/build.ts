@@ -1,11 +1,14 @@
 import { DeepPartial } from "sia-reactor";
-import { LightStateConfig } from "./types";
+import { LightConfig } from "./types";
 
-export const LIGHT_STATE_BUILD: DeepPartial<LightStateConfig> = {
+export const LIGHT_BUILD: DeepPartial<LightConfig> = {
   disabled: false,
   preview: {
     usePoster: true,
-    time: 4,
+    tease: false,
+    loop: false,
+    min: 0,
+    max: 4,
   },
   controls: ["meta", "bigPlayPause", "fullscreenOrientation"],
   stallControl: "bigPlayPause",

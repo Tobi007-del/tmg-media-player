@@ -5,7 +5,6 @@
   --tmg-media-current-object-height: var(--tmg-media-current-poster-height, 0px);
   object-fit: fill; /* "media-object" got u covered */
   background: none;
-  pointer-events: none;
   transition-property: opacity, filter;
   transition-timing-function: ease-in;
 }
@@ -16,6 +15,6 @@
 .tmg-media-container[data-ready-tier^="xx"] .tmg-media-poster {
   transition-duration: var(--tmg-media-fade-transition-time);
 }
-.tmg-media-poster-visible:has(.tmg-media-poster[data-loaded="true"]) .tmg-media {
+.tmg-media-poster-visible:has(.tmg-media-poster[data-loaded="true"]) :where(.tmg-media) {
   opacity: 0;
 }

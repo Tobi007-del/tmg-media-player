@@ -1,6 +1,21 @@
 import { DeepPartial } from "sia-reactor";
 import { VoiceConfig } from "./types";
+import { ACTIONS_DICT } from "@consts/actions";
 
+export const VOICE_COMMANDS: Record<string, string | string[]> = {
+  skipAd: "skip ad", // speech bait
+  voiceWake: "player",
+  voiceQuit: "quit",
+  voiceMute: "snub",
+  voiceSleep: "sleep",
+  voiceSubmit: ["submit", "confirm", "enter"],
+  voiceCtxPrevious: ["go back", "back", "previous"],
+  voiceCtxNext: ["go front", "front", "go forward", "forward", "next"],
+  voiceCtxClear: ["reset", "clear"],
+  voiceToggleOn: ["on", "yes", "true", "enable", "start"],
+  voiceToggleOff: ["off", "no", "false", "disable", "stop"],
+};
+for (const k in ACTIONS_DICT) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {
@@ -47,19 +62,7 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     },
     autoToggles: false,
   },
-  commands: {
-    skipAd: ["skip ad"], // speech bait
-    voiceWake: ["player"],
-    voiceQuit: ["quit"],
-    voiceMute: ["snub"],
-    voiceSleep: ["sleep"],
-    voiceSubmit: ["submit", "confirm", "enter"],
-    voiceCtxPrevious: ["go back", "back", "previous"],
-    voiceCtxNext: ["go front", "front", "go forward", "forward", "next"],
-    voiceCtxClear: ["reset", "clear"],
-    voiceToggleOn: ["on", "yes", "true", "enable", "start"],
-    voiceToggleOff: ["off", "no", "false", "disable", "stop"],
-  },
+  commands: VOICE_COMMANDS,
   toasts: {
     behavior: {
       value: "persistent",

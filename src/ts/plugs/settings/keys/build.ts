@@ -1,64 +1,70 @@
 import { DeepPartial } from "sia-reactor";
 import { KeysConfig } from "./types";
 import { KEYS_BLOCKS } from "@t007/utils";
+import { ACTIONS_DICT } from "@consts/actions";
+
+export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
+  previous: "Shift+p",
+  next: "Shift+n",
+  playPause: "k",
+  mute: "m",
+  dark: "d",
+  timeSkipBwd: "j",
+  timeSkipFwd: "l",
+  timeStart: ["Home", "0"],
+  timeEnd: ["End"],
+  timePreviousChapter: "p",
+  timeNextChapter: "n",
+  volumeUp: "ArrowUp",
+  volumeDown: "ArrowDown",
+  brightnessUp: "y",
+  brightnessDown: "h",
+  playbackRateUp: ">",
+  playbackRateDown: "<",
+  timeStepFwd: ".",
+  timeStepBwd: ",",
+  timeFormat: "z",
+  timeMode: "q",
+  capture: "s", // screenshot
+  objectFit: "a",
+  pictureInPicture: "i",
+  theater: "t",
+  fullscreen: "f",
+  captions: "c",
+  captionsFontSizeUp: ["+", "="],
+  captionsFontSizeDown: ["-", "_"],
+  captionsFontFamily: "u",
+  captionsFontWeight: "g", // g in weight or gravity
+  captionsFontVariant: "v",
+  captionsFontOpacity: "o",
+  captionsBackgroundOpacity: "b",
+  captionsWindowOpacity: "w",
+  captionsCharacterEdgeStyle: "e", // edges
+  captionsTextAlignment: "r", // shift 'r'ight
+  settings: "?",
+  cast: "Shift+c",
+  airplay: "Shift+a",
+  escape: "Escape",
+  skipAd: "x", // like pushing an "x" button
+  voiceWake: "Shift+v",
+  voiceQuit: "Shift+q",
+  voiceSleep: "Shift+z", // zz
+  voiceMute: "Shift+m",
+};
+for (const k in ACTIONS_DICT) KEYS_SHORTCUTS[k] ??= ""; // UX boost
+
+export const KEYS_OVERIDES = ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"];
 
 export const KEYS_WHITELIST = ["Space", "Enter", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-export const KEY_SHORTCUT_MOD_ACTIONS = ["timeSkip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
+export const KEYS_MODS_ACTIONS = ["timeSkip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
 
 export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   disabled: false,
   strictMatch: false,
   rankedMatch: true,
-  overrides: ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"],
-  shortcuts: {
-    previous: "Shift+p",
-    next: "Shift+n",
-    playPause: "k",
-    mute: "m",
-    dark: "d",
-    timeSkipBwd: "j",
-    timeSkipFwd: "l",
-    timeStart: ["Home", "0"],
-    timeEnd: ["End"],
-    timePreviousChapter: "p",
-    timeNextChapter: "n",
-    volumeUp: "ArrowUp",
-    volumeDown: "ArrowDown",
-    brightnessUp: "y",
-    brightnessDown: "h",
-    playbackRateUp: ">",
-    playbackRateDown: "<",
-    timeStepFwd: ".",
-    timeStepBwd: ",",
-    timeFormat: "z",
-    timeMode: "q",
-    capture: "s", // screenshot
-    objectFit: "a",
-    pictureInPicture: "i",
-    theater: "t",
-    fullscreen: "f",
-    captions: "c",
-    captionsFontSizeUp: ["+", "="],
-    captionsFontSizeDown: ["-", "_"],
-    captionsFontFamily: "u",
-    captionsFontWeight: "g", // g in weight or gravity
-    captionsFontVariant: "v",
-    captionsFontOpacity: "o",
-    captionsBackgroundOpacity: "b",
-    captionsWindowOpacity: "w",
-    captionsCharacterEdgeStyle: "e", // edges
-    captionsTextAlignment: "r", // shift 'r'ight
-    settings: "?",
-    cast: "Shift+c",
-    airplay: "Shift+a",
-    escape: "Escape",
-    skipAd: "x", // like pushing an "x" button
-    voiceWake: "Shift+v",
-    voiceQuit: "Shift+q",
-    voiceSleep: "Shift+z", // zz
-    voiceMute: "Shift+m",
-  },
+  overrides: KEYS_OVERIDES,
+  shortcuts: KEYS_SHORTCUTS,
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
   mods: {

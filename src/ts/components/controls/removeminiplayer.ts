@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type RemoveMiniplayerConfig = undefined;
 
@@ -13,7 +13,8 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
   }
 
   public override create(): HTMLButtonElement {
-    return (this.element = createEl("button", { className: "tmg-media-miniplayer-remove-btn", type: "button", innerHTML: IconRegistry.get("removeMiniplayer") }, { draggableControl: "", controlId: this.name }));
+    this.element = createEl("button", { className: "tmg-media-miniplayer-remove-btn", type: "button", innerHTML: IconRegistry.get("removeMiniplayer") }, { draggableControl: "", controlId: this.name });
+    return this.hide(), this.element;
   }
 
   public override wire(): void {
@@ -21,7 +22,9 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
     this.media.on("features.miniplayer", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    // Ctlr Config Listeners
+    // Ctlr Media Listeners
+    this.media.on("state.miniplayer", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
+    // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.escape", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.escape", this.syncARIA, { signal: this.signal });
   }
@@ -32,9 +35,13 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
 
   public syncARIA(): void {
     this.state.label = "Remove miniplayer";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.escape), (this.state.voiceCommand = this.settings.voice.commands.escape));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.escape), (this.state.voiceCommand = this.settings.voice.commands.escape));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
+  }
+
+  protected get canShow(): boolean {
+    return this.media.state.miniplayer && !!this.media.features.miniplayer; // can take care of myself
   }
 }
 

@@ -9,7 +9,7 @@ import { enterFullscreen, exitFullscreen, queryFullscreenEl, supportsFullscreen 
 import { initFocusTrap, removeFocusTrap } from "@t007/utils/hooks/vanilla";
 import { isFunc } from "@utils/obj";
 import { silence } from "sia-reactor/modules";
-import { connectOrientationManager, CtlrState, disconnectOrientationManager } from "@tools/runtime";
+import { connectOrientationManager, disconnectOrientationManager, globalState, type GlobalState } from "@tools/runtime";
 import { Controller } from "@core/controller";
 
 export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig> {
@@ -32,7 +32,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     for (const p of ["tech", "state.fullscreen"] as const) this.media.watch(p, this.syncFeatures, { init: p === "tech", signal: this.signal });
     this.media.watch("state.fullscreenOrientation", this.onScreenOrientation, { signal: this.signal });
     // ---- State --------
-    this.ctlr.state.watch("docInFullscreen", this.onDocInFullscreen, { signal: this.signal });
+    globalState.watch("inFullscreen", this.onDocInFullscreen, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.watch("settings.modes.fullscreen.disabled", this.syncFeatures, { signal: this.signal });
     // ---- Media Listeners
@@ -40,7 +40,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     this.media.on("intent.fullscreenOrientation", this.handleFullscreenOrientationIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.autoFullscreenOrientation", this.handleAutoFullscreenOrientationIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     // ---- State --------
-    this.ctlr.state.on("screenOrientation.type", this.handleScreenOrientationType, { signal: this.signal });
+    globalState.on("screenOrientation.type", this.handleScreenOrientationType, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.modes.fullscreen.pseudo", this.handlePseudo, { signal: this.signal });
     this.ctlr.config.on("settings.modes.fullscreen.orientation.allowMediaOverride", ({ value }) => value && this.media.state.fullscreen && (this.media.intent.fullscreenOrientation = this.preferredOrientation), { signal: this.signal });
@@ -57,7 +57,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     if (e.resolved || (IS_IOS && !this.config.pseudo)) return void (!e.resolved && e.reject(this.name)); // over to u, native tech!
     if (e.value && !this.isActive) {
       const fW = this.ctlr.plug("settings.modes")?.pictureInPicture?.floatingWindow;
-      if (this.ctlr.isUIActive("floatingPlayer")) return fW?.addEventListener("pagehide", this.enter, { signal: this.signal }), fW?.close(), e.resolve(this.name);
+      if (fW) return fW.addEventListener("pagehide", this.enter, { signal: this.signal }), fW.close(), e.resolve(this.name);
       if (this.media.state.pictureInPicture) silence(() => (this.media.intent.pictureInPicture = false));
       if (this.media.state.miniplayer) silence(() => (this.media.intent.miniplayer = false));
       this.enter();
@@ -88,9 +88,9 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     this.media.state.autoFullscreenOrientation = value;
   }
 
-  protected handleScreenOrientationType({ value: type }: REvent<CtlrState, "screenOrientation.type">): void {
-    if (this.media.state.fullscreen) this.media.state.fullscreenOrientation = this.ctlr.state.screenOrientation.locked ? type : false;
-    !this.ctlr.state.screenOrientation.locked && this.onScreenOrientation(type);
+  protected handleScreenOrientationType({ value: type }: REvent<GlobalState, "screenOrientation.type">): void {
+    if (this.media.state.fullscreen) this.media.state.fullscreenOrientation = globalState.screenOrientation.locked ? type : false;
+    !globalState.screenOrientation.locked && this.onScreenOrientation(type);
   }
 
   protected onDocInFullscreen(docInFs: boolean): void {
@@ -102,7 +102,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     } else if (this.ctlr.isUIActive("fullscreen")) {
       this.media.container.classList.toggle("tmg-media-fullscreen", (this.isActive = false));
       silence(() => (this.media.intent.locked = false)), disconnectOrientationManager();
-      this.ctlr.state.screenOrientation.locked = this.media.state.fullscreen = this.shadowFullscreen = false;
+      globalState.screenOrientation.locked = this.media.state.fullscreen = this.shadowFullscreen = false;
       removeFocusTrap(this.media.container), this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
     }
   }
@@ -118,12 +118,12 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     return this.config.orientation.allowMediaOverride && this.media.status.loadedMetadata ? (this.media.status.videoHeight > this.media.status.videoWidth ? "portrait" : "landscape") : this.media.intent.fullscreenOrientation; // #I/S EXCEPTION: state is not desire
   }
   public async changeScreenOrientation(option: OrientationLockType | false): Promise<void> {
-    if (this.media.state.fullscreen) (this.ctlr.state.screenOrientation.locked = !!option), option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option)?.catch(NOOP);
+    if (this.media.state.fullscreen) (globalState.screenOrientation.locked = !!option), option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option)?.catch(NOOP);
   }
 
   public syncFeatures(): void {
     this.media.tech.polyfill("fullscreen", this.config.pseudo || supportsFullscreen(false), this.config.disabled);
-    this.media.tech.polyfill(["fullscreenOrientation", "autoFullscreenOrientation"], !this.config.pseudo && this.media.features.fullscreen && this.media.state.fullscreen && IS_MOBILE && isFunc(screen.orientation?.lock));
+    this.media.tech.polyfill(["fullscreenOrientation", "autoFullscreenOrientation"], IS_MOBILE && isFunc(screen.orientation?.lock) && this.media.state.fullscreen && this.media.features.fullscreen && !this.config.pseudo);
   }
 }
 

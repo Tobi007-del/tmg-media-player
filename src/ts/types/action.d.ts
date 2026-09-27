@@ -1,17 +1,18 @@
 import type { ToastOptions } from "@t007/toast";
-import type { ACTIONS_BUILD } from "@consts/actions";
+import type { ACTIONS_DICT } from "@consts/actions";
 import type { MediaFeatures } from "@defs/contract";
 
 export type ActionLogicOp = "set" | "increment" | "decrement" | "toggle";
 
 export interface ActionLogic {
   path: string; // any path reachable from { media, settings }, e.g. "media.intent.volume", "settings.time.format.value"
+  fpath?: string; // UI friendly formatted path, e.g. "Media > Intent > Volume"
   value?: any; // required for "set"; optional for "increment"/"decrement"; unused for "toggle"
   op?: ActionLogicOp; // defaults to "set"
 }
 
 export interface Action {
-  id: keyof typeof ACTIONS_BUILD;
+  id: keyof typeof ACTIONS_DICT;
   label?: string;
   gates?: Array<keyof MediaFeatures>; // gates notifications/toasts: aborts them if any listed feature is false
   logic?: Array<ActionLogic>; // serializable ops, wide scope on { media, settings }

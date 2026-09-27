@@ -27,5 +27,5 @@
       "@styles/*": ["./src/css/*"]
     }
   },
-  "include": ["src/**/*", "tool-box/boombox/**/*"]
+  "include": ["src/**/*", "tool-box/boombox/**/*", "tsup.config.ts"]
 }

@@ -65,7 +65,7 @@ Watchers ensure the control plane stays synchronized *during* transitions. They'
 
 **TMG Media Player Usage**:
 - [SkeletonPlug.wire()](tmg-media-player/src/ts/plugs/main/skeleton/index.ts#L48): `on("state.paused", handlePaused)` for CSS class toggling
-- [CaptionsPlug menus](tmg-media-player/src/ts/plugs/menus/settings/captions.ts#L66): `on("secondaryTracks")` to sync UI badge counts
+- [CaptionsPlug menus](tmg-media-player/src/ts/plugs/menus/settings/captions.ts#L66): `ctlr.config.on("settings.captions.secondaryTracks")` to sync UI badge counts
 - [ControlPanelPlug](tmg-media-player/src/ts/plugs/settings/controlPanel/index.ts): Listens on depth 1 to ignore deep nested updates, react only to direct property changes
 
 **Why it Matters**:

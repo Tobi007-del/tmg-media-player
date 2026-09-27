@@ -16,7 +16,10 @@ export const PLAY_ITEM_BUILD: DeepPartial<PlayItemConfig> = {
   media: MEDIA_ITEM_BUILD as any,
   settings: {
     time: {
+      min: 0,
+      max: undefined,
       start: 0,
+      end: undefined,
     },
     controlPanel: {
       timeline: {

@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type FullscreenConfig = undefined;
 
@@ -10,7 +10,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
   public static readonly isControl: boolean = true;
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn", type: "button", innerHTML: IconRegistry.get("enterFullscreen") + IconRegistry.get("leaveFullscreen") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn", type: "button", innerHTML: IconRegistry.get("enterFullscreen") + IconRegistry.get("exitFullscreen") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -31,7 +31,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
 
   public syncARIA(): void {
     this.state.label = this.media.state.fullscreen ? "Exit full screen" : "Full screen";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.fullscreen), (this.state.voiceCommand = this.settings.voice.commands.fullscreen));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.fullscreen), (this.state.voiceCommand = this.settings.voice.commands.fullscreen));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -17,7 +17,6 @@ import { TouchTimelineNotifier } from "./touchTimeline";
 import { ChapterNotifier } from "./chapter";
 import { CastNotifier } from "./cast";
 import { AirPlayNotifier } from "./airplay";
-import { TimerNotifier } from "./timer";
 
 for (const Comp of [
   // Random Order
@@ -39,6 +38,5 @@ for (const Comp of [
   ChapterNotifier,
   CastNotifier,
   AirPlayNotifier,
-  TimerNotifier,
 ])
   ComponentRegistry.register(Comp);

@@ -1,7 +1,5 @@
 export interface SleepTimerConfig {
-  disabled: boolean;
-}
-
-export interface SleepTimerState {
-  ms: number;
+  ms?: number; // delete/== null = kill, 0 = off, <0 = end, >0 = ms
+  target?: number;
+  minutes: number[];
 }

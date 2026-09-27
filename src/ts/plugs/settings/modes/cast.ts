@@ -60,7 +60,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
     if (e.value && !active) {
       this.ctlr.plug("settings.metadata")?.syncSession();
       this.ctx!.requestSession().then(this.loadMediaSession).catch(this.ctlr.notice);
-      this.ctlr.plug("settings.notifiers")?.notify("cast"); // #STALLING: necessary optimistic distraction
+      this.ctlr.notify?.("cast"); // #STALLING: necessary optimistic distraction
     } else if (!e.value && active) {
       this.ctx!.endCurrentSession(true);
       this.media.container.classList.remove("tmg-media-cast");
@@ -136,7 +136,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
   }
 
   public syncFeatures(): void {
-    if (!this.config.disabled && this.ctlr.isNativeEl) this.ctlr.flags.wired ? this.initAPI() : this.ctlr.state.wonce("readyState", this.initAPI, { signal: this.signal }); // #HEAVY: waits for !lightState
+    if (!this.config.disabled && this.ctlr.isNativeEl) this.ctlr.flags.wired ? this.initAPI() : this.ctlr.state.wonce("readyState", this.initAPI, { signal: this.signal }); // #HEAVY: waits for !light
     this.media.tech.polyfill("cast", this.ctlr.isNativeEl && this.state.APIReady && this.ctx!.getCastState() !== cast.framework.CastState.NO_DEVICES_AVAILABLE, this.config.disabled);
   }
 

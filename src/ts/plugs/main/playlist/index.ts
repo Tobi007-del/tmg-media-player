@@ -3,7 +3,7 @@ import type { PlaylistConfig, PlaylistState } from "./types";
 import { PLAYLIST_BUILD, PLAY_ITEM_BUILD } from "./build";
 import type { CtlrConfig } from "@defs/config";
 import { type REvent } from "sia-reactor";
-import { mergeObjs, fanout, parsePathObj, deepClone } from "sia-reactor/utils";
+import { mergeObjs, fanout, parsePathObj, deepClone, getPaths, setPath } from "sia-reactor/utils";
 import { silence } from "sia-reactor/modules";
 import { isNum } from "@utils/obj";
 import { isSameURL } from "@utils/str";
@@ -17,6 +17,9 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   public static readonly plugName = "playlist";
   public static readonly isMain: boolean = true;
   public static readonly BUILD = PLAYLIST_BUILD;
+  public get item() {
+    return this.config.content?.[this.media.state.currentItem];
+  }
 
   constructor(ctlr: Controller, config = ctlr.config.playlist) {
     super(ctlr, config, { sortOrder: "asc" });
@@ -31,15 +34,13 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     this.media.set("intent.currentItem", (term) => (isNum(term) ? term : this.config.content?.findIndex(({ media: m }) => m.settings.metadata.id === term || m.settings.metadata.title === term || isSameURL(m.intent.src, this.media.intent.src)) ?? -1), { signal: this.signal }); // #VALIDATOR: intent type conformation
     // ---- Config --------
     this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(deepClone(PLAY_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
-    // ---- Media Watchers
+    // ---- Media & Config Watchers
     for (const k of ["tech", "state.currentItem", "status.ads"] as const) this.media.watch(k, this.syncFeatures, { signal: this.signal });
-    this.media.watch("state.poster", (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].media.intent.poster = v), { signal: this.signal });
-    this.media.watch("status.duration", (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].media.status.duration = v), { signal: this.signal });
-    for (const k of ["title", "artist", "profile", "artwork", "chapterInfo"] as const) this.media.watch(`settings.metadata.${k}`, (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].media.settings.metadata[k] = v as any), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
-    for (const k of ["title", "artist", "profile"] as const) this.media.watch(`settings.metadata.links.${k}`, (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].media.settings.metadata.links[k] = v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
-    // ---- Config --------
-    this.ctlr.config.watch("settings.time.start", (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].settings.time.start = v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
-    for (const k of ["previews", "marks"] as const) this.ctlr.config.watch(`settings.controlPanel.timeline.${k}`, (v) => this.config.content && !this.writing && (this.config.content[this.media.state.currentItem].settings.controlPanel.timeline[k] = v as any), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+    for (const p of getPaths(PLAY_ITEM_BUILD, "*", { leavesOnly: true }))
+      if (p.startsWith("media.")) {
+        const path = p.slice(6);
+        this.media.watch((!path.includes("intent") ? path : path.replace("intent", "state")) as any, (v) => !this.writing && this.item && setPath(this.item, p as any, v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+      } else !p.startsWith("ads.") && this.ctlr.config.watch(p as any, (v) => !this.writing && this.item && setPath(this.item, p as any, v), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.currentItem", this.handleCurrentItemIntent, { capture: true, signal: this.signal });
     // ---- Config --------

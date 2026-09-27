@@ -39,12 +39,12 @@ export class Timeline extends RangeInput<TimelineConfig> {
     // Variables Assignments
     this.element = super.create();
     this.el.dataset.controlId = this.name;
-    this.previewContainer = createEl("div", { className: "tmg-media-preview-container" });
+    this.previewContainer = createEl("div", { className: "tmg-media-preview-container tmg-media-no-pointer" });
     this.previewImg = createEl("div", { className: "tmg-media-preview" });
     this.previewCanvas = createEl("canvas", { className: "tmg-media-preview" });
     this.previewCtx = this.previewCanvas.getContext("2d", { alpha: false });
-    this.thumbnailImg = createEl("div", { className: "tmg-media-thumbnail tmg-media-filtered tmg-media-object" });
-    this.thumbnailCanvas = createEl("canvas", { className: "tmg-media-thumbnail tmg-media-filtered tmg-media-object" });
+    this.thumbnailImg = createEl("div", { className: "tmg-media-thumbnail tmg-media-no-pointer tmg-media-filtered tmg-media-object" });
+    this.thumbnailCanvas = createEl("canvas", { className: "tmg-media-thumbnail tmg-media-no-pointer tmg-media-filtered tmg-media-object" });
     this.thumbnailCtx = this.thumbnailCanvas.getContext("2d", { alpha: false });
     // DOM Injection
     this.el.classList.add("tmg-media-timeline-container"), this.barsWrapper.classList.add("tmg-media-timeline-bars-wrapper", "tmg-media-timeline"), this.thumbEl.classList.add("tmg-media-timeline-thumb");
@@ -83,9 +83,9 @@ export class Timeline extends RangeInput<TimelineConfig> {
     this.media.on("status.error", ({ value }) => value && this.syncChunks("buffer", 0), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("status.isLive", ({ value }) => (this.config.readonly = value && !this.media.status.canSeekLive), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("status.canSeekLive", ({ value }) => (this.config.readonly = !value && !!this.media.status.isLive), { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("settings.metadata.chapterInfo", (e) => (e.currentTarget.value.length < 2 ? (this.config.divs = []) : this.ctlr.when("loadedMetadata", e, this.syncChapters, this.signal)), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.chapterInfo", (e) => (e.currentTarget.value.length < 2 ? (this.config.divs = []) : this.ctlr.when("duration", e, this.syncChapters, this.signal)), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State --------
-    for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.object.${p}`, ({ value }) => (this.thumbnailCanvas[p] = value), { init: true, signal: this.signal });
+    for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.object.${k}`, ({ value }) => (this.thumbnailCanvas[k] = value), { init: true, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", this.syncPreviewText, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.time.mode", this.syncPreviewText, { signal: this.signal });
@@ -189,7 +189,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     for (let i = 0, len = this.chunks.length; i < len; i++) {
       const c = this.chunks[i];
       c.el.classList.add("tmg-media-timeline-chapter"), c.base.classList.add("tmg-media-timeline-base-bar", "tmg-media-timeline-bar"), c.preview.classList.add("tmg-media-timeline-preview-bar", "tmg-media-timeline-bar"), c.value.classList.add("tmg-media-timeline-played-bar", "tmg-media-timeline-bar");
-      c.el.insertBefore((c.buffer = createEl("div", { className: "tmg-media-range-bar tmg-media-buffered-bar tmg-media-timeline-buffered-bar tmg-media-timeline-bar" })), c.value);
+      c.el.insertBefore((c.buffer = createEl("div", { className: "tmg-media-range-bar tmg-media-no-pointer tmg-media-buffered-bar tmg-media-timeline-buffered-bar tmg-media-timeline-bar" })), c.value);
     }
     this.handleBufferedStatus({ value: this.media.status.buffered } as REvent<CtlrMedia, "status.buffered">);
   }
@@ -212,7 +212,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
       if (this.config.advertMarks) for (let i = 0, len = pnts.length; i < len; i++) agg.push({ start: (pnts[i] / max) * 100, label: `Advert at ${formatMediaTime({ time: pnts[i] })}`, type: "advert" });
       super.syncMarks(agg); // all weightless logic
     };
-    this.ctlr.when("loadedMetadata", undefined, handle, this.signal);
+    this.ctlr.when("duration", undefined, handle, this.signal);
   }
   public get hasExtMarks(): boolean {
     return this.config.bufferMarks || this.config.playedMarks || this.config.advertMarks;

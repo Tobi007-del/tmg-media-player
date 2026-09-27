@@ -57,14 +57,14 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   }
   protected get canShow(): boolean {
     return true;
-  } // override to make gating smarter
+  } // override to make gating smarter; `hide()` upon creation
 
   public setBadge(val: string): void {
     val ? (this.el.dataset.badge = val) : delete this.el.dataset.badge;
   }
   protected setBtnARIA(dblAction?: string, target: HTMLElement = this.el): void {
     this.state.label && target.setAttribute("aria-label", this.state.label);
-    this.state.keyShortcut && target.setAttribute("aria-keyShortcuts", parseForARIAKS(this.state.keyShortcut, false));
+    this.state.keyShortcut && target.setAttribute("aria-keyShortcuts", parseForARIAKS(this.state.keyShortcut));
     if (dblAction) target.setAttribute("aria-description", `Double-press to ${dblAction}`);
     else target.hasAttribute("aria-description") && target.removeAttribute("aria-description");
   }

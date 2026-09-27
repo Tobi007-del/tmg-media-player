@@ -34,14 +34,13 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
   public syncSession(): void {
     if (!navigator.mediaSession || (queryPictureInPicture() && !this.media.state.pictureInPicture)) return;
     navigator.mediaSession.metadata = new MediaMetadata(this.media.settings.metadata as MediaMetadataInit);
-    const set = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args),
-      list = this.ctlr.config.playlist.content;
+    const set = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args);
     set("play", () => (this.media.intent.paused = false));
     set("pause", () => (this.media.intent.paused = true));
     set("seekbackward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(-this.settings.time.skip) : null);
     set("seekforward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(this.settings.time.skip) : null);
-    set("previoustrack", list && this.media.state.currentItem > 0 ? this.ctlr.plug("playlist")!.previous : null);
-    set("nexttrack", list && this.media.state.currentItem < list.length - 1 ? this.ctlr.plug("playlist")!.next : null);
+    set("previoustrack", this.media.features.previousItem ? this.ctlr.plug("playlist")!.previous : null);
+    set("nexttrack", this.media.features.nextItem ? this.ctlr.plug("playlist")!.next : null);
   }
 }
 

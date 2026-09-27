@@ -29,7 +29,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   public override mount(): void {
-    this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-filtered" });
+    this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-cover tmg-media-fill tmg-media-filtered" });
     // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.container);
     // Post Mounting
@@ -65,7 +65,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     this.media.on("status.ended", ({ value }) => value && !this.media.status.ads && this.loader?.contentComplete(), { signal: this.signal });
     this.media.on("status.ads", this.handleAdsStatus, { signal: this.signal });
     // ---- State --------
-    for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${p}`, ({ target: { object } }) => this.manager?.resize(object.width, object.height), { signal: this.signal });
+    for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${k}`, ({ target: { object } }) => this.manager?.resize(object.width, object.height), { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("ads.rolls", this.handleRolls, { depth: 2, init: true, signal: this.signal }); // [n].played
     // Post Wiring
@@ -93,7 +93,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
       if (this.manager) for (const p of this.manager.getCuePoints()) points.add(p === -1 ? (max > 0 && Number.isFinite(max) ? max : -1) : p);
       this.media.status.adPoints = Array.from(points).sort((a, b) => a - b);
     };
-    this.ctlr.when("loadedMetadata", e, handle, this.signal);
+    this.ctlr.when("duration", e, handle, this.signal);
   }
 
   protected handleManagerLoaded(e: google.ima.AdsManagerLoadedEvent, set = new google.ima.AdsRenderingSettings()): void {
@@ -103,7 +103,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     this.manager.addEventListener(google.ima.AdEvent.Type.SKIPPABLE_STATE_CHANGED, this.syncFeatures);
     this.manager.addEventListener(google.ima.AdEvent.Type.ALL_ADS_COMPLETED, this.handleAllCompleted);
     this.manager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, this.handleError);
-    const start = () => (this.manager.init(this.ctlr.state.dimensions.container.width, this.ctlr.state.dimensions.container.height), this.manager.start()); // #HEAVY: waits for lightState
+    const start = () => (this.manager.init(this.ctlr.state.dimensions.container.width, this.ctlr.state.dimensions.container.height), this.manager.start()); // #HEAVY: waits for light
     this.handleRolls(), this.ctlr.when("IMAInitialized", undefined, () => (this.ctlr.flags.played ? start() : this.ctlr.state.wonce("readyState", start, { signal: this.signal })), this.signal); // #PATIENT: only after first play
   }
 
@@ -158,7 +158,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   private prevTime = -1;
 
   public syncFeatures(): void {
-    this.config.rolls.length && this.initSDK(); // #HEAVY: still in lightState
+    this.config.rolls.length && this.initSDK(); // #HEAVY: still in light
     this.media.tech.polyfill("ads", this.media.status.IMAReady && (this.state.roll || this.config.rolls.length));
     this.media.tech.polyfill("adSkip", this.manager?.getAdSkippableState());
   }

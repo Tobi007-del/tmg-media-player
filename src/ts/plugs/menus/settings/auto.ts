@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { AutoPlug } from "@plugs/settings/auto";
 import { getUIOpt, isArr } from "@utils/obj";
 import { formatUITime } from "@utils/time";
@@ -27,7 +27,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
         plug.config.play.value = cur.length ? cur : false; // forwarding intent
       },
       configPaths: ["settings.auto.play.value"],
-      getTipHTML: () => "Start playback when the player enters or leaves based on selected options",
+      getTipHTML: () => "Start playback when the player enters or leaves based on selected option(s)",
     },
     {
       id: "autoPause",
@@ -44,25 +44,39 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
         plug.config.pause.value = cur.length ? cur : false;
       },
       configPaths: ["settings.auto.pause.value"],
-      getTipHTML: () => "Pause playback when the player enters or leaves based on selected options",
+      getTipHTML: () => "Pause playback when the player enters or leaves based on selected option(s)",
     },
     {
       id: "autoNext",
       label: "Auto-next",
       widget: "group",
-      getValue: () => formatUITime(plug.config.next.value),
-      configPaths: ["settings.auto.next.value"],
+      getValue: () => formatUITime(plug.config.next.countdown * 1000),
+      configPaths: ["settings.auto.next.countdown"],
       items: [
-        { id: "autoNextTime", label: "Countdown", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "20000", helperText: { info: "Time to end before automatically playing the next playlist item. Set to -1 to disable." }, type: "number", min: "-1", required: true, value: () => plug.config.next.value }], getValue: () => formatUITime(plug.config.next.value), onChange: (val: Record<string, any>) => (plug.config.next.value = val.time), getTipHTML: () => (plug.ctlr.config.devMode ? "Customize the Time limits to adjust when this countdown begins" : ""), actions: [{ id: "autoNextGoToTimeLimits", getLabel: () => "Time limits", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("timeLimits"), hidden: () => !plug.ctlr.config.devMode }], configPaths: ["settings.auto.next.value"] },
+        { id: "autoNextCountdown", label: "Countdown", widget: "input", inputs: [{ name: "secs", label: "secs or %", placeholder: "20", type: "text", helperText: { info: "Time to end before next plays. Supports seconds or percent (10%). Set to -1 to disable." }, value: () => plug.config.next.countdown }], getValue: () => formatUITime(plug.config.next.countdown * 1000), onChange: (val: Record<string, any>) => (plug.config.next.countdown = val.secs), getTipHTML: () => (plug.ctlr.config.devMode ? "Customize the Time limits to adjust when this countdown begins" : ""), actions: [{ id: "autoNextGoToTimeLimits", getLabel: () => "Time limits", onClick: () => plug.ctlr.plug("settings.panel")?.menu.goTo("timeLimits"), hidden: () => !plug.ctlr.config.devMode }], configPaths: ["settings.auto.next.countdown"] },
         {
           id: "autoNextPreview",
           label: "Preview",
           widget: "group",
-          getValue: () => "",
+          getValue: () => (plug.config.next.preview.usePoster ? "Poster" : "Teaser"),
+          configPaths: ["settings.auto.next.preview.usePoster", "settings.auto.next.preview.tease"],
           items: [
             { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], title: "Display the next video's poster during the countdown" },
             { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], title: "Play a short silent preview of the next when no poster is present" },
-            { id: "autoNextPreviewTime", label: "Preview time", widget: "input", inputs: [{ name: "time", label: "ms", placeholder: "4000", helperText: { info: "The poster fallback preview time in ms in the next video, where the tease ends" }, type: "number", min: "0", value: () => plug.config.next.preview.time * 1000 }], getValue: () => formatUITime(plug.config.next.preview.time * 1000), onChange: (val: Record<string, any>) => (plug.config.next.preview.time = val.time / 1000), configPaths: ["settings.auto.next.preview.time"] },
+            { id: "autoNextPreviewLoop", label: "Loop teaser", widget: "toggle", getValue: () => (plug.config.next.preview.loop ? "On" : "Off"), getDisabled: () => !plug.config.next.preview.tease, onChange: (val: boolean) => (plug.config.next.preview.loop = val), configPaths: ["settings.auto.next.preview.loop", "settings.auto.next.preview.tease"], title: "Loop the video tease continuously instead of pausing at the end" },
+            {
+              id: "autoNextPreviewBounds",
+              label: "Teaser bounds",
+              widget: "input",
+              inputs: [
+                { name: "min", label: "Min (secs or %)", placeholder: "0", type: "text", helperText: { info: "Supports seconds or percent (10%)" }, value: () => plug.config.next.preview.min },
+                { name: "max", label: "Max (secs or %)", placeholder: "4", type: "text", helperText: { info: "Supports seconds or percent (50%)" }, value: () => plug.config.next.preview.max },
+              ],
+              getValue: () => `${formatUITime(plug.config.next.preview.min * 1000)} to ${formatUITime(plug.config.next.preview.max * 1000)}`,
+              getDisabled: () => !plug.config.next.preview.tease,
+              onChange: (val: Record<string, any>) => ((plug.config.next.preview.min = val.min), (plug.config.next.preview.max = val.max)),
+              configPaths: ["settings.auto.next.preview.min", "settings.auto.next.preview.max", "settings.auto.next.preview.tease"],
+            },
           ],
         },
         {

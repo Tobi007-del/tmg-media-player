@@ -4,6 +4,7 @@ import { TimeTravelConfig } from "./types";
 export const TIME_TRAVEL_BUILD: DeepPartial<TimeTravelConfig> = {
   module: {
     whitelist: ["intent"], // for undoing actions while "state" for reliving time itself
+    blacklist: ["intent.paused"],
     mirrorReads: true,
     mirrorWrites: true,
   },

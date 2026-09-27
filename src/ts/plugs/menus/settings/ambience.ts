@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { AmbiencePlug } from "@plugs/settings/ambience";
 
 export const getSettingsAmbienceMenu = (plug: AmbiencePlug): SettingsMenuItem => ({
@@ -18,3 +18,4 @@ declare module "@defs/registries" {
     "settings.ambience": typeof getSettingsAmbienceMenu;
   }
 }
+

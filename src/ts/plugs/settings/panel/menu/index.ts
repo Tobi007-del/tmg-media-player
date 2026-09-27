@@ -3,6 +3,7 @@ import type { SettingsMenuItem, SettingsMenuConfig } from "../types";
 import { MainMenuPanel } from "./panel/main";
 import { SubMenuPanel } from "./panel/sub";
 import type { BaseMenuPanel, PanelDir } from "./panel";
+import { MENU_FOCUS_SELECTOR } from "../build";
 import { createEl } from "@utils/dom";
 import { getActiveEl, isArr, isFunc } from "@t007/utils";
 import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
@@ -17,7 +18,6 @@ import "./widgets/group";
 
 export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentState, HTMLElement> {
   public static readonly componentName = "SettingsMenu";
-  public static readonly focusSelector = ":is([tabindex='0'], button, input:not([type='checkbox'], [type='radio'])):not(.tmg-media-smenu-back-btn, .tmg-media-range-container)";
   private registry = new OrderedRegistry<SettingsMenuItem>();
   private mainPanel!: MainMenuPanel;
   private subPanels: SubMenuPanel[] = [];
@@ -26,11 +26,11 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public onViewClick?: () => void;
 
   public override create(): HTMLElement {
-    this.element = createEl("div", { className: "tmg-media-smenu-overlay", inert: true });
+    this.element = createEl("div", { className: "tmg-media-smenu-overlay tmg-media-no-pointer", inert: true });
     this.el.addEventListener("keydown", (e: KeyboardEvent, active = getActiveEl(this.el.ownerDocument) as HTMLElement) => {
       if ((e.key === "Enter" || e.key === " ") && active && !active.matches("input,textarea,[contenteditable]") && active.tagName !== "BUTTON" && active.closest(".tmg-media-smenu-panel-active")) e.preventDefault(), active.click();
       else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopImmediatePropagation(), active.click();
-      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopImmediatePropagation(), this.goBack();
+      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopImmediatePropagation(), this.goBack(true);
     });
     return this.element;
   }
@@ -50,8 +50,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.media.on("state.paused", ({ value }) => !value && this.close(), { signal: this.signal });
     this.media.on("features", () => this.menuOpen && this.syncUI(), { signal: this.signal });
     // ---- State --------
-    for (const p of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${p}`, () => this.menuOpen && this.syncUI(), { signal: this.signal });
-    this.ctlr.config.on("settings.settingsView.menu.blacklist", () => this.menuOpen && this.syncUI(), { signal: this.signal });
+    for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${k}`, () => this.menuOpen && this.syncUI(), { signal: this.signal });
+    this.ctlr.config.on("settings.panel.menu.blacklist", () => this.menuOpen && this.syncUI(), { signal: this.signal });
   }
 
   public override unmount(): void {
@@ -137,8 +137,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (!this.isContext) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
     this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
     this.media.container.classList.add("tmg-media-settings-menu"), this.el.classList.toggle("tmg-media-smenu-context", this.isContext);
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: SettingsMenu.focusSelector });
-    initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: `.tmg-media-smenu-panel-active ${SettingsMenu.focusSelector}` });
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
+    initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: `.tmg-media-smenu-panel-active ${MENU_FOCUS_SELECTOR}` });
   }
   public close(): void {
     if (!this.menuOpen) return;
@@ -177,15 +177,15 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     nextPanel.load(item);
     this.hidePanel(activePanel, "backward"), this.showPanel(nextPanel, "forward");
   }
-  public goBack(): void {
+  public goBack(restore = false): void {
     if (this.navStack.length === 0) return;
     const activePanel = this.subPanels[this.navStack.length - 1];
     this.navStack.pop();
-    this.hidePanel(activePanel, "forward"), this.showPanel(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1], "backward");
+    this.hidePanel(activePanel, "forward"), this.showPanel(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1], "backward", restore);
   }
 
-  private showPanel(panel: BaseMenuPanel, dir: PanelDir = "forward"): void {
-    panel.enter(dir), this.syncHeight(panel), syncArrowNavigation(this.element);
+  private showPanel(panel: BaseMenuPanel, dir: PanelDir = "forward", restore = false): void {
+    panel.enter(dir, restore), this.syncHeight(panel), syncArrowNavigation(this.element);
   }
   private hidePanel(panel: BaseMenuPanel, dir: PanelDir = "backward"): void {
     panel.exit(dir);

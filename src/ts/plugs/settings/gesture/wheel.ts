@@ -26,7 +26,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || this.ctlr.isUIActive("floatingPlayer"));
+    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || !!this.media.status.floatingPlayer);
   }
 
   protected handleWheel(e: WheelEvent): void {

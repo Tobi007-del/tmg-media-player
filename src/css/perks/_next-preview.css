@@ -3,9 +3,6 @@
   flex: 0 0 var(--t007-toast-image-width);
   width: var(--t007-toast-image-width);
   height: var(--t007-toast-image-height);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
   color: var(--tmg-media-current-control-color);
   background: var(--tmg-media-background);
@@ -31,6 +28,7 @@
   padding-inline: calc(var(--t007-toast-unit) / 5);
   background-color: var(--tmg-media-complement-color);
   border-radius: 50%;
+  margin: auto;
   z-index: 1;
   transition: transform var(--tmg-media-slow-transition-time) ease;
   animation: tmg-beat 1s infinite ease-out;
@@ -40,9 +38,7 @@
   animation: none;
   transform: scale(var(--tmg-media-large-scale));
 }
-.tmg-media-next-preview-wrapper > button > * {
-  pointer-events: none;
-}
+
 .tmg-media-next-info {
   flex-grow: 1;
   min-width: 0;

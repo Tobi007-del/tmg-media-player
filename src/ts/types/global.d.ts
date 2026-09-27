@@ -1,9 +1,10 @@
 import { ATTR } from "@tools/runtime";
 import { Player } from "@tools/player";
-import * as TMGGlobal from "../../super";
 import "@t007/toast";
 import "@t007/input";
 import "@t007/dialog";
+
+import type { GlobalState } from "@tools/runtime";
 
 declare global {
   interface HTMLMediaElement {
@@ -24,7 +25,9 @@ declare global {
     _tmgPannerNode?: PannerNode | null;
   }
 
-  interface TMGNamespace extends TMGGlobal {}
+  interface TMGNamespace {
+    state: GlobalState;
+  }
 
   interface Window {
     // Auto-patched Props

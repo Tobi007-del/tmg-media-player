@@ -16,12 +16,12 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   public container!: HTMLDivElement;
 
   constructor(ctlr: Controller, config = ctlr.settings.notifiers) {
-    super(ctlr, config, { events: [] }); // ["mediaPlay", "mediaPause", "mediaPrevious", "mediaNext", "playbackRateUp", "playbackRateDown", "volumeUp", "volumeDown", "volumeMuted", "brightnessUp", "brightnessDown", "brightnessDark", "objectFitContain", "objectFitCover", "objectFitFill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd", "chapter", "timer"]
+    super(ctlr, config, { events: [] }); // ["mediaPlay", "mediaPause", "mediaPrevious", "mediaNext", "playbackRateUp", "playbackRateDown", "volumeUp", "volumeDown", "volumeMuted", "brightnessUp", "brightnessDown", "brightnessDark", "objectFitContain", "objectFitCover", "objectFitFill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd", "chapter"]
   }
 
   public override mount(): void {
     // Variables Assignment
-    this.ctlr.DOM.notifiersContainer = this.container = createEl("div", { className: "tmg-media-notifiers-container" }, { notify: "" });
+    this.ctlr.DOM.notifiersContainer = this.container = createEl("div", { className: "tmg-media-notifiers-container tmg-media-flex-center tmg-media-fill tmg-media-no-pointer" }, { notify: "" });
     // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.container);
     // DOM -> Ctlr Config Listeners

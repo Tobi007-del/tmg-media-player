@@ -19,7 +19,7 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
     // --------- Listeners
     this.media.on("intent.objectFit", this.handleObjectFitIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     // ---- State ---------
-    for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSizes, { init: p === "width", signal: this.signal });
+    for (const k of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${k}`, this.syncSizes, { init: k === "width", signal: this.signal });
     // ---- Config --------
     this.ctlr.config.watch("settings.css.objectFit", this.syncSizes, { signal: this.signal });
     this.ctlr.config.watch("settings.css.objectPosition", this.syncSizes, { signal: this.signal });
@@ -42,8 +42,8 @@ export class ObjectFitPlug extends BasePlug<ObjectFitConfig> {
     return ({ contain: "cover", cover: "fill", fill: "contain" } as const)[this.media.state.objectFit];
   }
   public rotateFit(): void {
-    this.media.intent.objectFit = rotateAny(this.media.state.objectFit, parseUIOpts(this.config.options!) as ObjectFit[]);
-    this.media.features.objectFit && this.ctlr.plug("settings.notifiers")?.notify(`objectFit${capitalize(this.media.intent.objectFit)}`); // must notify for visual aid
+    this.media.intent.objectFit = rotateAny(this.media.state.objectFit, parseUIOpts(this.config.options) as ObjectFit[]);
+    this.media.features.objectFit && this.ctlr.notify?.(`objectFit${capitalize(this.media.intent.objectFit)}`); // must notify for visual aid
   }
 
   public toLabel(fit = this.media.state.objectFit): string {

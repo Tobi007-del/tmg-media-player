@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type PictureInPictureConfig = undefined;
 
@@ -10,7 +10,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   public static readonly isControl: boolean = true;
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: IconRegistry.get("enterPip") + IconRegistry.get("leavePip") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: IconRegistry.get("enterPip") + IconRegistry.get("exitPip") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -31,7 +31,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   public syncARIA(): void {
     this.state.label = this.media.state.pictureInPicture ? "Exit picture in picture" : "Picture in picture";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

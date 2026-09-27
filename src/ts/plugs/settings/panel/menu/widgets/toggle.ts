@@ -9,7 +9,7 @@ export class ToggleWidget extends BaseWidget {
     this.track = createEl("span", { className: "tmg-media-smenu-toggle-track" });
     const thumb = createEl("span", { className: "tmg-media-smenu-toggle-thumb" });
     this.input = createEl("input", { type: "checkbox", className: "t007-input tmg-media-smenu-toggle-input" });
-    this.element = createEl("label", { className: "tmg-media-smenu-toggle-wrapper", role: "switch" });
+    this.element = createEl("label", { className: "tmg-media-smenu-toggle-wrapper tmg-media-flex-center", role: "switch" });
     this.track.append(thumb);
     this.element.append(this.input, this.track);
     this.input.addEventListener("change", () => (this.item.onChange?.(this.input.checked), (this.element.ariaChecked = String(this.input.checked)), this.syncTrack(this.input.checked)), { signal: this.signal });

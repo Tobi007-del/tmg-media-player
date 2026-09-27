@@ -8,7 +8,7 @@ export class ButtonWidget extends BaseWidget {
     const actions = this.item.actions || [{ getLabel: () => this.item.label, icon: this.item.icon, onClick: () => this.item.onChange?.(null) }];
     for (const action of actions) {
       const btn = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", ariaLabel: action.getLabel(), title: action.getLabel(), tabIndex: 0 });
-      btn.innerHTML = (action.icon ? `<span class="tmg-media-smenu-row-icon">${IconRegistry.get(action.icon, true) || ""}</span>` : "") + `<span class="tmg-media-smenu-row-label">${action.getLabel()}</span>`;
+      btn.innerHTML = (action.icon ? `<span class="tmg-media-smenu-row-icon tmg-media-flex-center">${IconRegistry.get(action.icon, true) || ""}</span>` : "") + `<span class="tmg-media-smenu-row-label">${action.getLabel()}</span>`;
       btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()), { signal: this.signal });
       btn.addEventListener("keydown", (e) => e.key === "Enter" && (e.preventDefault(), action.onClick()), { signal: this.signal });
       this.element.append(btn);

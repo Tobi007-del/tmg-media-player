@@ -22,12 +22,10 @@
   scale: var(--tmg-media-control-active-scale);
 }
 .tmg-media-vb-container.tmg-media-control-dragging > *:not(.tmg-media-vb-btn),
-.tmg-media-container:not(.tmg-media-miniplayer) :is(.tmg-media-miniplayer-remove-btn, .tmg-media-miniplayer-expand-btn),
-.tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-fullscreen) .tmg-media-theater-btn,
 .tmg-media-container:is(.tmg-media-miniplayer, .tmg-media-floating-player) .tmg-media-apt-controls-wrapper :is(.tmg-media-previous-btn, .tmg-media-play-pause-btn, .tmg-media-next-btn),
 .tmg-media-container.tmg-media-picture-in-picture :is(.tmg-media-cover-curtain, button:has(.tmg-media-play-icon, .tmg-media-pause-icon, .tmg-media-previous-icon, .tmg-media-next-icon), .tmg-media-brightness-container, .tmg-media-buffer, .tmg-media-object-fit-btn),
 .tmg-host-container[data-size-tier^="xxxxx"] :is(.tmg-media-profile-link, .tmg-media-artist-wrapper, .tmg-media-bottom-controls-wrapper:not(:hover) .tmg-media-timeline-thumb, .tmg-media-side-controls-wrapper > *:not(.tmg-media-play-pause-btn, .tmg-media-next-btn, .tmg-media-previous-btn, .tmg-media-captions-btn:not(.tmg-media-control-disabled), .tmg-media-fullscreen-btn, .tmg-media-volume-container, .tmg-media-time-btn, .tmg-media-duration-btn, .tmg-media-time-and-duration-btn, .tmg-media-settings-btn, .tmg-media-miniplayer-remove-btn, .tmg-media-miniplayer-expand-btn)),
-.tmg-media-container:has([data-notify^="playbackRate"], [data-notify^="volume"], [data-notify^="brightness"], [data-notify^="objectFit"], [data-notify="capture"], [data-notify="cast"], [data-notify="airplay"], [data-notify="timer"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
+.tmg-media-container:has([data-notify^="playbackRate"], [data-notify^="volume"], [data-notify^="brightness"], [data-notify^="objectFit"], [data-notify="capture"], [data-notify="cast"], [data-notify="airplay"]) :is(.tmg-media-big-controls-wrapper-cover, .tmg-media-buffer) {
   display: none;
 }
 :is(.tmg-media-container.tmg-media-paused .tmg-media-pause-icon, .tmg-media-container:not(.tmg-media-paused) .tmg-media-play-icon, .tmg-media-container:not(.tmg-media-replay) .tmg-media-replay-icon, .tmg-media-container.tmg-media-replay :is(.tmg-media-pause-icon, .tmg-media-play-icon)),

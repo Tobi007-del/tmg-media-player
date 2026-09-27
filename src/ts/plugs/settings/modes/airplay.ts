@@ -48,10 +48,10 @@ export class ModesAirPlayPin extends BasePin<ModesPlug, ModesAirPlayConfig, Mode
   }
 
   protected handleAirPlayIntent(e: REvent<CtlrMedia, "intent.airplay">): void {
-    if (e.resolved || !e.value) return;
-    if (!this.ctlr.isUIActive("airplay")) {
+    if (e.resolved) return;
+    if (e.value && !this.ctlr.isUIActive("airplay")) {
       this.media.element?.webkitShowPlaybackTargetPicker?.(); // Apple requires this to be triggered by a direct user gesture (like a click)
-      this.ctlr.plug("settings.notifiers")?.notify("airplay"); // #STALLING: necessary optimistic distraction
+      this.ctlr.notify?.("airplay"); // #STALLING: necessary optimistic distraction
     }
     e.resolve(this.name);
   }

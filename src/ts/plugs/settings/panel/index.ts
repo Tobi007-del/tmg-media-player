@@ -1,7 +1,7 @@
 import { silence } from "sia-reactor/modules";
 import { BasePlug } from "../../base";
 import { SETTINGS_BUILD } from "./build";
-import type { SettingsViewConfig, SettingsViewState } from "./types";
+import type { panelConfig, panelState } from "./types";
 import { SettingsMenu } from "./menu";
 import { createEl } from "@utils/dom";
 import { mockAsync } from "@utils/fn";
@@ -9,14 +9,14 @@ import { parseCSSTime } from "@utils/str";
 import type { Controller } from "@core/controller";
 import { isPOJO } from "@utils/obj";
 
-export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewState> {
-  public static readonly plugName = "settingsView";
+export class PanelPlug extends BasePlug<panelConfig, panelState> {
+  public static readonly plugName = "panel";
   public static readonly BUILD = SETTINGS_BUILD;
   public closeBtn!: HTMLButtonElement | null;
   public menu!: SettingsMenu;
   protected wasPaused = false;
 
-  constructor(ctlr: Controller, config = ctlr.settings.settingsView) {
+  constructor(ctlr: Controller, config = ctlr.settings.panel) {
     super(ctlr, config, { viewOpen: false });
     this.menu = new SettingsMenu(this.ctlr, this.config.menu);
   }
@@ -26,42 +26,42 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
     this.menu.onViewClick = this.toggleView;
   }
   public override unmount(): void {
-    this.media.container.classList.remove("tmg-media-settings-view");
+    this.media.container.classList.remove("tmg-media-more-settings");
     this.ctlr.queryDOM(".tmg-media-settings-tips-btn")?.remove(), this.ctlr.queryDOM(".tmg-media-settings-brand-wrapper")?.remove(), this.ctlr.queryDOM(".tmg-media-settings-theme-wrapper")?.remove();
   }
 
   public override wire(): void {
     // Event Listeners
-    this.closeBtn?.addEventListener("click", this.leaveView, { signal: this.signal });
+    this.closeBtn?.addEventListener("click", this.exitMore, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.paused", ({ value }) => !value && this.leaveView(), { signal: this.signal });
+    this.media.on("state.paused", ({ value }) => !value && this.exitMore(), { signal: this.signal });
     // Post Wiring
     this.ctlr.learn("settings", { fn: () => this.menu.toggle(undefined, true) }, this.signal);
     !this.config.menu.disabled && this.menu.wire(), super.wire();
   }
 
-  public async enterView(): Promise<void> {
-    if (this.ctlr.isUIActive("settings")) return;
+  public async enterMore(): Promise<void> {
+    if (this.ctlr.isUIActive("moreSettings")) return;
     if (!this.viewReady) this.initView(), (this.viewReady = true);
     (this.wasPaused = this.media.state.paused), this.config.autoPause && silence(() => (this.media.intent.paused = true));
-    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.add("tmg-media-settings-view"), (this.state.viewOpen = true);
-    await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
+    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.add("tmg-media-more-settings"), (this.state.viewOpen = true);
+    await mockAsync(parseCSSTime(this.settings.css.panelTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
     this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
     !isPOJO(this.menu.anchor) && this.closeBtn?.focus();
   } // #STANDALONE: needs scoped behavior
   private viewReady = false;
 
-  public async leaveView(): Promise<void> {
-    if (!this.ctlr.isUIActive("settings")) return;
-    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.remove("tmg-media-settings-view"), (this.state.viewOpen = false);
-    await mockAsync(parseCSSTime(this.settings.css.settingsViewTransitionTime));
+  public async exitMore(): Promise<void> {
+    if (!this.ctlr.isUIActive("moreSettings")) return;
+    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.remove("tmg-media-more-settings"), (this.state.viewOpen = false);
+    await mockAsync(parseCSSTime(this.settings.css.panelTransitionTime));
     this.config.autoPause && silence(() => (this.media.intent.paused = this.wasPaused));
     this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");
   } // #STANDALONE: needs scoped behavior
 
   public async toggleView(): Promise<void> {
-    this.ctlr.isUIActive("settings") ? await this.leaveView() : await this.enterView();
+    this.ctlr.isUIActive("moreSettings") ? await this.exitMore() : await this.enterMore();
   }
 
   private initView() {
@@ -171,7 +171,7 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
   }
 
   private async showTipsDialog() {
-    await this.leaveView();
+    await this.exitMore();
     t007.alert(this.getTipsHTML(), { id: `${this.ctlr.config.id}-tips-dialog`, rootElement: this.ctlr.DOM.containerContent, confirmText: "Got it!" });
   }
 
@@ -182,13 +182,13 @@ export class SettingsViewPlug extends BasePlug<SettingsViewConfig, SettingsViewS
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {
-    "settings.settingsView": typeof SettingsViewPlug;
+    "settings.panel": typeof PanelPlug;
   }
 }
 
 declare module "@defs/config" {
   interface Settings {
-    settingsView: SettingsViewConfig;
+    panel: panelConfig;
   }
 }
 

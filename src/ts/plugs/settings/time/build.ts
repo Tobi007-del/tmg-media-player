@@ -6,5 +6,5 @@ export const TIME_BUILD: Partial<TimeConfig> = {
   mode: "elapsed",
   format: "digital",
   autoCap: 0.25,
-  whitelist: ["lightState.preview.time", "settings.time.min", "settings.time.max", "settings.time.start", "settings.time.end", "settings.auto.next.preview.time"],
+  whitelist: ["light.preview.min", "light.preview.max", "settings.time.min", "settings.time.max", "settings.auto.next.countdown"],
 };

@@ -3,6 +3,7 @@ import { type REvent, inert } from "sia-reactor";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaIntent, MediaFeatures } from "@defs/contract";
 import type { Source, Track } from "@defs/generics";
+import { globalState } from "@tools/runtime";
 import { AUDIO_EXTENSIONS, HLS_EXTENSIONS, VIDEO_EXTENSIONS } from "@utils/match";
 import { MSE_ENABLED } from "@utils/env";
 import { isStr } from "@utils/obj";
@@ -112,7 +113,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected wireFullscreen(): void {
     this.el.addEventListener("webkitbeginfullscreen", this.setWebkitBeginFullscreenState, this.evtOpts.EL);
     this.el.addEventListener("webkitendfullscreen", this.setWebkitEndFullscreenState, this.evtOpts.EL);
-    this.ctlr.state.watch("docInFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
+    globalState.watch("inFullscreen", this.setFullscreenChangeState, this.evtOpts.CONFIG);
     this.config.on("intent.fullscreen", this.handleFullscreenIntent, this.evtOpts.CONFIG);
   }
   // --- Track Switching Wiring ---
@@ -250,8 +251,8 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || (this.wired && isSameURL(this.el.src, e.value))) return;
-    this.el.src = e.value;
+    if (e.resolved) return;
+    if (!this.wired || !isSameURL(this.el.src, e.value)) this.el.src = e.value;
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -355,7 +356,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       if ((e.value as number) >= list.length) return;
       setCurrentTrack(this.el, type, e.value as number, true, list); // #VALIDATED: mediated for cast conformity; no-opy
       this.setCurrentTrackState(type, list); // tracks "change" event not reliable
-      if (type === "Text" && e.value === -1) this.config.state.textVisible = false; // UX boost
+      if (type === "Text") this.media.state.textVisible = e.value === -1 ? false : this.media.intent.textVisible; // #UX boost: not a drifter
     });
     e.resolve(this.name);
   }
@@ -363,27 +364,27 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (e.resolved) return;
     this.ctlr.when("loadedMetadata", e, (iidx = this.config.intent.currentTextTrack) => {
       // prettier-ignore
-      if (e.value && this.config.status.textTracks.length && idx === -1) silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : !this.isAlien ? Math.max(0, getTrackIdx(this.config.element, "Text", this.config.state.tracks.find((t) => t.default), this.config.status.textTracks)) : 0)); // #BULLET-PROOF: should comes clutch
+      if (e.value && this.config.status.textTracks.length && idx === -1) silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : !this.isAlien ? Math.max(0, getTrackIdx(this.el, "Text", this.config.state.tracks.find((t) => t.default), this.config.status.textTracks)) : 0)); // #BULLET-PROOF: should comes clutch
       if (this.textTrack) this.textTrack.mode = e.value ? "showing" : "hidden";
       this.config.state.textVisible = e.value;
     });
     e.resolve(this.name);
   }
   protected handleAttributeIntent(e: REvent<CtlrMedia>, key: string, isBool: boolean, attr = key.toLowerCase()): void {
-    if (e.resolved || (key === "poster" && isSameURL((this.el as HTMLVideoElement).poster, e.value))) return;
-    isBool ? this.el.toggleAttribute(attr, Boolean(e.value)) : e.value ? this.el.setAttribute(attr, e.value) : this.el.removeAttribute(attr); // (this.el as any)[key] = isBool ? Boolean(e.value) : (e.value ?? ""); // Generic handler for simple attributes
-    if (key === "playsInline") this.el.toggleAttribute("webkit-playsinline", Boolean(e.value));
+    if (e.resolved) return;
+    if (key !== "poster" || !isSameURL((this.el as HTMLVideoElement).poster, e.value)) isBool ? this.el.toggleAttribute(attr, Boolean(e.value)) : e.value ? this.el.setAttribute(attr, e.value) : this.el.removeAttribute(attr); // (this.el as any)[key] = isBool ? Boolean(e.value) : (e.value ?? ""); // Generic handler for simple attributes
+    key === "playsInline" && this.el.toggleAttribute("webkit-playsinline", Boolean(e.value));
     e.resolve(this.name);
   }
   protected handleSourcesIntent(e: REvent<CtlrMedia, "intent.sources">): void {
-    if (e.resolved || isSameSources([...this.el.querySelectorAll("source")], e.currentTarget.value)) return;
-    (this.renderSources ??= renderList({ container: this.el, getKey: (s) => `${cleanURL(s.src)}|${s.type}${s.media}`, createNode: (s) => createEl("source", s), updateNode: (el, s) => assignEl(el, s, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLSourceElement && register(`${cleanURL(el.src)}|${el.type}${el.media}`) }))(e.currentTarget.value);
+    if (e.resolved) return;
+    if (!isSameSources([...this.el.querySelectorAll("source")], e.currentTarget.value)) (this.renderSources ??= renderList({ container: this.el, getKey: (s) => `${cleanURL(s.src)}|${s.type}${s.media}`, createNode: (s) => createEl("source", s), updateNode: (el, s) => assignEl(el, s, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLSourceElement && register(`${cleanURL(el.src)}|${el.type}${el.media}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
   private renderSources?: ReturnType<typeof renderList<Source, HTMLSourceElement>>;
   protected handleTracksIntent(e: REvent<CtlrMedia, "intent.tracks">): void {
-    if (e.resolved || isSameTracks([...this.el.querySelectorAll("track")], e.currentTarget.value)) return;
-    (this.renderTracks ??= renderList({ container: this.el, getKey: (t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}`, createNode: (t) => createEl("track", t), updateNode: (el, t) => assignEl(el, t, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLTrackElement && register(`${cleanURL(el.src)}|${el.kind}|${el.label}|${el.srclang}|${el.default}`) }))(e.currentTarget.value);
+    if (e.resolved) return;
+    if (!isSameTracks([...this.el.querySelectorAll("track")], e.currentTarget.value)) (this.renderTracks ??= renderList({ container: this.el, getKey: (t) => `${cleanURL(t.src)}|${t.kind}|${t.label}|${t.srclang}`, createNode: (t) => createEl("track", t), updateNode: (el, t) => assignEl(el, t, undefined, undefined, false), initNode: (el, register) => el instanceof HTMLTrackElement && register(`${cleanURL(el.src)}|${el.kind}|${el.label}|${el.srclang}|${el.default}`) }))(e.currentTarget.value);
     e.resolve(this.name);
   }
   private renderTracks?: ReturnType<typeof renderList<Track, HTMLTrackElement>>;
@@ -425,23 +426,25 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.status.waiting = false;
   }
   protected handleTracksStatus(type: TrackType, list: any, init = false): void {
-    type === "Text" && (this.autoChapters = this.config.settings.metadata.allowMediaOverride) && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
+    type === "Text" && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
     this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`] = Array.prototype.filter.call(list, (t) => (type === "Text" ? t.kind === "subtitles" || t.kind === "captions" : true)); // filter out non-cue text tracks
     !init && silence(() => ((this.config.intent[`current${type}Track`] = this.config.intent[`current${type}Track`]), this.config.tick(`intent.current${type}Track`))); // #RE-TRIGGER: sync intent resolution
     !init && type === "Text" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
   }
   protected handleChaptersStatus(list = this.el.textTracks): void {
-    const track = Array.prototype.find.call(list, (t) => t.kind === "chapters") || null;
-    if (!track) return void ((this.config.settings.metadata.chapterInfo = []), (this.config.state.currentChapter = -1));
-    if (track.mode === "disabled") track.mode = "hidden"; // ensure cue access
-    const extract = () => (this.config.settings.metadata.chapterInfo = track.cues?.length ? inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] }))) : []);
-    extract(), !track.cues?.length && track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true }), this.wireChapterCue(track);
+    const track = Array.prototype.find.call(list, (t: TextTrack) => t.kind === "chapters") as TextTrack | undefined;
+    if (!track) return void (this.autoChapters = false);
+    const extract = (_?: any, meta = this.config.settings.metadata) => meta.allowMediaOverride && track.cues?.length && ((meta.chapterInfo = inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] })))), (this.autoChapters = true));
+    track.mode === "disabled" && (track.mode = "hidden"), extract(), this.wireChapterCue(track);
+    if (track.cues?.length) return;
+    const dTrack = Array.prototype.find.call(this.el.querySelectorAll("track"), (t: HTMLTrackElement) => t.track === track);
+    dTrack ? dTrack.addEventListener("load", extract, this.evtOpts.EL) : track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true });
   }
   protected handleActiveCuesChange(e?: globalThis.Event | { target?: TextTrack }, strict = false, track = e?.target as TextTrack | null): void {
     if (!strict || (track && getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack)) force(() => (this.config.status.activeCues = track?.activeCues || null)); // incase of multiple tracks `cuechange`
   }
-  protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0] || null): void {
-    this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo.findIndex((c) => c.startTime === cue.startTime) : -1;
+  protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0]): void {
+    if (this.autoChapters) this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo.findIndex((c) => c.startTime === cue.startTime) : -1;
   }
   // --- Settings ---
   protected handleDefaultMutedSetting(e: REvent<CtlrMedia, "settings.defaultMuted">): void {

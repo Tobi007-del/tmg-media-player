@@ -63,7 +63,7 @@ export class ShakaTech extends HTML5Tech {
         if (this.config.status.hostReady) for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
         if (!this.config.settings.metadata.allowMediaOverride) return;
         const chapters = this.host.getChapters(this.config.status.textTracks[this.config.state.currentTextTrack]?.language || this.config.status.audioTracks[this.config.state.currentAudioTrack]?.language || "en");
-        this.config.settings.metadata.chapterInfo = inert(chapters?.length ? chapters.map((ch: any) => ({ title: ch.title, startTime: ch.startTime })) : []);
+        if (chapters.length) this.config.settings.metadata.chapterInfo = inert(chapters.map((ch: any) => ({ title: ch.title, startTime: ch.startTime })));
       });
       this.host.addEventListener("variantchanged", this.syncCurrentStats);
       this.host.addEventListener("adaptation", this.syncCurrentStats);
@@ -97,8 +97,8 @@ export class ShakaTech extends HTML5Tech {
   // HANDLERS
   // ===========================================================================
   protected override handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
-    this.initHost(e.value);
+    if (e.resolved) return;
+    !isSameURL(this.hostSrc, e.value) && this.initHost(e.value);
     e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {

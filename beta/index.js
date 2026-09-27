@@ -1,4 +1,4 @@
-import { isDef, isIter, isObj, isArr, loadResource, isSameURL, uid, clamp, bindAllMethods, createEl, getActiveEl, remToPx, parseCSSSize, parseCSSTime, parseKeyCombo, stringifyKeyEvent, cleanKeyCombo, matchKeys, formatKeyForDisplay, mockAsync, formatSize, isInteractive } from "@t007/utils";
+import { isDef, isIter, isObj, isArr, loadResource, isSameURL, uid, clamp, bindAllMethods, createEl, getActiveEl, remToPx, parseCSSSize, parseCSSTime, parseKeyCombo, stringifyKeyEvent, cleanKeyCombo, matchKeys, formatKeyTooltip, mockAsync, formatSize, isInteractive } from "@t007/utils";
 import { rippleHandler, initScrollAssist, removeScrollAssist } from "@t007/utils/hooks/vanilla";
 import { reactive, TERMINATOR, volatile } from "sia-reactor";
 import { setPath, getPath, parsePathObj, fanout, mergeObjs, deepClone, force } from "sia-reactor/utils";
@@ -373,7 +373,7 @@ class tmg_Video_Controller {
     `;
   }
   getPlayerElements() {
-    const k = this.fetchKeyShortcutsForDisplay();
+    const k = this.fetchKeyShortcutsTooltip();
     const _batch = (...els) => els.filter(Boolean);
     return {
       pictureinpicturewrapper: tmg.createEl("div", {
@@ -2350,7 +2350,7 @@ class tmg_Video_Controller {
   }
   _handleSpeedPointerOut = (e) => !this.videoContainer.matches(":hover") && this._handleSpeedPointerUp(e);
   plugKeysSettings = () => this.config.on("settings.keys.disabled", ({ value }) => (value ? (this.setKeyEventListeners("remove", true), this.setKeyEventListeners("remove", false)) : this.isIntersecting && this.setKeyEventListeners("add"))); // devx shortcut
-  fetchKeyShortcutsForDisplay = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyForDisplay(this.settings.keys.shortcuts[action])]));
+  fetchKeyShortcutsTooltip = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyTooltip(this.settings.keys.shortcuts[action])]));
   getTermsForKey(combo) {
     const terms = { override: false, block: false, allowed: false, action: null },
       { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
@@ -3103,7 +3103,7 @@ var tmg = {
   stringifyKeyEvent: stringifyKeyEvent,
   cleanKeyCombo: cleanKeyCombo,
   matchKeys: matchKeys,
-  formatKeyForDisplay: formatKeyForDisplay,
+  formatKeyTooltip: formatKeyTooltip,
   AsyncQueue: class AsyncQueue {
     constructor() {
       (this.jobs = []), (this.running = false); // add jobs, performs and reports sequentially; drop job: reports; cancel job: records, reports when about to perform

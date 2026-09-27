@@ -1,6 +1,6 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { PlaybackRatePlug } from "@plugs/settings/playbackRate";
-import { parseUIOpt } from "@utils/obj";
+import { parseUIOpt, isDef } from "@utils/obj";
 import { fanout } from "sia-reactor/utils";
 export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMenuItem[] => [
   {
@@ -61,7 +61,7 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
             label: "Playback speed",
             widget: "limits",
             configPaths: ["settings.playbackRate.min", "settings.playbackRate.max", "settings.playbackRate.skip"],
-            getValue: () => "",
+            getValue: ({ min, max, skip } = plug.config) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "),
             getLimits: () => [{ name: "playbackRate", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }],
             onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.playbackRate_min, max: val.playbackRate_max, skip: val.playbackRate_step }, { skipUndef: true }),
           },
@@ -76,3 +76,4 @@ declare module "@defs/registries" {
     "settings.playbackRate": typeof getSettingsPlaybackRateMenu;
   }
 }
+

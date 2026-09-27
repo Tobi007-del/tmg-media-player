@@ -5,7 +5,7 @@ import { limited } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
 import { capitalize, camelize, uncamelize, fuzzyBlobMatch, fuzzyChunkMatch, getLevenshteinSimilarity, luid } from "@utils/str";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 import { type ToastOptions } from "@t007/toast";
 import { REvent } from "sia-reactor";
 import { CtlrConfig } from "@defs/config";
@@ -14,6 +14,7 @@ import { Action } from "@defs/action";
 import { IconRegistry } from "@core/registries";
 import { isArr } from "@utils/obj";
 import { IS_MOBILE } from "@utils/env";
+import { globalState } from "@tools/runtime";
 
 export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   public static readonly plugName = "voice";
@@ -49,7 +50,8 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     // ---- Media Watchers
     this.media.watch("tech", () => this.media.tech.polyfill("voice", true), { init: true, signal: this.signal }); // falls back to tap routing
     // ---- State Listeners
-    this.ctlr.state.on("mediaIntersecting", () => this.ctlr.debounce("syncingVoiceListener", this.syncListener, 500, false, this.signal), { signal: this.signal });
+    this.ctlr.state.on("mediaIntersecting", () => this.ctlr.debounce("syncingListener", this.syncListener, 500, false, this.signal), { signal: this.signal });
+    globalState.on("isVisible", () => this.ctlr.debounce("syncingListener", this.syncListener, 500, false, this.signal), { signal: this.signal });
     // ---- Config -------
     this.ctlr.config.on("settings.voice.active.value", this.handleActive, { signal: this.signal });
     this.ctlr.config.on("settings.voice.muted", ({ value }) => this.config.active.value && (value && this.recognition?.abort(), this.start()), { signal: this.signal });
@@ -58,6 +60,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.ctlr.config.on("settings.voice.toasts.helper", ({ type, value, target: { key } }) => this.view?.update(this.IDS.HELPER, type !== "update" ? value : ({ [key]: value } as any)), { signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.voiceWake", ({ value }) => !this.state.routing && (value.length ? this.config.active.value && this.start() : (this.config.active.value = false)), { signal: this.signal });
     this.ctlr.config.on("disabled", this.syncListener, { signal: this.signal });
+    this.ctlr.config.on("devMode", () => this.state.routing && this.predict(), { signal: this.signal });
     this.ctlr.learn("voiceWake", { voice: { stage: "anytime", match: "chunk" } }, this.signal);
     this.ctlr.learn("voiceSleep", undefined, this.signal);
     this.ctlr.learn("voiceQuit", { voice: { stage: "anytime" } }, this.signal);
@@ -66,7 +69,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.ctlr.learn("voiceCtxPrevious", { fn: this.goBack, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("voiceCtxNext", { fn: this.goForward, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("voiceCtxClear", { fn: () => this.clearCtx(false) }, this.signal);
-    this.ctlr.flags.wired ? this.syncListener() : this.ctlr.state.wonce("readyState", this.syncListener, { signal: this.signal }); // #HEAVY: waits for !lightState. If wake word is enabled, start the engine immediately in "sleep" mode
+    this.ctlr.flags.wired ? this.syncListener() : this.ctlr.state.wonce("readyState", this.syncListener, { signal: this.signal }); // #HEAVY: waits for !light. If wake word is enabled, start the engine immediately in "sleep" mode
     super.wire();
   }
 
@@ -76,7 +79,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (!this.config.muted) for (let i = e.resultIndex, len = e.results.length; i < len; ++i) transcript += e.results[i][0].transcript;
     if (`${e.resultIndex}-${(transcript = transcript.trim().toLowerCase())}` === this.prevRes) return; // Block the interim/final duplicate fire
     this.prevRes = `${e.resultIndex}-${transcript}`;
-    !this.config.muted && (this.state.routing || this.config.toasts.behavior.value !== "strict") && this.view?.(transcript ? `${transcript}${!this.state.routing ? `... Say "${this.linked(this.config.commands.voiceWake[0] || "")}"!` : ""}` : this.getRouterSpeech(this.state.routing ? "Didn't catch that..." : undefined, this.state.routing ? "" : undefined), this.getRouterOptions());
+    !this.config.muted && (this.state.routing || this.config.toasts.behavior.value !== "strict") && this.view?.(transcript ? `${transcript}${!this.state.routing ? `... Say "${this.linked(isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake[0] : this.config.commands.voiceWake)}"!` : ""}` : this.getRouterSpeech(this.state.routing ? "Didn't catch that..." : undefined, this.state.routing ? "" : undefined), this.getRouterOptions());
     const pathInput = this.container?.querySelector<HTMLInputElement>(".tmg-media-voice-path-input");
     if (pathInput) pathInput.value = transcript.trim(); // Update the Text UI
     transcript && this.ctlr.debounce("voiceProcessing", () => this.process(transcript), 500, false, this.signal); // Process after delay
@@ -90,15 +93,13 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   protected handleActive({ value }: REvent<CtlrConfig, "settings.voice.active.value">): void {
-    if (value === false) (this.state.routing = false), this.recognition?.abort(), Object.keys(this.IDS).forEach((k) => t007.toast?.dismiss(this.IDS[k as keyof typeof this.IDS]));
-    else if (this.shouldListen()) value === "passive" ? this.sleep() : this.wakeUp(), this.start();
+    value === false ? this.stop() : this.shouldListen() && (value === "passive" ? this.sleep() : this.wakeUp(), this.start());
   }
   public syncListener(): void {
-    if (!this.shouldListen()) (this.state.routing = false), this.recognition?.abort(), Object.keys(this.IDS).forEach((k) => t007.toast?.dismiss(this.IDS[k as keyof typeof this.IDS]));
-    else if (this.config.active.value) this.config.active.value === true && this.wakeUp(), this.start();
+    !this.shouldListen() ? this.stop() : this.config.active.value && (this.config.active.value === true && this.wakeUp(), this.start());
   }
   protected shouldListen(): boolean {
-    return this.ctlr.flags.wired && (this.ctlr.state.mediaIntersecting || this.config.muted) && !this.ctlr.config.disabled;
+    return this.ctlr.flags.wired && ((globalState.isVisible && this.ctlr.state.mediaIntersecting) || this.config.muted) && !this.ctlr.config.disabled;
   }
 
   protected async request(): Promise<"granted" | "denied" | "cancelled" | "nuked"> {
@@ -111,23 +112,25 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     let state = this.config.muted ? "granted" : await this.request();
     if (state === "nuked" || !this.signal || this.signal?.aborted) return;
     state === "granted" && (this.config.toasts.behavior.value === "persistent" || t007.toast.isActive(this.IDS.ROUTER)) && this.view?.(this.getRouterSpeech(), this.getRouterOptions());
-    this.state.routing && this.goTo();
+    if (this.state.routing) this.goTo(), this.teachBasics();
     try {
       state === "granted" ? !this.config.muted && this.recognition?.start() : this.onError({ error: "not-allowed" });
     } catch (e) {} // Silence the InvalidStateError since we might call when already on due to wake word
+  }
+  protected stop(): void {
+    (this.state.routing = false), this.recognition?.abort();
+    for (const k in this.IDS) t007.toast?.dismiss(this.IDS[k as keyof typeof this.IDS]);
   }
 
   protected wakeUp(): void {
     if (this.state.routing) return;
     this.state.routing = true;
-    this.clearCtx(), this.teachBasics();
-    this.view?.(this.getRouterSpeech(), this.getRouterOptions()), this.snooze();
+    this.clearCtx(), this.view?.(this.getRouterSpeech(), this.getRouterOptions()), this.snooze();
   } // #STANDALONE: needs scoped behavior
   protected sleep(): void {
     if (!this.state.routing) return;
     this.state.routing = false;
-    this.clearCtx(), t007.toast?.dismiss(this.IDS.HELPER);
-    !this.config.active.value || this.config.toasts.behavior.value !== "persistent" ? t007.toast?.dismiss(this.IDS.ROUTER) : this.view?.(this.getRouterSpeech(), this.getRouterOptions());
+    this.clearCtx(), t007.toast?.dismiss(this.IDS.HELPER), !this.config.active.value || this.config.toasts.behavior.value !== "persistent" ? t007.toast?.dismiss(this.IDS.ROUTER) : this.view?.(this.getRouterSpeech(), this.getRouterOptions());
   } // #STANDALONE: needs scoped behavior
 
   protected trigger(transcript: string, stage: VoiceStage = this.config.process.stage.value): boolean {
@@ -190,9 +193,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-sticky-crumb">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small><i style="${active ? "font-weight: bold;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, true)}</i></small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
       actions: Record<string, () => void> = {};
     if (this.media.features.voiceItems) {
-      actions[`<span title='Reset Ctx${formatActionForDisplay(this.settings.keys.shortcuts.voiceCtxClear, this.config.commands.voiceCtxClear)}'>↻</span>`] = () => this.clearCtx(false);
-      actions[`<span title='Go Back${formatActionForDisplay(this.settings.keys.shortcuts.voiceCtxPrevious, this.config.commands.voiceCtxPrevious)}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
-      actions[`<span title='Go Forward${formatActionForDisplay(this.settings.keys.shortcuts.voiceCtxNext, this.config.commands.voiceCtxNext)}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
+      actions[`<span title='Reset Ctx${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxClear, this.config.commands.voiceCtxClear)}'>↻</span>`] = () => this.clearCtx(false);
+      actions[`<span title='Go Back${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxPrevious, this.config.commands.voiceCtxPrevious)}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
+      actions[`<span title='Go Forward${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxNext, this.config.commands.voiceCtxNext)}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
     }
     if (this.ctlr.isLogical(this.state.ctx, true)) {
       const value = getPath(this.ctlr.logicRoot as any, this.state.ctx as any),
@@ -200,9 +203,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
         showInput = this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type !== "boolean"),
         showSubmit = this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")),
         display = type === "array" ? value.join(", ") : value ?? "",
-        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-exact-input" placeholder="${display || "Type value..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionForDisplay(this.settings.keys.shortcuts.voiceSubmit, this.config.commands.voiceSubmit)}' class="tmg-media-voice-exact-submit">↳</button>` : ""}</div>` : "",
+        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-exact-input" placeholder="${display || "Type value..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings.keys.shortcuts.voiceSubmit, this.config.commands.voiceSubmit)}' class="tmg-media-voice-exact-submit">↳</button>` : ""}</div>` : "",
         // prettier-ignore
-        hints = type === "boolean" ? `${this.config.commands.voiceToggleOn.slice(0, 2).map((v) => this.linked(v)).join(", ")} or ${this.config.commands.voiceToggleOff.slice(0, 2).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}) ${inputHtml}` : type === "array" ? `comma-separated values ${inputHtml}` : `the exact text ${inputHtml}`;
+        hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}) ${inputHtml}` : type === "array" ? `comma-separated values ${inputHtml}` : `the exact text ${inputHtml}`;
       return void this.view?.(`${crumbHtml}Try saying ${hints}`, this.getHelperOptions(actions));
     }
     const paths = this.ctlr.getLogicPaths(this.state.ctx);
@@ -264,9 +267,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return full ? { id: this.IDS.ROUTER, actions: this.getRouterActions(), onClose: (_, user) => user && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
   }
   protected getRouterActions(): Record<string, () => void> {
-    return { [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionForDisplay(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
+    return { [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
-  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ")} to wake me up!` : "a path or command!"}`): string {
+  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ") : `"${this.linked(this.config.commands.voiceWake)}"`} to wake me up!` : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;
   }
   protected get container() {
@@ -277,7 +280,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   public override onDestroy(): void {
-    this.recognition?.abort(), super.onDestroy();
+    this.stop(), super.onDestroy();
   }
 }
 const uncam = (str: string) => capitalize(uncamelize(str)),

@@ -182,7 +182,7 @@
 }
 /* settings variables */
 :where(:root, .tmg-host-container) {
-  --tmg-media-settings-view-transition-time: var(--tmg-media-slow-transition-time);
+  --tmg-media-settings-transition-time: var(--tmg-media-slow-transition-time);
   --tmg-media-settings-content-padding: var(--tmg-media-current-safe-inset-x);
   --tmg-media-settings-background-color: var(--tmg-media-curtain-color);
   --tmg-media-settings-text-color: var(--tmg-media-text-color);
@@ -202,8 +202,9 @@
   --t007-toast-color: var(--tmg-media-theme-color);
   --t007-toast-background: var(--tmg-media-notifier-color);
   --t007-toast-background-blur: none;
-  --t007-toast-no-image-background: var(--tmg-media-image-background);
+  --t007-toast-image-object-fit: var(--tmg-media-object-fit);
   --t007-toast-image-background: var(--tmg-media-background);
+  --t007-toast-no-image-background: var(--tmg-media-image-background);
   --t007-toast-progress-background: var(--tmg-media-timeline-played-bar-background);
   --t007-toast-progress-backdrop-background: var(--tmg-media-timeline-base-bar-background);
   --t007-toast-action-button-color: var(--tmg-media-theme-inverse-color);

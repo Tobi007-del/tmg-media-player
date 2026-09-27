@@ -43,7 +43,6 @@ export class HLSTech extends HTML5Tech {
       if (!HLS?.isSupported()) return this.ctlr.notice("HLS is not supported in this browser", "error", null);
       this.hostSrc = src;
       this.host = new HLS({ autoStartLoad: true, startPosition: this.config[this.ctlr.gospel].currentTime, enableWorker: isAudio, defaultAudioCodec: isAudio ? "mp4a.40.2" : undefined }); // tells hls.js to behave if it's an audio-only manifest
-      if (this.config.settings.metadata.allowMediaOverride) this.config.settings.metadata.chapterInfo = [];
       // Status & State (Bulk Wiring)
       this.host.on(HLS.Events.MEDIA_ATTACHED, () => this.host!.loadSource(src));
       this.host.on(HLS.Events.MANIFEST_PARSED, (_, data) => {
@@ -97,18 +96,18 @@ export class HLSTech extends HTML5Tech {
   // HANDLERS
   // ===========================================================================
   protected override handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
-    this.initHost(e.value);
+    if (e.resolved) return;
+    !isSameURL(this.hostSrc, e.value) && this.initHost(e.value);
     e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => (e.value as number) <= this.config.status.levels.length && (this.useAutoLevel(), (this.host!.currentLevel = e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
+    this.ctlr.when("hostReady", e, () => (e.value as number) <= this.config.status.levels.length && (this.useAutoLevel(), (this.host!.currentLevel = e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.useAutoLevel(e.value));
+    this.ctlr.when("hostReady", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
   }
   protected useAutoLevel(value = false): void {
@@ -117,14 +116,14 @@ export class HLSTech extends HTML5Tech {
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${Exclude<TrackType, "Video">}Track`>, type: Lowercase<Exclude<TrackType, "Video">>): void {
     if (e.resolved) return;
-    this.when("hostReady", e, (list = this.config.status[`${type}Tracks`]) => {
+    this.ctlr.when("hostReady", e, (list = this.config.status[`${type}Tracks`]) => {
       if ((e.value as number) < list.length) this.host![`${type === "text" ? "subtitle" : type}Track`] = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
     });
     e.resolve(this.name);
   }
   protected override handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => e.value && (this.host!.liveSyncPosition ? (this.config.intent.currentTime = this.host!.liveSyncPosition) : super.handleLiveIntent(e))); // #FACADED: silenced intent actual op
+    this.ctlr.when("hostReady", e, () => e.value && (this.host!.liveSyncPosition ? (this.config.intent.currentTime = this.host!.liveSyncPosition) : super.handleLiveIntent(e))); // #FACADED: silenced intent actual op
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {

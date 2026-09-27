@@ -1,6 +1,6 @@
 import { Action } from "@defs/action";
 
-export const ACTIONS_BUILD = {
+export const ACTIONS_DICT = {
   // --- Keyboard-only actions (no default voice triggers; path router covers voice) ---
   playPause: { label: "Playback: Play or Pause" },
   previous: { label: "Playback: Previous or Restart", notify: "mediaPrevious", gates: ["previousItem"] },
@@ -9,8 +9,8 @@ export const ACTIONS_BUILD = {
   timeSkipBwd: { label: "Time: Skip backward", notify: "bwd" },
   timeStart: { label: "Time: Restart", logic: [{ path: "media.intent.currentTime", op: "set", value: 0 }] },
   timeEnd: { label: "Time: End" },
-  timePreviousChapter: { label: "Time: Previous chapter", notify: "chapter" },
-  timeNextChapter: { label: "Time: Next chapter", notify: "chapter" },
+  timePreviousChapter: { label: "Time: Previous chapter", notify: "chapter", gates: ["previousChapter"] },
+  timeNextChapter: { label: "Time: Next chapter", notify: "chapter", gates: ["nextChapter"] },
   volumeUp: { label: "Volume: Increase", notify: "volumeUp", gates: ["volume"] },
   volumeDown: { label: "Volume: Decrease", notify: "volumeDown", gates: ["volume"] },
   brightnessUp: { label: "Brightness: Increase", notify: "brightnessUp", gates: ["brightness"] },
@@ -60,3 +60,6 @@ export const ACTIONS_BUILD = {
   voiceToggleOn: { label: "Voice: Turn on", zen: true },
   voiceToggleOff: { label: "Voice: Turn off", zen: true },
 } as const satisfies Record<string, Omit<Action, "id">>;
+
+export const ACTIONS_ENTRIES: Record<string, Action> = {};
+for (const k in ACTIONS_DICT) ACTIONS_ENTRIES[k] = { id: k as Action["id"], ...ACTIONS_DICT[k as Action["id"]] };

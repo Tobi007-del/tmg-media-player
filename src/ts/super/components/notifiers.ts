@@ -13,7 +13,6 @@ export * from "@components/notifiers/playbackRate";
 export * from "@components/notifiers/playPause";
 export * from "@components/notifiers/prevNext";
 export * from "@components/notifiers/scrub";
-export * from "@components/notifiers/timer";
 export * from "@components/notifiers/touchBrightness";
 export * from "@components/notifiers/touchTimeline";
 export * from "@components/notifiers/touchVolume";

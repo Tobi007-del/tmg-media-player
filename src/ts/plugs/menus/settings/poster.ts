@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { PosterPlug } from "@plugs/settings/poster";
 
 export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
@@ -23,7 +23,7 @@ export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
           mediaPaths: ["state.poster"],
           items: [
             { id: "posterEager", label: "Eager visibility", widget: "toggle", getValue: () => (plug.settings.poster.eager ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.eager = val), configPaths: ["settings.poster.eager"], title: "If not eager, the poster hides when playback starts or time changes, and doesn't come back at the end." },
-            { id: "posterAllowAutoGen", label: "Allow auto-generate", widget: "toggle", getValue: () => (plug.settings.poster.allowAutoGen ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.allowAutoGen = val), configPaths: ["settings.poster.allowAutoGen"], title: "Automatically generate a poster image from the video if none is provided" },
+            { id: "posterAllowAutoGen", label: "Allow auto-generate", widget: "toggle", getValue: () => (plug.settings.poster.allowAutoGenerate ? "On" : "Off"), onChange: (val: boolean) => (plug.settings.poster.allowAutoGenerate = val), configPaths: ["settings.poster.allowAutoGenerate"], title: "Automatically generate a poster image from the video if none is provided" },
           ],
         },
       ],

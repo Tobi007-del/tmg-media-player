@@ -1,3 +1,4 @@
+/* ==== BASE RESETS ==== */
 .tmg-host-container *,
 .tmg-host-container *::after,
 .tmg-host-container *::before {
@@ -27,6 +28,98 @@
 .tmg-host-container :is([draggable="true"], #o#o#o#o#o) {
   -webkit-user-drag: element;
 }
+/* ==== HTML ELEMENTS ==== */
+:where(.tmg-host-container) button {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--tmg-media-current-unit) / 1.4);
+  opacity: 0.95;
+  transition: opacity var(--tmg-media-fade-transition-time) ease-in-out;
+}
+:where(.tmg-host-container button):is(:hover, :focus-visible) {
+  opacity: 1;
+  cursor: pointer;
+}
+:where(.tmg-host-container) img {
+  color: transparent;
+  text-shadow: none;
+  -webkit-text-stroke: 0px transparent;
+  background: var(--tmg-media-image-background);
+  min-width: unset;
+  min-height: unset;
+  max-width: unset;
+  max-height: unset;
+}
+.tmg-host-container svg {
+  width: var(--tmg-media-current-unit);
+  height: var(--tmg-media-current-unit);
+}
+.tmg-host-container svg:where(:not(.no-css-fill)) {
+  color: currentColor;
+}
+.tmg-host-container svg * {
+  transition: all var(--tmg-media-fade-transition-time) ease;
+}
+.tmg-host-container svg:where(:not(.no-css-fill)) *:where(:not(.no-css-fill, [fill="none"])) {
+  fill: currentColor;
+}
+button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
+  scale: 1.25;
+}
+:is(.tmg-media-big-controls-wrapper > *, :where(button[class^="tmg-media-big-"])) > svg {
+  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale));
+  width: var(--cmptd-ctrl-size);
+  height: var(--cmptd-ctrl-size);
+}
+.tmg-media-big-play-pause-btn > svg {
+  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale));
+  width: var(--cmptd-ctrl-size);
+  height: var(--cmptd-ctrl-size);
+}
+/* ==== UTILITIES ==== */
+.tmg-media-fill {
+  width: 100%;
+  height: 100%;
+}
+.tmg-media-cover {
+  position: absolute;
+  inset: 0;
+}
+.tmg-media-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.tmg-media-no-pointer {
+  pointer-events: none;
+}
+/* ==== LAYOUT ==== */
+:is(.tmg-media-side-controls-wrapper-cover, .tmg-media-big-controls-wrapper-cover, .tmg-media-meta-wrapper > *) {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+}
+:is(.tmg-media-side-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-meta-text) {
+  overflow: auto hidden;
+  scrollbar-width: none;
+}
+:is(.tmg-media-side-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-meta-text)::-webkit-scrollbar {
+  display: none;
+}
+.tmg-media-big-controls-wrapper-cover,
+.tmg-media-buffer,
+.tmg-media-captions-btn::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+/* ==== ACCESSIBILITY ==== */
 .tmg-host-container :is(*:focus-visible, #o#o#o#o#o),
 .tmg-media-range-container:focus-visible .tmg-media-range-thumb {
   outline: var(--tmg-media-focus-visible-outline);
@@ -48,106 +141,21 @@
 .tmg-host-container :is(:is(.tmg-media-range-container, .tmg-media-range-mark):focus-visible, #o#o#o#o#o) {
   outline: none;
 }
-.tmg-media-side-controls-wrapper-cover,
-.tmg-media-big-controls-wrapper-cover,
-.tmg-media-meta-wrapper > * {
-  flex-grow: 1;
-  position: relative;
-  overflow: hidden;
-}
-.tmg-media-side-controls-wrapper,
-.tmg-media-big-controls-wrapper,
-.tmg-media-meta-text {
-  overflow: auto hidden;
-  scrollbar-width: none;
-}
-:is(.tmg-media-side-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-meta-text)::-webkit-scrollbar {
-  display: none;
-}
+/* ==== VISUAL FILTERS ==== */
 :is(.tmg-media-settings-content, .tmg-media-smenu-overlay) *,
 :is(.tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-locked-wrapper, .tmg-media-placeholder),
-.tmg-media-touch-vb-notifier,
-.tmg-media-control-badge,
-.tmg-host-container [data-badge]::before {
+:is(.tmg-media-control-badge, .tmg-host-container [data-badge]::before),
+.tmg-media-touch-vb-notifier {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 :is(.tmg-media-settings-content, .tmg-media-smenu-overlay, .tmg-media-top-controls-wrapper, .tmg-media-bottom-controls-wrapper, .tmg-media-big-controls-wrapper, .tmg-media-touch-vb-notifier) svg,
 .tmg-media-placeholder [class$="icon-content"] {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
-.tmg-media-range-thumb,
-.tmg-media-smenu-toggle-thumb,
-.tmg-media-touch-vb-slider {
+:is(.tmg-media-range-thumb, .tmg-media-smenu-toggle-thumb, .tmg-media-touch-vb-slider) {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
-.tmg-host-container svg {
-  width: var(--tmg-media-current-unit);
-  height: var(--tmg-media-current-unit);
-}
-:is(.tmg-media-big-controls-wrapper > *, :where(button[class^="tmg-media-big-"])) > svg {
-  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale));
-  width: var(--cmptd-ctrl-size);
-  height: var(--cmptd-ctrl-size);
-}
-.tmg-media-big-play-pause-btn > svg {
-  --cmptd-ctrl-size: calc(var(--tmg-media-current-unit) * var(--tmg-media-current-big-controls-scale) * var(--tmg-media-large-scale));
-  width: var(--cmptd-ctrl-size);
-  height: var(--cmptd-ctrl-size);
-}
-.tmg-host-container svg:where(:not(.no-css-fill)) {
-  color: currentColor;
-}
-.tmg-host-container svg * {
-  transition: all var(--tmg-media-fade-transition-time) ease;
-}
-.tmg-host-container svg:where(:not(.no-css-fill)) *:where(:not(.no-css-fill, [fill="none"])) {
-  fill: currentColor;
-}
-button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
-  scale: 1.25;
-}
-:where(.tmg-host-container) img {
-  color: transparent;
-  text-shadow: none;
-  -webkit-text-stroke: 0px transparent;
-  background: var(--tmg-media-image-background);
-  min-width: unset;
-  min-height: unset;
-  max-width: unset;
-  max-height: unset;
-}
-:where(.tmg-host-container) button {
-  background: none;
-  border: none;
-  color: inherit;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(var(--tmg-media-current-unit) / 1.4);
-  opacity: 0.95;
-  transition: opacity var(--tmg-media-fade-transition-time) ease-in-out;
-}
-:where(.tmg-host-container button):is(:hover, :focus-visible) {
-  opacity: 1;
-  cursor: pointer;
-}
-.tmg-media-big-controls-wrapper-cover,
-.tmg-media-buffer,
-.tmg-media-captions-btn::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-}
-.tmg-media-placeholder,
-.tmg-media-placeholder::before,
-.tmg-media-placeholder::after,
-.tmg-media-next-preview-wrapper > button {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-}
+/* ==== INTERACTION ==== */
 .tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-content,
 .tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content,
 .tmg-media-content:has(:modal) {

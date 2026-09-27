@@ -7,7 +7,7 @@ export class Buffer extends BaseComponent<BufferConfig, ComponentState, HTMLDivE
   static readonly componentName = "buffer";
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-buffer", innerHTML: `<div class="tmg-media-buffer-accent"></div><div class="tmg-media-buffer-eclipse"><div class="tmg-media-buffer-left"><div class="tmg-media-buffer-circle"></div></div><div class="tmg-media-buffer-right"><div class="tmg-media-buffer-circle"></div></div></div>` }));
+    return (this.element = createEl("div", { className: "tmg-media-buffer tmg-media-no-pointer", innerHTML: `<div class="tmg-media-buffer-accent tmg-media-fill"></div><div class="tmg-media-buffer-eclipse tmg-media-fill"><div class="tmg-media-buffer-left tmg-media-cover"><div class="tmg-media-buffer-circle"></div></div><div class="tmg-media-buffer-right tmg-media-cover"><div class="tmg-media-buffer-circle"></div></div></div>` }));
   }
 
   public override mount(): void {

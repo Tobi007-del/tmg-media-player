@@ -94,7 +94,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.floatingWindow!.addEventListener("resize", this.handleFloatingPlayerResize, { signal: this.signal });
     this.floatingWindow!.addEventListener("pagehide", this.handleFloatingPlayerClose, { signal: this.signal });
     this.ctlr.plug("settings.keys")?.setListeners();
-    this.media.state.pictureInPicture = true;
+    this.media.state.pictureInPicture = this.media.status.floatingPlayer = true;
   } // #STANDALONE: needs scoped behavior
 
   protected handleFloatingPlayerResize(): void {
@@ -106,9 +106,9 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.floatingWindow = null;
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-floating-player"), this.media.pseudoContainer.classList.remove("tmg-media-in-floating-player");
-    this.ctlr.plug("skeleton")?.leavePseudoMode();
+    this.ctlr.plug("skeleton")?.exitPseudoMode();
     this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
-    this.media.state.pictureInPicture = false;
+    this.media.state.pictureInPicture = this.media.status.floatingPlayer = false;
   }
 
   public syncFeatures(): void {
@@ -128,7 +128,7 @@ declare module "@defs/registries" {
 }
 
 declare module "@defs/contract" {
-  interface MediaFeaturesExt {
-    floatingPlayer: boolean;
+  interface MediaStatus {
+    floatingPlayer?: boolean;
   }
 }

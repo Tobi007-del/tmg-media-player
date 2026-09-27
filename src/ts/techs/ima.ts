@@ -5,7 +5,7 @@ import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import { type REvent } from "sia-reactor";
 import { silence } from "sia-reactor/modules";
 import { fanout, clamp } from "sia-reactor/utils";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export class IMATech extends BaseTech<HTMLIFrameElement> {
   public static readonly techName = "ima";
@@ -123,7 +123,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
     if (!ad || !data) return t007.toast?.dismiss(this.TIDS.SKIP);
     this.config.state.currentTime = data.currentTime;
     const render = `<span class="tmg-media-ads-toast-meta">${this.plug.state.roll!.badge}<span class="tmg-media-ads-toast-count"> • ${data.adPosition} of ${data.totalAds}</span></span>`;
-    if (!t007.toast?.isActive(this.TIDS.SKIP)) return void this.ctlr.toast?.(render, { id: this.TIDS.SKIP, signal: this.signal, actions: offset === -1 ? false : { [`<span title='Skip ad${formatActionForDisplay(this.settings.keys.shortcuts.skipAd, this.settings.voice.commands.skipAd)}' class="tmg-media-ads-toast-skip"}></span>`]: this.plug.skipRoll }, ...this.plug.state.roll!.toasts.skip });
+    if (!t007.toast?.isActive(this.TIDS.SKIP)) return void this.ctlr.toast?.(render, { id: this.TIDS.SKIP, signal: this.signal, actions: offset === -1 ? false : { [`<span title='Skip ad${formatActionTooltip(this.settings.keys.shortcuts.skipAd, this.settings.voice.commands.skipAd)}' class="tmg-media-ads-toast-skip"></span>`]: this.plug.skipRoll }, ...this.plug.state.roll!.toasts.skip });
     this.ctlr.toast?.update(this.TIDS.SKIP, { render });
     if ((this.skipBtn ??= this.ctlr.queryDOM(".tmg-media-ads-toast-skip"))) (this.skipBtn.innerHTML = `Skip ${this.config.features.adSkip ? `<span>${IconRegistry.get("next")}</span>` : ` in ${Math.max(1, Math.ceil(offset - data.currentTime))}`}`), this.skipBtn.classList.toggle("tmg-media-control-disabled", !this.config.features.adSkip);
   }

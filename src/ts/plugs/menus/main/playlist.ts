@@ -1,5 +1,5 @@
 import type { PlaylistPlug } from "@plugs/main/playlist";
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import { PLAY_ITEM_BUILD } from "@plugs/main/playlist/build";
 import { mergeObjs } from "sia-reactor/utils";
 import { AUDIO_EXTENSIONS, MATCH_URL_YOUTUBE, MATCH_URL_VIMEO } from "@utils/match";
@@ -21,17 +21,16 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
   mediaPaths: ["state.currentItem"],
   getValue: () => getContent(plug)[plug.media.state.currentItem]?.media.settings.metadata.title || `Item ${plug.media.state.currentItem + 1}`,
   getOptions: () => getContent(plug).map((opt: any, i: number, _, src = opt.media.intent.src || "", dur = opt.media.status.duration, start = opt.settings.time.start) => ({ value: String(i), display: opt.media.settings.metadata.title || `Item ${i + 1}`, badge: MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_URL_VIMEO.test(src) ? "Vimeo" : AUDIO_EXTENSIONS.test(src) ? "Audio" : "", progress: dur && start ? Math.round((start / dur) * 100) : 0 })),
-  getDisabled: () => !plug.media.features.playlist,
   onChange: (val: string) => plug.moveTo(Number(val)),
   onReorder: (oldIdx: number, newIdx: number) => (plug.config.allowOverride.move ? plug.config.content?.splice(newIdx, 0, plug.config.content.splice(oldIdx, 1)[0]) : undefined),
   onDelete: async (idx: number) => {
     if (!plug.config.allowOverride.delete) return;
     const title = getContent(plug)[idx]?.media.settings.metadata.title || `Item ${idx + 1}`;
-    if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.settingsView")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
+    if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.panel")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
   },
-  onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-edit")) : undefined),
+  onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.panel")?.menu?.goTo("playlist-edit")) : undefined),
   getTipHTML: () => (plug.config.allowOverride.move ? `Navigate through or drag to reorder your playlist.<br><small>Viewing <b>${plug.media.state.currentItem + 1}</b> of <b>${plug.config.content?.length || 1}</b>.</small>` : ""),
-  actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort, getDisabled: () => !plug.config.content } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle, getDisabled: () => !plug.config.content } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu?.goTo("playlist-add") } as const] : [])],
+  actions: [...(plug.config.allowOverride.move ? [{ id: "sort", getLabel: () => "Sort", icon: "sort", onClick: plug.sort, getDisabled: () => !plug.config.content } as const, { id: "shuffle", getLabel: () => "Shuffle", icon: "shuffle", onClick: plug.shuffle, getDisabled: () => !plug.config.content } as const] : []), ...(plug.config.allowOverride.add ? [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.panel")?.menu?.goTo("playlist-add") } as const] : [])],
   items: [
     {
       id: "playlist-add",
@@ -39,7 +38,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
       icon: "add",
       widget: "input",
       inputs: [
-        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, helperText: { info: "Input any media (video or audio) url" } },
+        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, helperText: { info: "Input any video or audio url" } },
         { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", minLength: 1, maxLength: 179 },
         { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", minLength: 1, maxLength: 179 },
       ],
@@ -53,7 +52,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
       icon: "edit",
       widget: "input",
       inputs: [
-        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, value: () => getContent(plug)[ctx.editIdx]?.media.intent.src || "", helperText: { info: "Input any media (video or audio) url" } },
+        { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, value: () => getContent(plug)[ctx.editIdx]?.media.intent.src || "", helperText: { info: "Input any video or audio url" } },
         { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", minLength: 1, maxLength: 179, value: () => getContent(plug)[ctx.editIdx]?.media.settings.metadata.title || "" },
         { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", minLength: 1, maxLength: 179, value: () => getContent(plug)[ctx.editIdx]?.media.settings.metadata.artist || "" },
       ],
@@ -68,3 +67,4 @@ declare module "@defs/registries" {
     playlist: typeof getMainPlaylistMenu;
   }
 }
+

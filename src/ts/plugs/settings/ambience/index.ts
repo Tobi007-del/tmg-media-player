@@ -23,8 +23,8 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
 
   public override mount(): void {
     // Variables Assignment
-    this.wrapper = createEl("div", { className: "tmg-media-ambience-wrapper tmg-media-filtered", ariaHidden: "true" });
-    this.canvas = createEl("canvas", { className: "tmg-media-ambience-canvas" });
+    this.wrapper = createEl("div", { className: "tmg-media-ambience-wrapper tmg-media-no-pointer tmg-media-filtered", ariaHidden: "true" });
+    this.canvas = createEl("canvas", { className: "tmg-media-ambience-canvas tmg-media-fill" });
     this.ctx = this.canvas.getContext("2d", { alpha: false });
     // DOM Injection
     this.wrapper.append(this.canvas), this.ctlr.DOM.containerContent?.prepend(this.wrapper);
@@ -42,7 +42,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     this.media.watch("state.poster", this.syncFeatures, { signal: this.signal });
     // ---- State --------
-    for (const p of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${p}`, this.syncSize, { init: p === "width", signal: this.signal });
+    for (const k of ["width", "height"] as const) this.ctlr.state.watch(`dimensions.container.${k}`, this.syncSize, { init: k === "width", signal: this.signal });
     // ---- Media Listeners
     this.media.on("type", () => this.syncGlow(), { signal: this.signal });
     this.media.on("features.ambience", ({ value }) => this.syncDisplay(!!value), { signal: this.signal });
@@ -98,7 +98,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
   }
 
   protected override registerMenu(): void {
-    this.ctlr.plug("settings.settingsView")?.menu.registerFirst(MenuRegistry.get("settings.ambience")?.(this));
+    this.ctlr.plug("settings.panel")?.menu.registerFirst(MenuRegistry.get("settings.ambience")?.(this));
   }
 }
 
@@ -116,3 +116,4 @@ declare module "@defs/config" {
     ambience: AmbienceConfig;
   }
 }
+

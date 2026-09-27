@@ -153,7 +153,9 @@ export const MEDIA_ITEM_BUILD: DeepPartial<MediaReport> = {
     poster: MEDIA_STATE_BUILD.poster,
     tracks: MEDIA_INTENT_BUILD.tracks,
   },
-  status: {},
+  status: {
+    duration: MEDIA_STATUS_BUILD.duration,
+  },
   settings: {
     metadata: MEDIA_SETTINGS_BUILD.metadata as any,
   },

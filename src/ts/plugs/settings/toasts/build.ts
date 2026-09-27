@@ -8,4 +8,5 @@ export const TOASTS_BUILD = {
   closeButton: false,
   animation: "slide",
   dragToCloseDir: "x||y",
+  reminders: {},
 } satisfies ToastsConfig;

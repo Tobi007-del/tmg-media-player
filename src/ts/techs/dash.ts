@@ -5,7 +5,7 @@ import { inert, type REvent } from "sia-reactor";
 import { DASH_EXTENSIONS } from "@utils/match";
 import { MSE_ENABLED } from "@utils/env";
 import { capitalize, isSameURL } from "@utils/str";
-import { isNum } from "@utils/obj";
+import { isBool, isNum } from "@utils/obj";
 import { loadResource } from "@utils/dom";
 import type { TrackType } from "@utils/media";
 import type * as dashjs from "dashjs";
@@ -49,12 +49,11 @@ export class DashTech extends HTML5Tech {
       this.hostSrc = src;
       this.host = DASHJS.MediaPlayer().create() as DashMediaPlayer;
       if (this.config.type === "audio") this.host.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } }, trackSwitchMode: { audio: "alwaysReplace", video: "alwaysReplace" }, buffer: { fastSwitchEnabled: true } } }); // DASH.js to replace the audio to avoid buffer finish delays
-      if (this.config.settings.metadata.allowMediaOverride) this.config.settings.metadata.chapterInfo = [];
       // Status & State (Bulk Wiring)
       this.host.on(DASHJS.MediaPlayer.events.STREAM_INITIALIZED, () => {
         this.config.status.isLive = this.host!.isDynamic();
         const autoSwitch = (this.host!.getSettings() as any).streaming?.abr?.autoSwitchBitrate;
-        this.config.state.autoLevel = typeof autoSwitch === "boolean" ? autoSwitch : autoSwitch?.video ?? true; // Fallback logic for v3 vs v4+ API shapes
+        this.config.state.autoLevel = isBool(autoSwitch) ? autoSwitch : autoSwitch?.video ?? true; // Fallback logic for v3 vs v4+ API shapes
         for (const t of ["text", "audio", "video"] as const) this.config.status[`${t}Tracks`] = inert(this.host!.getTracksFor(t));
         this.config.status.levels = inert(this.host!.getBitrateInfoListFor("video"));
         this.config.status.hostReady = true;
@@ -107,18 +106,18 @@ export class DashTech extends HTML5Tech {
   // HANDLERS
   // ===========================================================================
   protected override handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
-    if (e.resolved || isSameURL(this.hostSrc, e.value)) return;
-    this.initHost(e.value);
+    if (e.resolved) return;
+    !isSameURL(this.hostSrc, e.value) && this.initHost(e.value);
     e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => (e.value as number) > -1 && (e.value as number) < this.config.status.levels.length && (this.useAutoLevel(), this.host!.setQualityFor("video", e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
+    this.ctlr.when("hostReady", e, () => (e.value as number) > -1 && (e.value as number) < this.config.status.levels.length && (this.useAutoLevel(), this.host!.setQualityFor("video", e.value as number))); // #BULLET-PROOF: must comes clutch // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
     if (e.resolved) return;
-    this.when("hostReady", e, () => this.useAutoLevel(e.value));
+    this.ctlr.when("hostReady", e, () => this.useAutoLevel(e.value));
     e.resolve(this.name);
   }
   protected useAutoLevel(value = false): void {
@@ -127,7 +126,7 @@ export class DashTech extends HTML5Tech {
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: Lowercase<TrackType>): void {
     if (e.resolved) return;
-    this.when("hostReady", e, (track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined) => track && this.host!.setCurrentTrack(track)); // #VALIDATED: mediated for cast conformity; no-opy
+    this.ctlr.when("hostReady", e, (track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined) => track && this.host!.setCurrentTrack(track)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {

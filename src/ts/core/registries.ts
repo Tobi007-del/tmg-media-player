@@ -25,7 +25,7 @@ export class BaseRegistry<T> {
     return this.items.find((i) => i.name === name)?.value;
   }
   public getAll(order?: string[]): T[] {
-    return (!order ? this.items : this.items.toSorted((a, b, ai = order.indexOf(a.name), bi = order.indexOf(b.name)) => (ai === -1 && bi === -1 ? 0 : ai === -1 ? 1 : bi === -1 ? -1 : ai - bi))).map((i) => i.value);
+    return (!order?.length ? this.items : this.items.toSorted((a, b, ai = order.indexOf(a.name), bi = order.indexOf(b.name)) => (ai === -1 && bi === -1 ? 0 : ai === -1 ? 1 : bi === -1 ? -1 : ai - bi))).map((i) => i.value);
   }
   public clear() {
     return (this.items = []), this;
@@ -177,6 +177,6 @@ export class IconRegistry extends BaseRegistry<string> {
   }
   // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
   public static registerAll(icons: Record<keyof IconRegistryMap, IconRegistryMap[keyof IconRegistryMap]>): void {
-    for (const k of Object.keys(icons)) this.instance.register(k, icons[k as keyof IconRegistryMap]);
+    for (const k in icons) this.instance.register(k, icons[k as keyof IconRegistryMap]);
   }
 }

@@ -146,8 +146,9 @@ tmg--settings--overlay--behavior--value="persistent"
 ```
 
 ```html
-<!-- Load an entire JSON config file -->
-<video tmg="./player-config.json" src="movie.mp4"></video>
+<!-- Load an entire JSON config file or a JSON string -->
+<video tmg="./player-config.json" src="movie.mp4"></video> 
+<video tmg='{"settings":{"overlay":{"behavior":{"value":"persistent"}}}}' src="movie.mp4"></video>
 ```
 
 ```html

@@ -43,10 +43,10 @@ export class PlaybackRatePlug extends BasePlug<PlaybackRateConfig> {
     let rate = Math.round(this.media.state.playbackRate * 100);
     if (sign === "-") {
       if (rate > this.config.min * 100) rate -= rate % value || value;
-      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackRateDown");
+      this.media.features.playbackRate && this.ctlr.notify?.("playbackRateDown");
     } else {
       if (rate < this.config.max * 100) rate += rate % value ? value - (rate % value) : value;
-      this.media.features.playbackRate && this.ctlr.plug("settings.notifiers")?.notify("playbackRateUp");
+      this.media.features.playbackRate && this.ctlr.notify?.("playbackRateUp");
     }
     this.media.intent.playbackRate = clamp(this.config.min, +(rate / 100).toFixed(2), this.config.max);
   }

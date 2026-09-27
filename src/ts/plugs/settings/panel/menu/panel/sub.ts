@@ -1,12 +1,10 @@
 import { BaseMenuPanel } from ".";
-import { SettingsMenu } from "../";
 import type { SettingsMenuItem } from "../../types";
 import { BaseWidget, WidgetRegistry } from "../widgets";
 import { GroupWidget } from "../widgets/group";
-import { createEl } from "@utils/dom";
+import { createEl, addSafeClicks } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import type { Controller } from "@core/controller";
-import { requestAnimationFrame } from "@utils/fn";
 
 export class SubMenuPanel extends BaseMenuPanel {
   private headerLabel!: HTMLElement;
@@ -16,7 +14,7 @@ export class SubMenuPanel extends BaseMenuPanel {
   private item: SettingsMenuItem | null = null;
   private headerActions!: HTMLElement;
   private footerSlot!: HTMLElement;
-  public onBack?: () => void;
+  public onBack?: (restore?: boolean) => void;
   public onSubItemClick?: (item: SettingsMenuItem) => void;
 
   constructor(ctlr: Controller) {
@@ -33,10 +31,20 @@ export class SubMenuPanel extends BaseMenuPanel {
 
   private buildShell(): void {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
-    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
+    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ DblClick→Restore scroll", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
-    this.backBtn.addEventListener("click", (e) => (e.stopPropagation(), this.onBack?.()), { signal: this.signal });
-    header.addEventListener("click", () => this.onBack?.(), { signal: this.signal });
+    addSafeClicks(
+      this.backBtn,
+      (e) => (e.stopPropagation(), this.onBack?.(false)),
+      (e) => (e.stopPropagation(), this.onBack?.(true)),
+      { signal: this.signal }
+    );
+    addSafeClicks(
+      this.headerLabel,
+      (e) => (e.stopPropagation(), this.onBack?.(false)),
+      (e) => (e.stopPropagation(), this.onBack?.(true)),
+      { signal: this.signal }
+    );
     this.headerActions = createEl("div", { className: "tmg-media-smenu-sub-actions" });
     header.append(this.backBtn, this.headerLabel, this.headerActions);
     this.widgetSlot = createEl("div", { className: "tmg-media-smenu-widget-slot" });
@@ -44,8 +52,8 @@ export class SubMenuPanel extends BaseMenuPanel {
     this.content.append(header, this.widgetSlot, this.footerSlot);
   }
 
-  public override enter(dir?: "forward" | "backward" | "none") {
-    super.enter(dir), requestAnimationFrame(() => this.element.querySelector<HTMLElement>(SettingsMenu.focusSelector)?.focus(), this.ctlr.signal);
+  public override enter(dir?: "forward" | "backward" | "none", restore = false) {
+    super.enter(dir, restore), !restore && this.focusFirst();
   }
 
   public load(item: SettingsMenuItem): void {

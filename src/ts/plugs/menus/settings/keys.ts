@@ -1,8 +1,9 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { KeysPlug } from "@plugs/settings/keys";
 import { capitalize, uncamelize } from "@utils/str";
-import { getUIOpt } from "@utils/obj";
-import { KEY_SHORTCUT_MOD_ACTIONS } from "@plugs/settings/keys/build";
+import { getUIOpt, isDef } from "@utils/obj";
+import { KEYS_MODS_ACTIONS } from "@plugs/settings/keys/build";
+import { fanout } from "sia-reactor/utils";
 
 export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
   id: "advanced",
@@ -27,25 +28,26 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
             { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
             { id: "keyboardStrictMatch", label: "Strict match", widget: "toggle", getValue: () => (plug.config.strictMatch ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatch = val), configPaths: ["settings.keys.strictMatch"], title: "Require exact key combo match for actions (e.g., Shift+f will not trigger the action for f)." },
             { id: "keyboardShowOverlay", label: "Show overlay", widget: "toggle", getValue: () => (plug.config.showOverlay ? "On" : "Off"), onChange: (val: boolean) => (plug.config.showOverlay = val), configPaths: ["settings.keys.showOverlay"], title: "Force the player controls overlay to appear when pressing keys." },
-            { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase (keydown/keyup) to trigger actions when not explicitly specified" },
+            { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase to trigger actions when not explicitly specified" },
             {
               id: "keyboardMods",
               label: "Modifiers",
               widget: "group",
               getValue: () => (plug.config.mods.disabled ? "Off" : "On"),
               items: [
-                { id: "keyboardModsDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.mods.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.mods.disabled = val), configPaths: ["settings.keys.mods.disabled"], title: "Allow holding Shift or Ctrl/Cmd to change how much the action steps by (e.g. holding Shift to seek 10s instead of 5s)" },
-                ...KEY_SHORTCUT_MOD_ACTIONS.map((mod) => ({
+                { id: "keyboardModsDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.mods.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.mods.disabled = val), configPaths: ["settings.keys.mods.disabled"], title: "Allow holding Shift/Ctrl/Cmd to modify steps (e.g. holding Shift to seek 10s instead of 5s)" },
+                ...KEYS_MODS_ACTIONS.map((mod) => ({
                   id: `keyboardMod-${mod}`,
                   label: `${capitalize(uncamelize(mod))}`,
                   widget: "input" as const,
-                  getValue: () => "",
+                  getValue: ({ ctrl, alt, shift } = plug.config.mods[mod]) => [isDef(ctrl) && `⌘ ${ctrl}`, isDef(shift) && `⇧ ${shift}`, isDef(alt) && `⌥ ${alt}`].filter(Boolean).join(" • "),
                   inputs: [
-                    { name: "ctrl", label: "Ctrl amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl },
-                    { name: "shift", label: "Shift amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift }
+                    { name: "ctrl", label: "Ctrl amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].ctrl, helperText: { info: "Applies when holding Ctrl or Cmd (⌘) key" } },
+                    { name: "shift", label: "Shift amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].shift, helperText: { info: "Applies when holding Shift (⇧) key" } },
+                    { name: "alt", label: "Alt amount", type: "number", min: "0", step: "any" as const, value: () => plug.config.mods[mod].alt, helperText: { info: "Applies when holding Alt or Option (⌥) key" } },
                   ],
-                  onChange: (val: any) => (val.ctrl !== undefined && (plug.config.mods[mod].ctrl = val.ctrl === "" ? undefined : Number(val.ctrl)), val.shift !== undefined && (plug.config.mods[mod].shift = val.shift === "" ? undefined : Number(val.shift))),
-                  configPaths: [`settings.keys.mods.${mod}` as const]
+                  onChange: (val: any) => fanout(plug.config.mods[mod], val),
+                  configPaths: [`settings.keys.mods.${mod}` as const],
                 })),
               ],
             },
@@ -53,8 +55,9 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
               id: "keyboardLists",
               label: "Constraints",
               widget: "group",
+              hidden: () => !plug.ctlr.config.devMode,
               getValue: () => (plug.config.overrides.length || plug.config.blocks.length || plug.config.whitelist.length ? "On" : "Off"),
-              configPaths: ["settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],
+              configPaths: ["devMode", "settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],
               items: [
                 {
                   id: "keyboardOverrides",
@@ -109,3 +112,4 @@ declare module "@defs/registries" {
     "settings.keys": typeof getSettingsKeysMenu;
   }
 }
+

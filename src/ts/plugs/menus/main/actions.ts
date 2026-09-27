@@ -1,6 +1,6 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import { Controller } from "@core/controller";
-import { syncToastConfig, getToastMenuInputs } from "./toasts";
+import { syncToastConfig, getToastMenuInputs } from "../settings/toasts";
 import { capitalize, camelize, uncamelize } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
 import { getPath } from "sia-reactor/utils";
@@ -13,22 +13,22 @@ const uncam = (s: string) => capitalize(uncamelize(s));
 const toId = (label: string) => camelize(label.toLowerCase().replace(/[^a-z0-9\s]/g, "")) || "";
 const OPS: ActionLogicOp[] = ["set", "increment", "decrement", "toggle"];
 
-const confirmDelete = (label: string, ctlr: Controller) => t007.confirm?.(`Delete "${label}" from your actions? This cannot be undone.`, { id: `${ctlr.config.id}-delete-confirm`, rootElement: ctlr.plug("settings.settingsView")?.menu.el, confirmText: "Delete" });
+const confirmDelete = (label: string, ctlr: Controller) => t007.confirm?.(`Delete "${label}" from your actions? This cannot be undone.`, { id: `${ctlr.config.id}-delete-confirm`, rootElement: ctlr.plug("settings.panel")?.menu.el, confirmText: "Delete" });
 
 const NAV_NODE_ID = (actionId: string, stepTag: string, path: string = "*") => (path === "*" ? `actions-${actionId}-logic-nav-${stepTag}` : `actions-${actionId}-logic-nav-${stepTag}-${path.replace(/\./g, "-")}`);
 
 function buildPathNavNode(actionId: string, stepTag: string, path: string, root: any, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem {
   const label = path === "*" ? "Choose Key" : uncam(path.split(".").pop()!),
     val = getPath(root, path as any);
-  if (ctlr.isLogical(path, true, val)) {
+  if (ctlr.isLogical(path, true, val, true)) {
     const type = isArr(val) ? "array" : typeof val,
-      tempStep: ActionLogic = { path, op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
+      tempStep: ActionLogic = { path, fpath: path.split(".").map(uncam).join(" > "), op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
     return {
       id: NAV_NODE_ID(actionId, stepTag, path),
       label,
       widget: "group",
-      getValue: () => path,
-      getTipHTML: () => `Path: <code>${path}</code>, Current value: <code>${type === "array" ? `[${val.join(", ")}]` : String(val)}</code>`,
+      getValue: () => (path === "*" ? "Choose Key" : ""),
+      getTipHTML: () => `Path: <code>${tempStep.fpath}</code><br>Current value: <code>${type === "array" ? `[${val.join(", ")}]` : String(val)}</code>`,
       actions: [
         {
           id: "confirm",
@@ -36,7 +36,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
           icon: "check",
           onClick: () => {
             onConfirm({ ...tempStep });
-            const menu = ctlr.plug("settings.settingsView")?.menu;
+            const menu = ctlr.plug("settings.panel")?.menu;
             if (!menu) return;
             const target = actionId === "new" ? "actions-add" : `actions-logic-${actionId}`;
             while (menu.navStack.length > 1 && menu.navStack[menu.navStack.length - 1] !== target) menu.goBack();
@@ -53,7 +53,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
           getOptions: () => (type === "boolean" ? (["set", "toggle"] as ActionLogicOp[]) : OPS).map((o) => ({ value: o, display: capitalize(o) })),
           onChange: (v: ActionLogicOp) => {
             tempStep.op = v;
-            ctlr.plug("settings.settingsView")?.menu.syncUI(NAV_NODE_ID(actionId, stepTag, path));
+            ctlr.plug("settings.panel")?.menu.syncUI(NAV_NODE_ID(actionId, stepTag, path));
           },
         },
         {
@@ -69,7 +69,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
               const raw = String(v.value ?? "").trim();
               tempStep.value = raw === "" ? undefined : type === "number" || !isNaN(+raw) ? +raw : type === "array" ? raw.split(",").map((s) => s.trim()) : getBoolOrStr(raw);
             }
-            ctlr.plug("settings.settingsView")?.menu.syncUI(NAV_NODE_ID(actionId, stepTag, path));
+            ctlr.plug("settings.panel")?.menu.syncUI(NAV_NODE_ID(actionId, stepTag, path));
           },
           ...(type !== "boolean"
             ? {
@@ -89,7 +89,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
       ],
     };
   }
-  const childPaths = ctlr.getLogicPaths(path),
+  const childPaths = ctlr.getLogicPaths(path, true),
     childNodes = childPaths.map((p) => buildPathNavNode(actionId, stepTag, p, root, ctlr, onConfirm, existingStep));
   const directInput: SettingsMenuItem = {
     id: `${NAV_NODE_ID(actionId, stepTag, path)}-direct`,
@@ -109,20 +109,20 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
     onChange: (v: Record<string, string>) => {
       const typed = String(v.path ?? "").trim(),
         match = typed ? childPaths.find((p) => p.split(".").pop()?.toLowerCase() === typed.toLowerCase()) : null;
-      if (match) return void requestAnimationFrame(() => ctlr.plug("settings.settingsView")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
+      if (match) return void requestAnimationFrame(() => ctlr.plug("settings.panel")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
       const fullPath = path === "*" ? typed : `${path}.${typed}`,
-        val = ctlr.isLogical(fullPath) ? getPath(root, fullPath as any) : undefined,
+        val = ctlr.isLogical(fullPath, true, undefined, true) ? getPath(root, fullPath as any) : undefined,
         id = NAV_NODE_ID(actionId, stepTag, fullPath),
-        menu = ctlr.plug("settings.settingsView")?.menu;
+        menu = ctlr.plug("settings.panel")?.menu;
       if (typed && val !== undefined && menu) !menu.getItem(id) && menu.register(buildPathNavNode(actionId, stepTag, fullPath, root, ctlr, onConfirm, existingStep)), requestAnimationFrame(() => menu.goTo(id), ctlr.signal);
     },
   };
-  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : path), getTipHTML: () => (path === "*" ? "<code>media</code> controls the player (volume, fullscreen, etc.). <code>settings</code> controls configuration values." : `Drilling into <code>${path}</code>, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
+  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : ""), getTipHTML: () => (path === "*" ? "<code>media</code> controls the player (volume, fullscreen, etc.). <code>settings</code> controls configuration values." : `Drilling into <code>${path.split(".").map(uncam).join(" > ")}</code>, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
 }
 
 const makeLogicNavTree = (actionId: string, stepTag: string, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem => buildPathNavNode(actionId, stepTag, "*", ctlr.logicRoot, ctlr, onConfirm, existingStep);
 
-const stepLabel = (step: ActionLogic) => (step.path ? `${step.path} (${step.op ?? "set"}${step.value !== undefined ? ` ${step.value}` : ""})` : "Empty step");
+const stepLabel = (step: ActionLogic) => (step.path ? `${(step.fpath ??= step.path.split(".").map(uncam).join(" > "))} (${step.op ?? "set"}${step.value !== undefined ? ` ${isArr(step.value) ? `[${step.value.join(", ")}]` : step.value}` : ""})` : "Empty step");
 
 function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem {
   const navTree = makeLogicNavTree(
@@ -133,7 +133,7 @@ function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctl
       const a = ctlr.actions.entries[actionId] as Action;
       a.logic![idx] = newStep;
       logicItems[idx] = makeLogicStepView(a.logic![idx], idx, actionId, ctlr, logicItems);
-      ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${actionId}`);
+      ctlr.plug("settings.panel")?.menu.syncUI(`actions-logic-${actionId}`);
     },
     step
   );
@@ -158,14 +158,14 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
       const steps = liveLogic();
       steps.splice(to, 0, ...steps.splice(from, 1));
       logicItems.splice(0, logicItems.length, ...steps.map((s, i) => makeLogicStepView(s, i, action.id, ctlr, logicItems)));
-      ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
+      ctlr.plug("settings.panel")?.menu.syncUI(`actions-logic-${action.id}`);
     },
-    onEdit: (i: number) => ctlr.plug("settings.settingsView")?.menu.goTo(NAV_NODE_ID(action.id, String(i), liveLogic()[i].path)),
+    onEdit: (i: number, step = liveLogic()[i], menu = ctlr.plug("settings.panel")?.menu, id = NAV_NODE_ID(action.id, String(i), step.path)) => (menu && !menu.getItem(id) && menu.register(buildPathNavNode(action.id, String(i), step.path, ctlr.logicRoot, ctlr, (s) => (((ctlr.actions.entries[action.id] as Action).logic![i] = s), (logicItems[i] = makeLogicStepView(s, i, action.id, ctlr, logicItems)), menu.syncUI(`actions-logic-${action.id}`)), step)), menu?.goTo(id)),
     onDelete: async (i: number) => {
       if (!(await confirmDelete(stepLabel(liveLogic()[i]), ctlr))) return;
       const steps = liveLogic();
       steps.splice(i, 1);
-      logicItems.splice(0, logicItems.length, ...steps.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
+      logicItems.splice(0, logicItems.length, ...steps.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.panel")?.menu.syncUI(`actions-logic-${action.id}`);
     },
     actions: hasLogicSupport
       ? [
@@ -181,10 +181,10 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
                   const act = ctlr.actions.entries[action.id] as Action;
                   if (!act.logic) act.logic = [];
                   act.logic.push(newStep);
-                  logicItems.splice(0, logicItems.length, ...act.logic.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-logic-${action.id}`);
+                  logicItems.splice(0, logicItems.length, ...act.logic.map((s, j) => makeLogicStepView(s, j, action.id, ctlr, logicItems))), ctlr.plug("settings.panel")?.menu.syncUI(`actions-logic-${action.id}`);
                 }),
                 placeholder: SettingsMenuItem = { id: `actions-${action.id}-logic-${tag}`, label: "New step", widget: "group", getValue: () => "New", items: [navTree] };
-              logicItems.push(placeholder), ctlr.plug("settings.settingsView")?.menu.goTo(NAV_NODE_ID(action.id, tag));
+              logicItems.push(placeholder), ctlr.plug("settings.panel")?.menu.goTo(NAV_NODE_ID(action.id, tag));
             },
           },
         ]
@@ -241,6 +241,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           type: "select",
           options: ctlr.settings.keys.phase.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().keyboard?.phase ?? "",
+          helperText: { info: "Whether to trigger the action on keydown or keyup" },
         },
       ],
       getValue: () => formatAction(action.system ? action.id : ctlr.settings.keys.shortcuts[action.id]) || "None",
@@ -277,6 +278,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           type: "select",
           options: ctlr.settings.voice.process.stage.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.stage ?? "",
+          helperText: { info: "When this command is allowed to trigger the action" },
         },
         {
           name: "match",
@@ -284,6 +286,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           type: "select",
           options: ctlr.settings.voice.process.match.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.match ?? "",
+          helperText: { info: "Whether it should match everything said or just a part" },
         },
       ],
       getValue: () => formatAction("", ctlr.settings.voice.commands[action.id]) || "None",
@@ -292,7 +295,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
-        ctlr.settings.voice.commands[action.id] = triggers.length > 0 ? triggers : [];
+        ctlr.settings.voice.commands[action.id] = triggers.length > 1 ? triggers : triggers[0] ?? "";
         _live.voice = { ..._live.voice, stage: val.stage as any, match: val.match as any };
       },
       configPaths: [`actions.entries.${action.id}.voice` as any, `settings.voice.commands.${action.id}` as any],
@@ -354,7 +357,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           configPaths: ["devMode", `actions.entries.${action.id}.gates` as any],
           hidden: () => !ctlr.config.devMode,
         },
-        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.UIZenList.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: () => !ctlr.config.devMode, configPaths: ["devMode", `actions.entries.${action.id}.zen` as any] },
+        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenlist.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: () => !ctlr.config.devMode, configPaths: ["devMode", `actions.entries.${action.id}.zen` as any] },
       ],
     },
   ];
@@ -378,7 +381,7 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
     getValue: () => formatAction(action.system ? action.id : ctlr.settings.keys.shortcuts[action.id], ctlr.settings.voice.commands[action.id]) || "None",
     configPaths: [`actions.entries.${action.id}` as any, `settings.keys.shortcuts.${action.id}` as any],
     onWire: (syncUI, signal) => {
-      ctlr.config.on(`actions.entries.${action.id}.disabled` as any, () => (syncUI(), ctlr.plug("settings.settingsView")?.menu.syncUI(`actions-detail-${action.id}`)), { signal });
+      ctlr.config.on(`actions.entries.${action.id}.disabled` as any, () => (syncUI(), ctlr.plug("settings.panel")?.menu.syncUI(`actions-detail-${action.id}`)), { signal });
     },
     actions: [
       { id: "run", getLabel: () => "Run", icon: "play", onClick: () => ctlr.perform(action.id), getDisabled: () => !!live().disabled },
@@ -390,7 +393,7 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
               icon: "bin" as const,
               onClick: async () => {
                 if (!(await confirmDelete(live().label ?? uncam(action.id), ctlr))) return;
-                delete ctlr.actions.entries[action.id], onDeleteAction(), ctlr.plug("settings.settingsView")?.menu.goBack();
+                delete ctlr.actions.entries[action.id], onDeleteAction(), ctlr.plug("settings.panel")?.menu.goBack(true);
               },
             },
           ]
@@ -427,7 +430,7 @@ function makeActionForm(ctlr: Controller, onAdd: () => void): SettingsMenuItem {
       ctlr.learn(id, { label, fn: NOOP, logic: [], userCreated: true });
       if (triggers.length) (ctlr.settings.voice.commands as any)[id] = triggers;
       if (keys.length) (ctlr.settings.keys.shortcuts as any)[id] = keys.length > 1 ? keys : keys[0];
-      onAdd(), ctlr.plug("settings.settingsView")?.menu.goBack(), requestAnimationFrame(() => ctlr.plug("settings.settingsView")?.menu.goTo(`actions-detail-${id}`), ctlr.signal);
+      onAdd(), ctlr.plug("settings.panel")?.menu.goBack(), requestAnimationFrame(() => ctlr.plug("settings.panel")?.menu.goTo(`actions-detail-${id}`), ctlr.signal);
     },
   };
 }
@@ -469,12 +472,12 @@ export const getActionsMenu = (ctlr: Controller): SettingsMenuItem => {
               rebuildActionItems();
             }
             syncUI();
-            ctlr.plug("settings.settingsView")?.menu.syncUI("actions");
+            ctlr.plug("settings.panel")?.menu.syncUI("actions");
           };
           ctlr.config.on("actions" as any, watcher, { signal, init: true });
           ctlr.config.on("devMode" as any, watcher, { signal });
         },
-        actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => ctlr.plug("settings.settingsView")?.menu.goTo("actions-add") }],
+        actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => ctlr.plug("settings.panel")?.menu.goTo("actions-add") }],
         items: actionItems,
       },
     ],

@@ -1,12 +1,10 @@
 import { BaseMenuPanel } from ".";
-import { SettingsMenu } from "../";
 import type { SettingsMenuItem, SettingsMenuConfig, SettingsRowElement } from "../../types";
 import { createEl, createListRenderer } from "@utils/dom";
 import { WidgetRegistry } from "../widgets";
 import type { Controller } from "@core/controller";
 import { IconRegistry } from "@core/registries";
 import { isFunc, parseUIOpt, parseUIBadge, isArr } from "@utils/obj";
-import { requestAnimationFrame } from "@utils/fn";
 
 export class MainMenuPanel extends BaseMenuPanel {
   private viewBtn!: HTMLButtonElement;
@@ -32,31 +30,30 @@ export class MainMenuPanel extends BaseMenuPanel {
       destroyNode: (node) => ((node as any)._ac?.abort(), (node as SettingsRowElement).widget?.destroy(), node.remove()),
     });
     this.content.append(list);
-    if (this.menuConfig.showView) {
-      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
+    if (this.menuConfig.showMore) {
+      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon tmg-media-flex-center">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
       this.viewBtn.addEventListener("click", () => this.onViewClick?.(), { signal: this.signal }), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
-      this.ctlr.plug("settings.settingsView")?.state.on("viewOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
+      this.ctlr.plug("settings.panel")?.state.on("viewOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
     }
   }
 
   public sync(items: SettingsMenuItem[]): void {
     this.renderRows(items);
   }
-  public override enter(dir?: "forward" | "backward" | "none"): void {
-    super.enter(dir), this.focusFirst();
-  }
-  private focusFirst(): void {
-    requestAnimationFrame(() => this.element.querySelector<HTMLElement>(SettingsMenu.focusSelector)?.focus(), this.ctlr.signal);
+  public override enter(dir?: "forward" | "backward" | "none", restore = false): void {
+    super.enter(dir, restore), !restore && this.focusFirst();
   }
 
   private buildRow(item: SettingsMenuItem): HTMLElement {
     const isWidget = item.widget === "toggle" || item.widget === "button" || item.inline,
-      li = createEl("li", { className: "tmg-media-smenu-row" + (item.getDisabled?.() ? " tmg-media-control-disabled" : ""), role: "menuitem", tabIndex: 0, inert: item.getDisabled?.() || undefined }, { itemId: item.id }) as SettingsRowElement,
+      disabled = !!item.getDisabled?.(),
+      li = createEl("li", { className: "tmg-media-smenu-row", role: "menuitem", tabIndex: 0, inert: disabled || undefined }, { itemId: item.id }) as SettingsRowElement,
       lbl = createEl("span", { className: "tmg-media-smenu-row-label", textContent: item.label });
+    li.toggleAttribute("disabled", disabled);
     if (item.title) li.title = isFunc(item.title) ? item.title() : item.title;
     if (item.icon) {
       const iconSvg = IconRegistry.get(item.icon, true);
-      if (iconSvg) li.append(createEl("span", { className: "tmg-media-smenu-row-icon", innerHTML: iconSvg }));
+      if (iconSvg) li.append(createEl("span", { className: "tmg-media-smenu-row-icon tmg-media-flex-center", innerHTML: iconSvg }));
     }
     if (isWidget) {
       const badge = parseUIBadge(item.getBadge?.());
@@ -83,34 +80,35 @@ export class MainMenuPanel extends BaseMenuPanel {
         li.append(lbl, info, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       } else li.append(lbl, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       li.addEventListener("click", () => !item.getDisabled?.() && this.onItemClick?.(item), { signal: this.signal });
-      if (item.mediaPaths || item.configPaths || item.onWire) {
-        const ac = new AbortController(),
-          syncUI = () => {
-            const value = item.getValue?.(),
-              opts = /^(select|drag-select)$/.test(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
-              badge = parseUIBadge(item.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
-              valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-value"),
-              lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-label");
-            if (lblNode) {
-              lblNode.querySelector(".tmg-media-control-badge")?.remove();
-              if (badge?.label) lblNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
-            }
-            if (valNode) {
-              valNode.textContent = "";
-              valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : value || "" }));
-              if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
-            } else {
-              const el = (li as SettingsRowElement).widget?.element;
-              if (el) badge?.value ? (el.dataset.badge = badge.value) : delete el.dataset.badge;
-              (li as SettingsRowElement).widget?.syncUI();
-            }
-            (li.inert = !!item.getDisabled?.()), li.classList.toggle("tmg-media-control-disabled", !!item.getDisabled?.());
-          };
-        if (item.mediaPaths) for (const path of item.mediaPaths || []) this.media.on(path, syncUI, { signal: ac.signal });
-        if (item.configPaths) for (const path of item.configPaths || []) this.ctlr.config.on(path, syncUI, { signal: ac.signal });
-        item.onWire?.(syncUI, ac.signal);
-        (li as any)._ac = ac;
-      }
+    }
+    
+    if (item.mediaPaths || item.configPaths || item.onWire) {
+      const ac = new AbortController(),
+        syncUI = () => {
+          const value = item.getValue?.(),
+            opts = /^(select|drag-select)$/.test(item.widget as string) && !item.getMultiple?.() ? item.getOptions?.() : undefined,
+            badge = parseUIBadge(item.getBadge?.() || (opts?.find((o, _, __, parsed = parseUIOpt(o)) => parsed.display === value || parsed.value === value) as any)?.badge),
+            valNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-value"),
+            lblNode = li.querySelector<HTMLElement>(".tmg-media-smenu-row-label");
+          if (lblNode) {
+            lblNode.querySelector(".tmg-media-control-badge")?.remove();
+            if (badge?.label) lblNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.label }));
+          }
+          if (valNode) {
+            valNode.textContent = "";
+            valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : value || "" }));
+            if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
+          } else {
+            const el = (li as SettingsRowElement).widget?.element;
+            if (el) badge?.value ? (el.dataset.badge = badge.value) : delete el.dataset.badge;
+          }
+          const disabled = !!item.getDisabled?.();
+          (li.inert = disabled), li.toggleAttribute("disabled", disabled);
+        };
+      if (item.mediaPaths) for (const path of item.mediaPaths) this.media.on(path, syncUI, { signal: ac.signal });
+      if (item.configPaths) for (const path of item.configPaths) this.ctlr.config.on(path, syncUI, { signal: ac.signal });
+      item.onWire?.(syncUI, ac.signal);
+      (li as any)._ac = ac;
     }
     return li;
   }

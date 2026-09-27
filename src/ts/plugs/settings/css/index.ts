@@ -25,7 +25,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
     // ---- Media Listeners
     this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State ----------
-    for (const p of ["container", "pseudoContainer"] as const) this.ctlr.state.on(`dimensions.${p}.tier`, ({ value: tier }) => (this.media[p].dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
+    for (const k of ["container", "pseudoContainer"] as const) this.ctlr.state.on(`dimensions.${k}.tier`, ({ value: tier }) => (this.media[k].dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
     // Post Wiring
     for (const [k, v] of entries) k !== "syncWithMedia" && ((this.build[k] ??= this.ctlr.build.settings.css[k]), this.set(k, v));
     super.wire();

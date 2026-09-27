@@ -44,7 +44,7 @@ export abstract class BasePlug<Config = any, State = any> extends Controllable<C
   }
 
   protected registerMenu(): void {
-    this.ctlr.plug("settings.settingsView")?.menu.register(MenuRegistry.get((this.constructor as PC).fullName as keyof MenuRegistryMap)?.(this as any));
+    this.ctlr.plug("settings.panel")?.menu.register(MenuRegistry.get((this.constructor as PC).fullName as keyof MenuRegistryMap)?.(this as any));
   } // override to configure positioning
 }
 
@@ -82,3 +82,4 @@ export abstract class BasePin<Plug extends BasePlug = BasePlug, Config = any, St
 }
 
 export type * from "./types";
+

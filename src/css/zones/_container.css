@@ -4,6 +4,7 @@
   margin: auto;
   color: var(--tmg-media-text-color);
   font-family: var(--tmg-media-font-family);
+  text-align: left;
   border-radius: var(--tmg-media-border-radius);
   isolation: isolate;
   contain: layout style;
@@ -22,15 +23,29 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-size: calc(var(--tmg-media-current-unit) / 1.5);
   font-weight: 500;
 }
+.tmg-pseudo-media-container.tmg-media-in-miniplayer::before,
+body:where(:has(.tmg-media-floating-player)) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:is(*:not(body):has(.tmg-host-container:is(.tmg-media-fullscreen, .tmg-media-theater)), #o#o#o#o#o) {
+  flex: 0 0 100%;
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: unset;
+  max-height: unset;
+}
 .tmg-host-container:is(.tmg-media-fullscreen, .tmg-media-theater):where(:not(.tmg-media-miniplayer)) {
   width: 100%;
+  max-width: unset;
   border-radius: 0;
+}
+.tmg-host-container.tmg-media-theater:where(:not(.tmg-media-miniplayer)) {
+  max-height: 80lvh;
 }
 .tmg-host-container.tmg-media-theater:where(:not(.tmg-media-mobile)) {
   --tmg-media-current-unit: var(--tmg-media-theater-unit);
@@ -78,9 +93,6 @@ body:has(.tmg-host-container.tmg-media-fullscreen:not(:fullscreen)) {
   transition: none;
 }
 body:where(:has(.tmg-media-floating-player)) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   padding: 0;
   margin: 0;
   background: black;
@@ -121,10 +133,10 @@ body:where(:has(.tmg-media-floating-player)) {
 .tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) {
   --tmg-media-current-safe-inset-bottom: var(--tmg-media-current-bottom-wrapper-height);
 }
-.tmg-media-container:not(.tmg-media-settings-view):is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:not(.tmg-media-more-settings):is(.tmg-media-overlay, :has(:focus-visible)) {
   --tmg-media-current-global-safe-inset-top: var(--tmg-media-current-top-wrapper-height);
 }
-.tmg-media-container:not(.tmg-media-settings-view):is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:not(.tmg-media-more-settings):is(.tmg-media-overlay, :has(:focus-visible)) {
   --tmg-media-current-global-safe-inset-bottom: var(--tmg-media-current-bottom-wrapper-height);
 }
 .tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)),
@@ -143,14 +155,14 @@ body:where(:has(.tmg-media-floating-player)) {
 
 .tmg-media-container.tmg-media-voice-routing .tmg-media-content-wrapper::after,
 .tmg-media-controls-container {
-  width: 100%;
-  height: 100%;
   position: absolute;
   background-color: transparent;
   border-radius: inherit;
 }
 .tmg-media-container.tmg-media-voice-routing .tmg-media-content-wrapper::after {
   content: "";
+  width: 100%;
+  height: 100%;
   inset: 0;
   pointer-events: none;
   animation: tmg-voice-pulse var(--tmg-media-notifiers-animation-time) infinite alternate ease-in-out;

@@ -1,12 +1,6 @@
 .tmg-media-notifiers-container {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
-  pointer-events: none;
 }
 .tmg-media-notifier {
   position: absolute;
@@ -51,8 +45,7 @@
 :is([data-notify="objectFitContain"] .tmg-media-object-fit-contain-notifier, [data-notify="objectFitCover"] .tmg-media-object-fit-cover-notifier, [data-notify="objectFitFill"] .tmg-media-object-fit-fill-notifier),
 :is([data-notify="cast"] .tmg-media-cast-notifier, [data-notify="airplay"] .tmg-media-airplay-notifier),
 [data-notify="capture"] .tmg-media-capture-notifier,
-[data-notify="captions"] .tmg-media-captions-notifier,
-[data-notify="timer"] .tmg-media-timer-notifier {
+[data-notify="captions"] .tmg-media-captions-notifier {
   animation-name: tmg-hide, tmg-scale-up;
 }
 :is([data-notify="playbackRateUp"], [data-notify="playbackRateDown"]) .tmg-media-playback-rate-notifier-content,
@@ -73,6 +66,7 @@
   animation: inherit;
   opacity: 1;
 }
+.tmg-media-notifier:empty,
 .tmg-media-container:is(.tmg-media-replay, .tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) :is(.tmg-media-play-notifier, .tmg-media-pause-notifier),
 .tmg-media-notifiers-container:has(.tmg-media-cancel-scrub-notifier.tmg-media-control-active) .tmg-media-scrub-notifier {
   display: none;

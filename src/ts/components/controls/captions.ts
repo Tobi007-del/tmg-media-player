@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 import { getTrackKind, getTrackLang } from "@utils/media";
 export type CaptionsConfig = undefined;
 
@@ -21,11 +21,10 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
     this.media.on("features.textVisible", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    // Plug Listeners
-    this.plug?.state.on("secondaryTracks", this.syncBadge, { signal: this.signal });
     // Ctlr Media Listeners
     for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
+    this.ctlr.config.on("settings.captions.secondaryTracks", this.syncBadge, { signal: this.signal });
     this.ctlr.config.on("settings.keys.shortcuts.captions", this.syncARIA, { signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.captions", this.syncARIA, { signal: this.signal });
   }
@@ -39,13 +38,13 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   }
   protected syncBadge(): void {
     const track = this.media.status.textTracks[this.media.state.currentTextTrack],
-      c = this.plug?.config.multiple && this.plug.state.secondaryTracks.length;
+      c = this.plug?.config.multiple && this.plug.config.secondaryTracks.length;
     this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase()}${c ? `+${c}` : ""}` : "");
   }
 
   public syncARIA(): void {
     this.state.label = getTrackKind(this.media.status.textTracks[this.media.state.currentTextTrack], true);
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -6,6 +6,7 @@
   max-width: 700px;
   max-height: 80lvh;
   margin: auto;
+  pointer-events: none;
 }
 :where(.tmg-host-container.tmg-media-mobile .tmg-host) {
   width: 100%;
@@ -21,13 +22,6 @@
 }
 :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-filter);
-}
-:is(*:not(body):has(.tmg-host-container:is(.tmg-media-fullscreen, .tmg-media-theater)), #o#o#o#o#o) {
-  flex: 0 0 100%;
-  grid-column: 1 / -1;
-  width: 100%;
-  max-width: unset;
-  max-height: unset;
 }
 .tmg-host-container.tmg-media-theater .tmg-host {
   width: 100%;
@@ -58,7 +52,7 @@
   min-width: unset;
 }
 .tmg-media-container:not(:has(.tmg-media-vb-slider:active, .tmg-media-touch-vb-notifier.tmg-media-control-active)) :is(.tmg-media, .tmg-media-filtered) {
-  transition: filter var(--tmg-media-settings-view-transition-time) ease;
+  transition: filter var(--tmg-media-settings-transition-time) ease;
 }
 
 /* FOREIGN HOST STYLES */

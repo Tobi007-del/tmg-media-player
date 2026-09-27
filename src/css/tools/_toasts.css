@@ -1,11 +1,6 @@
 .tmg-media-toasts-container {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   overflow: hidden;
   border-radius: inherit;
-  pointer-events: none;
   isolation: isolate;
 }
 .tmg-media-toasts-container > * {

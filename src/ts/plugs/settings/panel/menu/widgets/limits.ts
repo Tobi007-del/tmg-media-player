@@ -3,7 +3,7 @@ import { createEl } from "@utils/dom";
 import { getActiveEl } from "@t007/utils";
 import { setTimeout } from "sia-reactor/utils";
 
-export class LimitsWidget extends BaseWidget<Record<string, number>> {
+export class LimitsWidget extends BaseWidget<Record<string, any>> {
   private form!: HTMLFormElement;
 
   public override render(): HTMLElement {
@@ -13,13 +13,13 @@ export class LimitsWidget extends BaseWidget<Record<string, number>> {
       const row = createEl("fieldset", { className: "tmg-media-limits-row" }),
         wrap = createEl("div", { className: "tmg-media-limits-row-wrap" });
       row.append(createEl("legend", { className: "tmg-media-limits-row-legend", textContent: inp.label }));
-      for (const key of ["min", "max", "step", "start", "end"] as const) if (key in inp) wrap.append(t007.field({ type: "number", name: `${inp.name}_${key}`, label: key.toUpperCase(), required: false, className: "tmg-media-limits-field", step: "any" }));
+      for (const key of ["min", "max", "step", "start", "end"] as const) if (key in inp) wrap.append(t007.field({ type: (inp as any).type || "number", name: `${inp.name}_${key}`, label: key.toUpperCase(), required: false, className: "tmg-media-limits-field", ...((inp as any).type !== "text" && { step: "any" }) }));
       row.append(wrap), this.form.append(row);
     }
     this.form.append(createEl("button", { className: "tmg-media-smenu-limits-btn", type: "submit", textContent: "Save Limits" }));
     (this.form as any).onSubmit = () => {
-      const val = [...this.form.elements].filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && !!el.name).reduce((acc, el) => ((acc[el.name] = Number(el.value)), acc), {} as Record<string, number>);
-      setTimeout(() => (this.item.onChange?.(val), this.item.closeOnSelect !== false && this.ctlr.plug("settings.settingsView")?.menu.goBack()), 0, this.signal);
+      const val = [...this.form.elements].filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && !!el.name).reduce((acc, el) => ((acc[el.name] = el.type === "number" ? Number(el.value) : el.value), acc), {} as Record<string, any>);
+      setTimeout(() => (this.item.onChange?.(val), this.item.closeOnSelect !== false && this.ctlr.plug("settings.panel")?.menu.goBack(true)), 0, this.signal);
     };
     return t007.handleFormValidation?.(this.form), this.element.append(this.form), this.syncUI(), this.element;
   }
@@ -41,3 +41,4 @@ export class LimitsWidget extends BaseWidget<Record<string, number>> {
 }
 
 WidgetRegistry.register("limits", LimitsWidget);
+

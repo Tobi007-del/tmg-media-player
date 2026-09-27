@@ -1,9 +1,10 @@
 import "./types/global.d.ts"; // bundler handles the stylesheet side effect
-import { init } from "./tools/runtime";
+import { init, globalState } from "./tools/runtime";
 import { loadResource } from "./utils/dom";
 
 if ("undefined" !== typeof window) {
   window.tmg ??= {} as any; // bundler will handle the rest
+  window.tmg.state = globalState;
   window.TMG_MEDIA_CSS_SRC ??= "https://cdn.jsdelivr.net/npm/tmg-media-player@latest/dist/index.min.css";
   window.TMG_SHAKA_JS_SRC ??= "https://cdn.jsdelivr.net/npm/shaka-player/dist/shaka-player.compiled.js";
   window.TMG_HLS_JS_SRC ??= "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js";

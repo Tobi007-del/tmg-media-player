@@ -8,9 +8,9 @@ import { settings } from "./settings";
 import { lock } from "./lock";
 import { unlock } from "./unlock";
 import { enterFullscreen } from "./enterFullscreen";
-import { leaveFullscreen } from "./leaveFullscreen";
+import { exitFullscreen } from "./exitFullscreen";
 import { enterPip } from "./enterPip";
-import { leavePip } from "./leavePip";
+import { exitPip } from "./exitPip";
 import { pipPlaceholder } from "./pipPlaceholder";
 import { expandMiniplayer } from "./expandMiniplayer";
 import { removeMiniplayer } from "./removeMiniplayer";
@@ -25,7 +25,7 @@ import { brightnessHigh } from "./brightnessHigh";
 import { brightnessLow } from "./brightnessLow";
 import { brightnessDark } from "./brightnessDark";
 import { enterTheater } from "./enterTheater";
-import { leaveTheater } from "./leaveTheater";
+import { exitTheater } from "./exitTheater";
 import { fullscreenOrientation } from "./fullscreenOrientation";
 import { returnBack } from "./returnBack";
 import { subtitles } from "./subtitles";
@@ -75,9 +75,9 @@ IconRegistry.registerAll({
   lock,
   unlock,
   enterFullscreen,
-  leaveFullscreen,
+  exitFullscreen,
   enterPip,
-  leavePip,
+  exitPip,
   expandMiniplayer,
   removeMiniplayer,
   capture,
@@ -95,7 +95,7 @@ IconRegistry.registerAll({
   subtitles,
   captions,
   enterTheater,
-  leaveTheater,
+  exitTheater,
   fullscreenOrientation,
   returnBack,
   triangleLeft,

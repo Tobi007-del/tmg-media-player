@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { TimeTravelPlug } from "@plugs/settings/timeTravel";
 import { isArr } from "@t007/utils";
 import { capitalize, uncamelize } from "@utils/str";
@@ -29,7 +29,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
       configPaths: ["settings.timeTravel.module.limit"],
       getTipHTML: () => "🌌 Step through the space-time continuum. Rewind mistakes, replay interactions, and witness the magic firsthand.",
       actions: [{ id: "toggleConsole", getLabel: () => (plug.config.console.disabled ? "Show console" : "Hide console"), onClick: () => (plug.config.console.disabled = !plug.config.console.disabled), hidden: () => !plug.ctlr.config.devMode }],
-      onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravel"))) => {
+      onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("timeTravel"))) => {
         for (const k of ["devMode", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
       },
       items: [
@@ -50,7 +50,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
               .reverse();
           },
           onChange: (val: string, match = val.match(/\((\d+)\)/)) => match && plug.module.jumpTo(Number(match[1])),
-          onWire: (syncUI, signal, _tk = "tt_" + Math.random(), _sync = () => plug.ctlr.throttle(_tk, () => (syncUI(), plug.ctlr.plug("settings.settingsView")?.menu?.syncUI("timeTravelHistory")), 30, false, plug.signal)) => {
+          onWire: (syncUI, signal, _tk = "tt_" + Math.random(), _sync = () => plug.ctlr.throttle(_tk, () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("timeTravelHistory")), 30, false, plug.signal)) => {
             for (const k of ["currentFrame", "history", "tracking", "paused"]) plug.module.state.on(k as any, _sync, { signal });
             for (const k of ["devMode", "settings.timeTravel.module.whitelist"]) plug.ctlr.config.on(k as any, _sync, { signal });
           },
@@ -74,7 +74,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
             },
           ],
         },
-        { id: "timeTravelPersist", label: "Persist history", widget: "toggle", getValue: () => (plug.config.persist ? "On" : "Off"), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" },
+        { id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => (plug.config.persist ? "On" : "Off"), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" },
       ],
     },
   ],
@@ -85,3 +85,4 @@ declare module "@defs/registries" {
     "settings.timeTravel": typeof getSettingsTimeTravelMenu;
   }
 }
+

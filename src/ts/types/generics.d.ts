@@ -44,8 +44,10 @@ export interface ChapterInfo {
 
 export interface PosterPreview {
   usePoster: boolean;
-  time: number;
   tease: boolean;
+  loop: boolean;
+  min: number;
+  max: number;
 }
 
 export interface AptRange {

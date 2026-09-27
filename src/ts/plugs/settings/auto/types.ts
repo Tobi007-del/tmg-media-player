@@ -9,7 +9,7 @@ export interface AutoConfig {
   play: UISettings<boolean | AptAutoplayOption[], boolean | AptAutoplayOption>;
   pause: UISettings<boolean | AptAutoplayOption[], boolean | AptAutoplayOption>;
   next: {
-    value: number; // -1 for false
+    countdown: number; // -1 for false
     preview: PosterPreview;
     toast: ToastOptions;
   };

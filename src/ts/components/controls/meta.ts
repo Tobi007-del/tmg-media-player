@@ -20,7 +20,7 @@ export class Meta extends BaseComponent<MetaConfig, ComponentState, HTMLDivEleme
       profileLink = createEl("a", { className: "tmg-media-profile-link" }),
       titleWrapper = createEl("div", { className: "tmg-media-title-wrapper" }),
       artistWrapper = createEl("div", { className: "tmg-media-artist-wrapper" });
-    this.ctlr.DOM.metaProfile = this.profile = this.ctlr.syncImgLoadState(createEl("img", { alt: "Profile", className: "tmg-media-profile" }));
+    this.ctlr.DOM.metaProfile = this.profile = this.ctlr.syncImgLoadState(createEl("img", { alt: "Profile", className: "tmg-media-profile tmg-media-fill" }));
     this.ctlr.DOM.metaTitle = this.title = createEl("a", { className: "tmg-media-title tmg-media-meta-text" });
     this.ctlr.DOM.metaArtist = this.artist = createEl("a", { className: "tmg-media-artist tmg-media-meta-text" });
     // DOM Injection

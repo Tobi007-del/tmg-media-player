@@ -123,20 +123,20 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     if (e.type === "update" && !isFeatured(this.media, e.target.key as keyof MediaFeatures)) return e.reject(this.name), e.stopImmediatePropagation(); // (`&& (e.value || !this.ctlr.flags.wired)` = turn off at runtime) -> polyfill()
   }
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
-    if (e.resolved || !this.wired) return;
+    if (e.resolved || !this.wired) return void (!e.resolved && e.resolve(this.name));
     const chapter = this.config.settings.metadata.chapterInfo[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-    chapter && silence(() => ((this.config.intent.currentTime = chapter.startTime), (this.config.state.currentChapter = e.value as number))); // #FACADED: silenced intent actual op // #NEED FOR SPEED: optimistic but eventual
-    this.ctlr.plug("settings.notifiers")?.notify("chapter");
+    if (chapter) this.config.intent.currentTime = !this.autoChapters ? chapter.startTime : chapter.startTime + 0.001; // #FACADED: silenced intent actual op
+    this.ctlr.notify?.("chapter");
     e.resolve(this.name);
   }
   protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, (seekable = this.config.status.seekable) => e.value && seekable.length && (this.config.intent.currentTime = seekable.end(seekable.length - 1) - 1)); // #FACADED: silenced intent actual op
+    this.ctlr.when("loadedData", e, (seekable = this.config.status.seekable) => e.value && seekable.length && (this.config.intent.currentTime = seekable.end(seekable.length - 1) - 1)); // #FACADED: silenced intent actual op
     e.resolve(this.name);
   }
   // Dog Feeders
   protected onCurrentTime(time = this.config.state.currentTime): void {
-    if (!this.autoChapters) return;
+    if (this.autoChapters) return;
     const chapters = this.config.settings.metadata.chapterInfo;
     if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
     this.config.state.currentChapter = -1;

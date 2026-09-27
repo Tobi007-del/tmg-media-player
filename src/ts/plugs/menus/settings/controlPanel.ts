@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { ControlPanelPlug } from "@plugs/settings/controlPanel";
 import { CONTROLS } from "@plugs/settings/controlPanel/build";
 import type { AnyControl, ControlPanelBottomTuple } from "@plugs/settings/controlPanel/types";
@@ -86,8 +86,8 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       getOptions: () => plug.config.timeline.marks.map((m, i) => ({ value: String(i), display: m.label || `Marker ${i + 1}`, infoText: `${m.start}%` + (m.end ? ` - ${m.end}%` : "") })),
                       getDisabled: () => false,
                       onDelete: (idx: number) => plug.config.timeline.marks.splice(idx, 1),
-                      onEdit: (idx: number) => ((ctx.markerEditIdx = idx), plug.ctlr.plug("settings.settingsView")?.menu.goTo("timeline-marker-edit")),
-                      actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.settingsView")?.menu.goTo("timeline-marker-add") }],
+                      onEdit: (idx: number) => ((ctx.markerEditIdx = idx), plug.ctlr.plug("settings.panel")?.menu.goTo("timeline-marker-edit")),
+                      actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.panel")?.menu.goTo("timeline-marker-add") }],
                       configPaths: ["settings.controlPanel.timeline.marks"],
                       items: [
                         {
@@ -100,7 +100,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number" },
                           ],
                           getValue: () => "",
-                          onChange: (val: Record<string, string>) => plug.config.timeline.marks.push({ label: val.label, start: Number(val.pos) || 0, end: val.end ? Number(val.end) : undefined }),
+                          onChange: (val: Record<string, any>) => plug.config.timeline.marks.push({ label: val.label, start: val.pos || 0, end: val.end }),
                         },
                         {
                           id: "timeline-marker-edit",
@@ -112,9 +112,9 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number", value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.end || "" },
                           ],
                           getValue: () => "",
-                          onChange: (val: Record<string, string>) => {
+                          onChange: (val: Record<string, any>) => {
                             const m = plug.config.timeline.marks[ctx.markerEditIdx];
-                            if (m) (m.label = val.label || undefined), (m.start = Number(val.pos) || 0), (m.end = val.end ? Number(val.end) : undefined);
+                            if (m) (m.label = val.label || undefined), (m.start = val.pos || 0), (m.end = val.end);
                           },
                         },
                       ],
@@ -161,9 +161,9 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                               id: "timelineScrubCancelTimeout",
                               label: "Cancel timeout",
                               widget: "input",
-                              inputs: [{ name: "time", label: "ms", placeholder: "2500", type: "number", min: "0", required: true, helperText: { info: "How long to wait before allowing you to resume seeking after a cancellation" }, value: () => plug.config.timeline.scrub.cancel.timeout }],
+                              inputs: [{ name: "secs", label: "secs", placeholder: "2.5", type: "number", min: "0", required: true, helperText: { info: "How long to wait before allowing you to resume seeking after a cancellation" }, value: () => plug.config.timeline.scrub.cancel.timeout / 1000 }],
                               getValue: () => formatUITime(plug.config.timeline.scrub.cancel.timeout),
-                              onChange: (val: Record<string, any>) => (plug.config.timeline.scrub.cancel.timeout = val.time),
+                              onChange: (val: Record<string, any>) => (plug.config.timeline.scrub.cancel.timeout = val.secs * 1000),
                               configPaths: ["settings.controlPanel.timeline.scrub.cancel.timeout"],
                               getTipHTML: () => "How long to wait before allowing you to resume seeking after a cancellation attempt",
                             },
@@ -203,3 +203,4 @@ declare module "@defs/registries" {
     "settings.controlPanel": typeof getSettingsControlPanelMenu;
   }
 }
+

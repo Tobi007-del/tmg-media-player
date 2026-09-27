@@ -15,8 +15,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.fullscreen", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("features.locked", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const k of ["fullscreen", "locked"] as const) this.media.on(`features.${k}`, this.gate, { signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
@@ -35,7 +34,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   }
 
   protected override get canShow(): boolean {
-    return this.media.state.fullscreen && !!this.media.features.fullscreen && !!this.media.features.locked;
+    return this.media.state.fullscreen && !!this.media.features.fullscreen && !!this.media.features.locked; // can take care of myself
   }
 }
 

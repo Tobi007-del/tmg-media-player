@@ -10,7 +10,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
   public static readonly plugName = "overlay";
   public static readonly BUILD = OVERLAY_BUILD;
   public overlayDelayId = -1;
-  public UIWhitelist: string[] = ["pictureInPicture", "settings", "settingsMenu", "controlDragging"]; // #DEFAULT: build privilege
+  public whitelist: string[] = ["pictureInPicture", "settings", "settingsMenu", "controlDragging"]; // #DEFAULT: build privilege
 
   constructor(ctlr: Controller, config = ctlr.settings.overlay) {
     super(ctlr, config, { visible: false });
@@ -49,7 +49,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
     return this.config.behavior.value !== "hidden" && !this.media.state.locked && !this.ctlr.isUIActive("playerDragging");
   }
   public canHide(manner?: "force"): boolean {
-    return this.config.behavior.value !== "persistent" && (manner === "force" || (!this.UIWhitelist.some(this.ctlr.isUIActive) && (IS_MOBILE ? !this.media.status.waiting && !this.media.state.paused : this.config.behavior.value === "strict" || !this.media.state.paused)));
+    return this.config.behavior.value !== "persistent" && (manner === "force" || (!this.whitelist.some(this.ctlr.isUIActive) && (IS_MOBILE ? !this.media.status.waiting && !this.media.state.paused : this.config.behavior.value === "strict" || !this.media.state.paused) && !this.media.status.teasing));
   }
 }
 

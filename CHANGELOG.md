@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.32
+
+### Patch Changes
+
+- Bug fixes nd light mode advancements
+
+## 0.0.31
+
+### Patch Changes
+
+- Deps update nd bug fixes
+
 ## 0.0.30
 
 ### Patch Changes

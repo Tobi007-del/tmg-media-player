@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "@plugs/settings/settingsView/types";
+import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { FramePlug } from "@plugs/settings/frame";
 import { getToastMenuInputs, syncToastConfig } from "./toasts";
 
@@ -44,3 +44,4 @@ declare module "@defs/registries" {
     "settings.frame": typeof getSettingsFrameMenu;
   }
 }
+

@@ -8,6 +8,7 @@ import { capitalize } from "@utils/str";
 import { setTimeout } from "@utils/fn";
 import { IS_MOBILE } from "@utils/env";
 import { IconRegistry, MenuRegistry } from "@core/registries";
+import { isStr } from "@utils/obj";
 
 export class SkeletonPlug extends BasePlug<SkeletonConfig> {
   public static readonly plugName = "skeleton";
@@ -27,7 +28,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.injectInterface(), this.ctlr.DOM.containerContent?.prepend(this.media.element);
   }
   public override unmount(): void {
-    if (this.media.pseudoElement.isConnected) this.media.element.isConnected && this.leavePseudoMode(true), this.media.container.remove();
+    if (this.media.pseudoElement.isConnected) this.media.element.isConnected && this.exitPseudoMode(true), this.media.container.remove();
     else if (this.media.element.isConnected) this.media.container.parentElement?.replaceChild(this.media.element, this.media.container);
   }
 
@@ -50,13 +51,13 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
       this.media.container.insertAdjacentHTML(
         "beforeend",
         `<div class="tmg-media-content-wrapper">
-          <div class="tmg-media-content">
-            <div class="tmg-media-controls-container">
-              <div class="tmg-media-curtain tmg-media-top-curtain"></div><div class="tmg-media-curtain tmg-media-bottom-curtain"></div><div class="tmg-media-curtain tmg-media-cover-curtain"></div>
+          <div class="tmg-media-content tmg-media-fill">
+            <div class="tmg-media-controls-container tmg-media-fill">
+              <div class="tmg-media-curtain tmg-media-no-pointer tmg-media-top-curtain"></div><div class="tmg-media-curtain tmg-media-no-pointer tmg-media-bottom-curtain"></div><div class="tmg-media-curtain tmg-media-no-pointer tmg-media-cover-curtain"></div>
             </div>
           </div>
-          <div class="tmg-media-settings" inert>
-            <div class="tmg-media-settings-content">
+          <div class="tmg-media-settings tmg-media-cover tmg-media-fill" inert>
+            <div class="tmg-media-settings-content tmg-media-fill">
               <div class="tmg-media-settings-top-panel"><button type="button" class="tmg-media-settings-close-btn">${IconRegistry.get("returnBack")}<span>Close Settings</span></button></div>
               <div class="tmg-media-settings-bottom-panel"><p>More Settings Coming Soon!</p></div>
             </div>
@@ -74,7 +75,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
 
   protected handlePaused({ value, resolved, rejectable }: REvent<CtlrMedia, "state.paused" | "intent.paused">): void {
     if (rejectable && !resolved) return;
-    if (!rejectable && !value && this.config.autoPauseOthers) for (const media of this.media.container.ownerDocument.querySelectorAll<HTMLMediaElement>("video, audio")) media !== this.media.element && !media.paused && media.pause();
+    if (!rejectable && !value && this.config.exclusivePlay.value) for (const media of this.media.container.ownerDocument.querySelectorAll<HTMLMediaElement>(isStr(this.config.exclusivePlay.value) ? this.config.exclusivePlay.value : "video, audio")) media !== this.media.element && !media.paused && media.pause();
     this.media.container.classList.toggle("tmg-media-paused", value);
   }
 
@@ -92,7 +93,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     this.media.container.parentElement?.insertBefore(this.media.pseudoContainer, this.media.container), this.rootEl.append(this.media.container);
   }
 
-  public leavePseudoMode(destroy = false): void {
+  public exitPseudoMode(destroy = false): void {
     if (!this.ctlr.state.pseudoActive) return;
     (this.ctlr.state.pseudoActive = false), (this.media.element.id = this.media.pseudoElement.id), (this.media.pseudoElement.id = "");
     this.media.pseudoElement.className = `tmg-pseudo-${this.media.type} tmg-pseudo-media tmg-host`;
@@ -101,7 +102,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
   }
 
   protected registerMenu(): void {
-    setTimeout(() => super.registerMenu(), 0, this.signal), this.ctlr.plug("settings.settingsView")?.menu.register(MenuRegistry.get("actions")?.(this.ctlr));
+    setTimeout(() => super.registerMenu(), 0, this.signal), this.ctlr.plug("settings.panel")?.menu.registerFirst(MenuRegistry.get("actions")?.(this.ctlr));
   }
 }
 

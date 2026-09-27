@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { addSafeClicks, createEl } from "@utils/dom";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type VoiceConfig = undefined;
 
@@ -14,7 +14,7 @@ export class VoiceButton extends BaseComponent<VoiceConfig, ComponentState, HTML
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.voice", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.voice", this.gate, { init: this.ctlr.flags.wired || !("voice" in this.media.features), signal: this.signal }); // #SAFEGUARD: change is unguaranteed
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
@@ -37,8 +37,8 @@ export class VoiceButton extends BaseComponent<VoiceConfig, ComponentState, HTML
 
   public syncARIA(): void {
     this.state.label = this.settings.voice.active.value ? "Quit" : "Wake up";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]), (this.state.voiceCommand = this.settings.voice.commands[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]));
-    this.el.title = this.state.label + this.state.cmd + ` / DblClick→ Sleep${formatActionForDisplay(this.settings.keys.shortcuts.voiceSleep, this.settings.voice.commands.voiceSleep)}`;
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]), (this.state.voiceCommand = this.settings.voice.commands[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]));
+    this.el.title = this.state.label + this.state.cmd + ` / DblClick→ Sleep${formatActionTooltip(this.settings.keys.shortcuts.voiceSleep, this.settings.voice.commands.voiceSleep)}`;
     this.setBtnARIA("sleep (stop routing)");
   }
 }

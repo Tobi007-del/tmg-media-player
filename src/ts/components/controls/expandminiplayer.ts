@@ -12,7 +12,8 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
   }
 
   public override create(): HTMLButtonElement {
-    return (this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn", type: "button", innerHTML: IconRegistry.get("expandMiniplayer") }, { draggableControl: "", controlId: this.name }));
+    this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn", type: "button", innerHTML: IconRegistry.get("expandMiniplayer") }, { draggableControl: "", controlId: this.name });
+    return this.hide(), this.element;
   }
 
   public override wire(): void {
@@ -20,6 +21,8 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
     this.media.on("features.miniplayer", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
+    // Ctlr Media Listeners
+    this.media.on("state.miniplayer", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // Post Wiring
     this.syncARIA();
   }
@@ -31,6 +34,10 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
   public syncARIA(): void {
     this.el.title = this.state.label = "Expand miniplayer";
     this.setBtnARIA();
+  }
+
+  protected get canShow(): boolean {
+    return this.media.state.miniplayer && !!this.media.features.miniplayer; // can take care of myself
   }
 }
 

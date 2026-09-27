@@ -9,6 +9,7 @@ import { setTimeout } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { INTERACTIVE_SELECTOR } from "@t007/utils";
 import { silence } from "sia-reactor/modules";
+import { globalState } from "@tools/runtime";
 
 export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig> {
   public static readonly pinName = "miniplayer";
@@ -31,8 +32,8 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
-    this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.toggle(), { signal: this.signal }); // #HEAVY: waits for !lightState
+    this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.toggle(), { signal: this.signal }); // #HEAVY: waits for !light
+    globalState.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
   }
 
   protected handleMiniplayerIntent(e: REvent<CtlrMedia, "intent.miniplayer">): void {
@@ -52,7 +53,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
 
   protected exit(behavior?: ScrollBehavior): void {
     if (behavior && inDocView(this.media.pseudoContainer)) this.media.pseudoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
-    this.ctlr.plug("skeleton")?.leavePseudoMode();
+    this.ctlr.plug("skeleton")?.exitPseudoMode();
     this.media.container.classList.remove("tmg-media-miniplayer"), this.media.pseudoContainer.classList.remove("tmg-media-in-miniplayer");
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     for (const type of ["mousedown", "touchstart"]) this.media.container.removeEventListener(type, this.handleDragStart);

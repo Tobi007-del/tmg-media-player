@@ -11,13 +11,13 @@
   opacity: 1;
 }
 .tmg-media-container.tmg-media-light :is([data-control-id]:not([data-light-control="true"]), .tmg-media-cover-curtain, .tmg-media-captions-container),
-.tmg-media-container.tmg-media-light:not(.tmg-media-settings-view) .tmg-media-settings,
+.tmg-media-container.tmg-media-light:not(.tmg-media-more-settings) .tmg-media-settings,
 .tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-buffer, .tmg-media-play-notifier, .tmg-media-pause-notifier, [data-control-id="bigPlayPause"][data-stall-control="true"] svg),
 .tmg-media-container.tmg-media-stall .tmg-media-big-controls-wrapper > * {
   display: none;
 }
 .tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-big-controls-wrapper-cover, [data-control-id="bigPlayPause"][data-stall-control="true"] .tmg-media-play-icon),
-.tmg-media-container.tmg-media-light [data-control-id][data-light-control="true"],
+.tmg-media-container.tmg-media-low-light [data-control-id][data-light-control="true"],
 .tmg-media-container.tmg-media-stall [data-control-id][data-stall-control="true"] {
   display: flex;
 }

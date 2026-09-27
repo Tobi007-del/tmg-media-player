@@ -14,12 +14,12 @@ export class ChapterNotifier extends BaseNotifier<undefined, ComponentState, HTM
   public override wire(): void {
     super.wire();
     // Ctlr Media Listeners
-    this.media.on("state.currentChapter", this.handleChapterState, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("intent.currentChapter", this.handleChapterIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
   }
 
-  protected handleChapterState({ value }: REvent<CtlrMedia, "state.currentChapter">): void {
-    const chapter = this.media.settings.metadata.chapterInfo[value];
-    this.el.textContent = chapter?.title || `Chapter ${value + 1}`;
+  protected handleChapterIntent({ value }: REvent<CtlrMedia, "intent.currentChapter">): void {
+    const chapter = this.media.settings.metadata.chapterInfo[value as number];
+    this.el.textContent = chapter ? chapter.title || `Chapter ${(value as number) + 1}` : "";
   }
 }
 

@@ -6,6 +6,7 @@ export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight
 
 export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
   multiple: false,
+  secondaryTracks: [],
   font: {
     family: {
       value: "",

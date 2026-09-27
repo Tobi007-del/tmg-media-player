@@ -19,10 +19,8 @@ export class DisabledPlug extends BasePlug<DisabledConfig> {
 
   protected handle({ value }: REvent<CtlrConfig, "disabled">): void {
     if (value) {
-      this.ctlr.plug("settings.settingsView")?.leaveView();
-      this.ctlr.cancelAllLoops();
-      this.ctlr.plug("settings.overlay")?.show();
-      silence(() => (this.media.intent.paused = true));
+      this.ctlr.plug("settings.panel")?.exitMore(), this.ctlr.plug("settings.overlay")?.show();
+      silence(() => (this.media.intent.paused = true)), this.ctlr.cancelRAFLoops();
       this.media.container.classList.add("tmg-media-disabled"), this.media.pseudoContainer.classList.add("tmg-media-disabled"); // #TWINING
       this.ctlr.DOM.containerContent?.setAttribute("inert", "");
       this.ctlr.plug("settings.keys")?.setListeners("remove");

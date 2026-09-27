@@ -22,7 +22,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
 
   public override wire(): void {
     const run = () => this.ctlr.DOM.controlsContainer?.addEventListener("pointerdown", this.handlePointerDown, { capture: true, signal: this.signal });
-    this.ctlr.flags.wired ? run() : this.ctlr.state.wonce("readyState", run, { signal: this.signal }); // #HEAVY: waits for !lightState
+    this.ctlr.flags.wired ? run() : this.ctlr.state.wonce("readyState", run, { signal: this.signal }); // #HEAVY: waits for !light
     // Post Wiring
     super.wire();
   }
@@ -69,7 +69,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
   public unwind(): void {
     if (this.media.state.paused) return;
     if (this.intervalId) {
-      this.ctlr.plug("settings.notifiers")?.notify("mediaPause");
+      this.ctlr.notify?.("mediaPause");
       silence(() => (this.media.intent.paused = true));
       clearInterval(this.intervalId), (this.intervalId = null);
     } else this.intervalId ??= setInterval(this.shiftTime, Math.round(1000 / this.settings.frame.fps) - 18, this.signal);
@@ -112,7 +112,7 @@ export class FastPlayPlug extends BasePlug<FastPlayConfig, FastPlayState> {
   protected handlePointerUp(): void {
     clearTimeout(this.ptrTimeoutId!);
     this.state.ptrActive = false;
-    if (this.state.active && (this.ctlr.plug("settings.keys")?.playKeySeq ?? 0) < 1) setTimeout(this.slowDown, 350, this.signal); // safe dbl clicks need 300ms wait for singles
+    if (this.state.active && (this.ctlr.plug("settings.keys")?.playKeySeq ?? 0) < 1) setTimeout(this.slowDown, 300, this.signal); // safe dbl clicks need 250ms wait for singles
     for (const evt of ["touchmove", "mouseup", "touchend", "touchcancel"]) this.media.container.removeEventListener(evt, this.handlePointerUp);
     for (const evt of ["mousemove", "touchmove"]) this.media.container.removeEventListener(evt, this.handlePointerMove);
     this.media.container.removeEventListener("mouseleave", this.handlePointerOut);

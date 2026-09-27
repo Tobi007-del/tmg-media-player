@@ -2,7 +2,6 @@
   position: absolute;
   left: 0;
   width: 100%;
-  pointer-events: none;
 }
 .tmg-media-top-curtain,
 .tmg-media-bottom-curtain {

@@ -145,8 +145,8 @@ export interface MediaSettings {
   defaultMuted: boolean;
   defaultPlaybackRate: number;
   // --- Live Content ---
-  liveTolerance: number; // seconds
-  minDVRWindow: number; // seconds
+  liveTolerance: number; // seconds for live edge
+  minDVRWindow: number; // seconds for live seek
   // --- Lifecycles ---
   idleWaiting: boolean;
   timePlayedMin: number; // seconds

@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import { formatActionForDisplay } from "@utils/keys";
+import { formatActionTooltip } from "@utils/keys";
 
 export type ErrorPlaceholderConfig = undefined;
 
@@ -13,7 +13,7 @@ export class ErrorPlaceholder extends BaseComponent<ErrorPlaceholderConfig, Comp
   }
 
   public override create() {
-    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-error-placeholder", innerHTML: `<p></p>` });
+    this.element = createEl("div", { className: "tmg-media-placeholder tmg-media-flex-center tmg-media-no-pointer tmg-media-error-placeholder", innerHTML: `<p></p>` });
     this.iconBtn = createEl("button", { className: "tmg-media-placeholder-icon-btn tmg-media-error-icon-btn", innerHTML: IconRegistry.get("errorPlaceholder") });
     return this.el.prepend(this.iconBtn), this.el;
   }
@@ -43,7 +43,7 @@ export class ErrorPlaceholder extends BaseComponent<ErrorPlaceholderConfig, Comp
   }
   public syncARIA(): void {
     this.state.label = "Reload player";
-    this.state.cmd = formatActionForDisplay((this.state.keyShortcut = this.settings.keys.shortcuts.reload), (this.state.voiceCommand = this.settings.voice.commands.reload));
+    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.reload), (this.state.voiceCommand = this.settings.voice.commands.reload));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

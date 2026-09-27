@@ -1,6 +1,6 @@
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer, getElSiblingAt } from "@utils/dom";
-import { isArr, isFunc, parseUIOpt } from "@utils/obj";
+import { isArr, isFunc, parseUIOpt, isNum } from "@utils/obj";
 import { clamp } from "@utils/num";
 import { initVScrollerator } from "@t007/utils/hooks/vanilla";
 import { IconRegistry } from "@core/registries";
@@ -26,7 +26,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         if (opt.style) label.setAttribute("style", opt.style);
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         dragHandle ? li.append(dragHandle, label) : li.append(label);
-        if ((opt as any).progress > 0) li.append(createEl("div", { className: "tmg-media-smenu-select-progress" }, {}, { width: `${(opt as any).progress}%` }));
+        if (isNum(opt.progress)) li.append(createEl("div", { className: "tmg-media-smenu-select-progress tmg-media-cover" }, {}, { width: `${opt.progress}%` }));
         opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
         if (editBtn) {
           editBtn.onclick = (e) => {
@@ -76,16 +76,15 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
               newIdx !== -1 && oldIdx !== -1 && newIdx !== oldIdx && item.onReorder?.(oldIdx, newIdx);
               for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.removeEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp);
             }
-            for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.addEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp, { passive: false });
+            for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.addEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp, { passive: false, signal: this.signal });
           };
         }
         li.onclick = (e) => {
           if (!this.item.onChange || li.classList.contains("tmg-media-smenu-dragging") || (dragHandle && dragHandle.contains(e.target as Node))) return;
-          if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal));
+          if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
           this.item.onChange?.(opt.value);
           this.currentValue = li.dataset.optDisplay!;
-          this.syncActive();
-          if (this.item.closeOnSelect !== false) setTimeout(() => this.ctlr.plug("settings.settingsView")?.menu.goBack(), 0, this.signal);
+          this.syncActive(), this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal);
         };
         return li;
       },
@@ -100,7 +99,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         const infoNode = node.querySelector<HTMLElement>(".tmg-media-smenu-select-info");
         opt.infoText ? (infoNode ? (infoNode.textContent = isFunc(opt.infoText) ? opt.infoText() : opt.infoText) : node.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }))) : infoNode?.remove();
         const progressEl = node.querySelector<HTMLElement>(".tmg-media-smenu-select-progress");
-        if (typeof opt.progress === "number") progressEl ? (progressEl.style.width = `${opt.progress}%`) : node.append(createEl("div", { className: "tmg-media-smenu-select-progress" }, {}, { width: `${opt.progress}%` }));
+        if (isNum(opt.progress)) progressEl ? (progressEl.style.width = `${opt.progress}%`) : node.append(createEl("div", { className: "tmg-media-smenu-select-progress tmg-media-cover" }, {}, { width: `${opt.progress}%` }));
         else progressEl?.remove();
         node.dataset.optVal = opt.value as string;
         node.dataset.optDisplay = opt.display;

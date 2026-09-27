@@ -1,7 +1,5 @@
 .tmg-media-placeholder {
   display: none;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
   gap: calc(var(--tmg-media-current-unit) / 2);
   color: var(--tmg-media-current-control-color);
@@ -13,7 +11,9 @@
 .tmg-media-placeholder,
 .tmg-media-placeholder::before,
 .tmg-media-placeholder::after {
-  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
   border-radius: inherit;
 }
 .tmg-media-placeholder::before,
