@@ -46,6 +46,8 @@ export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
   airplay: "Shift+a",
   escape: "Escape",
   skipAd: "x", // like pushing an "x" button
+  timeTravelUndo: "Ctrl+z",
+  timeTravelRedo: ["Ctrl+y", "Ctrl+Shift+z"],
   voiceWake: "Shift+v",
   voiceQuit: "Shift+q",
   voiceSleep: "Shift+z", // zz

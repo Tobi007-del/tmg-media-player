@@ -3,18 +3,35 @@ import { VoiceConfig } from "./types";
 import { ACTIONS_DICT } from "@consts/actions";
 
 export const VOICE_COMMANDS: Record<string, string | string[]> = {
-  skipAd: "skip ad", // speech bait
+  next: "play next",
+  previous: "play previous",
+  timeSkipFwd: "skip ahead",
+  timeSkipBwd: "skip behind",
+  timePreviousChapter: "previous chapter",
+  timeNextChapter: "next chapter",
+  volumeUp: "volume up",
+  volumeDown: "volume down",
+  brightnessUp: "brightness up",
+  brightnessDown: "brightness down",
+  playbackRateUp: "speed up",
+  playbackRateDown: "slow down",
+  timeStart: "start over",
+  timeEnd: "end now",
+  capture: "screenshot",
+  skipAd: "skip ad",
+  timeTravelUndo: "undo",
+  timeTravelRedo: "redo",
   voiceWake: "player",
   voiceQuit: "quit",
   voiceMute: "snub",
   voiceSleep: "sleep",
-  voiceSubmit: ["submit", "confirm", "enter"],
-  voiceCtxPrevious: ["go back", "back", "previous"],
-  voiceCtxNext: ["go front", "front", "go forward", "forward", "next"],
-  voiceCtxClear: ["reset", "clear"],
-  voiceToggleOn: ["on", "yes", "true", "enable", "start"],
-  voiceToggleOff: ["off", "no", "false", "disable", "stop"],
-};
+  voiceSubmit: ["submit", "enter"],
+  voiceCtxPrevious: "go back",
+  voiceCtxNext: "go front",
+  voiceCtxClear: "clear",
+  voiceToggleOn: ["on", "yes", "true"],
+  voiceToggleOff: ["off", "no", "false"],
+}; // speech bait
 for (const k in ACTIONS_DICT) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {

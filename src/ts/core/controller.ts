@@ -11,7 +11,7 @@ import { getSizeTier, getWindow } from "@utils/dom";
 import { createEl, observeIntersection, observeResize } from "@utils/dom";
 import { collator, capitalize, uncamelize } from "@utils/str";
 import { cloneMedia, getMediaReport, isFeatured, isSameSources } from "@utils/media";
-import { type Volatile, reactive, type Reactive, inert, intent, volatile, getRaw, NOOP, NIL } from "sia-reactor";
+import { type Volatile, reactive, type Reactive, inert, intent, volatile, NOOP, NIL } from "sia-reactor";
 import { fanout, deepClone, getPath, getPaths, isLeafPath, matchPaths, mergeObjs, nuke, setPath, isObj } from "sia-reactor/utils";
 import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
 import { isArr, isFunc, isStr } from "@utils/obj";
@@ -102,7 +102,7 @@ export class Controller {
         // prettier-ignore
         if (techPick) { srcPick = source.src; break; }
       }
-    (getRaw(this.media.state).src = src), (getRaw(this.media.state).sources = inert(sources)); // for tech fanout accuracy
+    (this.media.state.src = src), (this.media.state.sources = inert(sources)); // for tech fanout accuracy
     this.useTech(techPick || undefined);
     if (srcPick !== src && !this.media.features.sources) silence(() => (this.media.intent.src = srcPick!)); // bonus since tech can't handle sources
   }
@@ -136,7 +136,7 @@ export class Controller {
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
   }
-  public when(status: keyof CtlrMedia["status"], e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
+  public when(status: keyof CtlrMedia["status"], e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.media.tech.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
     const callback = this.guard((v: any, __: any, stall = true) => v && (stall && this.stall.get(_key)?.(), this.stall.delete(_key), _log && this.log(`${e?.path || "-"} stall by ${status}: ${isObj(e?.value, false) ? "{-}" : e?.value ?? "-"}`), task())); // RS(${this.flags.readyState})
     this.stall.get(_key)?.(), _value ? callback(_value, null, false) : this.stall.set(_key, this.media.watch(`status.${status}`, callback, { signal }));
   } // #EXTRA-MILE: doing the most with the least

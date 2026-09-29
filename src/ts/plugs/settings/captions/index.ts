@@ -37,7 +37,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     // ----------- Watchers
     this.media.watch("tech", (t) => ((this.isNative = t.constructor === HTML5Tech), this.syncFeatures()), { init: true, signal: this.signal });
     // ---- Config --------
-    STYLE_PATHS.forEach((p, _, __, vP = p.replace(".value", "")) => this.ctlr.config.watch(`settings.${p}`, (v) => (setPath(this.settings.css, camelize(vP, /\./), p.includes("opacity") ? +v / 100 : (v as string)), this.views.forEach((v) => v.syncSize()), this.iView?.syncSize()), { init: true, signal: this.signal }));
+    STYLE_PATHS.forEach((p, _, __, vP = p.replace(".value", "")) => this.ctlr.config.watch(`settings.${p}`, (v) => (setPath(this.settings.css, camelize(vP, /\./), p.includes("opacity") ? +v / 100 : (v as string)), this.views.forEach((v) => v.rerender()), this.iView?.rerender()), { init: true, signal: this.signal }));
     // ---- Media Listeners
     this.media.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.textVisible", this.handleTextVisibleIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
@@ -52,7 +52,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.ctlr.config.on("settings.captions.font.size.max", ({ value }) => this.settings.captions.font.size.value > value && (this.settings.captions.font.size.value = value), { init: true, signal: this.signal });
     for (const k of ["lockToPanel", "lockToVideo"] as const) this.ctlr.config.on(`settings.captions.window.position.${k}`, ({ value }) => this.media.container.classList.toggle(`tmg-media-captions-${uncamelize(k, "-")}`, value), { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("captions", { fn: () => (this.toggleVisible(), this.media.features.textVisible && this.ctlr.notify?.("captions")) }, this.signal);
+    this.ctlr.learn("captions", { fn: this.toggleVisible }, this.signal);
     for (const k of ["Up", "Down"] as const) this.ctlr.learn(`captionsFontSize${k}`, { fn: (_: KeyboardEvent, mod: KeyMod) => this.changeFontSize((this.ctlr.plug("settings.keys")?.getModded("captionsFontSize", mod, this.config.font.size.skip) ?? this.config.font.size.skip) * (k === "Up" ? 1 : -1)), keyboard: { phase: "keydown" } }, this.signal);
     // prettier-ignore
     ROTATE_PATHS.forEach((p, _, __, vP = p.replace(".value", ""), cP = vP.replace("captions.", "")) => this.ctlr.learn(camelize(vP, /\./), { fn: () => this.rotateProp(getPath(this.config, cP as any).options.map((opt: any) => parseUIOpt(opt).value), p), keyboard: { phase: "keydown" } }, this.signal));
@@ -64,8 +64,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     const handle = () => {
       if ((e.value as number) >= this.media.status.textTracks.length) return;
       this.media.state.currentTextTrack = this.shadowCurrentIndex = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
-      this.media.state.textVisible = e.value === -1 ? false : this.media.intent.textVisible; // #UX boost: not a drifter
-      this.syncTracks();
+      this.syncTracks(), silence(() => (this.media.intent.textVisible = e.value === -1 ? false : this.media.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
     };
     this.ctlr.when("loadedMetadata", e, handle, this.signal);
     e.resolve(this.name);
@@ -75,9 +74,8 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     if (e.resolved || !this.media.features.activeCues) return void (!e.resolved && e.reject(this.name)); // this ain't no mega cue lib
     const handle = (iidx = this.media.intent.currentTextTrack) => {
       // prettier-ignore
-      if (e.value && this.media.status.textTracks.length && idx === -1) silence(() => (this.media.intent.currentTextTrack = iidx !== -1 ? iidx : this.isNative ? Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default), this.media.status.textTracks)) : 0)); // #BULLET-PROOF: should comes clutch
-      const sache = this.ctlr.plug("settings.css")?.build;
-      if (sache) (this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!);
+      if (e.value && this.media.status.textTracks.length && idx === -1) silence(() => (this.media.intent.currentTextTrack = iidx !== -1 ? iidx : this.isNative ? Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default), this.media.status.textTracks)) : 0)); // #BULLET-PROOF: should come clutch
+      this.handleActiveCuesStatus(undefined, e.value ? this.media.status.activeCues : null), !e.value && this.iView?.render(null), this.viewMaps.forEach((map, i) => this.handleCueChange(undefined, e.value ? this.media.status.textTracks[i] : ({ activeCues: null } as any)));
       this.media.state.textVisible = e.value;
     };
     this.ctlr.when("loadedMetadata", e, handle, this.signal);
@@ -90,18 +88,16 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     track && (this.iView ??= ComponentRegistry.init("captionsView", this.ctlr) || null)?.preview(this.getPreviewTip(track));
   }
 
-  protected handleActiveCuesStatus({ value }: REvent<CtlrMedia, "status.activeCues">): void {
-    if (!this.ctlr.isUIActive("captions") && Array.prototype.some.call(this.views.values(), (v) => v.previewing)) return;
-    this.syncCues(value as CueLike[] | null, this.views, this.initView);
+  protected handleActiveCuesStatus(e?: REvent<CtlrMedia, "status.activeCues">, value = e?.value): void {
+    this.media.state.textVisible && (e || !this.mainView?.previewing) && this.syncCues(value as CueLike[] | null, this.views, this.initView);
   }
 
-  protected handleCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null): void {
-    const idx = Array.prototype.indexOf.call(this.media.status.textTracks, track);
+  protected handleCueChange(e?: globalThis.Event, track = e?.target as TextTrack | null): void {
+    const idx = this.media.state.textVisible ? Array.prototype.indexOf.call(this.media.status.textTracks, track) : -1;
     if (!track || idx === -1 || idx === this.media.state.currentTextTrack) return;
-    const map = this.viewMaps.get(idx);
-    if (!map) return;
-    const order = this.viewMaps.size;
-    this.syncCues(track.activeCues ? [...track.activeCues] : null, map, (key, v = ComponentRegistry.init("captionsView", this.ctlr, { secondaryOrder: order })) => v && (map.set(key, v), v));
+    const map = this.viewMaps.get(idx),
+      opts = { secondaryOrder: this.viewMaps.size };
+    map && this.syncCues(track.activeCues ? [...track.activeCues] : null, map, (key, v = ComponentRegistry.init("captionsView", this.ctlr, opts)) => v && (map.set(key, v), v));
   }
 
   public toggleVisible(): void {
@@ -136,7 +132,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
   }
 
   public get canVisible(): boolean {
-    return (this.media.features.textTracks && this.media.features.activeCues ? !!this.media.status.textTracks.length : !this.media.features.activeCues) && !!this.media.features.textVisible;
+    return (this.media.features.textTracks ? !!this.media.status.textTracks.length : !this.media.features.activeCues) && !!this.media.features.textVisible;
   }
   public getPreviewTip(track = this.media.status.textTracks[this.media.state.currentTextTrack], index = this.media.state.currentTextTrack): CueLike {
     return { text: `${getTrackLabel(this.media.status.textTracks, index)} ${getTrackKind(track)}`.trim() + "\n Click ⚙ for settings", region: { viewportAnchorX: 10, viewportAnchorY: 20 } };
@@ -158,7 +154,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     for (let i = 0, len = list.length; i < len; i++) {
       const sec = this.config.multiple && this.config.secondaryTracks.includes(i);
       list[i].mode = i === this.media.state.currentTextTrack || sec ? "hidden" : "disabled";
-      if (sec) list[i].addEventListener("cuechange", this.handleCueChange, { signal: this.signal }), !this.viewMaps.has(i) && (this.viewMaps.set(i, new Map()), this.handleCueChange({ target: list[i] }));
+      if (sec) list[i].addEventListener("cuechange", this.handleCueChange, { signal: this.signal }), !this.viewMaps.has(i) && (this.viewMaps.set(i, new Map()), this.handleCueChange(undefined, list[i]));
     }
   }
   protected syncCues(value: CueLike[] | null, map: Map<string, CaptionsView>, spawn: (key: string) => CaptionsView | undefined | null): void {
@@ -173,7 +169,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
   }
   public syncFeatures(): void {
     this.media.tech.polyfill("textTracks", this.isNative), this.media.tech.polyfill("currentTextTrack", this.isNative && this.media.features.textTracks);
-    this.media.tech.polyfill("textVisible", this.media.features.activeCues), this.media.tech.polyfill("textsVisible", this.isNative && this.media.features.currentTextTrack);
+    this.media.tech.polyfill("textVisible", this.media.features.activeCues), this.media.tech.polyfill("textsVisible", this.isNative && this.media.features.currentTextTrack); // this.media.features.activeCues -> true
   }
 
   protected override registerMenu(items = MenuRegistry.get("settings.captions")?.(this), menu = this.ctlr.plug("settings.panel")?.menu): void {
@@ -182,8 +178,6 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
 
   protected override onDestroy(): void {
     this.iView?.destroy(), this.views.forEach((v) => v.destroy()), this.viewMaps.forEach((map) => map.forEach((v) => v.destroy()));
-    const list = this.media.status.textTracks;
-    if (list) for (let i = 0; i < list.length; i++) list[i].removeEventListener("cuechange", this.handleCueChange);
     super.onDestroy();
   }
 }

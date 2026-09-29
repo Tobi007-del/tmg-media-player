@@ -77,8 +77,8 @@ export class AutoPlug extends BasePlug<AutoConfig> {
     const clup = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextClup = this.nextPreview = null), (this.canMovePlaylist = !permanent)),
       autoClup = () => this.toNextTime() > this.config.next.countdown && clup();
     this.nextClup = () => !this.media.status.ended && clup();
-    const removeListeners = () => this.autoClupPaths.forEach((e) => this.media.off(e, e.endsWith("Time") ? autoClup : this.nextClup!));
-    for (const e of this.autoClupPaths) this.media.on(e, e.endsWith("Time") ? autoClup : this.nextClup, { signal: this.signal });
+    const removeListeners = () => this.autoClupPaths.forEach((p) => this.media.off(p, p === "state.currentTime" ? autoClup : this.nextClup!));
+    for (const p of this.autoClupPaths) this.media.on(p, p === "state.currentTime" ? autoClup : this.nextClup, { signal: this.signal });
     const nVP = type === "video" ? (this.nextPreview = this.ctlr.queryDOM<HTMLVideoElement>(".tmg-media-next-preview"))! : null;
     if (nVP && m.intent.sources?.length) addSources(m.intent.sources, nVP);
     if (nVP && m.status.duration) nVP.nextElementSibling!.textContent = this.ctlr.plug("settings.time")?.toTimeText(m.status.duration) || "";

@@ -15,7 +15,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.pictureInPicture", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.pictureInPicture", this.gate, { init: true, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners

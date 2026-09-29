@@ -48,15 +48,12 @@
 [data-notify="captions"] .tmg-media-captions-notifier {
   animation-name: tmg-hide, tmg-scale-up;
 }
+:is([data-notify="fwd"] .tmg-media-fwd-notifier, [data-notify="bwd"] .tmg-media-bwd-notifier),
 :is([data-notify="playbackRateUp"], [data-notify="playbackRateDown"]) .tmg-media-playback-rate-notifier-content,
 :is([data-notify="volumeUp"], [data-notify="volumeDown"]) .tmg-media-volume-notifier-content,
 :is([data-notify="brightnessUp"], [data-notify="brightnessDown"]) .tmg-media-brightness-notifier-content,
-[data-notify^="objectFit"] .tmg-media-object-fit-notifier-content {
-  animation-name: tmg-hide-alt;
-}
-:is([data-notify="fwd"] .tmg-media-fwd-notifier, [data-notify="bwd"] .tmg-media-bwd-notifier),
-[data-notify="chapter"] .tmg-media-chapter-notifier,
-.tmg-media-notifier.tmg-media-control-persist {
+[data-notify^="objectFit"] .tmg-media-object-fit-notifier-content,
+[data-notify="chapter"] .tmg-media-chapter-notifier {
   animation-name: tmg-hide-alt;
 }
 .tmg-media-notifiers-container :is(.tmg-media-text-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active {
@@ -184,6 +181,7 @@
   padding-inline: 10%;
   display: flex;
   align-items: center;
+  opacity: 1;
 }
 .tmg-media-notifiers-container .tmg-media-fwd-notifier.tmg-media-control-persist {
   right: -50%;

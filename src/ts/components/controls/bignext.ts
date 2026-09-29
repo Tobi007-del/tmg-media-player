@@ -19,7 +19,7 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: this.ctlr.flags.wired || !("nextItem" in this.media.features), signal: this.signal }); // #SAFEGUARD: change is unguaranteed
+    this.media.on("features.nextItem", ({ value }) => this[value ? "enable" : "disable"](), { init: true, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners

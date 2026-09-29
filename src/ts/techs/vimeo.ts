@@ -1,7 +1,7 @@
 import { BaseTech } from "./base";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures } from "@defs/contract";
-import { inert, type REvent } from "sia-reactor";
+import { inert, NOOP, type REvent } from "sia-reactor";
 import { createEl, loadResource, supportsFullscreen, supportsPictureInPicture } from "@utils/dom";
 import { createTimeRanges } from "@utils/time";
 import { isSameURL } from "@utils/str";
@@ -57,6 +57,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
         [, id = "", h = ""] = url.match(MATCH_ID_VIMEO) || [];
       this.element = this.hostDiv.querySelector("iframe")!;
       this.el.src = `https://player.vimeo.com/video/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, loop: +truth.loop, muted: +truth.muted, playsinline: +truth.playsInline, dnt: truth.crossOrigin === "use-credentials" ? 0 : 1, transparent: 1, pip: 1, h } as any).toString()}`; // Do Not Track = Privacy Mode
+      (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained
       this.host = new (window as any).Vimeo.Player(this.el, { url: (this.hostSrc = url) }) as Player;
       for (const e of VIMEO_EVENTS) this.host.on(e, (data) => this.handleHostStateChange(e, data)); // EXHAUSTIVE EVENT ROUTING: Mapping every documented Vimeo event
       await this.host.ready(), (this.config.status.hostReady = true);
@@ -135,30 +136,30 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     this.ctlr.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
       if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
-      finite && this.host!.setCurrentTime(val).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
+      finite && this.host!.setCurrentTime(val).catch(NOOP);
     });
     e.resolve(this.name);
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
+    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch(NOOP));
     e.resolve(this.name);
   }
   // --- Feature Intents ---
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
     if (e.resolved) return;
     if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds; Vimeo uses 0-1
-    this.ctlr.when("hostReady", e, () => this.host!.setVolume(clamp(0, e.value / 100, 1)).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
+    this.ctlr.when("hostReady", e, () => this.host!.setVolume(clamp(0, e.value / 100, 1)).catch(NOOP));
     e.resolve(this.name);
   }
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => this.host!.setMuted(e.value).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
+    this.ctlr.when("hostReady", e, () => this.host!.setMuted(e.value).catch(NOOP));
     e.resolve(this.name);
   }
   protected handlePlaybackRateIntent(e: REvent<CtlrMedia, "intent.playbackRate">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => this.host!.setPlaybackRate(e.value).catch((err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
+    this.ctlr.when("hostReady", e, () => this.host!.setPlaybackRate(e.value).catch(NOOP));
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
@@ -174,23 +175,23 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   protected handleLoopIntent(e: REvent<CtlrMedia, "intent.loop">): void {
     if (e.resolved) return;
     // prettier-ignore
-    this.ctlr.when("hostReady", e, () => this.host!.setLoop(e.value).then(() => (this.config.state.loop = e.value), (err) => this.ctlr.log(err, "error", true))); // #LESS: error not worth notifying
+    this.ctlr.when("hostReady", e, () => this.host!.setLoop(e.value).then(() => (this.config.state.loop = e.value), NOOP));
     e.resolve(this.name);
   }
   protected handleCurrentTextTrackIntent(e: REvent<CtlrMedia, "intent.currentTextTrack">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.textTracks as VimeoTextTrack[])[e.value as number]) => (track ? this.host!.enableTextTrack(track.language, track.kind) : this.host!.disableTextTrack()).catch((err) => this.ctlr.log(err, "error", true))); // #VALIDATED: mediated for cast conformity; no-opy  // #LESS: error not worth notifying
+    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.textTracks as VimeoTextTrack[])[e.value as number]) => (track ? this.host!.enableTextTrack(track.language, track.kind) : this.host!.disableTextTrack()).catch(NOOP)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleCurrentAudioTrackIntent(e: REvent<CtlrMedia, "intent.currentAudioTrack">): void {
     if (e.resolved) return;
     // prettier-ignore
-    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.audioTracks as VimeoAudioTrack[])[e.value as number]) => track && this.host!.selectAudioTrack(track.language, track.kind).then(() => (this.config.state.currentAudioTrack = e.value as number), (err) => this.ctlr.log(err, "error", true))); // #VALIDATED: mediated for cast conformity; no-opy // #LESS: error not worth notifying
+    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.audioTracks as VimeoAudioTrack[])[e.value as number]) => track && this.host!.selectAudioTrack(track.language, track.kind).then(() => (this.config.state.currentAudioTrack = e.value as number), NOOP)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, (quality = (this.config.status.levels as VimeoQuality[])[e.value as number]) => quality && (this.useAutoLevel(), this.host!.setQuality(quality.id).catch((err) => this.ctlr.log(err, "error", true)))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch // #LESS: error not worth notifying
+    this.ctlr.when("loadedMetadata", e, (quality = (this.config.status.levels as VimeoQuality[])[e.value as number]) => quality && (this.useAutoLevel(), this.host!.setQuality(quality.id).catch(NOOP))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch
     e.resolve(this.name);
   }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {
@@ -199,7 +200,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     e.resolve(this.name);
   }
   protected useAutoLevel(value = false): void {
-    this.host!.setQuality(value ? "auto" : (this.config.status.levels as VimeoQuality[])[0]?.id).catch((err) => this.ctlr.log(err, "error", true)); // #LESS: error not worth notifying
+    this.host!.setQuality(value ? "auto" : (this.config.status.levels as VimeoQuality[])[0]?.id).catch(NOOP);
   }
   // --- API Exhaustive Logic ---
   private durationSeq = 0;
@@ -321,7 +322,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       this.config.status.levels = inert(qualities.filter((q) => q.id !== "auto"));
       this.config.state.currentLevel = (this.config.status.levels as VimeoQuality[]).findIndex((q) => q.active);
       this.config.state.autoLevel = qualities.find((q) => q.active)?.id === "auto";
-    });
+    }); // no intent sync as lists wait for metadata
     Promise.all([this.host.getVideoWidth().catch(() => 1920), this.host.getVideoHeight().catch(() => 1080)]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h)));
   }
   protected destroyHost(): void {

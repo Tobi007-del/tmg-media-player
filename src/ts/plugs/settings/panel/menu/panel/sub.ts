@@ -31,7 +31,7 @@ export class SubMenuPanel extends BaseMenuPanel {
 
   private buildShell(): void {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
-    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ DblClick→Restore scroll", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
+    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ Double click→Restore scroll", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
     addSafeClicks(
       this.backBtn,

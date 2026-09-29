@@ -6,5 +6,5 @@ export const TIME_BUILD: Partial<TimeConfig> = {
   mode: "elapsed",
   format: "digital",
   autoCap: 0.25,
-  whitelist: ["light.preview.min", "light.preview.max", "settings.time.min", "settings.time.max", "settings.auto.next.countdown"],
+  whitelist: ["media.settings.timePlayedMin", "light.preview.min", "light.preview.max", "settings.time.min", "settings.time.max", "settings.auto.next.countdown"],
 };

@@ -50,7 +50,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
 
   protected handlePseudo(): void {
     this.syncFeatures();
-    this.media.state.fullscreen && silence(() => ((this.media.intent.fullscreen = false), this.media.wonce("state.fullscreen", () => (this.media.intent.fullscreen = true), { signal: this.signal })));
+    this.media.state.fullscreen && silence(() => (this.media.intent.fullscreen = false)), this.media.wonce("state.fullscreen", () => silence(() => (this.media.intent.fullscreen = true)), { signal: this.signal });
   }
 
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {

@@ -356,7 +356,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       if ((e.value as number) >= list.length) return;
       setCurrentTrack(this.el, type, e.value as number, true, list); // #VALIDATED: mediated for cast conformity; no-opy
       this.setCurrentTrackState(type, list); // tracks "change" event not reliable
-      if (type === "Text") this.media.state.textVisible = e.value === -1 ? false : this.media.intent.textVisible; // #UX boost: not a drifter
+      type === "Text" && silence(() => (this.media.intent.textVisible = e.value === -1 ? false : this.media.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
     });
     e.resolve(this.name);
   }
@@ -364,7 +364,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     if (e.resolved) return;
     this.ctlr.when("loadedMetadata", e, (iidx = this.config.intent.currentTextTrack) => {
       // prettier-ignore
-      if (e.value && this.config.status.textTracks.length && idx === -1) silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : !this.isAlien ? Math.max(0, getTrackIdx(this.el, "Text", this.config.state.tracks.find((t) => t.default), this.config.status.textTracks)) : 0)); // #BULLET-PROOF: should comes clutch
+      e.value && this.config.status.textTracks.length && idx === -1 && silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : !this.isAlien ? Math.max(0, getTrackIdx(this.el, "Text", this.config.state.tracks.find((t) => t.default), this.config.status.textTracks)) : 0)); // #BULLET-PROOF: should come clutch
       if (this.textTrack) this.textTrack.mode = e.value ? "showing" : "hidden";
       this.config.state.textVisible = e.value;
     });
@@ -428,8 +428,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected handleTracksStatus(type: TrackType, list: any, init = false): void {
     type === "Text" && this.handleChaptersStatus(list); // chapter "cuechange" over to u; base
     this.config.status[`${type.toLowerCase() as Lowercase<TrackType>}Tracks`] = Array.prototype.filter.call(list, (t) => (type === "Text" ? t.kind === "subtitles" || t.kind === "captions" : true)); // filter out non-cue text tracks
-    !init && silence(() => ((this.config.intent[`current${type}Track`] = this.config.intent[`current${type}Track`]), this.config.tick(`intent.current${type}Track`))); // #RE-TRIGGER: sync intent resolution
-    !init && type === "Text" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
+    if (!init) silence(() => (this.config.intent[`current${type}Track`] = this.config.intent[`current${type}Track`])), this.config.tick(`intent.current${type}Track`); // #RE-TRIGGER: sync intent resolution
   }
   protected handleChaptersStatus(list = this.el.textTracks): void {
     const track = Array.prototype.find.call(list, (t: TextTrack) => t.kind === "chapters") as TextTrack | undefined;

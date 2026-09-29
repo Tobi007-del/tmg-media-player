@@ -37,7 +37,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.volume", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.volume", this.gate, { init: true, signal: this.signal });
     // Event Listeners
     this.button.addEventListener("click", this.handleClick, { signal: this.signal });
     this.el.addEventListener("mousemove", this.startActive, { signal: this.signal });

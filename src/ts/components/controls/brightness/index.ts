@@ -48,7 +48,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.dark", this.syncARIA, { signal: this.signal });
     // Features Gating
-    this.media.on("features.brightness", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.brightness", this.gate, { init: true, signal: this.signal });
   }
 
   protected handleClick(): void {

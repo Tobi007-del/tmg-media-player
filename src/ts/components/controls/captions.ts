@@ -1,6 +1,6 @@
 import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
-import { createEl } from "@utils/dom";
+import { addSafeClicks, createEl } from "@utils/dom";
 import { formatActionTooltip } from "@utils/keys";
 import { getTrackKind, getTrackLang } from "@utils/media";
 export type CaptionsConfig = undefined;
@@ -18,9 +18,9 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.textVisible", this.gate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("features.textVisible", this.gate, { init: true, signal: this.signal });
     // Event Listeners
-    this.el.addEventListener("click", this.handleClick, { signal: this.signal });
+    addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
     for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
@@ -31,6 +31,10 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
 
   protected handleClick(): void {
     this.plug?.toggleVisible();
+  }
+  protected handleDblClick(): void {
+    const sache = this.ctlr.plug("settings.css")?.build;
+    if (sache) (this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!);
   }
 
   public syncUI(): void {
@@ -45,8 +49,8 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   public syncARIA(): void {
     this.state.label = getTrackKind(this.media.status.textTracks[this.media.state.currentTextTrack], true);
     this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
-    this.el.title = this.state.label + this.state.cmd;
-    this.setBtnARIA();
+    this.el.title = `${this.state.label} ${this.state.cmd} ↔ Double click→ Reset position`;
+    this.setBtnARIA("Reset captions position");
   }
 }
 

@@ -266,7 +266,7 @@ class Boombox {
   resetPos(e) {
     this.bbBody.style.transition = "transform 0.8s cubic-bezier(0.1, 0, 0, 1)"; // Adds a snnapy transition for the reset
     this.bbBody.ontransitionend = () => this.bbBody.style.removeProperty("transition");
-    sia.utils.fanout(this.store.transform, bbStore.transform); // Smoothly reset the state to the defaults
+    sia.utils.fanout(this.store.transform, bbStore.transform, {txLabel: "Position reset"}); // Smoothly reset the state to the defaults
     this.eS = { lastX: 0, lastY: 0, isZSliding: false, auxDown: false }; // Reset the event store to prevent jumps
   }
   startVibing() {

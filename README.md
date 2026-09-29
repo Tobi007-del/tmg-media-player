@@ -7,7 +7,7 @@
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/tmg-media-player)](https://bundlephobia.com/package/tmg-media-player)
 [![GitHub](https://img.shields.io/badge/github-100000?style=for-the-badge&logo=github)](https://github.com/Tobi007-del/tmg-media-player)
 
-[Live Demo](https://tmg-video-player.vercel.app) | [Report Bug](https://github.com/Tobi007-del/tmg-media-player/issues) | [Discussions](https://github.com/Tobi007-del/tmg-media-player/discussions)
+[Live Demo](https://tmg-video-player.vercel.app) | [Showcase](https://https://tobi007.github.io/tmg-media-player) | [Report Bug](https://github.com/Tobi007-del/tmg-media-player/issues) | [Discussions](https://github.com/Tobi007-del/tmg-media-player/discussions)
 
 ---
 

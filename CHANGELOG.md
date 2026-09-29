@@ -1,5 +1,23 @@
 # tmg-media-player
 
+## 0.0.35
+
+### Patch Changes
+
+- Bug fixes nd poster stability
+
+## 0.0.34
+
+### Patch Changes
+
+- Bug fixes
+
+## 0.0.33
+
+### Patch Changes
+
+- Light state disabled play state bug fi
+
 ## 0.0.32
 
 ### Patch Changes

@@ -67,7 +67,7 @@ export class ShakaTech extends HTML5Tech {
       });
       this.host.addEventListener("variantchanged", this.syncCurrentStats);
       this.host.addEventListener("adaptation", this.syncCurrentStats);
-      this.host.addEventListener("texttrackvisibility", () => (this.config.state.textVisible = this.host.isTextTrackVisible()));
+      // this.host.addEventListener("texttrackvisibility", () => (this.config.state.textVisible = this.host.isTextTrackVisible())); // #SKIPPED: not uptight enough
       this.host.addEventListener("error", (ev: any) => this.handleHostError(ev.detail));
       await this.host.attach(this.el), this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection });
       await this.host.load(src, this.config[this.ctlr.gospel].currentTime), (this.config.status.hostReady = true), this.syncCurrentStats();
@@ -108,7 +108,7 @@ export class ShakaTech extends HTML5Tech {
   }
   // protected override handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
   //   if (e.resolved) return;
-  //   this.ctlr.when("hostReady", e, () => (this.host.setTextTrackVisibility(e.value), this.config.state.textVisible = e.value)); // #SKIPPED: not uptight enough; base logic more predictable rn
+  //   this.ctlr.when("hostReady", e, () => this.host.setTextTrackVisibility(e.value)); // #SKIPPED: not uptight enough; base logic more predictable rn
   //   e.resolve(this.name);
   // }
   protected handleAutoLevelIntent(e: REvent<CtlrMedia, "intent.autoLevel">): void {

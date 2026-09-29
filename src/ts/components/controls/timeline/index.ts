@@ -94,10 +94,10 @@ export class Timeline extends RangeInput<TimelineConfig> {
     return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(getTime(this.media, value / 100))), true) : false;
   }
 
-  protected handleCurrentTime({ target, rejectable, resolved }: REvent<CtlrMedia, "state.currentTime" | "intent.currentTime">): void {
+  protected handleCurrentTime({ value, rejectable, resolved }: REvent<CtlrMedia, "state.currentTime" | "intent.currentTime">): void {
     if (this.state.scrubbing || (rejectable && !resolved)) return; // shouldn't mind `.scrubbing`; it's binded to `intent.currentTime` but base class `.value` just renders faster
-    this.media.state.paused && this.syncValue(false, target.value);
-    this.el.ariaValueText = `${formatMediaTime({ time: target.value, format: "human-long" })} of ${formatMediaTime({ time: this.media.status.duration, format: "human-long" })}`;
+    this.media.state.paused && this.syncValue(false, value);
+    this.el.ariaValueText = `${formatMediaTime({ time: value, format: "human-long" })} of ${formatMediaTime({ time: this.media.status.duration, format: "human-long" })}`;
   } // !(a full embodiment) for near native range perf but close enough
 
   protected handleBufferedStatus({ value }: REvent<CtlrMedia, "status.buffered">): void {

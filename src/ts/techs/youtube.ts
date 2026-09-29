@@ -60,6 +60,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.element = this.hostDiv.querySelector("iframe")!;
       this.el.src = `https://www.youtube${truth.crossOrigin === "use-credentials" ? "" : "-nocookie"}.com/embed/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, playsinline: +truth.playsInline, loop: +truth.loop, start: truth.currentTime, rel: +truth.controls, modestbranding: +truth.controls, fs: +truth.controls, iv_load_policy: truth.controls ? 1 : 3, cc_load_policy: "1", disablekb: "1", enablejsapi: "1", origin: window.location.origin } as any).toString()}`;
       this.el.toggleAttribute("data-hide-ui", !truth.controls);
+      (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained
       this.host = new window.YT.Player(this.el, {
         events: {
           onReady: () => {
@@ -74,9 +75,9 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
             this.config.state.autoLevel = this.ABRFlag || e.data === "auto";
           },
           onPlaybackRateChange: (e: { data: number }): void => void (this.config.state.playbackRate = e.data),
-          onApiChange: () => {
-            this.config.status.textTracks = inert((this.host as any).getOption("captions", "tracklist") ?? []); // .map((t: any) => ({ id: `yt-cc-${t.languageCode}`, kind: t.vssId?.startsWith("a.") ? "subtitles" : "captions", label: t.displayName || t.languageName, srclang: t.languageCode, ...t }))
-            if (this.config.status.hostReady) silence(() => (this.config.intent.currentTextTrack = this.config.state.currentTextTrack));
+          onApiChange: (_, tracks = (this.host as any).getOption("captions", "tracklist")) => {
+            if (tracks) this.config.status.textTracks = inert(tracks); // .map((t: any) => ({ id: `yt-cc-${t.languageCode}`, kind: t.vssId?.startsWith("a.") ? "subtitles" : "captions", label: t.displayName || t.languageName, srclang: t.languageCode, ...t }))
+            if (tracks) silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"); // #RE-TRIGGER: sync intent resolution
             (this.host as any).setOption("captions", "fontSize", this.settings.captions.font.size.value / 100);
           }, // Fired when modules like Captions load
           onError: this.handleHostError,
@@ -138,7 +139,6 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected wireTextVisible(): void {
     this.config.on("intent.textVisible", this.handleTextVisibleIntent, this.evtOpts.CONFIG);
-    this.config.watch("status.textTracks", this.onTracksStatus, this.evtOpts.CONFIG);
   }
   protected wireAutoLevel(): void {
     this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
@@ -179,9 +179,9 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected handleVolumeIntent(e: REvent<CtlrMedia, "intent.volume">): void {
     if (e.resolved) return;
     if (e.value < 0 || e.value > 100) e.reject(this.name); // Out of bounds
-    this.ctlr.when("hostReady", e, () => {
-      this.host!.setVolume(clamp(0, e.value, 100));
-      this.config.state.volume = clamp(0, e.value, 100);
+    this.ctlr.when("hostReady", e, (val = clamp(0, e.value, 100)) => {
+      this.host!.setVolume(val);
+      this.config.state.volume = val;
     });
     e.resolve(this.name);
   }
@@ -196,9 +196,9 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected handlePlaybackRateIntent(e: REvent<CtlrMedia, "intent.playbackRate">): void {
     if (e.resolved) return;
     if (e.value < 0.25 || e.value > 2) e.reject(this.name); // Out of bounds
-    this.ctlr.when("hostReady", e, () => {
-      this.host!.setPlaybackRate(clamp(0.25, e.value, 2));
-      this.config.state.playbackRate = clamp(0.25, e.value, 2);
+    this.ctlr.when("hostReady", e, (val = clamp(0.25, e.value, 2)) => {
+      this.host!.setPlaybackRate(val);
+      this.config.state.playbackRate = val;
     });
     e.resolve(this.name);
   }
@@ -219,10 +219,9 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     this.ctlr.when("loadedMetadata", e, () => {
       e.value === -1 ? (this.host as any).unloadModule("captions") : (this.host as any).loadModule("captions");
-      if (e.value === -1) (this.config.state.currentTextTrack = -1), (this.config.state.textVisible = false);
-      this.el.toggleAttribute("data-hide-ui", !this.config.state.textVisible);
       const track = this.config.status.textTracks[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
       if (track) (this.host as any).setOption("captions", "track", { languageCode: track.srclang }), (this.config.state.currentTextTrack = e.value as number);
+      silence(() => (this.config.intent.textVisible = e.value === -1 ? false : this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
     });
     e.resolve(this.name);
   }
@@ -231,11 +230,12 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.ctlr.when("loadedMetadata", e, (quality = (this.config.status.levels as YT.SuggestedVideoQuality[])[e.value as number]) => quality && (this.useAutoLevel(), this.host!.setPlaybackQuality(quality))); // #VALIDATED: mediated for cast conformity; no-opy // #BULLET-PROOF: must comes clutch
     e.resolve(this.name);
   }
-  protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">): void {
+  protected handleTextVisibleIntent(e: REvent<CtlrMedia, "intent.textVisible">, idx = this.config[this.ctlr.gospel].currentTextTrack): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, (should = (this.host as any).getOptions().includes("captions") && e.value) => {
-      this.el.toggleAttribute("data-hide-ui", !should);
-      this.config.state.textVisible = should;
+    this.ctlr.when("loadedMetadata", e, (iidx = this.config.intent.currentTextTrack) => {
+      e.value && this.config.status.textTracks.length && idx === -1 && silence(() => (this.config.intent.currentTextTrack = iidx !== -1 ? iidx : 0)); // #BULLET-PROOF: should come clutch
+      this.el.toggleAttribute("data-hide-ui", !this.config.state.controls && !(e.value && (this.host as any).getOptions().includes("captions")));
+      this.config.state.textVisible = e.value;
     });
     e.resolve(this.name);
   }
@@ -248,9 +248,6 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.host!.setPlaybackQuality((this.ABRFlag = value) ? "default" : (this.config.status.levels as YT.SuggestedVideoQuality[])[0]);
   }
   private ABRFlag = true;
-  protected onTracksStatus(v: ArrayLike<any>): void {
-    this.config.features.textVisible = v.length > 0;
-  }
   // --- API Logic ---
   protected handleHostStateChange(e: { data: number }): void {
     this.reInitInfo && this.setInitInfo();

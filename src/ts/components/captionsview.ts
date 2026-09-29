@@ -41,20 +41,23 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handleDragStart, { signal: this.signal });
     // Ctlr State Listeners
-    this.ctlr.state.on("dimensions.container.width", this.syncSize, { init: true, signal: this.signal });
+    this.ctlr.state.on("dimensions.container.width", this.rerender, { init: true, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.syncSize, { signal: this.signal });
+    this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.rerender, { signal: this.signal });
     // ---- Media ---------
-    this.media.on("state.objectFit", this.syncSize, { signal: this.signal });
+    this.media.on("state.objectFit", this.rerender, { signal: this.signal });
   }
 
   public syncSize(): void {
-    this.el.style.setProperty("display", "block", "important");
+    const w = this.ctlr.state.dimensions.container.width;
+    if (this.lastSyncW === w) return;
+    (this.lastSyncW = w), this.el.style.setProperty("display", "block", "important");
     const measurer = this.el.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" })),
       { lineHeight, fontSize } = getComputedStyle(measurer);
     (this.charW = measurer.offsetWidth / 52), (this.fontSize = safeNum(parseFloat(fontSize), 16)), (this.lineHPx = !safeNum(parseFloat(lineHeight), 0) ? this.fontSize * 1.2 : parseFloat(lineHeight));
-    measurer.remove(), this.el.style.removeProperty("display"), this.cues && this.render(this.cues, this.previewing);
+    measurer.remove(), this.el.style.removeProperty("display");
   }
+  private lastSyncW = 0;
 
   public preview(cue: CueLike | string = `${capitalize(this.media.status.textKind || "captions")} look like this`, flush = this.previewing): void {
     const should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
@@ -65,11 +68,14 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     return this.el.classList.contains("tmg-media-captions-preview");
   }
 
+  public rerender(): void {
+    if (this.media.state.textVisible || this.previewing) this.syncSize(), this.cues && this.render(this.cues, this.previewing);
+  }
   public render(cues: CueLike[] | null, isPreview = false): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!(this.cues = cues)?.length) return existing?.remove();
-    for (const attr of ["style", "data-active", "data-scroll"]) this.el.removeAttribute(attr);
+    this.syncSize(), this.el.removeAttribute("data-active"), this.el.removeAttribute("data-scroll"), this.el.removeAttribute("style");
     const wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" })),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
       allowOverride = this.settings.captions.allowMediaOverride || !this.config.isMain,

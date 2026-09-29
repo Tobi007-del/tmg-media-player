@@ -61,7 +61,7 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode}`;
     this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.timeMode), (this.state.voiceCommand = this.settings.voice.commands.timeMode));
-    this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd + ` / DblClick→ Show ${this.plug?.nextFormat} ${formatActionTooltip(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)}` : "Skip ahead to live broadcast";
+    this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd + ` / Double click→ Show ${this.plug?.nextFormat} ${formatActionTooltip(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)}` : "Skip ahead to live broadcast";
     this.setBtnARIA("Switch time format");
   }
 }

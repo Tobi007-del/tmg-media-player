@@ -14,7 +14,7 @@ export class VoiceButton extends BaseComponent<VoiceConfig, ComponentState, HTML
 
   public override wire(): void {
     // Features Gating
-    this.media.on("features.voice", this.gate, { init: this.ctlr.flags.wired || !("voice" in this.media.features), signal: this.signal }); // #SAFEGUARD: change is unguaranteed
+    this.media.on("features.voice", this.gate, { init: true, signal: this.signal });
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
@@ -38,7 +38,7 @@ export class VoiceButton extends BaseComponent<VoiceConfig, ComponentState, HTML
   public syncARIA(): void {
     this.state.label = this.settings.voice.active.value ? "Quit" : "Wake up";
     this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]), (this.state.voiceCommand = this.settings.voice.commands[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]));
-    this.el.title = this.state.label + this.state.cmd + ` / DblClick→ Sleep${formatActionTooltip(this.settings.keys.shortcuts.voiceSleep, this.settings.voice.commands.voiceSleep)}`;
+    this.el.title = this.state.label + this.state.cmd + ` / Double click→ Sleep${formatActionTooltip(this.settings.keys.shortcuts.voiceSleep, this.settings.voice.commands.voiceSleep)}`;
     this.setBtnARIA("sleep (stop routing)");
   }
 }
