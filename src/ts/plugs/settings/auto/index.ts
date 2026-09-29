@@ -37,8 +37,8 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   }
 
   protected handleGlobalIsVisible({ value }: REvent<GlobalState, "isVisible">, p = value ? ("in" as const) : ("out" as const)): void {
-    if (isArr(this.config.pause.value) && this.config.pause.value.includes(`${p}-window-always`)) this.media.intent.paused = true;
-    if (isArr(this.config.play.value) && this.config.play.value.includes(`${p}-window-always`) && this.ctlr.state.mediaIntersecting) this.media.intent.paused = false;
+    if (isArr(this.config.pause.value) && this.config.pause.value.includes(`${p}-window-always`)) silence(() => (this.media.intent.paused = true));
+    if (isArr(this.config.play.value) && this.config.play.value.includes(`${p}-window-always`) && this.ctlr.state.mediaIntersecting) silence(() => (this.media.intent.paused = false));
   }
 
   protected handleNextPreview({ currentTarget: { value: p } }: REvent<CtlrConfig, "settings.auto.next.preview">): void {
@@ -48,9 +48,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   }
 
   protected aptAutoplay(auto = this.config.play.value, bool = true, p = this.ctlr.state.parentIntersecting ? ("in" as const) : ("out" as const)): void {
-    if (!isArr(auto)) return;
-    if (auto.includes(`${p}-view-always`)) this.media.intent.paused = !bool;
-    else if (auto.includes(`${p}-view`) && !this.ctlr.flags.played) this.media.intent.paused = !bool; // #PATIENT: only before first play
+    if (isArr(auto)) if (auto.includes(`${p}-view-always`) || (auto.includes(`${p}-view`) && !this.ctlr.flags.played)) silence(() => (this.media.intent.paused = !bool)); // #PATIENT: only before first play
   }
 
   protected autonextMedia(): void {

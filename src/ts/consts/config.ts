@@ -9,7 +9,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /^media\.intent\.(preload|crossOrigin|controls|controlsList)/,
       /^media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
       /^settings\.(techOrder|persist|css|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
-      /^settings\.keys\.(rankedMatch|overrides|blocks)/,
+      /^settings\.keys\.(rankedMatch|overrides|blocks|moddedlist)/,
       /^settings\.timeTravel\.(console|module)/,
       "settings.modes.pictureInPicture.floatingPlayer.css",
       /\.(options|whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because root plugs (like volume) are already blocked above

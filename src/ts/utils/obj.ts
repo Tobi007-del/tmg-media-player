@@ -36,18 +36,14 @@ export function getUIOpt<T = unknown>(opts: UIOption<T>[] | undefined, value: T,
 }
 
 export function getUniqueOpts<T>(options: UITuple<T>[]) {
-  const counts: Record<string, number> = {};
-  for (const opt of options) counts[opt.display] = (counts[opt.display] || 0) + 1;
-  const seen: Record<string, number> = {};
-  for (let i = options.length - 1; i >= 0; i--) {
-    const opt = options[i];
-    if (counts[opt.display] > 1) {
-      seen[opt.display] = (seen[opt.display] || 0) + 1;
-      const num = counts[opt.display] - seen[opt.display] + 1;
-      opt.display = `${opt.display} ${num}`;
-    }
-  } // Second pass: Add numbers to duplicates, tracking our current index from the back
-  return options;
+  const groups = new Map<string, UITuple<T>[]>();
+  for (const opt of options) {
+    let group = groups.get(opt.display);
+    !group && groups.set(opt.display, (group = [])), group.push(opt);
+  }
+  const result: UITuple<T>[] = [];
+  for (const [display, group] of groups) group.length > 1 ? group.forEach((opt, idx) => ((opt.display = `${display} ${idx + 1}`), result.push(opt))) : result.push(group[0]);
+  return result;
 }
 
 export function parseUIOpt<T = unknown>(opt: UIOption<T>): UITuple<T> {

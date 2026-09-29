@@ -5,7 +5,7 @@ export const LIGHT_BUILD: DeepPartial<LightConfig> = {
   disabled: false,
   preview: {
     usePoster: true,
-    tease: false,
+    tease:true,
     loop: false,
     min: 0,
     max: 4,

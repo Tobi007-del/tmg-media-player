@@ -75,7 +75,7 @@ export class DashTech extends HTML5Tech {
       this.host.on(DASHJS.MediaPlayer.events.PERIOD_SWITCH_COMPLETED, () => {
         for (const t of ["text", "audio", "video"] as const) this.config.status[`${t}Tracks`] = inert(this.host!.getTracksFor(t));
         this.config.status.levels = inert(this.host!.getBitrateInfoListFor("video"));
-        for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
+        for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`), T === "TextTrack" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
       }); // Dynamic Track List Updates (Mid-stream changes, e.g. multi-period live streams)
       this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
         if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`, true);

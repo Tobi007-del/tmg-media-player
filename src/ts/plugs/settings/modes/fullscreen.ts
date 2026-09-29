@@ -103,7 +103,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
       this.media.container.classList.toggle("tmg-media-fullscreen", (this.isActive = false));
       silence(() => (this.media.intent.locked = false)), disconnectOrientationManager();
       globalState.screenOrientation.locked = this.media.state.fullscreen = this.shadowFullscreen = false;
-      removeFocusTrap(this.media.container), this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
+      removeFocusTrap(this.media.container), this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
     }
   }
 

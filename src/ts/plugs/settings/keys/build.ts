@@ -46,8 +46,8 @@ export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
   airplay: "Shift+a",
   escape: "Escape",
   skipAd: "x", // like pushing an "x" button
-  timeTravelUndo: "Ctrl+z",
-  timeTravelRedo: ["Ctrl+y", "Ctrl+Shift+z"],
+  timeTravelUndo: ["Ctrl+z", "Cmd+z"],
+  timeTravelRedo: ["Ctrl+y", "Ctrl+Shift+z", "Cmd+Shift+z"], // "Cmd+y" -> history
   voiceWake: "Shift+v",
   voiceQuit: "Shift+q",
   voiceSleep: "Shift+z", // zz
@@ -69,6 +69,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   shortcuts: KEYS_SHORTCUTS,
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
+  moddedlist: ["ArrowLeft", "ArrowRight", ...Object.keys(KEYS_SHORTCUTS).filter((k) => KEYS_MODS_ACTIONS.some((m) => k.startsWith(m)))],
   mods: {
     disabled: false,
     timeSkip: {

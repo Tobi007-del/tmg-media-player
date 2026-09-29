@@ -30,10 +30,10 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.ctlr.config.on("settings.modes.miniplayer.lockToWindow", ({ value }) => this.media.container.classList.toggle("tmg-media-miniplayer-lock-to-window", value), { init: true, signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.paused", ({ value }) => !value && this.toggle(), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.paused", ({ value }) => !value && this.autoToggle(), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State --------
-    this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.toggle(), { signal: this.signal }); // #HEAVY: waits for !light
-    globalState.on("dimensions.window.width", () => !this.media.state.fullscreen && this.toggle(), { signal: this.signal });
+    this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.autoToggle(), { signal: this.signal }); // #HEAVY: waits for !light
+    globalState.on("dimensions.window.width", () => !this.media.state.fullscreen && this.autoToggle(), { signal: this.signal });
   }
 
   protected handleMiniplayerIntent(e: REvent<CtlrMedia, "intent.miniplayer">): void {
@@ -67,10 +67,10 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     silence(() => (this.media.intent.paused = true)), this.exit();
   }
 
-  public toggle(bool?: boolean): void {
+  public autoToggle(bool?: boolean): void {
     const active = this.ctlr.isUIActive("miniplayer");
-    if (!active && (bool === true || this.shouldEnter())) this.media.intent.miniplayer = true;
-    else if (active && (bool === false || this.shouldExit())) this.media.intent.miniplayer = false;
+    if (!active && (bool === true || this.shouldEnter())) silence(() => (this.media.intent.miniplayer = true));
+    else if (active && (bool === false || this.shouldExit())) silence(() => (this.media.intent.miniplayer = false));
   }
   public shouldEnter(): boolean {
     return !this.media.state.pictureInPicture && !this.media.state.fullscreen && !this.ctlr.state.parentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;

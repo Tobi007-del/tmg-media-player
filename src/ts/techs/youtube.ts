@@ -77,7 +77,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
           onPlaybackRateChange: (e: { data: number }): void => void (this.config.state.playbackRate = e.data),
           onApiChange: (_, tracks = (this.host as any).getOption("captions", "tracklist")) => {
             if (tracks) this.config.status.textTracks = inert(tracks); // .map((t: any) => ({ id: `yt-cc-${t.languageCode}`, kind: t.vssId?.startsWith("a.") ? "subtitles" : "captions", label: t.displayName || t.languageName, srclang: t.languageCode, ...t }))
-            if (tracks) silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"); // #RE-TRIGGER: sync intent resolution
+            if (tracks) silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"), silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
             (this.host as any).setOption("captions", "fontSize", this.settings.captions.font.size.value / 100);
           }, // Fired when modules like Captions load
           onError: this.handleHostError,
@@ -221,7 +221,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       e.value === -1 ? (this.host as any).unloadModule("captions") : (this.host as any).loadModule("captions");
       const track = this.config.status.textTracks[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
       if (track) (this.host as any).setOption("captions", "track", { languageCode: track.srclang }), (this.config.state.currentTextTrack = e.value as number);
-      silence(() => (this.config.intent.textVisible = e.value === -1 ? false : this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
+      this.el.toggleAttribute("data-hide-ui", (this.config.state.textVisible = e.value === -1 ? false : this.config.intent.textVisible) && !this.config.state.controls); // #UX boost: not a drifter
     });
     e.resolve(this.name);
   }

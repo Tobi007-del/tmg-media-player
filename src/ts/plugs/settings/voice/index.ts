@@ -158,11 +158,11 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
           const score = getLevenshteinSimilarity(leaf, transcript);
           if (score > this.config.process.accuracy && score > highest) (highest = score), (match = paths[i]);
         } // Fuzzy Match: Check if the user said the last word of any valid path
-      if (match && this.ctlr.isLogical(this.goTo(match), true) && this.execute(transcript, match, true)) return true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
+      if (match && this.ctlr.isLogical(this.goTo(match), true)) return this.execute(transcript, match, true), true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
       else if (isSubmit) {
         const path = this.state.ctx === "*" ? transcript : `${this.state.ctx}.${camelize(transcript)}`,
           val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, path) : undefined;
-        if (val !== undefined && this.ctlr.isLogical(this.goTo(path), true, val) && this.execute(transcript, path, true)) return true; // Hey dev or explorer, here u go!
+        if (val !== undefined && this.ctlr.isLogical(this.goTo(path), true, val)) return this.execute(transcript, path, true), true; // Hey dev or explorer, here u go!
       }
     } else if (this.execute(transcript, undefined, false)) return true;
     // --- 4. POST-ROUTE STAGE ---

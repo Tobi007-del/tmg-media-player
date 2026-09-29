@@ -330,7 +330,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
             const r = live().toast?.render;
             return r ? (isFunc(r) ? "Dynamic text" : capitalize(r)) : "None";
           },
-          inputs: [{ name: "message", label: "Message", type: "text", value: (_live = live()) => (isFunc(_live.toast?.render) ? (_live.toast!.render as Function)?.() : _live.toast?.render) ?? "", placeholder: "Action triggered!", required: true, helperText: { info: "The message to display in the notification" } }, ...getToastMenuInputs(live().toast || {})],
+          inputs: [{ name: "message", label: "Message", type: "text", value: (_live = live()) => (isFunc(_live.toast?.render) ? (_live.toast!.render as Function)?.() : _live.toast?.render) ?? "", placeholder: "Action performed!", helperText: { info: "The message to display in the notification" } }, ...getToastMenuInputs(live().toast || {})],
           onChange: (val: any) => {
             live().toast = !val.message ? undefined : syncToastConfig(val, { render: val.message });
           },

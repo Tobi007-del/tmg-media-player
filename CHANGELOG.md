@@ -1,5 +1,47 @@
 # tmg-media-player
 
+## 0.0.42
+
+### Patch Changes
+
+- Color extraction conditional
+
+## 0.0.41
+
+### Patch Changes
+
+- Derived video color better
+
+## 0.0.40
+
+### Patch Changes
+
+- Frame promise fix for autogeneration canvases
+
+## 0.0.39
+
+### Patch Changes
+
+- Deps update nd keys modifiers wit other fixes
+
+## 0.0.38
+
+### Patch Changes
+
+- Bug fixes nd dev updates
+
+## 0.0.37
+
+### Patch Changes
+
+- Bug fixes on intent text visible
+
+## 0.0.36
+
+### Patch Changes
+
+- captions bug fixes
+
 ## 0.0.35
 
 ### Patch Changes

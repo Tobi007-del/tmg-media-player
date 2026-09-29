@@ -31,7 +31,7 @@ export class LightPlug extends BasePlug<LightConfig> {
       this.ctlr.state.noset("readyState", this.readyStateHook), this.media.nowatch("state.paused", this.eject);
       this.ctlr.DOM.controlsContainer?.removeEventListener("click", this.handleClick);
       if (this.media.status.teasing) this.media.state.paused = this.media.status.teasing = false;
-      for (const k of this.cache.keys) if (isDef(this.cache[k])) silence(() => (this.media.intent[k] = this.cache[k] as never)); // restore cache
+      for (const k of this.cache.keys) isDef(this.cache[k]) && silence(() => (this.media.intent[k] = this.cache[k] as never)); // restore cache
       this.media.container.classList.remove("tmg-media-light", "tmg-media-low-light");
       !this.ctlr.flags.wired && this.hasStalled && this.ctlr.setReadyState(2); // restoring order
     } else {

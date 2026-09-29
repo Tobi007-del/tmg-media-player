@@ -142,7 +142,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
           if (!(slot instanceof HTMLElement) && slot.zone && !slot.zone.querySelector('[data-control-id]:not([data-control-id="spacer"])') && pos(r, z) !== startPos) emptyZones.push({ pos: pos(r, z), zone: slot.zone });
         }
       el?.classList.add("tmg-media-control-dragging"), this.ctlr.media.container.classList.add("tmg-media-control-dragging"), this.ctlr.plug("settings.overlay")?.show();
-      const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-current-control-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
+      const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-text-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
       await mockAsync(3500);
       if (!toast.isActive(tId)) return;
       toast(`You can move it from here...`, { id: tId, position: startPos });

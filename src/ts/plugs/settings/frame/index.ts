@@ -7,6 +7,7 @@ import { clamp, safeNum } from "@utils/num";
 import { parseCSSTime } from "@utils/str";
 import { formatMediaTime } from "@utils/time";
 import { silence } from "sia-reactor/modules";
+import { setTimeout } from "@utils/fn";
 import { getMediaMin, getMediaMax } from "@utils/time";
 
 export class FramePlug extends BasePlug<FrameConfig> {
@@ -34,7 +35,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     if (video !== this.media.element) {
       if (this.ctlr.state.frameReadyPromise) await this.ctlr.state.frameReadyPromise; // wait for it to get set by last getter 5 lines below
       if (Math.abs(video.currentTime - time) > 0.01 || !video.readyState) {
-        this.ctlr.state.frameReadyPromise ??= new Promise<null>((res) => video.addEventListener(video.readyState ? "timeupdate" : "loadeddata", () => res(null), { once: true, signal: this.signal })); // me sef no small, been burned before this
+        this.ctlr.state.frameReadyPromise ??= new Promise<null>((res, _, cb = () => (clearTimeout(t), res(null)), t?: any) => ([video.readyState ? "timeupdate" : "loadeddata", "error", "abort", "emptied"].forEach((ev) => video.addEventListener(ev, cb, { once: true, signal: this.signal })), (t = setTimeout(cb, 15000, this.signal)))); // me sef no small, been burned before this
         video.currentTime = time; // small epsilon tolerance for video time comparison - 0.01(10ms)
       }
       this.ctlr.state.frameReadyPromise = await this.ctlr.state.frameReadyPromise;
@@ -89,7 +90,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   }
   private findSeq = 0;
 
-  public async getMainColor(time?: number, poster = (this.media.element as HTMLVideoElement).poster, config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
+  public async getMainColor(time?: number, poster = this.media.state.poster, config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
     return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas);
   }
 

@@ -120,7 +120,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     if (type === "init") for (const feature of Object.keys(target.value)) this.wireFeature(feature as keyof MediaFeatures);
   }
   protected handleWrite(e: REvent<CtlrMedia, "intent" | "settings">): void {
-    if (e.type === "update" && !isFeatured(this.media, e.target.key as keyof MediaFeatures)) return e.reject(this.name), e.stopImmediatePropagation(); // (`&& (e.value || !this.ctlr.flags.wired)` = turn off at runtime) -> polyfill()
+    if (e.type === "update" && !isFeatured(this.config, e.target.key as keyof MediaFeatures)) return e.reject(this.name), e.stopImmediatePropagation(); // (`&& (e.value || !this.ctlr.flags.wired)` = turn off at runtime) -> polyfill()
   }
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
     if (e.resolved || !this.wired) return void (!e.resolved && e.resolve(this.name));

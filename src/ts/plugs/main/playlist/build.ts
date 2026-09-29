@@ -21,6 +21,9 @@ export const PLAY_ITEM_BUILD: DeepPartial<PlayItemConfig> = {
       start: 0,
       end: undefined,
     },
+    captions: {
+      secondaryTracks: [],
+    },
     controlPanel: {
       timeline: {
         previews: false,

@@ -60,7 +60,7 @@ export class ShakaTech extends HTML5Tech {
         this.config.status.audioTracks = inert([...aMap.values()]);
         this.config.status.videoTracks = inert([...vMap.values()]);
         this.config.status.levels = inert([...lMap.values()].sort((a: any, b: any) => (b.height !== a.height ? a.height - b.height : a.bandwidth - b.bandwidth))); // ascending, mimicks other libs
-        if (this.config.status.hostReady) for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`); // #RE-TRIGGER: sync intent resolution
+        if (this.config.status.hostReady) for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`), T === "TextTrack" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
         if (!this.config.settings.metadata.allowMediaOverride) return;
         const chapters = this.host.getChapters(this.config.status.textTracks[this.config.state.currentTextTrack]?.language || this.config.status.audioTracks[this.config.state.currentAudioTrack]?.language || "en");
         if (chapters.length) this.config.settings.metadata.chapterInfo = inert(chapters.map((ch: any) => ({ title: ch.title, startTime: ch.startTime })));

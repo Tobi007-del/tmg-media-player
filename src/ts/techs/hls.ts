@@ -67,7 +67,7 @@ export class HLSTech extends HTML5Tech {
         if (updated) this.config.settings.metadata.chapterInfo = chapters.sort((a: any, b: any) => a.startTime - b.startTime);
       });
       this.host.on(HLS.Events.FRAG_LOADED, () => this.ctlr.throttle("hlsBandwidthing", () => (this.config.status.bandwidth = Math.round(this.host!.bandwidthEstimate)), 2000));
-      this.host.on(HLS.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => ((this.config.status.textTracks = inert(data.subtitleTracks)), silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"))); // #RE-TRIGGER: sync intent resolution
+      this.host.on(HLS.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => ((this.config.status.textTracks = inert(data.subtitleTracks)), silence(() => (this.config.intent.currentTextTrack = this.config.intent.currentTextTrack)), this.config.tick("intent.currentTextTrack"), silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)))); // #RE-TRIGGER: sync intent resolution
       this.host.on(HLS.Events.AUDIO_TRACKS_UPDATED, (_, data) => ((this.config.status.audioTracks = inert(data.audioTracks)), silence(() => (this.config.intent.currentAudioTrack = this.config.intent.currentAudioTrack)), this.config.tick("intent.currentAudioTrack"))); // #RE-TRIGGER: sync intent resolution
       this.host.on(HLS.Events.LEVELS_UPDATED, (_, data) => ((this.config.status.levels = inert(data.levels)), silence(() => (this.config.intent.currentLevel = this.config.intent.currentLevel)), this.config.tick("intent.currentLevel"))); // #RE-TRIGGER: sync intent resolution
       this.host.on(HLS.Events.ERROR, (_, data) => data.fatal && (data.type === HLS.ErrorTypes.NETWORK_ERROR ? this.host!.startLoad() : data.type === HLS.ErrorTypes.MEDIA_ERROR ? this.host!.recoverMediaError() : this.handleHostError(data)));
@@ -116,9 +116,7 @@ export class HLSTech extends HTML5Tech {
   }
   protected handleCurrentHostTrackIntent(e: REvent<CtlrMedia, `intent.current${Exclude<TrackType, "Video">}Track`>, type: Lowercase<Exclude<TrackType, "Video">>): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, (list = this.config.status[`${type}Tracks`]) => {
-      if ((e.value as number) < list.length) this.host![`${type === "text" ? "subtitle" : type}Track`] = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
-    });
+    this.ctlr.when("hostReady", e, (list = this.config.status[`${type}Tracks`]) => (e.value as number) < list.length && (this.host![`${type === "text" ? "subtitle" : type}Track`] = e.value as number)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected override handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {

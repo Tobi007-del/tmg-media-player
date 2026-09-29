@@ -59,7 +59,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     } else {
       await mockAsync(180);
       this.media.container.classList.remove("tmg-media-picture-in-picture"), this.media.pseudoContainer.classList.remove("tmg-media-in-picture-in-picture");
-      this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
+      this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
       this.ctlr.plug("settings.overlay")?.delay();
     }
   }
@@ -107,7 +107,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-floating-player"), this.media.pseudoContainer.classList.remove("tmg-media-in-floating-player");
     this.ctlr.plug("skeleton")?.exitPseudoMode();
-    this.ctlr.plug("settings.modes")?.miniplayer?.toggle();
+    this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
     this.media.state.pictureInPicture = this.media.status.floatingPlayer = false;
   }
 

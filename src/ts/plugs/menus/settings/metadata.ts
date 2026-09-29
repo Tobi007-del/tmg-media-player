@@ -82,15 +82,15 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     widget: "select",
     feature: "textTracks",
     getValue() {
-      if (plug.media.state.currentTextTrack === -1 || !plug.media.status.textTracks.length) return "Off";
+      if (plug.media.state.currentTextTrack === -1 || !plug.media.status.textTracks.length || !plug.media.state.textVisible) return "Off";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentTextTrack)?.display || "Off";
     }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.textTracks;
       return !list.length ? [] : [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })))];
     },
-    onChange: (val: number) => (plug.media.intent.currentTextTrack = val),
-    mediaPaths: ["status.textTracks", "state.currentTextTrack", "features.textTracks"],
+    onChange: (val: number) => ((plug.media.intent.currentTextTrack = val), val !== -1 && (plug.media.intent.textVisible ||= true)),
+    mediaPaths: ["status.textTracks", "state.currentTextTrack", "state.textVisible", "features.textTracks"],
   },
   {
     id: "chapters",

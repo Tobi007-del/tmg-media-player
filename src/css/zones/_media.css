@@ -6,7 +6,7 @@
   max-width: 700px;
   max-height: 80lvh;
   margin: auto;
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 :where(.tmg-host-container.tmg-media-mobile .tmg-host) {
   width: 100%;

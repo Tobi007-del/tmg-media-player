@@ -73,6 +73,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     for (const p of ["bufferMarks", "playedMarks", "advertMarks"] as const) this.config.on(p, () => this.syncMarks(), { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("type", this.syncPreviews, { signal: this.signal });
+    this.media.on("state.src", () => this.clearCanvases(true), { signal: this.signal });
     this.media.on("state.paused", ({ value }) => (!value ? this.ctlr.RAFLoop(`${this.config.label}Updating`, this.syncValue, this.signal) : this.ctlr.cancelRAFLoop(`${this.config.label}Updating`)), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.currentTime", this.handleCurrentTime, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("intent.currentTime", this.handleCurrentTime, { signal: this.signal }); // #APPRENTICE: folklore embodiment

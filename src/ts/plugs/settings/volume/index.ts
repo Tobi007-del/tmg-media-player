@@ -7,6 +7,7 @@ import type { CtlrMedia } from "@defs/contract";
 import { clamp } from "@utils/num";
 import { AUDIO_CONTEXT, connectToAudioManager, disconnectFromAudioManager, globalState } from "@tools/runtime";
 import { KeyMod } from "../keys";
+import { silence } from "sia-reactor/modules";
 
 export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   public static readonly plugName = "volume";
@@ -87,7 +88,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   }
 
   protected handleNativeVolumeChange(): void {
-    (this.media.element.volume = 1), this.ctlr.isNativeEl && this.media.state.muted !== this.media.element.muted && this.toggle(); // even advanced systems have edge cases
+    (this.media.element.volume = 1), this.ctlr.isNativeEl && this.media.state.muted !== this.media.element.muted && silence(this.toggle); // even advanced systems have edge cases
   }
 
   protected connectAudio(): void {

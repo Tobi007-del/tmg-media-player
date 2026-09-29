@@ -90,7 +90,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
             let col;
             if (val === "custom") return cBField.inputEl.click();
             if (val !== "auto") col = this.settings.css.brandColor = val;
-            else col = this.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?.build.brandColor!;
+            else col = this.settings.css.brandColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime, this.media.features.frameCapture ? "" : undefined) : null) ?? this.ctlr.plug("settings.css")?.build.brandColor!; // said 'video' not 'poster' derived
             const cb = (s: any) => (bField.inputEl.value = defs.bcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false), assert({ actions: { Yes } })),
               Yes = () => (sync(cb, true), assert({ actions: { No } }));
@@ -107,7 +107,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
             let col;
             if (val === "custom") return cTField.inputEl.click();
             if (val !== "auto") col = this.settings.css.themeColor = val;
-            else col = this.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime) : null) ?? this.ctlr.plug("settings.css")?.build.themeColor!;
+            else col = this.settings.css.themeColor = (this.media.status.loadedData ? await this.ctlr.plug("settings.frame")?.getMainColor(this.media.state.currentTime, this.media.features.frameCapture ? "" : undefined) : null) ?? this.ctlr.plug("settings.css")?.build.themeColor!;
             const cb = (s: any) => (tField.inputEl.value = defs.tcolors.includes(col as string) ? (col as string) : s ? "auto" : "custom"),
               No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")),
               Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));

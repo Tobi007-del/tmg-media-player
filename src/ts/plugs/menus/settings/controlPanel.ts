@@ -95,7 +95,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                           label: "Add marker",
                           widget: "input",
                           inputs: [
-                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, required: true },
+                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" } },
                             { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 – 100" }, type: "number", step: "any", required: true, value: () => String(safeNum(getMediaProgress(plug.media)) * 100) },
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number" },
                           ],
@@ -107,7 +107,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                           label: "Edit marker",
                           widget: "input",
                           inputs: [
-                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, required: true, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.label || "" },
+                            { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.label || "" },
                             { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 – 100" }, type: "number", step: "any", required: true, value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.start || "" },
                             { name: "end", label: "End (%)", helperText: { info: "0 – 100 (Optional)" }, type: "number", value: () => plug.config.timeline.marks[ctx.markerEditIdx]?.end || "" },
                           ],
@@ -203,4 +203,3 @@ declare module "@defs/registries" {
     "settings.controlPanel": typeof getSettingsControlPanelMenu;
   }
 }
-

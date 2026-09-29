@@ -10,6 +10,7 @@ import { setTimeout, requestAnimationFrame } from "@utils/fn";
 export type CaptionsViewConfig = {
   secondaryOrder?: number;
   isMain?: boolean;
+  ofMedia?: boolean;
 };
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
@@ -43,6 +44,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     // Ctlr State Listeners
     this.ctlr.state.on("dimensions.container.width", this.rerender, { init: true, signal: this.signal });
     // ---- Config --------
+    this.ctlr.config.on("settings.captions.multiple", this.rerender, { signal: this.signal });
     this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.rerender, { signal: this.signal });
     // ---- Media ---------
     this.media.on("state.objectFit", this.rerender, { signal: this.signal });
@@ -71,15 +73,15 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   public rerender(): void {
     if (this.media.state.textVisible || this.previewing) this.syncSize(), this.cues && this.render(this.cues, this.previewing);
   }
-  public render(cues: CueLike[] | null, isPreview = false): void {
+  public render(cues: CueLike[] | null, isPreview = false, opts = this.settings.captions): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!(this.cues = cues)?.length) return existing?.remove();
     this.syncSize(), this.el.removeAttribute("data-active"), this.el.removeAttribute("data-scroll"), this.el.removeAttribute("style");
-    const wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" })),
+    const wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display", badge: opts.multiple && opts.secondaryTracks.length && this.config.isMain ? "M" : "" })),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
-      allowOverride = this.settings.captions.allowMediaOverride || !this.config.isMain,
-      wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2; // Padding allowance
+      allowOverride = opts.allowMediaOverride || (!this.config.isMain && !this.config.ofMedia),
+      wrapWidth = (opts.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2; // Padding allowance
     if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
     wrapper.innerHTML = "";
     for (const cue of cues!) {
