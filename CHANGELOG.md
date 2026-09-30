@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.44
+
+### Patch Changes
+
+- Keys modifiers fix
+
 ## 0.0.43
 
 ### Patch Changes

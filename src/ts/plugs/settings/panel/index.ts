@@ -81,7 +81,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
     this.ctlr.DOM.settingsBottomPanel?.append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
     const id = { theme: "", brand: "" },
       sync = (cb: any, req = true, type = "brand") => ((this.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),
-      assert = (opts: any, type: "brand" | "theme" = "brand") => this.ctlr.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }),
+      assert = (opts: any, type: "brand" | "theme" = "brand") => this.ctlr.toast?.update(id[type], opts),
       onBColorChange = ({ target: { value: val } }: any) =>
         this.ctlr.throttle(
           "brandColorPicking",
@@ -95,7 +95,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
               No = () => (sync(cb, false), assert({ actions: { Yes } })),
               Yes = () => (sync(cb, true), assert({ actions: { No } }));
             sync(cb, val === "auto");
-            val === "auto" && (id.brand = this.ctlr.toast?.("Should the brand color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = ""), signal: this.signal }) || "");
+            val === "auto" && (id.brand = this.ctlr.toast?.("The brand color will change anytime a video loads", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { No }, onClose: () => (id.brand = ""), signal: this.signal }) || "");
           },
           150
         ),
@@ -112,7 +112,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
               No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")),
               Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
             sync(cb, val === "auto", "theme");
-            val === "auto" && (id.theme = this.ctlr.toast?.("Should the theme color change anytime a video loads?", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = ""), signal: this.signal }) || "");
+            val === "auto" && (id.theme = this.ctlr.toast?.("The theme color will change anytime a video loads", { icon: "🎨", autoClose: 15000, hideProgressBar: false, actions: { No }, onClose: () => (id.theme = ""), signal: this.signal }) || "");
           },
           150
         );

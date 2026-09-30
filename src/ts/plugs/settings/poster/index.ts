@@ -43,7 +43,7 @@ export class PosterPlug extends BasePlug<PosterConfig, PosterState> {
     this.media.on("state.poster", ({ value }) => this.syncSrc(value), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.paused", ({ value }) => !value && this.config.eager && this.syncState(false), { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.currentTime", (e) => (!this.config.eager || e.value) && this.ctlr.when("loadedData", e, () => this.syncState(false), this.signal), { init: this.ctlr.flags.wired, signal: this.signal }); // if strict, sets hides like html5, light Plug blocks
-    this.media.on("status.loadedMetadata", this.autoGenerate, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.loadedData", (e) => e.value && this.autoGenerate(), { init: this.ctlr.flags.wired, signal: this.signal });
     for (const k of ["ended", "teasing"] as const) this.media.on(`status.${k}`, this.syncView, { signal: this.signal });
     // Post Wiring
     super.wire();

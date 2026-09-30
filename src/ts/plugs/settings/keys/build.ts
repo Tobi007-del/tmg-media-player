@@ -57,7 +57,7 @@ for (const k in ACTIONS_DICT) KEYS_SHORTCUTS[k] ??= ""; // UX boost
 
 export const KEYS_OVERIDES = ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"];
 
-export const KEYS_WHITELIST = ["Space", "Enter", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+export const KEYS_WHITELIST = ["Space", "Escape", "ArrowLeft", "ArrowRight", "1", "2", "3", "4", "5", "6", "7", "8", "9"]; // "ArrowUp", "ArrowDown", "Enter", "Home", "End", "0",
 
 export const KEYS_MODS_ACTIONS = ["timeSkip", "volume", "brightness", "playbackRate", "captionsFontSize"] as const; // numerical values
 
@@ -69,7 +69,7 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   shortcuts: KEYS_SHORTCUTS,
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
-  moddedlist: ["ArrowLeft", "ArrowRight", ...Object.keys(KEYS_SHORTCUTS).filter((k) => KEYS_MODS_ACTIONS.some((m) => k.startsWith(m)))],
+  moddedlist: [" ", "arrowleft", "arrowright", ...Object.keys(KEYS_SHORTCUTS).filter((k) => KEYS_MODS_ACTIONS.some((m) => k.startsWith(m))), "capture"],
   mods: {
     disabled: false,
     timeSkip: {

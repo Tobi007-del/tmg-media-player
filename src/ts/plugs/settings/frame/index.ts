@@ -22,7 +22,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     // ---- Config --------
     this.ctlr.config.watch("settings.frame.disabled", this.syncFeatures, { signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("capture", { fn: () => this.capture("") }, this.signal);
+    this.ctlr.learn("capture", { fn: (e?: KeyboardEvent) => this.capture(e?.altKey ? "monochrome" : "") }, this.signal);
     this.ctlr.learn("timeStepFwd", { fn: () => this.moveFrame("forwards"), keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeStepBwd", { fn: () => this.moveFrame("backwards"), keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
