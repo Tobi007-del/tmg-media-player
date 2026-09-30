@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.43
+
+### Patch Changes
+
+- Locked screen fix
+
 ## 0.0.42
 
 ### Patch Changes

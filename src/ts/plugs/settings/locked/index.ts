@@ -63,7 +63,7 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   } // #STANDALONE: needs scoped behavior
 
   protected handleScreenClick(e: MouseEvent): void {
-    if (!e.target && !this.config.disabled) this.state.visible ? this?.hideOverlay() : this?.showOverlay();
+    if (!this.config.disabled && e.target === this.media.container) this.state.visible ? this?.hideOverlay() : this?.showOverlay();
   }
 
   public showOverlay(): void {
