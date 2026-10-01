@@ -81,7 +81,7 @@ export class MainMenuPanel extends BaseMenuPanel {
       } else li.append(lbl, val, createEl("span", { className: "tmg-media-smenu-row-arrow", ariaHidden: "true", innerHTML: "&#8250;" }));
       li.addEventListener("click", () => !item.getDisabled?.() && this.onItemClick?.(item), { signal: this.signal });
     }
-    
+
     if (item.mediaPaths || item.configPaths || item.onWire) {
       const ac = new AbortController(),
         syncUI = () => {

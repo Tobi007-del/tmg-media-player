@@ -151,8 +151,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     if (e.resolved) return;
     if (isSameURL(this.hostSrc, e.value)) return void e.resolve(this.name);
     const id = e.value.match(MATCH_ID_YOUTUBE)?.[1];
-    this.setAutoResPoster(id);
-    this.flush(), this.initHost(e.value, id);
+    this.flush(), this.setPublicPoster(id), this.initHost(e.value, id);
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -307,7 +306,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     } else if (st.duration) st.ended = s.currentTime === st.duration; // UX boost
   }
   public syncMetadata(data = this.host!.getVideoData(), meta = this.config.settings.metadata): void {
-    if (data && meta.allowMediaOverride) fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
+    data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined, links: { title: data.video_id ? `https://youtube.com/watch?v=${data.video_id}` : undefined } }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
   }
   // --- Lifecycle ---
   protected reInitInfo = false;
@@ -324,7 +323,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     // Settings & Post-Init
     this.syncCurrentStats(), this.syncMetadata(data);
   }
-  public setAutoResPoster(id = "", hq = `https://img.youtube.com/vi/${id}/hqdefault.jpg`, maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`): void {
+  public setPublicPoster(id = "", hq = `https://img.youtube.com/vi/${id}/hqdefault.jpg`, maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`): void {
     if (!this.config.settings.metadata.allowMediaOverride) return;
     const seq = ++this.posterSeq,
       img = createEl("img", { src: hq, onload: () => seq === this.posterSeq && (this.config.state.poster = img.naturalWidth <= 120 ? hq : maxres), onerror: () => seq === this.posterSeq && (this.config.state.poster = hq) }); // Preload HQ for immediate use, then conditionally switch to MX if valid

@@ -24,7 +24,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
       // Engine Inputs
       volume: true, muted: true,
       // States 
-      autoplay: true, playsInline: true, objectFit: false,
+      playsInline: true, objectFit: false,
       // Infos
       readyState: true, error: true, loadedMetadata: true, loadedData: true, canPlay: true,
       // Extensions
@@ -36,8 +36,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   public override mount(): void {}
   public override unmount(): void {}
   protected override onAwaken(): void {
-    super.onAwaken();
-    silence(() => fanout(this.config, this.plug.state.roll!.media, { cloneSets: true }));
+    super.onAwaken(), silence(() => fanout(this.config, this.plug.state.roll!.media, { cloneSets: true }));
   }
   protected override onHibernate(): void {
     super.onHibernate();

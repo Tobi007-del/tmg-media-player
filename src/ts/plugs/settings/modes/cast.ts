@@ -30,8 +30,8 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
     try {
       if ("undefined" === typeof cast) {
         const prev = (window as any).__onGCastApiAvailable;
-        ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupAPi())), await loadResource(window.TMG_CAST_API_SRC!, "script");
-      } else this.setupAPi();
+        ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupAPI())), await loadResource(window.TMG_CAST_API_SRC!, "script");
+      } else this.setupAPI();
     } catch (err) {
       this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
     }
@@ -95,7 +95,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
     e.resolve(this.name);
   }
 
-  protected setupAPi(): void {
+  protected setupAPI(): void {
     if (this.state.APIReady || !chrome?.cast) return;
     this.ctx = cast.framework.CastContext.getInstance();
     this.ctx.setOptions(Object.assign({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED }, this.config.options));

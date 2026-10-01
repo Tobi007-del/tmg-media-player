@@ -10,19 +10,29 @@
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
       body {
-        display: flex;
-        justify-content: center;
         margin: 0;
         padding-top: 50px;
         background-color: #141414;
       }
-      :is(#o, .video-js) {
+      :is(#o, .video-js, video-player) {
         width: 100dvw;
         height: auto;
         max-width: 700px;
         max-height: 80lvh;
         min-height: 210px;
         aspect-ratio: 16 / 9;
+        margin: auto;
+        margin-bottom: 20px;
+        display: block;
+      }
+      video-player {
+        --media-border-radius: 0px;
+        --video-border-radius: 0px;
+      }
+      video-player video-skin, video-player video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       .video-js .vjs-control-bar {
         background-color: rgba(0, 0, 0, 0.6);
@@ -40,6 +50,14 @@
       Your browser does not support the video tag.
     </video>
 
+    <!-- Video.js v10 (The actual new VJS web component player) -->
+    <video-player class="video-js">
+      <video-skin>
+        <video src="https://vjs.zencdn.net/v/oceans.mp4" playsinline></video>
+      </video-skin>
+    </video-player>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/cdn@10.0.0-rc.4/video.js"></script>
     <script src="https://vjs.zencdn.net/8.9.0/video.min.js"></script>
     <script>
       const player = videojs("my-video", {

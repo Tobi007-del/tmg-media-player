@@ -35,7 +35,7 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     // ---- Config --------
     this.ctlr.config.set("playlist.content", (v) => (v ? (v.map((i) => mergeObjs(deepClone(PLAY_ITEM_BUILD) as any, parsePathObj(i))) as any) : null), { init: true, signal: this.signal });
     // ---- Media & Config Watchers
-    for (const k of ["tech", "state.currentItem", "status.ads"] as const) this.media.watch(k, this.syncFeatures, { signal: this.signal });
+    for (const k of ["tech", "state.currentItem"] as const) this.media.watch(k, this.syncFeatures, { signal: this.signal });
     for (const p of getPaths(PLAY_ITEM_BUILD, "*", { leavesOnly: true }))
       if (p.startsWith("media.")) {
         const path = p.slice(6);

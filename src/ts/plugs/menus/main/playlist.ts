@@ -6,10 +6,11 @@ import { AUDIO_EXTENSIONS, MATCH_URL_YOUTUBE, MATCH_URL_VIMEO } from "@utils/mat
 
 const getContent = (plug: PlaylistPlug, basic = true) => {
   if (plug.config.content) return plug.config.content;
-  if (basic) return [{ media: { intent: { src: plug.media.state.src }, settings: { metadata: { title: plug.media.settings.metadata.title } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start } } }];
+  if (basic) return [{ media: { intent: { src: plug.media.state.src }, settings: { metadata: { title: plug.media.settings.metadata.title, artist: plug.media.settings.metadata.artist } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start } } }];
   const { title, artist, profile, artwork, chapterInfo, links } = plug.media.settings.metadata;
   return [{ ...mergeObjs(PLAY_ITEM_BUILD as any, { media: { intent: { src: plug.media.state.src, poster: plug.media.state.poster, tracks: plug.media.state.tracks }, settings: { metadata: { title, artist, profile, artwork, chapterInfo, links } }, status: { duration: plug.media.status.duration } }, settings: { time: { start: plug.settings.time.start }, controlPanel: { timeline: { previews: plug.settings.controlPanel.timeline.previews, marks: [...plug.settings.controlPanel.timeline.marks] } } } }) }];
 };
+const getBadge = (src = "") => (MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_URL_VIMEO.test(src) ? "Vimeo" : AUDIO_EXTENSIONS.test(src) ? "Audio" : "");
 
 export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): SettingsMenuItem => ({
   id: "playlist",
@@ -18,9 +19,10 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
   widget: "drag-select",
   feature: "playlist",
   configPaths: ["playlist"],
-  mediaPaths: ["state.currentItem"],
+  mediaPaths: ["state.currentItem", "state.src"],
   getValue: () => getContent(plug)[plug.media.state.currentItem]?.media.settings.metadata.title || `Item ${plug.media.state.currentItem + 1}`,
-  getOptions: () => getContent(plug).map((opt: any, i: number, _, src = opt.media.intent.src || "", dur = opt.media.status.duration, start = opt.settings.time.start) => ({ value: String(i), display: opt.media.settings.metadata.title || `Item ${i + 1}`, badge: MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_URL_VIMEO.test(src) ? "Vimeo" : AUDIO_EXTENSIONS.test(src) ? "Audio" : "", progress: dur && start ? Math.round((start / dur) * 100) : 0 })),
+  getBadge: () => getBadge(plug.media.state.src),
+  getOptions: () => getContent(plug).map((opt: any, i: number, _, src = opt.media.intent.src || "", dur = opt.media.status.duration, start = opt.settings.time.start) => ({ value: String(i), display: opt.media.settings.metadata.title || `Item ${i + 1}`, badge: getBadge(src), progress: dur && start ? Math.round((start / dur) * 100) : 0 })),
   onChange: (val: string) => plug.moveTo(Number(val)),
   onReorder: (oldIdx: number, newIdx: number) => (plug.config.allowOverride.move ? plug.config.content?.splice(newIdx, 0, plug.config.content.splice(oldIdx, 1)[0]) : undefined),
   onDelete: async (idx: number) => {
@@ -67,4 +69,3 @@ declare module "@defs/registries" {
     playlist: typeof getMainPlaylistMenu;
   }
 }
-

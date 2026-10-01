@@ -14,7 +14,7 @@ export class SleepTimerPlug extends BasePlug<SleepTimerConfig> {
 
   public override wire(): void {
     // Ctlr Media Watchers
-    this.media.watch("tech", () => (this.media.features.sleepTimer = !this.media.status.ads), { init: true, signal: this.signal });
+    this.media.watch("tech", () => this.media.tech.polyfill("sleepTimer", !this.media.status.ads), { init: true, signal: this.signal });
     // ---------- Listeners
     this.media.on("state.currentTime", ({ value }) => this.config.ms === -1 && this.media.status.duration > 0 && value >= this.media.status.duration - 0.5 && this.trigger(), { signal: this.signal });
     // ---- Config --------

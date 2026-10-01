@@ -2,6 +2,7 @@ import { BaseTech } from "./base";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaFeatures } from "@defs/contract";
 import { inert, NOOP, type REvent } from "sia-reactor";
+import { fanout } from "sia-reactor/utils";
 import { createEl, loadResource, supportsFullscreen, supportsPictureInPicture } from "@utils/dom";
 import { createTimeRanges } from "@utils/time";
 import { isSameURL } from "@utils/str";
@@ -129,7 +130,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
     if (e.resolved) return;
-    if (!isSameURL(this.hostSrc, e.value)) this.flush(), this.initHost(e.value);
+    if (!isSameURL(this.hostSrc, e.value)) this.flush(), this.fetchEmbedData(e.value), this.initHost(e.value);
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -186,7 +187,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   protected handleCurrentAudioTrackIntent(e: REvent<CtlrMedia, "intent.currentAudioTrack">): void {
     if (e.resolved) return;
     // prettier-ignore
-    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.audioTracks as VimeoAudioTrack[])[e.value as number]) => track && this.host!.selectAudioTrack(track.language, track.kind).then(() => (this.config.state.currentAudioTrack = e.value as number), NOOP)); // #VALIDATED: mediated for cast conformity; no-opy
+    this.ctlr.when("loadedMetadata", e, (track = (this.config.status.audioTracks as VimeoAudioTrack[])[e.value as number]) => track?.language && this.host!.selectAudioTrack(track.language, track.kind).then(() => (this.config.state.currentAudioTrack = e.value as number), NOOP)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
   protected handleCurrentLevelIntent(e: REvent<CtlrMedia, "intent.currentLevel">): void {
@@ -325,6 +326,16 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     }); // no intent sync as lists wait for metadata
     Promise.all([this.host.getVideoWidth().catch(() => 1920), this.host.getVideoHeight().catch(() => 1080)]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h)));
   }
+  public syncMetadata(data: any, meta = this.config.settings.metadata): void {
+    data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author_name && data.author_name !== meta.artist ? data.author_name : undefined, links: { artist: data.author_url && data.author_url !== meta.links.artist ? data.author_url : undefined, title: data.video_id ? `https://vimeo.com/${data.video_id}` : undefined } }, { skipUndef: true, txLabel: "Vimeo Metadata Override" });
+  }
+  public fetchEmbedData(url = ""): void {
+    if (!this.config.settings.metadata.allowMediaOverride) return;
+    const seq = ++this.posterSeq;
+    // prettier-ignore
+    fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`).then((r) => r.json()).then((d) => seq === this.posterSeq && ((this.config.state.poster = d.thumbnail_url?.replace(/_\d+x\d+/, "")), this.syncMetadata(d))).catch(NOOP);
+  }
+  private posterSeq = 0;
   protected destroyHost(): void {
     if (!this.host) return;
     this.host.destroy(), (this.host = null), (this.config.status.hostReady = this.autoChapters = false);

@@ -21,7 +21,6 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   public displayContainer!: google.ima.AdDisplayContainer;
   public container!: HTMLDivElement;
   public points: Map<number, AdRoll> = new Map();
-  public imTech: IMATech | null = null; // Interactive Media
   public bgTech: BaseTech | null = null; // Background
 
   constructor(ctlr: Controller, config = ctlr.config.ads) {
@@ -110,14 +109,12 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   protected handlePauseRequest(): void {
     silence(() => (this.media.intent.paused = true)), this.media.tick("intent.paused");
     (this.bgTech = this.media.tech).hibernate();
-    const method = !this.imTech ? "setup" : "awaken";
-    this.media.tech = this.imTech ??= new IMATech(this.ctlr);
     this.media.status.ads = true; // b4 sets
-    this.media.tech[method]();
+    (this.media.tech = new IMATech(this.ctlr)).setup();
   }
   protected handleResumeRequest(): void {
     if (!this.media.status.ads) return;
-    this.imTech!.hibernate();
+    this.media.tech.destroy();
     (this.media.tech = this.bgTech!).awaken();
     this.media.status.ads = false;
     this.handleRolls();
@@ -144,7 +141,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   public pollRolls(time: number, { loadedMetadata, seeking, ads, adPoints } = this.media.status): void {
-    if (!loadedMetadata || ads || seeking) return;
+    if (!loadedMetadata || ads || seeking || this.media.state.paused) return;
     if (time > this.prevTime) {
       let max = -1;
       for (let i = 0, len = adPoints.length; i < len; i++) {
@@ -164,7 +161,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   protected override onDestroy(): void {
-    this.manager?.destroy(), this.loader?.destroy(), this.imTech?.destroy();
+    this.manager?.destroy(), this.loader?.destroy();
     super.onDestroy();
   }
 }

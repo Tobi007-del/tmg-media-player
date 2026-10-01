@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vidstack Test</title>
+    <!-- 1. Import Player Styles -->
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css" />
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css" />
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/video-layout.css" />
+    <!-- 2. Import Vidstack Player via CDN -->
+    <script type="module" src="https://cdn.vidstack.io/player" defer></script>
+    <style>
+      html {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding-top: 50px;
+        background-color: #141414;
+      }
+      media-player {
+        width: 100dvw;
+        height: auto;
+        max-width: 700px;
+        max-height: 80lvh;
+        min-height: 210px;
+        aspect-ratio: 16 / 9;
+      }
+    </style>
+  </head>
+  <body>
+    <media-player
+      title="Oceans"
+      src="https://vjs.zencdn.net/v/oceans.mp4"
+      poster="https://vjs.zencdn.net/v/oceans.png"
+      crossorigin
+      playsinline
+    >
+      <media-provider>
+      </media-provider>
+      
+      <!-- Default Video Layout -->
+      <media-video-layout></media-video-layout>
+    </media-player>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const player = document.querySelector('media-player');
+        
+        player.addEventListener('provider-change', (event) => {
+          console.log('Provider changed', event.detail);
+        });
+
+        player.addEventListener('can-play', () => {
+          console.log('Vidstack Player Ready');
+        });
+
+        player.addEventListener('play', () => console.log('Playing'));
+        player.addEventListener('pause', () => console.log('Paused'));
+        player.addEventListener('ended', () => console.log('Ended'));
+      });
+    </script>
+  </body>
+</html>

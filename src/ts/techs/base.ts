@@ -41,6 +41,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     super(ctlr, ctlr.media); // Odekunle Olasubomi Abimbola Cornelius Adisun was here; Aug 14th 2026
     ctlr.config.courtesy = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
     this.element = ctlr.media.element as any; // must reassign if not using original
+    if (this.caching) (this.cache = {}).features = ctlr.media.snapshot(false, ctlr.media.features);
     for (const key of Object.keys(ctlr.media.features)) ctlr.media.features[key as keyof MediaFeatures] = false;
     // prettier-ignore
     fanout(ctlr.media.features, (this.features = {
@@ -58,7 +59,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     this.config.status.hostReady = false;
   }
   protected onAwaken(): void {
-    if (this.caching) for (const key of cacheKeys) (this.cache ??= {} as any)[key] = this.config.snapshot(false, this.config[key]); // all that once was
+    if (this.caching) for (const key of cacheKeys) (this.cache ??= {} as any)[key] ??= this.config.snapshot(false, this.config[key]); // all that once was
     this.evtOpts.CONFIG.signal = this.evtOpts.EL.signal = this.signal;
     this.ctlr.state.readyState ? this.wire() : this.ctlr.state.wonce("readyState", this.wire, { signal: this.signal }); // wire after all plugs setup
   }

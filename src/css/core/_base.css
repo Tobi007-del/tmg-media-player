@@ -156,9 +156,8 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 /* ==== INTERACTION ==== */
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-content,
-.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content,
-.tmg-media-content:has(:modal) {
+.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible), :has(dialog[open])) .tmg-media-content,
+.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content {
   cursor: auto;
 }
 .tmg-media-container.tmg-media-miniplayer :is(.tmg-media-content, .tmg-media-settings),

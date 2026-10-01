@@ -58,9 +58,10 @@ export class Controller {
     this.media = reactive({ intent: volatile(intent(defs.intent)), state: defs.state, status: defs.status, settings: volatile(intent(defs.settings)), type: medium.tagName.toLowerCase() as MediaType, tech: inert({}), features: {}, element: medium, pseudoElement: createEl(medium.tagName.toLowerCase()), container: createEl("div"), pseudoContainer: createEl("div") }, { crossRealms: true }) as any;
     this.media.set("tech", (t) => inert(t!), { signal: this.signal });
     this.log((this.build = this.config.snapshot())), delete this.config.media; // clone for resets and fast subsequents
-    this.setReadyState(0), this.boot();
+    this.setReadyState(0), this.setup();
   }
-  private async boot(): Promise<void> {
+
+  private async setup(): Promise<void> {
     this.connectPlugs(), this.wireTechHandler(), this.wireStateHandler();
     await mockAsync(0), this.setReadyState(1); // wiring the machinery
     this.state.wonce("readyState", () => (!this.media.state.paused ? this.setReadyState(3) : this.media.wonce("state.paused", () => this.setReadyState(3), { signal: this.signal })), { signal: this.signal }); // first play(ed), matters to some

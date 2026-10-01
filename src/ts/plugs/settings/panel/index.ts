@@ -143,7 +143,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
         </ul>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🏗️ Total UI Control</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
-          <li><strong>Build your own player:</strong> Don't like our layout? <strong>Click and drag</strong> almost any button on the bottom control bar to physically rearrange the interface exactly how you want it.</li>
+          <li><strong>Build your own player:</strong> Don't like our layout? <strong>Click and drag</strong> almost "any" button on the control bars to physically rearrange the interface exactly how you want it.</li>
           <li><strong>Draggable subtitles:</strong> Subtitles blocking a crucial part of the scene? Just grab the text box and drag it anywhere else on the screen.</li>
           <li><strong>The chameleon engine:</strong> Head to settings and set your Brand/Theme colors to "Video Derived". TVP will actively analyze the video frames and extract dominant colors to paint the UI dynamically.</li>
           <li><strong>Descriptive hints:</strong> Hover over the controls to expose their tooltips and get more information about how to trigger each function.</li>
@@ -151,7 +151,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">⌨️ Keyboard Ninja Status</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
           <li><strong>The playback trinity (J, K, L):</strong> Skip backward, Play/Pause, and Skip forward like a pro editor. Do the same with arrow keys, hold <strong>Ctrl</strong>, <strong>Shift</strong> or <strong>Alt</strong> to spice things up.</li>
-          <li><strong>Time travel (0 - 9):</strong> Hit any number key to instantly jump to that percentage of the video (e.g., hitting '5' jumps to the exact middle).</li>
+          <li><strong>Time travel:</strong> Hit any number key to jump to that percentage of the video (e.g., hitting '5' jumps to the exact middle). <em>(Easter Egg: Undo or Redo with <strong>Ctrl + Z</strong> and <strong>Ctrl + Y</strong>)</em></li>
           <li><strong>Frame-by-frame:</strong> Paused the video? Use <strong>,</strong> (comma) and <strong>.</strong> (period) to step backward or forward one single frame at a time.</li>
           <li><strong>Warp speed:</strong> Use <strong>&gt;</strong> and <strong>&lt;</strong> to crank the playback speed up or down.</li>
         </ul>
@@ -164,7 +164,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
         </ul>
         <div style="text-align: center; margin-top: 30px; padding: 15px; border-radius: 8px; background: rgba(128, 128, 128, 0.1);">
           <p style="margin: 0 0 10px 0;"><strong>Enjoy the player.</strong> We're still in active development, but already miles ahead. Welcome to the bleeding edge.</p>
-          <p style="margin: 0; opacity: 0.8;">🧪 <strong>beta tester?</strong> Check the bottom of the page to find the hidden button to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
+          <p style="margin: 0; opacity: 0.8;">🧪 <strong>beta tester?</strong> Find the Settings advanced menu to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
           </div>
         </div>
       `;

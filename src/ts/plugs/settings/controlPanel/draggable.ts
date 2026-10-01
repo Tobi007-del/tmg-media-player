@@ -123,7 +123,6 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     this.settings.controlPanel.bottom = { 1: [...derive(this.plug.slots.bottom[1].left), ...derive(this.plug.slots.bottom[1].center, true), ...derive(this.plug.slots.bottom[1].right)], 2: [...derive(this.plug.slots.bottom[2].left), ...derive(this.plug.slots.bottom[2].center, true), ...derive(this.plug.slots.bottom[2].right)], 3: [...derive(this.plug.slots.bottom[3].left), ...derive(this.plug.slots.bottom[3].center, true), ...derive(this.plug.slots.bottom[3].right)] };
   }
 
-  protected teaching = false;
   protected teachBasics = limited(
     async (id: AnyControl = "meta", toast = this.ctlr.toast) => {
       if (!toast) return;
@@ -158,6 +157,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     },
     { key: `${luid()}_ctrl_dnd_basics`, maxTimes: 3 }
   );
+  protected teaching = false;
 }
 
 declare module "@defs/registries" {

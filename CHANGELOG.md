@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.46
+
+### Patch Changes
+
+- Dialog always show cursor
+
+## 0.0.45
+
+### Patch Changes
+
+- Ad bug fixes nd Vimeo metadata Override
+
 ## 0.0.44
 
 ### Patch Changes

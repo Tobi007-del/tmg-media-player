@@ -38,6 +38,7 @@ const ap = new tmg.Player({
 ap.attach(document.getElementById("adstest"));
 
 const vp = new tmg.Player({
+  "settings.css.syncWithMedia.brandColor": true,
   playlist: {
     content: [
       {
