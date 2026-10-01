@@ -33,14 +33,14 @@
     </style>
   </head>
   <body>
-    <video controls preload="none" id="player">
+    <video controls preload="none" id="player" poster="https://vjs.zencdn.net/v/oceans.png">
       <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4" />
     </video>
     <script src="https://cdn.jsdelivr.net/npm/mediaelement@5.0.5/build/mediaelement-and-player.min.js"></script>
     <script>
       const player = new MediaElementPlayer(document.getElementById("player"), {
         features: ["playpause", "current", "progress", "duration", "tracks", "volume", "fullscreen"],
-        autoplay: true,
+        
         stretching: "responsive",
       });
     </script>

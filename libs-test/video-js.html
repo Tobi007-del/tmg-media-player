@@ -51,9 +51,11 @@
     </video>
 
     <!-- Video.js v10 (The actual new VJS web component player) -->
-    <video-player class="video-js">
+    <video-player class="video-js" title="Oceans" poster="https://vjs.zencdn.net/v/oceans.png">
       <video-skin>
-        <video src="https://vjs.zencdn.net/v/oceans.mp4" playsinline></video>
+        <video src="https://vjs.zencdn.net/v/oceans.mp4" playsinline>
+          <track kind="captions" src="https://vjs.zencdn.net/vtt/captions.vtt" srclang="en" label="English" default />
+        </video>
       </video-skin>
     </video-player>
 
@@ -66,7 +68,7 @@
         enableDocumentPictureInPicture: true,
         enableSmoothSeeking: true,
         fluid: true,
-        autoplay: "muted",
+        
         responsive: true,
         userActions: {
           hotkeys: true,
