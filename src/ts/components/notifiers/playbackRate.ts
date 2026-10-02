@@ -21,10 +21,10 @@ export class PlaybackRateNotifier extends BaseNotifier<undefined, ComponentState
   public override wire(): void {
     super.wire();
     // Ctlr Media Listeners
-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("intent.playbackRate", this.handlePlaybackRateIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
   }
 
-  protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {
+  protected handlePlaybackRateIntent({ value }: REvent<CtlrMedia, "intent.playbackRate">): void {
     this.content.textContent = `${value}x`;
   }
 }

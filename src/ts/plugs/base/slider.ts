@@ -2,17 +2,13 @@ import { BasePlug } from ".";
 import { MediaIntent, MediaFeatures } from "@defs/contract";
 import type { OptRange } from "@defs/generics";
 import { capitalize } from "@utils/str";
-import { silence, startTx, endTx, Transaction } from "sia-reactor/modules";
+import { silence } from "sia-reactor/modules";
 
 export interface SliderState {
   aptValue: number;
 }
 
 export abstract class BaseSliderPlug<Config extends OptRange, State extends SliderState> extends BasePlug<Config, State> {
-  protected tx: Transaction | null = null;
-  protected useTx(bool = false): void {
-    bool ? (this.tx = startTx(`${this.name} slider`)) : this.tx && (endTx(this.tx!), (this.tx = null));
-  }
   public shouldToggle = false;
   public sliderAptValue = 100;
   public useAptValue = false;

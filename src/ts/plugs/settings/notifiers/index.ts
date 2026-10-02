@@ -46,6 +46,18 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
     for (const id of value) !this.components.has(id) && this.initComp(id);
   }
 
+  public handleEvent({ type: eN }: Event): void {
+    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN), this.signal);
+  }
+
+  public reset(token = "", flush = false): void {
+    flush && this.ctlr.cancelRAFLoop("notifying"), this.container.setAttribute("data-notify", token);
+  }
+
+  public notify(key: string): void {
+    !this.config.disabled && this.ctlr.fire(key, null, this.container);
+  }
+
   public initComp<K extends keyof ComponentRegistryMap>(name: K, comp?: InstanceType<ComponentRegistryMap[K]>): InstanceType<ComponentRegistryMap[K]> | undefined;
   public initComp<T extends BaseNotifier = BaseNotifier>(name: string, comp?: T): T | undefined;
   public initComp(name: string, comp = ComponentRegistry.init(name, this.ctlr)) {
@@ -61,19 +73,6 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   public compEl<T extends BaseNotifier = BaseNotifier>(name: string): T["element"] | undefined;
   public compEl(name: string): HTMLElement | undefined {
     return this.components.get(name)?.element;
-  }
-
-  public handleEvent({ type: eN }: Event): void {
-    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN), this.signal);
-  }
-
-  public reset(token = "", flush = false): void {
-    flush && this.ctlr.cancelRAFLoop("notifying");
-    this.container.setAttribute("data-notify", token);
-  }
-
-  public notify(key: string): void {
-    if (!this.config.disabled) this.ctlr.fire(key, null, this.container);
   }
 
   protected override onDestroy(): void {

@@ -1,4 +1,5 @@
 import { CtlrMedia } from "@defs/contract";
+import { ChapterInfo } from "@defs/generics";
 import { capitalize, isArr, isNum } from "@t007/utils";
 
 // Time Ranges
@@ -14,6 +15,10 @@ export function getMediaProgress({ state: s, status: st }: CtlrMedia, time = s.c
 export const getMediaTime = (media: CtlrMedia, percent: number, _min = getMediaMin(media)): number => (media.status.isLive ? _min! + percent * (getMediaMax(media) - _min!) : percent * media.status.duration);
 export const getMediaMin = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? (st.canSeekLive ? st.seekable.start(0) : st.seekable.end(st.seekable.length - 1)) : s.currentTime) : 0); // live?, can't seek?, jump to edge
 export const getMediaMax = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? st.seekable.end(st.seekable.length - 1) : s.currentTime) : st.duration);
+export const getMediaChapter = (chapters: ChapterInfo[], time: number): number => {
+  for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return i;
+  return -1;
+};
 
 export function createTimeRanges(ranges?: [number, number][] | TimeRanges | ArrayLike<any>): TimeRanges {
   if (ranges instanceof TimeRanges) return ranges;

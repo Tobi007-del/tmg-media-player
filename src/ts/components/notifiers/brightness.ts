@@ -24,12 +24,12 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
   public override wire(): void {
     super.wire();
     // Plug Listeners
-    this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessState, { signal: this.signal });
+    this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessIntent, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("intent.brightness", this.handleBrightnessIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
   }
 
-  protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness"> | REvent<BrightnessState, "aptValue">): void {
+  protected handleBrightnessIntent({ value }: REvent<CtlrMedia, "intent.brightness"> | REvent<BrightnessState, "aptValue">): void {
     this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
   }
 }

@@ -69,22 +69,21 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">, isNext = this.nextToggle === e.value): void {
     if (isNext) this.nextToggle = null;
     if (e.resolved) return;
-    else if (this.media.state.muted === e.value && !!this.media.state.volume) return e.resolve(this.name);
+    if (!isNext && this.media.state.muted === e.value && !!this.media.state.volume) return e.resolve(this.name);
     this.setToggleState(e.value, isNext);
     this.media.state.muted = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
   protected handleKeyMute(): void {
-    this.toggle("auto");
-    this.media.features.volume && this.media.wonce("state.volume", (v) => this.ctlr.notify?.(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
+    this.toggle("auto"), this.media.features.volume && this.media.wonce("state.volume", (v) => v && this.ctlr.notify?.("volumeUp"), { signal: this.signal });
   }
   protected handleKeyVolumeUp(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip);
   }
   protected handleKeyVolumeDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip));
-    if (!this.useAptValue && this.media.features.volume) !this.media.state.volume ? this.ctlr.notify?.("volumeMuted") : this.media.wonce("state.volume", (v) => this.ctlr.notify?.(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.volume) !this.media.state.volume ? this.ctlr.notify?.("volumeMuted") : this.media.wonce("state.volume", (v) => !v && this.ctlr.notify?.("volumeMuted"), { signal: this.signal });
   }
 
   protected handleNativeVolumeChange(): void {

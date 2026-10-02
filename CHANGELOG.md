@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.48
+
+### Patch Changes
+
+- Removed unused dependencies
+
+## 0.0.47
+
+### Patch Changes
+
+- Code optimizations
+
 ## 0.0.46
 
 ### Patch Changes

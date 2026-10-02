@@ -106,7 +106,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   // --- Track Switching Wiring ---
   protected wireCurrentChapter(): void {
-    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
   }
   protected wireCurrentTextTrack(): void {
@@ -283,9 +283,6 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
         return void (s.currentTextTrack = (st.textTracks as VimeoTextTrack[]).findIndex((t) => t.label === data.label && t.language === data.language && t.kind === data.kind));
       case "cuechange":
         return void (st.activeCues = data.cues || null);
-      case "chapterchange":
-        s.currentChapter = data.index - 1;
-        break;
       case "qualitychange":
         s.currentLevel = (st.levels as VimeoQuality[]).findIndex((q) => q.id === data.quality);
         this.host!.getQuality().then((q) => (s.autoLevel = q === "auto" || !q));
@@ -316,7 +313,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     this.host.getPlayed().then((played) => (this.config.status.played = createTimeRanges(played)));
     this.host.getBuffered().then((buffered) => (this.config.status.buffered = createTimeRanges(buffered)));
     this.host.getSeekable().then((seekable) => (this.config.status.seekable = createTimeRanges(seekable)));
-    this.host.getChapters().then((chapters, meta = this.config.settings.metadata) => meta.allowMediaOverride && chapters.length && ((meta.chapterInfo = inert(chapters)), (this.autoChapters = true))); // chapter "cuechange" over to u; truth
+    this.host.getChapters().then((chapters, meta = this.config.settings.metadata) => meta.allowMediaOverride && chapters.length && (meta.chapterInfo = inert(chapters))); // chapter "cuechange" over to u; truth
     this.host.getTextTracks().then((tracks) => (this.config.status.textTracks = inert(tracks)));
     this.host.getAudioTracks().then((tracks) => (this.config.status.audioTracks = inert(tracks)));
     this.host.getQualities().then((qualities) => {
@@ -338,7 +335,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   private posterSeq = 0;
   protected destroyHost(): void {
     if (!this.host) return;
-    this.host.destroy(), (this.host = null), (this.config.status.hostReady = this.autoChapters = false);
+    this.host.destroy(), (this.host = null), (this.config.status.hostReady = false);
     (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = `<div class="tmg-host-content">${this.hostHTML}</div>`; // Reset to placeholder
   }
   protected override onDestroy(): void {

@@ -1,0 +1,465 @@
+﻿diff --git a/.agents/AGENTS.md b/.agents/AGENTS.md
+index cf5624f..2bd3e14 100644
+--- a/.agents/AGENTS.md
++++ b/.agents/AGENTS.md
+@@ -269,6 +269,7 @@ Canonical example: `volume.ts` on `media.intent.volume` and `media.intent.muted`
+ 
+ ## Do Not Break
+ 
++- NEVER use PowerShell or terminal commands to edit, modify, or replace file contents. ALWAYS use the native code editing tools so visual diffs are generated for review.
+ - Never add `guardAllMethods` manually - `Controllable` constructor handles it
+ - Never call `this.wire()` directly - `onSetup()` / `wonce` pattern owns it
+ - Never listen without `{ signal: this.signal }` - memory leak
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 4223fe1..85ab6ff 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,11 @@
+ # tmg-media-player
+ 
++## 0.0.47
++
++### Patch Changes
++
++- Code optimizations
++
+ ## 0.0.46
+ 
+ ### Patch Changes
+diff --git a/package.json b/package.json
+index 191d639..3eb077a 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "tmg-media-player",
+-  "version": "0.0.46",
++  "version": "0.0.47",
+   "description": "A feature-rich, Web media player implementation for The Movie Garden initiative",
+   "author": "Oketade Oluwatobiloba <tobioketade007@gmail.com>",
+   "license": "MIT",
+diff --git a/src/dev.html b/src/dev.html
+index 17a0a58..5c7e29e 100644
+--- a/src/dev.html
++++ b/src/dev.html
+@@ -8,7 +8,7 @@
+     <link rel="stylesheet" href="./css/Test.css" />
+     <script>
+       window.TMG_MEDIA_CSS_SRC = window.T007_INPUT_JS_SRC = window.T007_INPUT_CSS_SRC = window.T007_TOAST_JS_SRC = window.T007_TOAST_CSS_SRC = window.T007_DIALOG_JS_SRC = window.T007_DIALOG_CSS_SRC = Symbol.for("T007_VIRTUAL_RESOURCE");
+-      window.TMG_MEDIA_ALT_IMG_SRC = "/assets/icons/movie-tape.png";
++      window.TMG_MEDIA_ALT_IMG_SRC = "../assets/icons/movie-tape.png";
+     </script>
+     <script type="module">
+       import "@t007/toast";
+diff --git a/src/index.html b/src/index.html
+index 5cc44b1..9ecc943 100644
+--- a/src/index.html
++++ b/src/index.html
+@@ -8,7 +8,7 @@
+     <link rel="stylesheet" href="./css/Test.css" />
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tmg-media-player@latest/dist/index.min.css" />
+     <script>
+-      window.TMG_MEDIA_ALT_IMG_SRC = "/assets/icons/movie-tape.png";
++      window.TMG_MEDIA_ALT_IMG_SRC = "../assets/icons/movie-tape.png";
+     </script>
+     <script defer src="https://cdn.jsdelivr.net/npm/tmg-media-player@latest"></script>
+     <script defer src="./js/Test.js"></script>
+diff --git a/src/ts/components/notifiers/brightness.ts b/src/ts/components/notifiers/brightness.ts
+index 9313d86..d099efa 100644
+--- a/src/ts/components/notifiers/brightness.ts
++++ b/src/ts/components/notifiers/brightness.ts
+@@ -24,12 +24,12 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState,
+   public override wire(): void {
+     super.wire();
+     // Plug Listeners
+-    this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessState, { signal: this.signal });
++    this.ctlr.plug("settings.brightness")?.state.on("aptValue", this.handleBrightnessIntent, { signal: this.signal });
+     // Ctlr Media Listeners
+-    this.media.on("state.brightness", this.handleBrightnessState, { init: this.ctlr.flags.wired, signal: this.signal });
++    this.media.on("intent.brightness", this.handleBrightnessIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
+   }
+ 
+-  protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness"> | REvent<BrightnessState, "aptValue">): void {
++  protected handleBrightnessIntent({ value }: REvent<CtlrMedia, "intent.brightness"> | REvent<BrightnessState, "aptValue">): void {
+     this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">Γåæ</strong>` : ""}`.trim();
+   }
+ }
+diff --git a/src/ts/components/notifiers/playbackRate.ts b/src/ts/components/notifiers/playbackRate.ts
+index f013db7..3d998c3 100644
+--- a/src/ts/components/notifiers/playbackRate.ts
++++ b/src/ts/components/notifiers/playbackRate.ts
+@@ -21,10 +21,10 @@ export class PlaybackRateNotifier extends BaseNotifier<undefined, ComponentState
+   public override wire(): void {
+     super.wire();
+     // Ctlr Media Listeners
+-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.flags.wired, signal: this.signal });
++    this.media.on("intent.playbackRate", this.handlePlaybackRateIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
+   }
+ 
+-  protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {
++  protected handlePlaybackRateIntent({ value }: REvent<CtlrMedia, "intent.playbackRate">): void {
+     this.content.textContent = `${value}x`;
+   }
+ }
+diff --git a/src/ts/components/notifiers/volume.ts b/src/ts/components/notifiers/volume.ts
+index 2600e88..d11512a 100644
+--- a/src/ts/components/notifiers/volume.ts
++++ b/src/ts/components/notifiers/volume.ts
+@@ -24,12 +24,12 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
+   public override wire(): void {
+     super.wire();
+     // Plug Listeners
+-    this.ctlr.plug("settings.volume")?.state.on("aptValue", this.handleVolumeState, { signal: this.signal });
++    this.ctlr.plug("settings.volume")?.state.on("aptValue", this.handleVolumeIntent, { signal: this.signal });
+     // Ctlr Media Listeners
+-    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.flags.wired, signal: this.signal });
++    this.media.on("intent.volume", this.handleVolumeIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
+   }
+ 
+-  protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume"> | REvent<VolumeState, "aptValue">): void {
++  protected handleVolumeIntent({ value }: REvent<CtlrMedia, "intent.volume"> | REvent<VolumeState, "aptValue">): void {
+     this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">Γåæ</strong>` : ""}`.trim();
+   }
+ }
+diff --git a/src/ts/plugs/base/slider.ts b/src/ts/plugs/base/slider.ts
+index dd3d26f..697dc1c 100644
+--- a/src/ts/plugs/base/slider.ts
++++ b/src/ts/plugs/base/slider.ts
+@@ -2,17 +2,13 @@ import { BasePlug } from ".";
+ import { MediaIntent, MediaFeatures } from "@defs/contract";
+ import type { OptRange } from "@defs/generics";
+ import { capitalize } from "@utils/str";
+-import { silence, startTx, endTx, Transaction } from "sia-reactor/modules";
++import { silence } from "sia-reactor/modules";
+ 
+ export interface SliderState {
+   aptValue: number;
+ }
+ 
+ export abstract class BaseSliderPlug<Config extends OptRange, State extends SliderState> extends BasePlug<Config, State> {
+-  protected tx: Transaction | null = null;
+-  protected useTx(bool = false): void {
+-    bool ? (this.tx = startTx(`${this.name} slider`)) : this.tx && (endTx(this.tx!), (this.tx = null));
+-  }
+   public shouldToggle = false;
+   public sliderAptValue = 100;
+   public useAptValue = false;
+diff --git a/src/ts/plugs/settings/brightness/index.ts b/src/ts/plugs/settings/brightness/index.ts
+index 28a1588..a80455c 100644
+--- a/src/ts/plugs/settings/brightness/index.ts
++++ b/src/ts/plugs/settings/brightness/index.ts
+@@ -42,32 +42,31 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
+   }
+ 
+   protected handleBrightnessIntent(e: REvent<CtlrMedia, "intent.brightness">, isNext = this.nextLevel === e.value): void {
+-    if (e.resolved) return;
+     if (isNext) this.nextLevel = null;
++    if (e.resolved) return;
+     this.setValueState(e.value, isNext);
+     this.media.state.brightness = this.settings.css.brightness = e.value;
+     // e.resolve(this.name); // #UMBRELLA: must envelope logic
+   }
+ 
+   protected handleDarkIntent(e: REvent<CtlrMedia, "intent.dark">, isNext = this.nextToggle === e.value): void {
+-    if (e.resolved) return;
+     if (isNext) this.nextToggle = null;
+-    else if (this.media.state.dark === e.value && !!this.media.state.brightness) return e.resolve(this.name);
++    if (e.resolved) return;
++    if (!isNext && this.media.state.dark === e.value && !!this.media.state.brightness) return e.resolve(this.name);
+     this.setToggleState(e.value, isNext);
+     this.media.state.dark = e.value;
+     // e.resolve(this.name); // #UMBRELLA: must envelope logic
+   }
+ 
+   protected handleKeyDark(): void {
+-    this.toggle("auto");
+-    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessUp"), { signal: this.signal });
++    this.toggle("auto"), this.media.features.brightness && this.media.wonce("state.brightness", (v) => v && this.ctlr.notify?.("brightnessUp"), { signal: this.signal });
+   }
+   protected handleKeyBrightnessUp(_: KeyboardEvent, mod: KeyMod): void {
+     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip);
+   }
+   protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
+     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
+-    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.notify?.("brightnessDark") : this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
++    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.notify?.("brightnessDark") : this.media.wonce("state.brightness", (v) => !v && this.ctlr.notify?.("brightnessDark"), { signal: this.signal });
+   }
+ }
+ 
+diff --git a/src/ts/plugs/settings/notifiers/index.ts b/src/ts/plugs/settings/notifiers/index.ts
+index 8cfe52f..8b49cac 100644
+--- a/src/ts/plugs/settings/notifiers/index.ts
++++ b/src/ts/plugs/settings/notifiers/index.ts
+@@ -46,6 +46,18 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
+     for (const id of value) !this.components.has(id) && this.initComp(id);
+   }
+ 
++  public handleEvent({ type: eN }: Event): void {
++    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN), this.signal);
++  }
++
++  public reset(token = "", flush = false): void {
++    flush && this.ctlr.cancelRAFLoop("notifying"), this.container.setAttribute("data-notify", token);
++  }
++
++  public notify(key: string): void {
++    !this.config.disabled && this.ctlr.fire(key, null, this.container);
++  }
++
+   public initComp<K extends keyof ComponentRegistryMap>(name: K, comp?: InstanceType<ComponentRegistryMap[K]>): InstanceType<ComponentRegistryMap[K]> | undefined;
+   public initComp<T extends BaseNotifier = BaseNotifier>(name: string, comp?: T): T | undefined;
+   public initComp(name: string, comp = ComponentRegistry.init(name, this.ctlr)) {
+@@ -63,19 +75,6 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
+     return this.components.get(name)?.element;
+   }
+ 
+-  public handleEvent({ type: eN }: Event): void {
+-    this.reset(), this.ctlr.RAFLoop("notifying", () => this.reset(eN), this.signal);
+-  }
+-
+-  public reset(token = "", flush = false): void {
+-    flush && this.ctlr.cancelRAFLoop("notifying");
+-    this.container.setAttribute("data-notify", token);
+-  }
+-
+-  public notify(key: string): void {
+-    if (!this.config.disabled) this.ctlr.fire(key, null, this.container);
+-  }
+-
+   protected override onDestroy(): void {
+     this.reset("", true);
+     for (const comp of this.components.values()) comp.destroy();
+diff --git a/src/ts/plugs/settings/panel/index.ts b/src/ts/plugs/settings/panel/index.ts
+index 75a144f..cbd1bcb 100644
+--- a/src/ts/plugs/settings/panel/index.ts
++++ b/src/ts/plugs/settings/panel/index.ts
+@@ -70,9 +70,9 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
+     const options = [{ option: "Light Blue", value: "#3198f5" }, { option: "Hot Pink", value: "#ff69b4" }, { option: "Fiery Red", value: "#ff0033" }, { option: "Dark Turquoise", value: "#00ced1" }, { option: "Custom Hue", value: "custom" }, { option: "Video Derived", value: "auto" }],
+       gcolors = options.slice(0, -2).map((opt) => opt.value),
+       defs = { brand: this.settings.css.brandColor as string ?? "#e26e02", theme: this.settings.css.themeColor as string ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
+-      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "Just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
++      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "Try changing your brand color" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
+       cBField = t007.field({ type: "color" }),
+-      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "Also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
++      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "Also try changing your theme color" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
+       cTField = t007.field({ type: "color" }),
+       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
+       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
+diff --git a/src/ts/plugs/settings/volume/index.ts b/src/ts/plugs/settings/volume/index.ts
+index e682995..a67404c 100644
+--- a/src/ts/plugs/settings/volume/index.ts
++++ b/src/ts/plugs/settings/volume/index.ts
+@@ -69,22 +69,21 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
+   protected handleMutedIntent(e: REvent<CtlrMedia, "intent.muted">, isNext = this.nextToggle === e.value): void {
+     if (isNext) this.nextToggle = null;
+     if (e.resolved) return;
+-    else if (this.media.state.muted === e.value && !!this.media.state.volume) return e.resolve(this.name);
++    if (!isNext && this.media.state.muted === e.value && !!this.media.state.volume) return e.resolve(this.name);
+     this.setToggleState(e.value, isNext);
+     this.media.state.muted = e.value;
+     // e.resolve(this.name); // #UMBRELLA: must envelope logic
+   }
+ 
+   protected handleKeyMute(): void {
+-    this.toggle("auto");
+-    this.media.features.volume && this.media.wonce("state.volume", (v) => this.ctlr.notify?.(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
++    this.toggle("auto"), this.media.features.volume && this.media.wonce("state.volume", (v) => v && this.ctlr.notify?.("volumeUp"), { signal: this.signal });
+   }
+   protected handleKeyVolumeUp(_: KeyboardEvent, mod: KeyMod): void {
+     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip);
+   }
+   protected handleKeyVolumeDown(_: KeyboardEvent, mod: KeyMod): void {
+     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("volume", mod, this.config.skip) ?? this.config.skip));
+-    if (!this.useAptValue && this.media.features.volume) !this.media.state.volume ? this.ctlr.notify?.("volumeMuted") : this.media.wonce("state.volume", (v) => this.ctlr.notify?.(!v ? "volumeMuted" : "volumeDown"), { signal: this.signal });
++    if (!this.useAptValue && this.media.features.volume) !this.media.state.volume ? this.ctlr.notify?.("volumeMuted") : this.media.wonce("state.volume", (v) => !v && this.ctlr.notify?.("volumeMuted"), { signal: this.signal });
+   }
+ 
+   protected handleNativeVolumeChange(): void {
+diff --git a/src/ts/techs/base.ts b/src/ts/techs/base.ts
+index 52e6d90..fa5ca87 100644
+--- a/src/ts/techs/base.ts
++++ b/src/ts/techs/base.ts
+@@ -9,6 +9,7 @@ import { capitalize } from "@utils/str";
+ import { isArr, isBool, isNum } from "@utils/obj";
+ import { setTimeout } from "@utils/fn";
+ import { MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
++import { getMediaChapter } from "@utils/time";
+ 
+ export interface TechConstructor<T extends BaseTech = BaseTech> {
+   new (ctlr: Controller, features?: MediaFeatures): T;
+@@ -34,14 +35,13 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
+   public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptionsTuple } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } };
+   public readonly features!: MediaFeatures;
+   public readonly wiredSet: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
+-  public autoChapters: boolean = false; // turn on if handling `currentChapter`
+ 
+   constructor(ctlr: Controller, features: MediaFeatures = {}) {
+     ctlr.media.tech.wired && ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`); // kill if listening
+     super(ctlr, ctlr.media); // Odekunle Olasubomi Abimbola Cornelius Adisun was here; Aug 14th 2026
+     ctlr.config.courtesy = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
+     this.element = ctlr.media.element as any; // must reassign if not using original
+-    if (this.caching) (this.cache = {}).features = ctlr.media.snapshot(false, ctlr.media.features);
++    if (this.caching) (this.cache = {} as any).features = ctlr.media.snapshot(false, ctlr.media.features);
+     for (const key of Object.keys(ctlr.media.features)) ctlr.media.features[key as keyof MediaFeatures] = false;
+     // prettier-ignore
+     fanout(ctlr.media.features, (this.features = {
+@@ -79,9 +79,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
+   public wire(): void {
+     // Variables Assignments
+     (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained if element was replaced in mount
+-    // Config Watchers
+-    this.config.watch("state.currentTime", this.onCurrentTime, this.evtOpts.CONFIG);
+-    // ------ Listeners
++    // Config Listeners
+     this.config.on("intent", this.handleWrite, this.evtOpts.CONFIG), this.config.on("settings", this.handleWrite, this.evtOpts.CONFIG); // protecting everybody
+     // Bulk Wiring
+     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
+@@ -106,8 +104,9 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
+   }
+   // Track Switching Wiring
+   protected wireCurrentChapter(): void {
+-    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
++    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
++    this.config.on("state.currentTime", this.onCurrentTimeState, this.evtOpts.CONFIG);
+   }
+   // ive Content Wiring
+   protected wireLive(): void {
+@@ -126,7 +125,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
+   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
+     if (e.resolved || !this.wired) return void (!e.resolved && e.resolve(this.name));
+     const chapter = this.config.settings.metadata.chapterInfo[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
+-    if (chapter) this.config.intent.currentTime = !this.autoChapters ? chapter.startTime : chapter.startTime + 0.001; // #FACADED: silenced intent actual op
++    if (chapter) (this.config.intent.currentTime = chapter.startTime), this.config.tick("intent.currentTime"), this.onCurrentTimeState(); // #FACADED: silenced intent actual op
+     this.ctlr.notify?.("chapter");
+     e.resolve(this.name);
+   }
+@@ -136,12 +135,14 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
+     e.resolve(this.name);
+   }
+   // Dog Feeders
+-  protected onCurrentTime(time = this.config.state.currentTime): void {
+-    if (this.autoChapters) return;
++  protected onCurrentTimeState(): void {
++    const time = this.config.state.currentTime;
++    if (time === this.lastTime) return;
+     const chapters = this.config.settings.metadata.chapterInfo;
+-    if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
+-    this.config.state.currentChapter = -1;
++    if (chapters.length) this.config.state.currentChapter = getMediaChapter(chapters, time);
++    this.lastTime = time;
+   }
++  private lastTime = -1;
+   protected onIsLiveStatus(v: boolean): void {
+     this.config.features.live = v;
+   }
+diff --git a/src/ts/techs/html5.ts b/src/ts/techs/html5.ts
+index 9bf4c9f..deeac0b 100644
+--- a/src/ts/techs/html5.ts
++++ b/src/ts/techs/html5.ts
+@@ -102,6 +102,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
+   }
+   protected wirePlaybackRate(): void {
+     this.el.addEventListener("ratechange", this.setRateChangeState, this.evtOpts.EL);
++    this.config.get("state.playbackRate", (v) => (this.wired ? this.el.playbackRate : v), { signal: this.signal }); // #VIRTUAL: reliable return value
+     this.config.on("intent.playbackRate", this.handlePlaybackRateIntent, this.evtOpts.CONFIG);
+   }
+   // --- Presentation Modes Wiring ---
+@@ -197,11 +198,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
+   protected get alienTextTrack(): TextTrack | null {
+     return Array.prototype.find.call(this.el.textTracks, (t) => t.mode === "showing") || null;
+   }
+-  protected chapterTrack: TextTrack | null = null;
+-  protected wireChapterCue(track: TextTrack): void {
+-    if (this.chapterTrack && this.chapterTrack !== track) this.chapterTrack.removeEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL);
+-    (this.chapterTrack = track).addEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL), this.handleChapterCueChange({ target: track });
+-  }
++  // --- Settings Wiring ---
+   // --- Settings Wiring ---
+   protected wireDefaultMuted(): void {
+     this.config.on("settings.defaultMuted", this.handleDefaultMutedSetting, this.evtOpts.CONFIG);
+@@ -433,9 +430,9 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
+   }
+   protected handleChaptersStatus(list = this.el.textTracks): void {
+     const track = Array.prototype.find.call(list, (t: TextTrack) => t.kind === "chapters") as TextTrack | undefined;
+-    if (!track) return void (this.autoChapters = false);
+-    const extract = (_?: any, meta = this.config.settings.metadata) => meta.allowMediaOverride && track.cues?.length && ((meta.chapterInfo = inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] })))), (this.autoChapters = true));
+-    track.mode === "disabled" && (track.mode = "hidden"), extract(), this.wireChapterCue(track);
++    if (!track) return;
++    const extract = (_?: any, meta = this.config.settings.metadata) => meta.allowMediaOverride && track.cues?.length && (meta.chapterInfo = inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] }))));
++    track.mode === "disabled" && (track.mode = "hidden"), extract();
+     if (track.cues?.length) return;
+     const dTrack = Array.prototype.find.call(this.el.querySelectorAll("track"), (t: HTMLTrackElement) => t.track === track);
+     dTrack ? dTrack.addEventListener("load", extract, this.evtOpts.EL) : track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true });
+@@ -443,9 +440,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
+   protected handleActiveCuesChange(e?: globalThis.Event | { target?: TextTrack }, strict = false, track = e?.target as TextTrack | null): void {
+     if (!strict || (track && getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack)) force(() => (this.config.status.activeCues = track?.activeCues || null)); // incase of multiple tracks `cuechange`
+   }
+-  protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0]): void {
+-    if (this.autoChapters) this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo.findIndex((c) => c.startTime === cue.startTime) : -1;
+-  }
+   // --- Settings ---
+   protected handleDefaultMutedSetting(e: REvent<CtlrMedia, "settings.defaultMuted">): void {
+     if (this.el.defaultMuted !== e.value) this.el.defaultMuted = e.value; // #GUARD: no shots in the foot
+diff --git a/src/ts/techs/vimeo.ts b/src/ts/techs/vimeo.ts
+index c791042..8db49da 100644
+--- a/src/ts/techs/vimeo.ts
++++ b/src/ts/techs/vimeo.ts
+@@ -106,7 +106,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
+   }
+   // --- Track Switching Wiring ---
+   protected wireCurrentChapter(): void {
+-    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
++    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
+   }
+   protected wireCurrentTextTrack(): void {
+@@ -283,9 +283,6 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
+         return void (s.currentTextTrack = (st.textTracks as VimeoTextTrack[]).findIndex((t) => t.label === data.label && t.language === data.language && t.kind === data.kind));
+       case "cuechange":
+         return void (st.activeCues = data.cues || null);
+-      case "chapterchange":
+-        s.currentChapter = data.index - 1;
+-        break;
+       case "qualitychange":
+         s.currentLevel = (st.levels as VimeoQuality[]).findIndex((q) => q.id === data.quality);
+         this.host!.getQuality().then((q) => (s.autoLevel = q === "auto" || !q));
+@@ -316,7 +313,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
+     this.host.getPlayed().then((played) => (this.config.status.played = createTimeRanges(played)));
+     this.host.getBuffered().then((buffered) => (this.config.status.buffered = createTimeRanges(buffered)));
+     this.host.getSeekable().then((seekable) => (this.config.status.seekable = createTimeRanges(seekable)));
+-    this.host.getChapters().then((chapters, meta = this.config.settings.metadata) => meta.allowMediaOverride && chapters.length && ((meta.chapterInfo = inert(chapters)), (this.autoChapters = true))); // chapter "cuechange" over to u; truth
++    this.host.getChapters().then((chapters, meta = this.config.settings.metadata) => meta.allowMediaOverride && chapters.length && (meta.chapterInfo = inert(chapters))); // chapter "cuechange" over to u; truth
+     this.host.getTextTracks().then((tracks) => (this.config.status.textTracks = inert(tracks)));
+     this.host.getAudioTracks().then((tracks) => (this.config.status.audioTracks = inert(tracks)));
+     this.host.getQualities().then((qualities) => {
+@@ -338,7 +335,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
+   private posterSeq = 0;
+   protected destroyHost(): void {
+     if (!this.host) return;
+-    this.host.destroy(), (this.host = null), (this.config.status.hostReady = this.autoChapters = false);
++    this.host.destroy(), (this.host = null), (this.config.status.hostReady = false);
+     (this.element = this.hostDiv as HTMLIFrameElement).innerHTML = `<div class="tmg-host-content">${this.hostHTML}</div>`; // Reset to placeholder
+   }
+   protected override onDestroy(): void {
+diff --git a/src/ts/utils/time.ts b/src/ts/utils/time.ts
+index 1d81ce2..c8bf985 100644
+--- a/src/ts/utils/time.ts
++++ b/src/ts/utils/time.ts
+@@ -1,4 +1,5 @@
+ import { CtlrMedia } from "@defs/contract";
++import { ChapterInfo } from "@defs/generics";
+ import { capitalize, isArr, isNum } from "@t007/utils";
+ 
+ // Time Ranges
+@@ -14,6 +15,10 @@ export function getMediaProgress({ state: s, status: st }: CtlrMedia, time = s.c
+ export const getMediaTime = (media: CtlrMedia, percent: number, _min = getMediaMin(media)): number => (media.status.isLive ? _min! + percent * (getMediaMax(media) - _min!) : percent * media.status.duration);
+ export const getMediaMin = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? (st.canSeekLive ? st.seekable.start(0) : st.seekable.end(st.seekable.length - 1)) : s.currentTime) : 0); // live?, can't seek?, jump to edge
+ export const getMediaMax = ({ status: st, state: s }: Pick<CtlrMedia, "state" | "status">): number => (st.isLive ? (st.seekable.length ? st.seekable.end(st.seekable.length - 1) : s.currentTime) : st.duration);
++export const getMediaChapter = (chapters: ChapterInfo[], time: number): number => {
++  for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return i;
++  return -1;
++};
+ 
+ export function createTimeRanges(ranges?: [number, number][] | TimeRanges | ArrayLike<any>): TimeRanges {
+   if (ranges instanceof TimeRanges) return ranges;

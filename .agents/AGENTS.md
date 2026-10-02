@@ -269,6 +269,7 @@ Canonical example: `volume.ts` on `media.intent.volume` and `media.intent.muted`
 
 ## Do Not Break
 
+- NEVER use PowerShell or terminal commands to edit, modify, or replace file contents. ALWAYS use the native code editing tools so visual diffs are generated for review.
 - Never add `guardAllMethods` manually - `Controllable` constructor handles it
 - Never call `this.wire()` directly - `onSetup()` / `wonce` pattern owns it
 - Never listen without `{ signal: this.signal }` - memory leak

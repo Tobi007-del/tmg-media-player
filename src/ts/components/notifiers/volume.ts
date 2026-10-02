@@ -24,12 +24,12 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
   public override wire(): void {
     super.wire();
     // Plug Listeners
-    this.ctlr.plug("settings.volume")?.state.on("aptValue", this.handleVolumeState, { signal: this.signal });
+    this.ctlr.plug("settings.volume")?.state.on("aptValue", this.handleVolumeIntent, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.volume", this.handleVolumeState, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("intent.volume", this.handleVolumeIntent, { init: this.ctlr.flags.wired, signal: this.signal }); // #I/S EXCEPTION: state is not desire
   }
 
-  protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume"> | REvent<VolumeState, "aptValue">): void {
+  protected handleVolumeIntent({ value }: REvent<CtlrMedia, "intent.volume"> | REvent<VolumeState, "aptValue">): void {
     this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
   }
 }

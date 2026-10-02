@@ -102,6 +102,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected wirePlaybackRate(): void {
     this.el.addEventListener("ratechange", this.setRateChangeState, this.evtOpts.EL);
+    this.config.get("state.playbackRate", (v) => (this.wired ? this.el.playbackRate : v), { signal: this.signal }); // #VIRTUAL: reliable return value
     this.config.on("intent.playbackRate", this.handlePlaybackRateIntent, this.evtOpts.CONFIG);
   }
   // --- Presentation Modes Wiring ---
@@ -197,11 +198,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected get alienTextTrack(): TextTrack | null {
     return Array.prototype.find.call(this.el.textTracks, (t) => t.mode === "showing") || null;
   }
-  protected chapterTrack: TextTrack | null = null;
-  protected wireChapterCue(track: TextTrack): void {
-    if (this.chapterTrack && this.chapterTrack !== track) this.chapterTrack.removeEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL);
-    (this.chapterTrack = track).addEventListener("cuechange", this.handleChapterCueChange, this.evtOpts.EL), this.handleChapterCueChange({ target: track });
-  }
+  // --- Settings Wiring ---
   // --- Settings Wiring ---
   protected wireDefaultMuted(): void {
     this.config.on("settings.defaultMuted", this.handleDefaultMutedSetting, this.evtOpts.CONFIG);
@@ -433,18 +430,15 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleChaptersStatus(list = this.el.textTracks): void {
     const track = Array.prototype.find.call(list, (t: TextTrack) => t.kind === "chapters") as TextTrack | undefined;
-    if (!track) return void (this.autoChapters = false);
-    const extract = (_?: any, meta = this.config.settings.metadata) => meta.allowMediaOverride && track.cues?.length && ((meta.chapterInfo = inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] })))), (this.autoChapters = true));
-    track.mode === "disabled" && (track.mode = "hidden"), extract(), this.wireChapterCue(track);
+    if (!track) return;
+    const extract = (_?: any, meta = this.config.settings.metadata) => meta.allowMediaOverride && track.cues?.length && (meta.chapterInfo = inert(Array.from(track.cues, (cue: any) => ({ title: cue.text, startTime: cue.startTime, artwork: [] }))));
+    track.mode === "disabled" && (track.mode = "hidden"), extract();
     if (track.cues?.length) return;
     const dTrack = Array.prototype.find.call(this.el.querySelectorAll("track"), (t: HTMLTrackElement) => t.track === track);
     dTrack ? dTrack.addEventListener("load", extract, this.evtOpts.EL) : track.addEventListener("cuechange", extract, { ...this.evtOpts.EL, once: true });
   }
   protected handleActiveCuesChange(e?: globalThis.Event | { target?: TextTrack }, strict = false, track = e?.target as TextTrack | null): void {
     if (!strict || (track && getTrackIdx(this.el, "Text", track, this.config.status.textTracks) === this.config.state.currentTextTrack)) force(() => (this.config.status.activeCues = track?.activeCues || null)); // incase of multiple tracks `cuechange`
-  }
-  protected handleChapterCueChange(e?: globalThis.Event | { target?: TextTrack }, track = e?.target as TextTrack | null, cue = track?.activeCues?.[0]): void {
-    if (this.autoChapters) this.config.state.currentChapter = cue ? this.config.settings.metadata.chapterInfo.findIndex((c) => c.startTime === cue.startTime) : -1;
   }
   // --- Settings ---
   protected handleDefaultMutedSetting(e: REvent<CtlrMedia, "settings.defaultMuted">): void {

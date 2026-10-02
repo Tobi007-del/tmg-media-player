@@ -9,6 +9,7 @@ import { capitalize } from "@utils/str";
 import { isArr, isBool, isNum } from "@utils/obj";
 import { setTimeout } from "@utils/fn";
 import { MEDIA_STATE_BUILD, MEDIA_STATUS_BUILD } from "@consts/media";
+import { getMediaChapter } from "@utils/time";
 
 export interface TechConstructor<T extends BaseTech = BaseTech> {
   new (ctlr: Controller, features?: MediaFeatures): T;
@@ -34,14 +35,13 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   public readonly evtOpts: { EL: AddEventListenerOptions; CONFIG: ListenerOptionsTuple } = { EL: { capture: true, signal: this.signal }, CONFIG: { capture: true, signal: this.signal } };
   public readonly features!: MediaFeatures;
   public readonly wiredSet: Set<keyof MediaFeatures> = new Set(); // Tracking to avoid rewiring
-  public autoChapters: boolean = false; // turn on if handling `currentChapter`
 
   constructor(ctlr: Controller, features: MediaFeatures = {}) {
     ctlr.media.tech.wired && ctlr.media.tech.destroy?.(), ctlr.log(`Using ${new.target.techName} media technology.`); // kill if listening
     super(ctlr, ctlr.media); // Odekunle Olasubomi Abimbola Cornelius Adisun was here; Aug 14th 2026
     ctlr.config.courtesy = "TMG"; // tell them! tell them!! tell them!!! ~ Kendrick Lamar
     this.element = ctlr.media.element as any; // must reassign if not using original
-    if (this.caching) (this.cache = {}).features = ctlr.media.snapshot(false, ctlr.media.features);
+    if (this.caching) (this.cache = {} as any).features = ctlr.media.snapshot(false, ctlr.media.features);
     for (const key of Object.keys(ctlr.media.features)) ctlr.media.features[key as keyof MediaFeatures] = false;
     // prettier-ignore
     fanout(ctlr.media.features, (this.features = {
@@ -79,9 +79,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   public wire(): void {
     // Variables Assignments
     (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained if element was replaced in mount
-    // Config Watchers
-    this.config.watch("state.currentTime", this.onCurrentTime, this.evtOpts.CONFIG);
-    // ------ Listeners
+    // Config Listeners
     this.config.on("intent", this.handleWrite, this.evtOpts.CONFIG), this.config.on("settings", this.handleWrite, this.evtOpts.CONFIG); // protecting everybody
     // Bulk Wiring
     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
@@ -106,8 +104,9 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   }
   // Track Switching Wiring
   protected wireCurrentChapter(): void {
-    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term || c.artwork === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
+    this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
+    this.config.on("state.currentTime", this.onCurrentTimeState, this.evtOpts.CONFIG);
   }
   // ive Content Wiring
   protected wireLive(): void {
@@ -126,7 +125,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   protected handleCurrentChapterIntent(e: REvent<CtlrMedia, "intent.currentChapter">): void {
     if (e.resolved || !this.wired) return void (!e.resolved && e.resolve(this.name));
     const chapter = this.config.settings.metadata.chapterInfo[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
-    if (chapter) this.config.intent.currentTime = !this.autoChapters ? chapter.startTime : chapter.startTime + 0.001; // #FACADED: silenced intent actual op
+    if (chapter) (this.config.intent.currentTime = chapter.startTime), this.config.tick("intent.currentTime"), this.onCurrentTimeState(); // #FACADED: silenced intent actual op
     this.ctlr.notify?.("chapter");
     e.resolve(this.name);
   }
@@ -136,12 +135,14 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     e.resolve(this.name);
   }
   // Dog Feeders
-  protected onCurrentTime(time = this.config.state.currentTime): void {
-    if (this.autoChapters) return;
+  protected onCurrentTimeState(): void {
+    const time = this.config.state.currentTime;
+    if (time === this.lastTime) return;
     const chapters = this.config.settings.metadata.chapterInfo;
-    if (chapters?.length) for (let len = chapters.length, i = len - 1; i >= 0; i--) if (time >= chapters[i].startTime) return void (this.config.state.currentChapter = i);
-    this.config.state.currentChapter = -1;
+    if (chapters.length) this.config.state.currentChapter = getMediaChapter(chapters, time);
+    this.lastTime = time;
   }
+  private lastTime = -1;
   protected onIsLiveStatus(v: boolean): void {
     this.config.features.live = v;
   }

@@ -42,32 +42,31 @@ export class BrightnessPlug extends BaseSliderPlug<BrightnessConfig, BrightnessS
   }
 
   protected handleBrightnessIntent(e: REvent<CtlrMedia, "intent.brightness">, isNext = this.nextLevel === e.value): void {
-    if (e.resolved) return;
     if (isNext) this.nextLevel = null;
+    if (e.resolved) return;
     this.setValueState(e.value, isNext);
     this.media.state.brightness = this.settings.css.brightness = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
   protected handleDarkIntent(e: REvent<CtlrMedia, "intent.dark">, isNext = this.nextToggle === e.value): void {
-    if (e.resolved) return;
     if (isNext) this.nextToggle = null;
-    else if (this.media.state.dark === e.value && !!this.media.state.brightness) return e.resolve(this.name);
+    if (e.resolved) return;
+    if (!isNext && this.media.state.dark === e.value && !!this.media.state.brightness) return e.resolve(this.name);
     this.setToggleState(e.value, isNext);
     this.media.state.dark = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
   }
 
   protected handleKeyDark(): void {
-    this.toggle("auto");
-    this.media.features.brightness && this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessUp"), { signal: this.signal });
+    this.toggle("auto"), this.media.features.brightness && this.media.wonce("state.brightness", (v) => v && this.ctlr.notify?.("brightnessUp"), { signal: this.signal });
   }
   protected handleKeyBrightnessUp(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip);
   }
   protected handleKeyBrightnessDown(_: KeyboardEvent, mod: KeyMod): void {
     this.changeAptValue(-(this.ctlr.plug("settings.keys")?.getModded("brightness", mod, this.config.skip) ?? this.config.skip));
-    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.notify?.("brightnessDark") : this.media.wonce("state.brightness", (v) => this.ctlr.notify?.(!v ? "brightnessDark" : "brightnessDown"), { signal: this.signal });
+    if (!this.useAptValue && this.media.features.brightness) !this.media.state.brightness ? this.ctlr.notify?.("brightnessDark") : this.media.wonce("state.brightness", (v) => !v && this.ctlr.notify?.("brightnessDark"), { signal: this.signal });
   }
 }
 
