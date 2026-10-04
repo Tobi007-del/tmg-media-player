@@ -46,7 +46,7 @@ export interface ModesPictureInPictureConfig {
 
 export interface ModesCastConfig {
   disabled: boolean;
-  options: Partial<cast.framework.CastOptions>;
+  castOptions: Partial<cast.framework.CastOptions>;
 }
 
 export interface ModesCastState {

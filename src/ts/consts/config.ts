@@ -12,14 +12,16 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /^settings\.keys\.(rankedMatch|overrides|blocks|moddedlist)/,
       /^settings\.timeTravel\.(console|module)/,
       "settings.modes.pictureInPicture.floatingPlayer.css",
-      /\.(options|whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because root plugs (like volume) are already blocked above
+      /\.(whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because nodes (like volume) are already blocked above
     ],
     blacklist: [
       /^media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
       /^media\.intent\.(sources|tracks|xrInputSource)/,
       /^media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
-      "settings.sleepTimer.target",
       /^settings\.toasts\.reminders\.[^.]+\.(target|id)/,
+      "settings.sleepTimer.target",
+      /\.(on|before)[A-Z]\w+$/,
+      /\.(options)($|\.)/,
     ],
   },
   settings: {

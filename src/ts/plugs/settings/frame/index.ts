@@ -9,6 +9,7 @@ import { formatMediaTime } from "@utils/time";
 import { silence } from "sia-reactor/modules";
 import { setTimeout } from "@utils/fn";
 import { getMediaMin, getMediaMax } from "@utils/time";
+import { NIL } from "sia-reactor";
 
 export class FramePlug extends BasePlug<FrameConfig> {
   public static readonly plugName = "frame";
@@ -78,7 +79,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url), autoClose: this.config.toast.autoClose }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
   }
 
-  public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), secondsLimit: s = 25, saturation: sat = 12, brightness: bri = 40 } = {}): Promise<number | undefined> {
+  public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), searchDuration: s = this.config.goodTime.searchDuration, saturation: sat = this.config.goodTime.minSaturation, brightness: bri = this.config.goodTime.minBrightness } = NIL): Promise<number | undefined> {
     const end = clamp(getMediaMin(this.media), t + s, getMediaMax(this.media)),
       seq = ++this.findSeq;
     for (; t <= end; t += 0.333) {

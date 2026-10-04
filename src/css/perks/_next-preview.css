@@ -12,7 +12,7 @@
   max-width: 100%;
   max-height: 100%;
 }
-.tmg-media-next-preview-wrapper > p {
+.tmg-media-next-preview-wrapper > span {
   position: absolute;
   right: 0;
   bottom: 0;

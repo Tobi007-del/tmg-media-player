@@ -4,7 +4,7 @@ import { MEDIA_ITEM_BUILD } from "@consts/media";
 
 export const ADS_BUILD: AdsConfig = {
   rolls: [],
-  options: {
+  settings: {
     locale: "en",
     vpaidMode: 2, // INSECURE by default for maximum compatibility
     maxRedirects: 4,

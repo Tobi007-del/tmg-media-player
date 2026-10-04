@@ -1,11 +1,16 @@
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-body {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-body-text {
+  display: block;
   max-height: calc(var(--t007-toast-max-height) - var(--t007-toast-padding));
   overflow-y: auto;
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-body-text {
-  display: block;
+.t007-toast[id^="tmg-media-voice-helper-"] .t007-toast-body-text {
+  display: flex;
+  flex-direction: column;
 }
-.tmg-media-voice-routing .t007-toast[id^="tmg-media-voice-helper-"] .t007-toast-actions-wrapper {
+.t007-toast[id^="tmg-media-voice-router-"] .t007-toast-actions-wrapper {
+  flex-wrap: nowrap;
+}
+.t007-toast[id^="tmg-media-voice-helper-"] .t007-toast-actions-wrapper {
   flex-shrink: 0;
   width: calc(var(--t007-toast-unit) * 3.1);
 }
@@ -14,24 +19,32 @@
   padding-block: calc(var(--t007-toast-unit) / 3.25);
   line-height: 1;
 }
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="×"] {
+  font-size: 110%;
+  font-weight: 600;
+}
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button:is([data-action="‹"], [data-action="›"]) {
   font-size: 120%;
+  font-weight: 900;
 }
-.tmg-media-voice-sticky-crumb {
-  position: sticky;
-  top: calc(var(--t007-toast-unit) / -3.25);
+.tmg-media-voice-crumb-wrap {
+  line-height: 0.75;
   border-bottom: 1px solid rgb(from currentColor r g b / 0.1);
-  z-index: 1;
+}
+.tmg-media-voice-content {
+  overflow-y: auto;
+}
+.tmg-media-voice-content:not(:has(> small)) {
+  margin-top: calc(var(--t007-toast-unit) / 3.25);
 }
 .tmg-media-voice-input-wrap {
   display: flex;
   gap: calc(var(--t007-toast-unit) / 4.33);
-  margin-top: calc(var(--t007-toast-unit) / 3.25);
 }
 .tmg-media-voice-path-input,
-.tmg-media-voice-exact-input,
+.tmg-media-voice-word-input,
 .tmg-media-voice-path-submit,
-.tmg-media-voice-exact-submit {
+.tmg-media-voice-word-submit {
   padding: 0 2px;
   margin-top: 2px;
   color: inherit;
@@ -44,6 +57,6 @@
   width: calc(var(--t007-toast-unit) * 3.5);
   padding: 0 calc(var(--t007-toast-unit) / 6.5);
 }
-.tmg-media-voice-exact-input {
+.tmg-media-voice-word-input {
   flex: 1;
 }

@@ -53,7 +53,7 @@ export const MODES_MINIPLAYER_BUILD: Partial<ModesMiniplayerConfig> = {
 
 export const MODES_CAST_BUILD: Partial<ModesCastConfig> = {
   disabled: false,
-  options: {},
+  castOptions: {},
 };
 
 export const MODES_AIRPLAY_BUILD: Partial<ModesAirPlayConfig> = {

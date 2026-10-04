@@ -1,6 +1,6 @@
 {
   "name": "tmg-media-player",
-  "version": "0.0.48",
+  "version": "0.0.51",
   "description": "A feature-rich, Web media player implementation for The Movie Garden initiative",
   "author": "Oketade Oluwatobiloba <tobioketade007@gmail.com>",
   "license": "MIT",
@@ -87,6 +87,7 @@
     "build": "tsup --env.NODE_ENV production",
     "build:dev": "tsup",
     "build:super": "node scripts/build-super.js",
+    "build:schema": "node scripts/build-schema.js",
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1",
     "change": "changeset",
@@ -114,11 +115,11 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@t007/dialog": "^0.0.48",
-    "@t007/input": "^0.0.47",
-    "@t007/toast": "^0.0.53",
-    "@t007/utils": "^0.0.49",
-    "sia-reactor": "^0.0.51"
+    "@t007/dialog": "^0.0.49",
+    "@t007/input": "^0.0.48",
+    "@t007/toast": "^0.0.55",
+    "@t007/utils": "^0.0.50",
+    "sia-reactor": "^0.0.52"
   },
   "allowScripts": {
     "@parcel/watcher": true,

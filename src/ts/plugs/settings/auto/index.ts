@@ -62,7 +62,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       bodyHTML: `<span title="Play next ${type}" class="tmg-media-next-preview-wrapper tmg-media-flex-center">
         <button type="button" class="tmg-media-cover">${IconRegistry.get("play", true)?.replace('class="', 'class="tmg-media-no-pointer ') || ""}</button>
         <video class="tmg-media-next-preview tmg-media-no-pointer" poster="${m.intent.poster || m.settings.metadata.artwork?.[0]?.src || window.TMG_MEDIA_ALT_IMG_SRC || ""}" src="${m.intent.src || ""}" muted playsinline webkit-playsinline preload="metadata"></video>
-        <p>${this.ctlr.plug("settings.time")?.toTimeText(NaN)}</p>
+        <span>${this.ctlr.plug("settings.time")?.toTimeText(NaN)}</span>
       </span>
       <span class="tmg-media-next-info">
         <p class="tmg-media-next-meta">Next ${capitalize(type)} in <span class="tmg-media-next-countdown">${count}</span></p>${m.settings.metadata.title ? `<p class="tmg-media-next-title">${m.settings.metadata.title}</p>` : ""}${m.settings.metadata.artist ? `<p class="tmg-media-next-artist">${m.settings.metadata.artist}</p>` : ""}

@@ -30,7 +30,7 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
   }
 
   protected handleBrightnessIntent({ value }: REvent<CtlrMedia, "intent.brightness"> | REvent<BrightnessState, "aptValue">): void {
-    this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
+    this.content.innerHTML = `${value}% ${value > 100 ? `<b style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</b>` : ""}`.trim();
   }
 }
 

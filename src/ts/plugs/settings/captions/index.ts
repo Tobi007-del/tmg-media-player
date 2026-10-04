@@ -75,7 +75,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     if (e.resolved || !this.media.features.activeCues) return void (!e.resolved && e.reject(this.name)); // this ain't no mega cue lib
     const handle = (iidx = this.media.intent.currentTextTrack) => {
       // prettier-ignore
-      if (e.value && this.media.status.textTracks.length && idx === -1) silence(() => (this.media.intent.currentTextTrack = iidx !== -1 ? iidx : this.isNative ? Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default), this.media.status.textTracks)) : 0)); // #BULLET-PROOF: should come clutch
+      if (e.value && this.media.status.textTracks.length && idx === -1) silence(() => (this.media.intent.currentTextTrack = this.shadowCurrentIndex = iidx !== -1 ? iidx : this.isNative ? Math.max(0, getTrackIdx(this.media.element, "Text", this.media.state.tracks.find((t) => t.default), this.media.status.textTracks)) : 0)); // #BULLET-PROOF: should come clutch
       this.media.state.textVisible = e.value;
     };
     this.ctlr.when("loadedMetadata", e, handle, this.signal);

@@ -42,12 +42,10 @@
 :is(.tmg-media-container:is([data-brightness-level="boost"], [data-brightness-level="high"]) .tmg-media-brightness-high-icon, .tmg-media-container[data-brightness-level="low"] .tmg-media-brightness-low-icon, .tmg-media-container[data-brightness-level="dark"] .tmg-media-brightness-dark-icon) {
   display: block;
 }
-.tmg-media-control-text-btn,
-.tmg-media-playback-rate-btn {
+.tmg-media-control-text-btn {
   gap: 0.5ch;
   min-height: var(--tmg-media-current-unit);
   white-space: pre;
-  font-variant-numeric: tabular-nums;
 }
 .tmg-media-playback-rate-btn {
   max-width: calc(var(--tmg-media-current-unit) * 2);

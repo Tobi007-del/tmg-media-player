@@ -36,6 +36,6 @@ export class VolumeSlider extends RangeInput<RangeInputConfig, RangeState> {
   protected handleVolumeMax({ value }: REvent<CtlrConfig, "settings.volume.max">): void {
     this.config.max = value;
     // prettier-ignore
-    this.config.divs = value > 100 ? [{ value: 0, label: "" }, { value: 100, label: `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` },] : [];
+    this.config.divs = value > 100 ? [{ value: 0, label: "" }, { value: 100, label: `<b style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</b>` },] : [];
   }
 }

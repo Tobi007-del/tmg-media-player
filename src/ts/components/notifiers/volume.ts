@@ -30,7 +30,7 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
   }
 
   protected handleVolumeIntent({ value }: REvent<CtlrMedia, "intent.volume"> | REvent<VolumeState, "aptValue">): void {
-    this.content.innerHTML = `${value}% ${value > 100 ? `<strong style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</strong>` : ""}`.trim();
+    this.content.innerHTML = `${value}% ${value > 100 ? `<b style="color: var(--tmg-media-range-track-boost-color, red); vertical-align: 4%;">↑</b>` : ""}`.trim();
   }
 }
 

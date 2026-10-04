@@ -106,7 +106,6 @@
   translate: -50% 0;
   color: var(--tmg-media-text-color);
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
   text-align: center;
   text-overflow: ellipsis;
   white-space: pre;
@@ -145,7 +144,7 @@ div.tmg-media-preview {
   position: absolute;
 }
 div.tmg-media-thumbnail {
-  background: var(--tmg-media-current-thumbnail-url) var(--tmg-media-current-thumbnail-background-position) / 100% 100% no-repeat, var(--tmg-media-disabled-background);
+  background: var(--tmg-media-current-thumbnail-url) var(--tmg-media-current-thumbnail-background-position) / 100% 100% no-repeat; /** too big to grey out **/
 }
 .tmg-host-container.tmg-media-inactive div:is(.tmg-media-thumbnail, .tmg-media-preview) {
   background: var(--tmg-media-image-background);

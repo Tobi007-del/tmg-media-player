@@ -3,7 +3,7 @@ import { Controller } from "@core/controller";
 import { syncToastConfig, getToastMenuInputs } from "../settings/toasts";
 import { capitalize, camelize, uncamelize } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
-import { getPath } from "sia-reactor/utils";
+import { getPath, mirror } from "sia-reactor/utils";
 import { isFunc, getBoolOrStr, isArr, parseUIOpt } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
 import { formatAction } from "@utils/keys";
@@ -19,7 +19,7 @@ const NAV_NODE_ID = (actionId: string, stepTag: string, path: string = "*") => (
 
 function buildPathNavNode(actionId: string, stepTag: string, path: string, root: any, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem {
   const label = path === "*" ? "Choose Key" : uncam(path.split(".").pop()!),
-    val = getPath(root, path as any);
+    val = path === "*" ? undefined : getPath(root, mirror(path));
   if (ctlr.isLogical(path, true, val, true)) {
     const type = isArr(val) ? "array" : typeof val,
       tempStep: ActionLogic = { path, fpath: path.split(".").map(uncam).join(" > "), op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
@@ -28,7 +28,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
       label,
       widget: "group",
       getValue: () => (path === "*" ? "Choose Key" : ""),
-      getTipHTML: () => `Path: <code>${tempStep.fpath}</code><br>Current value: <code>${type === "array" ? `[${val.join(", ")}]` : String(val)}</code>`,
+      getTipHTML: () => `Path: ${tempStep.fpath}<br>Current value: ${type === "array" ? `[${val.join(", ")}]` : String(val)}`,
       actions: [
         {
           id: "confirm",
@@ -111,13 +111,13 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
         match = typed ? childPaths.find((p) => p.split(".").pop()?.toLowerCase() === typed.toLowerCase()) : null;
       if (match) return void requestAnimationFrame(() => ctlr.plug("settings.panel")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
       const fullPath = path === "*" ? typed : `${path}.${typed}`,
-        val = ctlr.isLogical(fullPath, true, undefined, true) ? getPath(root, fullPath as any) : undefined,
+        val = ctlr.isLogical(fullPath, true, undefined, true) ? getPath(root, mirror(fullPath)) : undefined,
         id = NAV_NODE_ID(actionId, stepTag, fullPath),
         menu = ctlr.plug("settings.panel")?.menu;
       if (typed && val !== undefined && menu) !menu.getItem(id) && menu.register(buildPathNavNode(actionId, stepTag, fullPath, root, ctlr, onConfirm, existingStep)), requestAnimationFrame(() => menu.goTo(id), ctlr.signal);
     },
   };
-  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : ""), getTipHTML: () => (path === "*" ? "<code>media</code> controls the player (volume, fullscreen, etc.). <code>settings</code> controls configuration values." : `Drilling into <code>${path.split(".").map(uncam).join(" > ")}</code>, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
+  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : ""), getTipHTML: () => (path === "*" ? `Media controls the ${ctlr.media.type} (volume, fullscreen, etc.). Settings controls configuration values.` : `Drilling into ${path.split(".").map(uncam).join(" > ")}, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
 }
 
 const makeLogicNavTree = (actionId: string, stepTag: string, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem => buildPathNavNode(actionId, stepTag, "*", ctlr.logicRoot, ctlr, onConfirm, existingStep);

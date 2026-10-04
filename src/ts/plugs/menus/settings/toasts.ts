@@ -19,11 +19,11 @@ export const TOAST_FORM_INPUTS = [
   { name: "hideProgressBar", label: "Hide progress bar", type: "select", options: TOAST_BOOLEAN_OPTS },
   { name: "compact", label: "Compact view", type: "select", options: TOAST_BOOLEAN_OPTS },
   { name: "position", label: "Position", type: "select", options: toToastFormOpts(TOAST_UI_POSITIONS) },
-  { name: "autoClose", label: "Auto close (secs)", type: "number", helperText: { info: "Blank for Default, -1 for None" }, min: "-1" },
+  { name: "autoClose", label: "Auto close (secs)", type: "number", helperText: { info: "Blank for default, -1 for none" }, min: "-1", step: "any" },
 ] as const;
 
-export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v === "" ? undefined : v * 1000) : k === "icon" ? (v === "" ? false : v) : v === "" || v === "default" ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
-export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v === undefined || v === true ? "" : v / 1000) : k === "icon" && isBool(v) ? "" : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
+export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v == null ? undefined : v * 1000) : k === "icon" ? (v === "" ? false : v) : v === "" || v === "default" || v == null ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
+export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v == null || v === true ? "" : v / 1000) : k === "icon" && isBool(v) ? "" : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
 export const syncToastConfig = (val: any, target: any) => {
   for (const key in val) {
     const parsed = parseToastVal(val[key], key);
@@ -75,7 +75,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): S
               label: "Create reminder",
               widget: "input",
               getValue: () => "",
-              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true }, { name: "after", label: "After (mins)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", value: 0 }, { name: "actionId", label: "Action", value: "none", type: "select", options: getActionOpts(plug) as unknown as { option: string; value: string }[] }, ...TOAST_FORM_INPUTS],
+              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true }, { name: "after", label: "After (mins)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", step: "any", value: 0 }, { name: "actionId", label: "Action", value: "none", type: "select", options: getActionOpts(plug) as unknown as { option: string; value: string }[] }, ...TOAST_FORM_INPUTS],
               onChange: (val: any, id = Date.now().toString()) => (plug.config.reminders[id] = { id, ...syncToastConfig(val, {}), message: val.message, after: val.after * 60000, actionId: val.actionId }),
             },
             {
@@ -83,7 +83,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): S
               label: "Edit reminder",
               widget: "input",
               getValue: () => "",
-              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true, value: () => plug.config.reminders[ctx.editId]?.message || "" }, { name: "after", label: "After (mins)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", value: () => (plug.config.reminders[ctx.editId]?.after ?? 0) / 60000 }, { name: "actionId", label: "Action", type: "select", options: getActionOpts(plug) as unknown as { option: string; value: string }[], value: () => plug.config.reminders[ctx.editId]?.actionId || "none" }, ...TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal((plug.config.reminders[ctx.editId] as any)?.[input.name], input.name) }))],
+              inputs: [{ name: "message", label: "Message", placeholder: "Take a break!", helperText: { info: "The message to display in the notification" }, required: true, value: () => plug.config.reminders[ctx.editId]?.message || "" }, { name: "after", label: "After (mins)", type: "number", helperText: { info: "0 for Immediate" }, required: true, min: "0", step: "any", value: () => (plug.config.reminders[ctx.editId]?.after ?? 0) / 60000 }, { name: "actionId", label: "Action", type: "select", options: getActionOpts(plug) as unknown as { option: string; value: string }[], value: () => plug.config.reminders[ctx.editId]?.actionId || "none" }, ...TOAST_FORM_INPUTS.map((input) => ({ ...input, value: () => getToastFormVal((plug.config.reminders[ctx.editId] as any)?.[input.name], input.name) }))],
               onChange: (val: any, existing = plug.config.reminders[ctx.editId]) => existing && (plug.config.reminders[ctx.editId] = { ...existing, ...syncToastConfig(val, {}), message: val.message, after: val.after * 60000, actionId: val.actionId }),
             },
           ],
@@ -98,7 +98,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): S
         { id: "toastsCloseOnClick", label: "Close on click", widget: "toggle", getValue: () => (plug.config.closeOnClick ? "On" : "Off"), onChange: (val: boolean) => (plug.config.closeOnClick = val), configPaths: ["settings.toasts.closeOnClick"] },
         { id: "toastsDragToClose", label: "Drag to close", widget: "toggle", getValue: () => TOAST_UI_DRAG_OPTIONS.find((o) => o.value === plug.config.dragToClose)?.display, onChange: (val: boolean) => (plug.config.dragToClose = val), configPaths: ["settings.toasts.dragToClose"] },
         { id: "toastsDragToCloseDir", label: "Drag direction", widget: "select", getValue: () => TOAST_UI_DRAG_DIRECTIONS.find((o) => o.value === plug.config.dragToCloseDir)?.display, getOptions: () => TOAST_UI_DRAG_DIRECTIONS, onChange: (val: string) => (plug.config.dragToCloseDir = val as typeof plug.config.dragToCloseDir), configPaths: ["settings.toasts.dragToCloseDir"] },
-        { id: "toastsAutoClose", label: "Auto close (secs)", widget: "input", type: "number", required: false, min: "-1", getValue: () => formatUITime(plug.config.autoClose), onChange: (val: any) => (plug.config.autoClose = val === -1 ? false : val * 1000), configPaths: ["settings.toasts.autoClose"], title: "Blank for Default, -1 for None", helperText: { info: "Blank for Default, -1 for None" }, inputs: [{ name: "secs", label: "secs", type: "number", min: "-1", value: () => (plug.config.autoClose === false ? -1 : plug.config.autoClose ? plug.config.autoClose / 1000 : "") }] },
+        { id: "toastsAutoClose", label: "Auto close (secs)", widget: "input", type: "number", required: false, min: "-1", step: "any", getValue: () => formatUITime(plug.config.autoClose), onChange: (val: any) => (plug.config.autoClose = val == -1 ? false : val == null ? undefined : val * 1000), configPaths: ["settings.toasts.autoClose"], title: "Blank for default, -1 for none", helperText: { info: "Blank for default, -1 for none" }, inputs: [{ name: "secs", label: "secs", type: "number", min: "-1", step: "any", value: (v = plug.config.autoClose) => (v === false ? -1 : v == null || v === true ? "" : v / 1000) }] },
         { id: "toastsLimit", label: "Max visible", widget: "range", getValue: () => String(plug.config.limit), getRange: () => ({ min: 1, max: 30, step: 1, formatTooltip: (v: number) => String(Math.round(v)) }), onChange: (val: number) => (plug.config.limit = val), configPaths: ["settings.toasts.limit"] },
         { id: "toastsNewestOnTop", label: "Newest on top", widget: "toggle", getValue: () => (plug.config.newestOnTop ? "On" : "Off"), onChange: (val: boolean) => (plug.config.newestOnTop = val), configPaths: ["settings.toasts.newestOnTop"] },
       ],

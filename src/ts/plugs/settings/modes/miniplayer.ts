@@ -95,7 +95,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(top)), (this.lastMiniplayerPtrX = clientX), (this.lastMiniplayerPtrY = clientY);
     (this.nextMiniplayerX = this.settings.css.currentMiniplayerX as string), (this.nextMiniplayerY = this.settings.css.currentMiniplayerY as string), (this.wildMiniplayerX = this.nextMiniplayerX), (this.wildMiniplayerY = this.nextMiniplayerY);
     document.addEventListener("mousemove", this.handleDragging, { signal: this.signal }), document.addEventListener("touchmove", this.handleDragging, { passive: false, signal: this.signal });
-    for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"]) document.addEventListener(type, this.handleDragEnd, { signal: this.signal });
+    for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"] as const) document.addEventListener(type, this.handleDragEnd, { signal: this.signal });
     this.media.container.style.setProperty("transition", "none", "important");
   }
 
@@ -126,7 +126,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.media.container.style.setProperty("left", this.wildMiniplayerX, "important"), this.media.container.style.setProperty("top", this.wildMiniplayerY, "important"), this.media.container.style.removeProperty("transform");
     setTimeout(() => ((this.settings.css.currentMiniplayerX = this.nextMiniplayerX), (this.settings.css.currentMiniplayerY = this.nextMiniplayerY), ["transition", "left", "top"].forEach((prop) => this.media.container.style.removeProperty(prop))), 0, this.signal);
     document.removeEventListener("mousemove", this.handleDragging), document.removeEventListener("touchmove", this.handleDragging);
-    for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"]) document.removeEventListener(type, this.handleDragEnd);
+    for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"] as const) document.removeEventListener(type, this.handleDragEnd);
   }
 
   // ---- Resize ----
@@ -144,8 +144,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     const { left, top } = getComputedStyle(this.media.container),
       { width, height } = this.ctlr.state.dimensions.container;
     (this.resizeDir = dir), (this.resizeStartX = e.clientX), (this.resizeStartY = e.clientY), (this.resizeStartW = width), (this.resizeStartH = height), (this.resizeStartLeft = parseFloat(left)), (this.resizeStartTop = parseFloat(top));
-    document.addEventListener("pointermove", this.handleResizing, { signal: this.signal });
-    document.addEventListener("pointerup", this.handleResizeEnd, { signal: this.signal });
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) document.addEventListener(evt, evt === "pointermove" ? this.handleResizing : this.handleResizeEnd, { signal: this.signal });
   }
 
   protected handleResizing(e: PointerEvent): void {
@@ -168,8 +167,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected handleResizeEnd(): void {
     this.ctlr.cancelRAFLoop("miniplayerResizing");
     this.resizeDir = this.prevWH = null;
-    document.removeEventListener("pointermove", this.handleResizing);
-    document.removeEventListener("pointerup", this.handleResizeEnd);
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) document.removeEventListener(evt, evt === "pointermove" ? this.handleResizing : this.handleResizeEnd);
   }
 
   protected injectResizers(): void {

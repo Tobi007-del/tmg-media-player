@@ -286,6 +286,8 @@ video.addEventListener("tmgwire", (e) => {
   const ctlr = e.detail.ctlr; // The payload contains the controller instance!
   console.log("TMG is wired and ready!");
   
+  ctlr.config; // your configurations now live here and are fully reactive
+  ctlr.media; // media is extracted from the build to live here standalone
   ctlr.media.intent.volume = 50; // Safe to use the reactor now
 });
 ```
@@ -321,7 +323,7 @@ The `ctlr.media` object is the unified API for interacting with the player, rega
 
 Because S.I.A. intercepts changes *before* they settle, plugins can effortlessly reject, modify, or clamp intents. For example, if you send `media.intent.volume = 200`, the Volume Limits plugin intercepts it during the capture phase and clamps the final state down to `100` before the UI ever renders it.
 
-> **Note:** For the full list of supported properties across all spheres, always refer directly to the source of truth: [`contract.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/types/contract.d.ts).
+> **Note:** For the full list of supported properties across all spheres, always refer directly to the source of truth: [`contract.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/types/contract.d.ts) (for the `.media` object) and [`schema.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/schema-reference.d.ts) (for `.config` and `.state`).
 
 ### Using the Reactor (State Router)
 
@@ -366,19 +368,23 @@ For more advanced selector logic across multiple paths, you can use `useSelector
 
 TMG is infinitely extensible. Features like Volume, Playback Rate, Captions, and even the core Control Panel are just **Plugs**. 
 
-You can add your own custom logic by writing a Plug and registering it before the player initializes.
+You can add your own custom logic by writing a Plug and registering it before the player initializes. Reference [`BasePlug`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/plugs/base/index.ts) for more info.
 
 ```ts
 import { BasePlug, PlugRegistry } from "tmg-media-player";
 
 class MyCustomPlug extends BasePlug {
-  public static readonly plugName = "myCustomPlug";
+  public static readonly plugName = "custom";
+  public static readonly isMain = false; // main live on `config` root otherwise `settings` branch
+  public static readonly BUILD = {}; // your build will be attached to default config at registration
   
   public override wire() {
-    // Listen to media state
+    // Ctlr Media Listeners
     this.media.on("state.currentTime", (e) => {
       if (e.value > 60) console.log("Past 1 minute!");
     }, { signal: this.signal }); // Automatically cleans up when destroyed
+    // Post Wiring
+    super.wire(); // registers menu if applicable
   }
 }
 
@@ -389,7 +395,7 @@ You can access any running plug dynamically from the controller to access its in
 
 ```js
 // Access the underlying Captions plug
-const captionsPlug = controller.plug("captions");
+const captionsPlug = controller.plug("settings.captions"); // paths are the map keys and this isn't main hence the `settings.` prefix
 captionsPlug.settings.css.currentCaptionsY = "50px"; 
 ```
 

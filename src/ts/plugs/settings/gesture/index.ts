@@ -52,8 +52,8 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   protected handleAnyClick(): void {
     this.ctlr.plug("settings.overlay")?.delay();
   }
-  protected handleRightClick(e: MouseEvent): void {
-    e.preventDefault(), e.stopImmediatePropagation(), !IS_MOBILE && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
+  protected handleRightClick(e: PointerEvent): void {
+    e.preventDefault(), e.stopImmediatePropagation(), (e.pointerType ? e.pointerType === "mouse" : !IS_MOBILE) && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
   }
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return;

@@ -1,6 +1,6 @@
 import { BasePlug } from "@plugs/base";
 import type { Controller } from "@core/controller";
-import { force, getPath, setPath } from "sia-reactor/utils";
+import { force, getPath, setPath, mirror } from "sia-reactor/utils";
 import { limited } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
@@ -106,7 +106,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const state = (await navigator.permissions?.query({ name: "microphone" }).catch(() => null))?.state ?? "prompt";
     if (state === "granted" || state === "denied") return state;
     // prettier-ignore
-    return t007.toast?.dismiss(this.TIDS.HELPER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.info("Voice control requires mic access", { id: this.TIDS.ROUTER, signal: this.signal, ...this.config.toasts.router, autoClose: false, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.TIDS.ROUTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions() }, onClose: (_, user) => res(user ? "cancelled" : "nuked") }) || res("nuked"))())); // #EXTRA-MILE: doing the most with the least
+    return t007.toast?.dismiss(this.TIDS.HELPER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.info("Voice control requires mic access", { id: this.TIDS.ROUTER, signal: this.signal, ...this.config.toasts.router, autoClose: false, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.TIDS.ROUTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions(false) }, onClose: (_, user) => res(user ? "cancelled" : "nuked") }) || res("nuked"))())); // #EXTRA-MILE: doing the most with the least
   }
   public async start(): Promise<void> {
     let state = this.config.muted ? "granted" : await this.request();
@@ -137,7 +137,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     for (const act of Object.values(this.ctlr.actions.entries)) {
       const cmd = this.config.commands[act.id];
       if (!cmd?.length || (act.id !== "voiceWake" && !this.config.process.allowCommands) || this.snublist.includes(act.id) || (act.voice?.stage || this.config.process.stage.value) !== stage || (act.id === "voiceWake" && this.state.routing)) continue;
-      if (((act.voice?.match || this.config.process.match.value) === "chunk" ? fuzzyChunkMatch : fuzzyBlobMatch)(cmd, transcript, this.config.process.accuracy)) return this.ctlr.perform(act.id) && this.view?.success(`Triggered <i>${act.label ?? capitalize(uncamelize(act.id))}</i>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), true;
+      if (((act.voice?.match || this.config.process.match.value) === "chunk" ? fuzzyChunkMatch : fuzzyBlobMatch)(cmd, transcript, this.config.process.accuracy)) return this.ctlr.perform(act.id) && this.view?.success(`Triggered <b>${act.label ?? capitalize(uncamelize(act.id))}</b>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), true;
     }
     return false;
   }
@@ -161,14 +161,14 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       if (match && this.ctlr.isLogical(this.goTo(match), true)) return this.execute(transcript, match, true), true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
       else if (isSubmit) {
         const path = this.state.ctx === "*" ? transcript : `${this.state.ctx}.${camelize(transcript)}`,
-          val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, path) : undefined;
+          val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, mirror(path)) : undefined;
         if (val !== undefined && this.ctlr.isLogical(this.goTo(path), true, val)) return this.execute(transcript, path, true), true; // Hey dev or explorer, here u go!
       }
     } else if (this.execute(transcript, undefined, false)) return true;
     // --- 4. POST-ROUTE STAGE ---
     return this.trigger(transcript, "post-route");
   }
-  protected parse(transcript: string, path = this.state.ctx, isNav = false, value = getPath(this.ctlr.logicRoot as any, path as any), type = isArr(value) ? "array" : typeof value): any {
+  protected parse(transcript: string, path = this.state.ctx, isNav = false, value = getPath(this.ctlr.logicRoot as any, mirror(path)), type = isArr(value) ? "array" : typeof value): any {
     if (type === "boolean") return isNav && this.config.routing.autoToggles ? !value : fuzzyChunkMatch(this.config.commands.voiceToggleOn, transcript, this.config.process.accuracy) ? true : fuzzyChunkMatch(this.config.commands.voiceToggleOff, transcript, this.config.process.accuracy) ? false : null;
     if (isNav) return null;
     if (type === "number") {
@@ -180,38 +180,38 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected execute(transcript: string, path = this.state.ctx, isNav = false, isSubmit = false, value = this.parse(transcript, path, isNav), type = isArr(value) ? "array" : typeof value): boolean {
     if (value === null) return false;
     if ((this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")) && !isSubmit) {
-      const input = this.container?.querySelector<HTMLInputElement>(clame("exact-input"));
+      const input = this.container?.querySelector<HTMLInputElement>(clame("word-input"));
       if (input) input.value = type === "array" ? value.join(", ") : String(value);
       return this.view?.update(this.TIDS.ROUTER, { render: transcript || String(value), ...this.getRouterOptions(false) }), true;
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`<i>${path.split(".").map(uncam).join(" > ")}</i> -> ${isArr(value) ? `[${value.join(", ")}]` : value}`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
+    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${path.split(".").map(uncam).join(" > ")} -> ${isArr(value) ? `[${value.join(", ")}]` : value}`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
   }
-  protected submit(render = this.container?.querySelector<HTMLInputElement>(clame("exact-input"))?.value.trim(), process = false): void {
+  protected submit(render = this.container?.querySelector<HTMLInputElement>(clame("word-input"))?.value.trim(), process = false): void {
     if (render) this.view?.update(this.TIDS.ROUTER, { render, ...this.getRouterOptions(false) }), !process ? this.execute(render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
   }
   protected predict(): void {
-    const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-sticky-crumb">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small><i style="${active ? "font-weight: bold;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, true)}</i></small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
-      actions: Record<string, () => void> = {};
+    const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-crumb-wrap">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small style="${active ? "font-weight: 500;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, true)}</small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
+      actions: ToastOptions["actions"] = {};
     if (this.media.features.voiceItems) {
-      actions[`<span title='Reset Ctx${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxClear, this.config.commands.voiceCtxClear)}'>↻</span>`] = () => this.clearCtx(false);
-      actions[`<span title='Go Back${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxPrevious, this.config.commands.voiceCtxPrevious)}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
-      actions[`<span title='Go Forward${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxNext, this.config.commands.voiceCtxNext)}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
+      actions[`<span title='Clear context${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxClear, this.config.commands.voiceCtxClear)}'>×</span>`] = () => this.clearCtx(false);
+      actions[`<span title='Go back${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxPrevious, this.config.commands.voiceCtxPrevious)}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
+      actions[`<span title='Go forward${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxNext, this.config.commands.voiceCtxNext)}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
     }
     if (this.ctlr.isLogical(this.state.ctx, true)) {
-      const value = getPath(this.ctlr.logicRoot as any, this.state.ctx as any),
+      const value = getPath(this.ctlr.logicRoot as any, mirror(this.state.ctx)),
         type = isArr(value) ? "array" : typeof value,
         showInput = this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type !== "boolean"),
         showSubmit = this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")),
         display = type === "array" ? value.join(", ") : value ?? "",
-        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-exact-input" placeholder="${display || "Type value..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings.keys.shortcuts.voiceSubmit, this.config.commands.voiceSubmit)}' class="tmg-media-voice-exact-submit">↳</button>` : ""}</div>` : "",
+        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-word-input" placeholder="${display || "Type value..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings.keys.shortcuts.voiceSubmit, this.config.commands.voiceSubmit)}' class="tmg-media-voice-word-submit">↳</button>` : ""}</div>` : "",
         // prettier-ignore
-        hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}) ${inputHtml}` : type === "array" ? `comma-separated values ${inputHtml}` : `the exact text ${inputHtml}`;
-      return void this.view?.(`${crumbHtml}Try saying ${hints}`, this.getHelperOptions(actions));
+        hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}):</small> ${inputHtml}` : type === "array" ? `comma-separated values:</small> ${inputHtml}` : `the exact text:</small> ${inputHtml}`;
+      return void this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${showInput ? '<small style="font-weight: 500;">' : ""}Try ${this.config.muted ? (showInput ? "typing" : IS_MOBILE ? "tapping" : "clicking") : "saying"} ${hints}</div>`, this.getHelperOptions(actions));
     }
     const paths = this.ctlr.getLogicPaths(this.state.ctx);
     if (!paths.length) return;
     const inputHtml = `<input name="voice_path" type="text" class="tmg-media-voice-path-input" placeholder="...text"/>`;
-    this.view?.(`${crumbHtml}<small style="font-weight: 500;"><i>Try these:</i></small><br>${inputHtml} • ${paths.map((p) => this.linked(uncam(p.split(".").pop()!))).join(" • ")}`, this.getHelperOptions(actions));
+    this.view?.(`${crumbHtml}<div class="tmg-media-voice-content"><small style="font-weight: 500;">Try ${this.config.muted ? (IS_MOBILE ? "tapping" : "clicking") : "saying"} any of these:</small><br>${inputHtml} • ${paths.map((p) => this.linked(uncam(p.split(".").pop()!))).join(" • ")}</div>`, this.getHelperOptions(actions));
   }
 
   protected linked(text: string, value = text.toLowerCase(), isGoto = false): string {
@@ -230,7 +230,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected handleInput(e: Event, t = e.target as HTMLInputElement, isEnter = e.type === "keydown" && (e as KeyboardEvent).key === "Enter", isClick = e.type === "click"): void {
     if (!t?.tagName) return;
     this.stayWoke(e);
-    if ((isEnter && t.matches(clame("exact-input"))) || (isClick && t.matches(clame("exact-submit")))) e.preventDefault(), e.stopPropagation(), this.submit(t.closest(clame("input-wrap"))?.querySelector<HTMLInputElement>(clame("exact-input"))?.value);
+    if ((isEnter && t.matches(clame("word-input"))) || (isClick && t.matches(clame("word-submit")))) e.preventDefault(), e.stopPropagation(), this.submit(t.closest(clame("input-wrap"))?.querySelector<HTMLInputElement>(clame("word-input"))?.value);
     else if (isEnter && t.matches(clame("path-input"))) e.preventDefault(), e.stopPropagation(), this.submit(t.value, true);
   }
   public snooze(): void {
@@ -260,16 +260,16 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     (this.history = direct ? ["*", "media", "media.intent"] : ["*"]), this.goTo(direct ? "media.intent" : "*", true);
   }
 
-  protected getHelperOptions(actions: ToastOptions["actions"]): ToastOptions {
+  protected getHelperOptions(actions?: ToastOptions["actions"]): ToastOptions {
     return { id: this.TIDS.HELPER, actions, onClose: (_, user) => user && (this.config.active.value = "passive"), signal: this.signal, ...this.config.toasts.helper };
   }
   protected getRouterOptions(full = true): ToastOptions {
     return full ? { id: this.TIDS.ROUTER, actions: this.getRouterActions(), onClose: (_, user) => user && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
   }
-  protected getRouterActions(): Record<string, () => void> {
-    return { [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
+  protected getRouterActions(full = true): ToastOptions["actions"] {
+    return { ...(full && this.state.routing && { [`<span title='Open Actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
-  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ") : `"${this.linked(this.config.commands.voiceWake)}"`} to wake me up!` : "a path or command!"}`): string {
+  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ") : `"${this.linked(this.config.commands.voiceWake)}"`} to wake me up` : this.config.muted ? "or type instead" : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;
   }
   protected get container() {

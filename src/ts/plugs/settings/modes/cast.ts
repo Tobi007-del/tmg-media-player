@@ -98,7 +98,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
   protected setupAPI(): void {
     if (this.state.APIReady || !chrome?.cast) return;
     this.ctx = cast.framework.CastContext.getInstance();
-    this.ctx.setOptions(Object.assign({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED }, this.config.options));
+    this.ctx.setOptions(Object.assign({ receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID, autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED }, this.config.castOptions));
     this.ctx.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this.syncFeatures);
     this.remotePlyr = new cast.framework.RemotePlayer();
     this.remoteCtlr = new cast.framework.RemotePlayerController(this.remotePlyr);

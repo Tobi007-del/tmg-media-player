@@ -31,7 +31,7 @@ export class SubMenuPanel extends BaseMenuPanel {
 
   private buildShell(): void {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
-    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ Double click→Restore scroll", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
+    this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ Double click→with history", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
     addSafeClicks(
       this.backBtn,
@@ -59,7 +59,7 @@ export class SubMenuPanel extends BaseMenuPanel {
   public load(item: SettingsMenuItem): void {
     this.headerLabel.textContent = item.label;
     if (this.item?.id === item.id) return void this.syncUI();
-    if (this.widget) this.widget.element?.remove(), this.widget.destroy();
+    if (this.widget) this.widget.element?.remove(), this.widget.destroy(), this.widget = null;
     this.item = item;
     const widget = WidgetRegistry.create(item, this.ctlr);
     if (!widget) return;

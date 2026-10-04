@@ -39,7 +39,7 @@ export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentS
     !this.plug?.state.visible && this.el.classList.remove("tmg-media-control-unlock");
   }
   public syncARIA(): void {
-    this.el.title = this.state.label = "Unlock Screen";
+    this.el.title = this.state.label = "Unlock screen";
     this.setBtnARIA();
   }
 }

@@ -1,5 +1,23 @@
 # tmg-media-player
 
+## 0.0.51
+
+### Patch Changes
+
+- Bug fixes
+
+## 0.0.50
+
+### Patch Changes
+
+- UI Optimizations
+
+## 0.0.49
+
+### Patch Changes
+
+- Used font variant numeric
+
 ## 0.0.48
 
 ### Patch Changes

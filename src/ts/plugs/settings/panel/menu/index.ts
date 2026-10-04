@@ -15,6 +15,7 @@ import "./widgets/range";
 import "./widgets/toggle";
 import "./widgets/color";
 import "./widgets/group";
+import { isPOJO } from "sia-reactor/utils";
 
 export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentState, HTMLElement> {
   public static readonly componentName = "SettingsMenu";
@@ -118,7 +119,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
 
-  public anchor?: HTMLElement | { x: number; y: number };
+  public anchor?: HTMLElement | { x: number; y: number } | null;
   private lastAnchorX = 0;
   private lastAnchorY = 0;
   private anchorIntervalId = -1;
@@ -134,9 +135,9 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (!preserveStack) this.navStack = [];
     if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
-    if (!this.isContext) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
+    if (!this.anchor || isPOJO(this.anchor)) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
     this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
-    this.media.container.classList.add("tmg-media-settings-menu"), this.el.classList.toggle("tmg-media-smenu-context", this.isContext);
+    this.media.container.classList.add("tmg-media-settings-menu"), this.el.classList.toggle("tmg-media-smenu-context", !this.anchor || isPOJO(this.anchor));
     initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
     initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, selector: `.tmg-media-smenu-panel-active ${MENU_FOCUS_SELECTOR}` });
   }
@@ -151,9 +152,6 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
   public get isOpen(): boolean {
     return this.menuOpen;
-  }
-  public get isContext(): boolean {
-    return !!this.anchor && !("getBoundingClientRect" in this.anchor);
   }
 
   private getSubPanel(depth: number): SubMenuPanel {
@@ -203,7 +201,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (!anchor && !this.menuOpen) return;
     const { top: cTop, left: cLeft, width: cWidth, height: cHeight, bottom: cBottom, right: cRight } = this.media.container.getBoundingClientRect(),
       menuWidth = this.el.offsetWidth || 320,
-      { top: aTop, right: aRight } = !anchor ? { top: cBottom - (this.ctlr.DOM.bottomControlsWrapper?.offsetHeight || this.safeMargin), right: cRight - this.safeMargin - 10 } : this.isContext ? { top: (anchor as any).y, right: (anchor as any).x + menuWidth - 10 } : (anchor as any).getBoundingClientRect(),
+      { top: aTop, right: aRight } = !anchor ? { top: cBottom - (this.ctlr.DOM.bottomControlsWrapper?.offsetHeight || this.safeMargin), right: cRight - this.safeMargin - 10 } : isPOJO(anchor) ? { top: (anchor as any).y, right: (anchor as any).x + menuWidth - 10 } : (anchor as any).getBoundingClientRect(),
       y = aTop - cTop;
     let xPos = aRight - cLeft - menuWidth + 10;
     if (xPos < this.safeMargin) xPos = this.safeMargin;

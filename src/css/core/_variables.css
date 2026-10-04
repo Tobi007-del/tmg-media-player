@@ -217,6 +217,7 @@
   --t007-toast-unit: calc(var(--tmg-media-current-unit) / 2);
   --t007-toast-width: calc(var(--t007-toast-unit) * 26.5);
   --t007-toast-min-height: calc(var(--t007-toast-unit) * 3.75);
+  --t007-toast-max-height: calc(var(--t007-toast-unit) * 7);
   --t007-toast-padding: calc(var(--t007-toast-unit) / 2);
   --t007-toast-image-width: calc(var(--t007-toast-unit) * 6.45);
   --t007-toast-image-height: calc(var(--t007-toast-unit) * 3.8);

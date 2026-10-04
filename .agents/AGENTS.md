@@ -287,6 +287,7 @@ Canonical example: `volume.ts` on `media.intent.volume` and `media.intent.muted`
 - **Semantic property naming**: if a property already lives on a typed class, don't repeat the class in the name. `PlaylistPlug.currentIndex` not `currentPlaylistIndex` — the class already provides the namespace.
 - **Imports in all files**: always import from `"@"` urls in `tsconfig.json`, `super` folder route is not for internal use.
 - **UI Punctuation**: Single-sentence UI text (tips, helper text, labels) gets NO period at the end. Multi-sentence UI text gets periods everywhere, including the last sentence.
+- **Bold vs Strong tags**: Use `<b>` strictly for visual highlighting of keywords, actionable words, or product names (does not add emphasis for screen readers). Use `<strong>` ONLY for semantic meaning like critical instructions, warnings, or urgent text.
 - **Source of Truth**: always use the current state of a file as the source of truth before editing. Do not rely on memory of previous file states to rewrite logic that might have been recently edited by the user.
 - **No em-dashes**: never use the em-dash character (—) in any written output — README files, comments, docs, UI text, or anywhere else. Rewrite the sentence to not need one. Use a colon, a comma, parentheses, or restructure the clause. A plain hyphen is not a substitute either — the rule is to write around it, not swap the glyph.
 

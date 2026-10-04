@@ -29,7 +29,7 @@ export class FullscreenLockButton extends BaseComponent<FullscreenLockConfig, Co
   }
 
   public syncARIA(): void {
-    this.el.title = this.state.label = "Lock Screen";
+    this.el.title = this.state.label = "Lock screen";
     this.setBtnARIA();
   }
 

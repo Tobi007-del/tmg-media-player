@@ -21,16 +21,15 @@ export function clampRGBBri([r, g, b]: RGB, m = 40): RGB {
 }
 
 // Dominant Color Detection
-export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement | { canvas: HTMLCanvasElement; width: number; height: number }, format: "hex", raw?: false): Promise<string | null>;
-export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement | { canvas: HTMLCanvasElement; width: number; height: number }, format: "rgb", raw: true): Promise<RGB | null>;
-export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement | { canvas: HTMLCanvasElement; width: number; height: number }, format?: "rgb", raw?: false): Promise<string | null>;
-export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement | { canvas: HTMLCanvasElement; width: number; height: number }, format: "rgb" | "hex" = "hex", raw = false): Promise<string | RGB | null> {
+export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement, format: "hex", raw?: false): Promise<string | null>;
+export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement, format: "rgb", raw: true): Promise<RGB | null>;
+export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement, format?: "rgb", raw?: false): Promise<string | null>;
+export async function getDominantColor(src: string | HTMLImageElement | HTMLCanvasElement, format: "rgb" | "hex" = "hex", raw = false): Promise<string | RGB | null> {
   if (isStr(src))
     src = await new Promise<HTMLImageElement>((res, rej) => {
       const i = createEl("img", { crossOrigin: "anonymous", src: String(src), onload: () => res(i), onerror: () => rej(new Error(`Image load error: ${src}`)) });
     });
-  if ((src as { canvas?: HTMLCanvasElement })?.canvas) src = (src as { canvas: HTMLCanvasElement }).canvas;
-  const s = Math.min(64, (src as HTMLImageElement | HTMLCanvasElement).width, (src as HTMLImageElement | HTMLCanvasElement).height),
+  const s = Math.min(64, src.width, src.height),
     c = createEl("canvas", { width: s, height: s }),
     x = c.getContext("2d", { willReadFrequently: true, alpha: false });
   let d: Uint8ClampedArray | null | undefined = null;

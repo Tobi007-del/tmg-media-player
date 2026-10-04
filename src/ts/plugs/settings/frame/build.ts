@@ -7,4 +7,9 @@ export const FRAME_BUILD: Partial<FrameConfig> = {
     icon: false,
     autoClose: 15000,
   },
+  goodTime: {
+    searchDuration: 25,
+    minSaturation: 12,
+    minBrightness: 40,
+  },
 };

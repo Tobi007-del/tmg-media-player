@@ -51,7 +51,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.el.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal });
     this.el.addEventListener("mouseover", () => (this.rect = this.el.getBoundingClientRect()), { signal: this.signal });
     this.el.addEventListener("mousemove", this.handleInput, { signal: this.signal });
-    for (const e of ["mouseleave", "touchend", "touchcancel"]) this.el.addEventListener(e, this.stopPreviewing, { signal: this.signal });
+    for (const evt of ["mouseleave", "touchend", "touchcancel"] as const) this.el.addEventListener(evt, () => setTimeout(this.stopPreviewing, 0, this.signal), { signal: this.signal }); // (mouse|pointer)move can fire after touchend
     // State Watchers
     this.state.watch("scrubbing", this.useTx, { signal: this.signal });
     // ----- Listeners
@@ -96,9 +96,8 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.el.setPointerCapture(e.pointerId);
     const s = getWindow(this.el).getComputedStyle(this.el);
     (this.isVertical = s.writingMode.includes("vertical")), (this.isRTL = s.direction === "rtl");
-    (this.rect = this.el.getBoundingClientRect()), (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currentThumbPos = this.getValuePos());
-    getWindow(this.el).addEventListener("pointermove", this.handleInput, { signal: this.signal }), this.handleInput(e);
-    getWindow(this.el).addEventListener("pointerup", this.stopScrubbing, { signal: this.signal }), getWindow(this.el).addEventListener("pointercancel", this.stopScrubbing, { signal: this.signal });
+    (this.rect = this.el.getBoundingClientRect()), (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currentThumbPos = this.getValuePos()), this.handleInput(e);
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) getWindow(this.el).addEventListener(evt, evt === "pointermove" ? this.handleInput : this.stopScrubbing, { signal: this.signal });
   }
 
   protected stopScrubbing(): void {
@@ -108,8 +107,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.scrub(this.getPosValue(this.state.cancelScrub ? this.lastThumbPos : this.currentThumbPos), this.state.cancelScrub);
     this.allowScrubbing(), this.stopPreviewing();
     this.stallCancelScrub = true;
-    getWindow(this.el).removeEventListener("pointermove", this.handleInput);
-    getWindow(this.el).removeEventListener("pointerup", this.stopScrubbing), getWindow(this.el).removeEventListener("pointercancel", this.stopScrubbing);
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) getWindow(this.el).removeEventListener(evt, evt === "pointermove" ? this.handleInput : this.stopScrubbing);
   }
   protected stopPreviewing(): void {
     if (!this.state.previewing) return;

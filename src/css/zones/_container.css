@@ -2,9 +2,6 @@
   position: relative;
   width: fit-content;
   margin: auto;
-  color: var(--tmg-media-text-color);
-  font-family: var(--tmg-media-font-family);
-  text-align: left;
   border-radius: var(--tmg-media-border-radius);
   isolation: isolate;
   contain: layout style;
@@ -80,7 +77,7 @@ body:has(.tmg-host-container.tmg-media-fullscreen:not(:fullscreen)) {
   width: fit-content;
   height: fit-content;
   z-index: 2147483647;
-  touch-action: none;
+  touch-action: pinch-zoom;
   transition: var(--tmg-media-motion-transition);
   animation: tmg-miniplayer-enter var(--tmg-media-slow-transition-time) var(--tmg-media-bounce-timing);
 }

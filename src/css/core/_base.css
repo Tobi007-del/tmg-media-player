@@ -1,13 +1,19 @@
 /* ==== BASE RESETS ==== */
+.tmg-host-container {
+  color: var(--tmg-media-text-color);
+  font-family: var(--tmg-media-font-family);
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  text-align: left;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 .tmg-host-container *,
 .tmg-host-container *::after,
 .tmg-host-container *::before {
   box-sizing: border-box;
   font-family: inherit;
-  font-kerning: normal;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  font-feature-settings: inherit;
 }
 :where(.tmg-host-container) *,
 :where(.tmg-host-container) *::after,
@@ -21,7 +27,8 @@
   color: currentColor;
   background-color: var(--tmg-media-brand-color);
 }
-:where(.tmg-host-container:not(.tmg-media-disabled)) :not([inert]) :is(a, p, h1, h2, h3, h4, h5, h6, li) {
+:where(.tmg-host-container:not(.tmg-media-disabled)) :not([inert]) :is(p, h1, h2, h3, h4, h5, h6, a) {
+  font-feature-settings: normal;
   -webkit-user-select: text;
   user-select: text;
 }
@@ -132,7 +139,7 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   transition: outline-offset var(--tmg-media-fade-transition-time) ease !important;
 }
 .tmg-host-container .tmg-media-smenu-overlay :is(*:focus-visible, #o#o#o#o#o),
-:is(.tmg-media-voice-path-input, .tmg-media-voice-exact-input):is(:focus-visible, #o#o#o#o#o) {
+:is(.tmg-media-voice-path-input, .tmg-media-voice-word-input):is(:focus-visible, #o#o#o#o#o) {
   outline-offset: calc(var(--tmg-media-current-unit) / -13);
 }
 .tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, :is(.tmg-media-big-controls-wrapper, .tmg-media-next-preview-wrapper) > *, .tmg-media-voice-link):focus-visible, #o#o#o#o#o) {
@@ -156,7 +163,7 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 /* ==== INTERACTION ==== */
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible), :has(dialog[open])) .tmg-media-content,
+.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible), :has(dialog[open])) .tmg-media-content,
 .tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content {
   cursor: auto;
 }

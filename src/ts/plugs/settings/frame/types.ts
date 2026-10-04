@@ -4,5 +4,9 @@ export interface FrameConfig {
   disabled: boolean;
   fps: number;
   toast: ToastOptions;
+  goodTime: {
+    searchDuration: number;
+    minSaturation: number;
+    minBrightness: number;
+  };
 }
-

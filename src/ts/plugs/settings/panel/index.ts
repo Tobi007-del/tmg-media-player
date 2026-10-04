@@ -67,12 +67,12 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
   private initView() {
     // Theming
     // prettier-ignore
-    const options = [{ option: "Light Blue", value: "#3198f5" }, { option: "Hot Pink", value: "#ff69b4" }, { option: "Fiery Red", value: "#ff0033" }, { option: "Dark Turquoise", value: "#00ced1" }, { option: "Custom Hue", value: "custom" }, { option: "Video Derived", value: "auto" }],
+    const options = [{ option: "Light blue", value: "#3198f5" }, { option: "Hot pink", value: "#ff69b4" }, { option: "Fiery red", value: "#ff0033" }, { option: "Dark turquoise", value: "#00ced1" }, { option: "Custom hue", value: "custom" }, { option: "Video derived", value: "auto" }],
       gcolors = options.slice(0, -2).map((opt) => opt.value),
       defs = { brand: this.settings.css.brandColor as string ?? "#e26e02", theme: this.settings.css.themeColor as string ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
-      bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "Try changing your brand color" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
+      bField = t007.field({ type: "select", label: "Brand color", helperText: { info: "Sets the primary color for the interface" }, options: [{ option: "Tastey orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
       cBField = t007.field({ type: "color" }),
-      tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "Also try changing your theme color" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
+      tField = t007.field({ type: "select", label: "Theme color", helperText: { info: "Sets the base color for text and controls" }, options: [{ option: "Pure white", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
       cTField = t007.field({ type: "color" }),
       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
@@ -131,40 +131,40 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
           <h2 style="margin: 0 0 10px 0; letter-spacing: -0.5px;">🎬 Welcome to TVP</h2>
           <p style="margin: 0; opacity: 0.9; line-height: 1.5;">
             You aren't just watching a video; you're sitting in the cockpit of the most advanced, performance-first media engine on the web. We are thrilled to have you here. 
-            <br><strong>Here is your official flight manual to unlock its full power:</strong>
+            <br><b>Here is your official flight manual to unlock its full power:</b>
           </p>
         </div>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🎛️ The Smart Canvas (Mouse & Touch)</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
-          <li><strong>Hyper-speed on demand:</strong> Click and hold the right side of the video screen or the play key (<strong>Spacebar</strong>) to fast-forward, left side or <strong>Shift</strong> + play key rewinds.</li>
-          <li><strong>Smart scrubbing:</strong> Don't hunt for the tiny progress bar. Just scroll horizontally across the middle of the screen to scrub smoothly through time.</li>
-          <li><strong>Invisible sliders:</strong> Scroll vertically on the <em>right edge</em> for Volume, and the <em>left edge</em> for Brightness.</li>
-          <li><strong>Precision taps:</strong> Double-tap the edges to skip forward or backward. Double tap the center to toggle Fullscreen (or Play/Pause on mobile).</li>
+          <li><p><b>Hyper-speed on demand:</b> Click and hold the right side of the video screen or the play key (<b>Spacebar</b>) to fast-forward, left side or <b>Shift</b> + play key rewinds.</p></li>
+          <li><p><b>Smart scrubbing:</b> Don't hunt for the tiny progress bar. Just scroll horizontally across the middle of the screen to scrub smoothly through time.</p></li>
+          <li><p><b>Invisible sliders:</b> Scroll vertically on the <em>right edge</em> for Volume, and the <em>left edge</em> for Brightness.</p></li>
+          <li><p><b>Precision taps:</b> Double-tap the edges to skip forward or backward. Double tap the center to toggle Fullscreen (or Play/Pause on mobile).</p></li>
         </ul>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🏗️ Total UI Control</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
-          <li><strong>Build your own player:</strong> Don't like our layout? <strong>Click and drag</strong> almost "any" button on the control bars to physically rearrange the interface exactly how you want it.</li>
-          <li><strong>Draggable subtitles:</strong> Subtitles blocking a crucial part of the scene? Just grab the text box and drag it anywhere else on the screen.</li>
-          <li><strong>The chameleon engine:</strong> Head to settings and set your Brand/Theme colors to "Video Derived". TVP will actively analyze the video frames and extract dominant colors to paint the UI dynamically.</li>
-          <li><strong>Descriptive hints:</strong> Hover over the controls to expose their tooltips and get more information about how to trigger each function.</li>
+          <li><p><b>Build your own player:</b> Don't like our layout? <b>Click and drag</b> almost "any" button on the control bars to physically rearrange the interface exactly how you want it.</p></li>
+          <li><p><b>Draggable subtitles:</b> Subtitles blocking a crucial part of the scene? Just grab the text box and drag it anywhere else on the screen.</p></li>
+          <li><p><b>The chameleon engine:</b> Head to settings and set your Brand/Theme colors to "Video Derived". TVP will actively analyze the video frames and extract dominant colors to paint the UI dynamically.</p></li>
+          <li><p><b>Descriptive hints:</b> Hover over the controls to expose their tooltips and get more information about how to trigger each function.</p></li>
         </ul>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">⌨️ Keyboard Ninja Status</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 25px;">
-          <li><strong>The playback trinity (J, K, L):</strong> Skip backward, Play/Pause, and Skip forward like a pro editor. Do the same with arrow keys, hold <strong>Ctrl</strong>, <strong>Shift</strong> or <strong>Alt</strong> to spice things up.</li>
-          <li><strong>Time travel:</strong> Hit any number key to jump to that percentage of the video (e.g., hitting '5' jumps to the exact middle). <em>(Easter Egg: Undo or Redo with <strong>Ctrl + Z</strong> and <strong>Ctrl + Y</strong>)</em></li>
-          <li><strong>Frame-by-frame:</strong> Paused the video? Use <strong>,</strong> (comma) and <strong>.</strong> (period) to step backward or forward one single frame at a time.</li>
-          <li><strong>Warp speed:</strong> Use <strong>&gt;</strong> and <strong>&lt;</strong> to crank the playback speed up or down.</li>
+          <li><p><b>The playback trinity (J, K, L):</b> Skip backward, Play/Pause, and Skip forward like a pro editor. Do the same with arrow keys, hold <b>Ctrl</b>, <b>Shift</b> or <b>Alt</b> to spice things up.</p></li>
+          <li><p><b>Time travel:</b> Hit any number key to jump to that percentage of the video (e.g., hitting '5' jumps to the exact middle). <em>(Easter Egg: Undo or Redo with <b>Ctrl + Z</b> and <b>Ctrl + Y</b>)</em></p></li>
+          <li><p><b>Frame-by-frame:</b> Paused the video? Use <b>,</b> (comma) and <b>.</b> (period) to step backward or forward one single frame at a time.</p></li>
+          <li><p><b>Warp speed:</b> Use <b>&gt;</b> and <b>&lt;</b> to crank the playback speed up or down.</p></li>
         </ul>
         <h3 style="margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid currentColor; padding-bottom: 5px; opacity: 0.85;">🔬 Advanced Window Tech</h3>
         <ul style="padding-left: 20px; line-height: 1.6; margin-bottom: 20px;">
-          <li><strong>The snapshot engine:</strong> Click the Camera icon or press <strong>s</strong> to screenshot a high-res image of the exact frame. <em>(Easter Egg: Double-Click or press <strong>Alt + s</strong> to capture in pure Black &amp; White!)</em></li>
-          <li><strong>Ultra-readable time:</strong> Click the time display or press <strong>q</strong> to toggle between elapsed time and remaining time. <em>(Easter Egg: Double-Click or press <strong>z</strong> to display the time in different formats!)</em></li>
-          <li><strong>Floating miniplayer:</strong> Start playing a video and just scroll down the page. TVP will automatically detach into a draggable miniplayer so you never miss a second.</li>
-          <li><strong>Custom picture-in-picture:</strong> We bypassed standard browser limits to give you a floating player that actually keeps all your custom UI controls intact.</li>
+          <li><p><b>The snapshot engine:</b> Click the Camera icon or press <b>s</b> to screenshot a high-res image of the exact frame. <em>(Easter Egg: Double-Click or press <b>Alt + s</b> to capture in pure Black &amp; White!)</em></p></li>
+          <li><p><b>Ultra-readable time:</b> Click the time display or press <b>q</b> to toggle between elapsed time and remaining time. <em>(Easter Egg: Double-Click or press <b>z</b> to display the time in different formats!)</em></p></li>
+          <li><p><b>Floating miniplayer:</b> Start playing a video and just scroll down the page. TVP will automatically detach into a draggable miniplayer so you never miss a second.</p></li>
+          <li><p><b>Custom picture-in-picture:</b> We bypassed standard browser limits to give you a floating player that actually keeps all your custom UI controls intact.</p></li>
         </ul>
         <div style="text-align: center; margin-top: 30px; padding: 15px; border-radius: 8px; background: rgba(128, 128, 128, 0.1);">
-          <p style="margin: 0 0 10px 0;"><strong>Enjoy the player.</strong> We're still in active development, but already miles ahead. Welcome to the bleeding edge.</p>
-          <p style="margin: 0; opacity: 0.8;">🧪 <strong>beta tester?</strong> Find the Settings advanced menu to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit; text-decoration: underline;">drop me an email</a> to collaborate!</p>
+          <p style="margin: 0 0 10px 0;"><b>Enjoy the player.</b> We're still in active development, but already miles ahead. Welcome to the bleeding edge.</p>
+          <p style="margin: 0; opacity: 0.8;">🧪 <b>beta tester?</b> Find the Settings advanced menu to travel through linear time, or <a href="mailto:tobioketade007@gmail.com" style="color: inherit;">drop me an email</a> to collaborate!</p>
           </div>
         </div>
       `;

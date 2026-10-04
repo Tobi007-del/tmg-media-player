@@ -13,7 +13,7 @@ export interface AdRoll {
 
 export interface AdsConfig {
   rolls: Inert<AdRoll[]>;
-  options: {
+  settings: {
     locale: string;
     vpaidMode: number; // 0 = DISABLED, 1 = ENABLED, 2 = INSECURE
     maxRedirects: number;

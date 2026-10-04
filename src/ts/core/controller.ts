@@ -12,7 +12,7 @@ import { createEl, observeIntersection, observeResize } from "@utils/dom";
 import { collator, capitalize, uncamelize } from "@utils/str";
 import { cloneMedia, getMediaReport, isFeatured, isSameSources } from "@utils/media";
 import { type Volatile, reactive, type Reactive, inert, intent, volatile, NOOP, NIL } from "sia-reactor";
-import { fanout, deepClone, getPath, getPaths, isLeafPath, matchPaths, mergeObjs, nuke, setPath, isObj } from "sia-reactor/utils";
+import { fanout, deepClone, getPath, getPaths, isLeafPath, matchPaths, mergeObjs, nuke, setPath, isObj, mirror } from "sia-reactor/utils";
 import type { PlugRegistryMap, ControllerDOMMap } from "@defs/registries";
 import { isArr, isFunc, isStr } from "@utils/obj";
 import { silence, transaction } from "sia-reactor/modules";
@@ -157,12 +157,12 @@ export class Controller {
     if (!act || act.disabled || (!act.zen && this.zenlist.some(this.isUIActive))) return false;
     const can = !act.gates?.some((g) => !this.media.features[g]);
     transaction((root = act.logic?.length ? (this.logicRoot as any) : undefined) => {
-      if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, !path.includes("intent") ? path : path.replace("intent", "state")) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
+      if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, mirror(path)) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
       can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: this.config.id + act.id, renotify: true, ...act.toast });
     }, act.label ?? act.id);
     return can;
   }
-  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, path as any), force = false): boolean {
+  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, mirror(path)), force = false): boolean {
     if (matchPaths(this.actions.blacklist, path) || (!this.config.devMode && matchPaths(this.actions.devlist, path))) return false;
     if (!force && /^media\.(intent|settings)\./.test(path) && !isFeatured(this.media, path.slice(path.lastIndexOf(".") + 1))) return false;
     return !leaf || isArr(value) || isLeafPath(this.logicRoot as any, path as any, undefined, value);

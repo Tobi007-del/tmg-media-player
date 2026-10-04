@@ -37,8 +37,8 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     if (this.media.status.IMAReady) return;
     try {
       if ("undefined" === typeof google || "undefined" === typeof google.ima) await loadResource(window.TMG_IMA_SDK_SRC!, "script");
-      google.ima.settings.setVpaidMode(this.config.options.vpaidMode), google.ima.settings.setNumRedirects(this.config.options.maxRedirects);
-      google.ima.settings.setLocale(this.config.options.locale), google.ima.settings.setFeatureFlags({ audioPosterImageEnabled: true, audioPosterImageDefaultUrl: window.TMG_MEDIA_ALT_IMG_SRC });
+      google.ima.settings.setVpaidMode(this.config.settings.vpaidMode), google.ima.settings.setNumRedirects(this.config.settings.maxRedirects);
+      google.ima.settings.setLocale(this.config.settings.locale), google.ima.settings.setFeatureFlags({ audioPosterImageEnabled: true, audioPosterImageDefaultUrl: window.TMG_MEDIA_ALT_IMG_SRC });
       this.displayContainer = new google.ima.AdDisplayContainer(this.container);
       document.addEventListener("click", () => (this.displayContainer.initialize(), (this.media.status.IMAInitialized = true)), { once: true, signal: this.signal });
       this.loader = new google.ima.AdsLoader(this.displayContainer);

@@ -136,8 +136,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     const { left, top } = getComputedStyle(this.el);
     (this.lastPosX = parseFloat(left)), (this.lastPosY = parseFloat(top));
     (this.lastPtrX = e.clientX), (this.lastPtrY = e.clientY);
-    this.el.addEventListener("pointermove", this.handleDragging, { signal: this.signal });
-    this.el.addEventListener("pointerup", this.handleDragEnd, { signal: this.signal });
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) this.el.addEventListener(evt, evt === "pointermove" ? this.handleDragging : this.handleDragEnd, { signal: this.signal });
   }
 
   protected handleDragging(e: PointerEvent): void {
@@ -159,8 +158,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   protected handleDragEnd(): void {
     this.ctlr.cancelRAFLoop("captionsDragging");
     this.media.container.classList.remove("tmg-media-captions-dragging");
-    this.el.removeEventListener("pointermove", this.handleDragging);
-    this.el.removeEventListener("pointerup", this.handleDragEnd);
+    for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) this.el.removeEventListener(evt, evt === "pointermove" ? this.handleDragging : this.handleDragEnd);
   }
 
   protected override onDestroy(): void {

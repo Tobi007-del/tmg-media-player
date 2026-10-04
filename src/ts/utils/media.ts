@@ -13,8 +13,8 @@ type SourceLike = Source | (HTMLSourceElement & Record<string, any>);
 type TrackLike = Track | (HTMLTrackElement & Record<string, any>);
 
 // Report Generation
-export function getMediaReport(m: HTMLMediaElement, opts = { skipUndef: true }, _isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): MediaReport {
-  const [state, status, settings] = [getMediaState(m, _isVid, _txtTrackIdx), getMediaStatus(m, false, _isVid, _txtTrackIdx), getMediaSettings(m)];
+export function getMediaReport(m: HTMLMediaElement, opts = { skipUndef: true }, _isVid = m instanceof HTMLVideoElement): MediaReport {
+  const [state, status, settings] = [getMediaState(m, _isVid), getMediaStatus(m, false, _isVid), getMediaSettings(m)];
   return {
     state: merge(MEDIA_STATE_BUILD, state, opts),
     intent: merge(MEDIA_INTENT_BUILD, state, opts),
@@ -23,7 +23,7 @@ export function getMediaReport(m: HTMLMediaElement, opts = { skipUndef: true }, 
   } as MediaReport;
 }
 
-export const getMediaState = (m: HTMLMediaElement, _isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): Partial<MediaState> => ({
+export const getMediaState = (m: HTMLMediaElement, _isVid = m instanceof HTMLVideoElement): Partial<MediaState> => ({
   src: m.src,
   currentTime: m.currentTime,
   paused: m.paused,
@@ -32,21 +32,21 @@ export const getMediaState = (m: HTMLMediaElement, _isVid = m instanceof HTMLVid
   playbackRate: m.playbackRate,
   pictureInPicture: queryPictureInPictureEl() === m,
   fullscreen: queryFullscreenEl() === m,
-  currentTextTrack: _txtTrackIdx,
+  // currentTextTrack: getTrackIdx(m, "Text"), // fragmented, i.e has chapters nd metadata too
   currentAudioTrack: getTrackIdx(m, "Audio"),
   currentVideoTrack: getTrackIdx(m, "Video"),
   poster: _isVid ? (m as HTMLVideoElement).poster : "",
   autoplay: m.autoplay,
   loop: m.loop,
   preload: m.preload,
-  playsInline: _isVid ? m.playsInline : false,
+  playsInline: m.playsInline,
   crossOrigin: m.crossOrigin,
   controls: m.controls,
   controlsList: m.controlsList,
   sources: getSources(m),
   tracks: getTracks(m),
 });
-export const getMediaStatus = (m: HTMLMediaElement, flagsOnly = false, _isVid = m instanceof HTMLVideoElement, _txtTrackIdx = getTrackIdx(m, "Text")): Partial<MediaStatus> => ({
+export const getMediaStatus = (m: HTMLMediaElement, flagsOnly = false, _isVid = m instanceof HTMLVideoElement): Partial<MediaStatus> => ({
   readyState: m.readyState,
   networkState: m.networkState,
   error: m.error,
@@ -65,7 +65,7 @@ export const getMediaStatus = (m: HTMLMediaElement, flagsOnly = false, _isVid = 
   textTracks: flagsOnly ? undefined : m.textTracks,
   audioTracks: flagsOnly ? undefined : (m as any).audioTracks,
   videoTracks: flagsOnly ? undefined : (m as any).videoTracks,
-  activeCues: flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues ? [...m.textTracks[_txtTrackIdx].activeCues] : null,
+  // activeCues: flagsOnly ? undefined : m.textTracks[_txtTrackIdx]?.activeCues ? [...m.textTracks[_txtTrackIdx].activeCues] : null,
 });
 export const getMediaSettings = (m: HTMLMediaElement): DeepPartial<MediaSettings> => ({
   defaultMuted: m.defaultMuted,
