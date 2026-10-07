@@ -155,7 +155,7 @@ export function getTrackIdx(medium: HTMLMediaElement, type: TrackType = "Text", 
   if (list && isStr(term)) return (term = term.toLowerCase()), !isNaN(+term) ? +term : Array.prototype.findIndex.call(list, (t: any) => t.id?.toLowerCase?.() === term || t.label?.toLowerCase() === term || t.srclang?.toLowerCase() === term || t.language?.toLowerCase() === term || isSameURL(t.src, term));
   return -1;
 }
-export function getTrackLabel(list: ArrayLike<any>, index: number, safe = true, track = list?.[index]): string {
+export function getTrackLabel(track: any, index: number, safe = true): string {
   let label = !track ? "" : track.label || track.displayName || track.name || track.languageName;
   if (!track || label) return !track ? "" : capitalize(label.toLowerCase());
   const code = getTrackLang(track);

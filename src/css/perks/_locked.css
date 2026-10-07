@@ -2,8 +2,6 @@
   position: absolute;
   left: 50%;
   bottom: var(--tmg-media-inset-size);
-  height: fit-content;
-  width: fit-content;
   translate: -50%;
   display: flex;
   flex-direction: column;
@@ -13,7 +11,7 @@
   transform: translateY(calc(var(--tmg-media-current-unit) * 5));
   transition: transform var(--tmg-media-switch-transition-time) ease, opacity var(--tmg-media-switch-transition-time) ease;
 }
-.tmg-media-container.tmg-media-locked:is(.tmg-media-locked-overlay, :has(:focus-visible)) .tmg-media-locked-wrapper {
+.tmg-media-container.tmg-media-locked:where(.tmg-media-locked-overlay, :has(:focus-visible)) .tmg-media-locked-wrapper {
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;

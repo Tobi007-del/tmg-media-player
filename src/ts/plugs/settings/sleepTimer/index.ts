@@ -38,7 +38,7 @@ export class SleepTimerPlug extends BasePlug<SleepTimerConfig> {
     const id = `${this.ctlr.config.id}-sleep-timer-dialog`;
     if (t007.dialog?.isActive(id)) return;
     const menu = this.ctlr.plug("settings.panel")?.menu;
-    if ((await t007[menu ? "confirm" : "alert"]?.(`<h3 style="margin-bottom: 10px;">Time's up</h3><div>We hope you're fast asleep, but you can always add more time</div>`, { id, rootElement: this.ctlr.DOM.containerContent, confirmText: "Close", cancelText: "Add time" })) === false) menu?.open(), menu?.goTo("sleepTimer");
+    if ((await t007[menu ? "confirm" : "alert"]?.(`<h3 style="margin-bottom: 10px;">Time's up</h3><div>We hope you're fast asleep, but you can always add more time</div>`, { id, rootElement: this.ctlr.DOM.content, confirmText: "Close", cancelText: "Add time" })) === false) menu?.open(), menu?.goTo("sleepTimer");
   }
 }
 

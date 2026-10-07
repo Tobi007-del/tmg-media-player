@@ -1,7 +1,3 @@
-.tmg-media-ads-container {
-  overflow: hidden;
-  border-radius: inherit;
-}
 .tmg-media-container:not(.tmg-media-ads.tmg-media-ima) .tmg-media-ads-container {
   pointer-events: none;
 }

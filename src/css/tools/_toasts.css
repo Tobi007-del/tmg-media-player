@@ -1,6 +1,4 @@
 .tmg-media-toasts-container {
-  overflow: hidden;
-  border-radius: inherit;
   isolation: isolate;
 }
 .tmg-media-toasts-container > * {

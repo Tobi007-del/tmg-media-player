@@ -18,23 +18,15 @@
   max-height: inherit;
   min-width: inherit;
   min-height: inherit;
-  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform var(--tmg-media-settings-transition-time) var(--tmg-media-bounce-timing);
 }
 .tmg-media-content-wrapper {
   width: inherit;
   height: inherit;
-  transform-style: preserve-3d;
-  transition: transform var(--tmg-media-settings-transition-time) var(--tmg-media-bounce-timing);
-}
-.tmg-media-content,
-.tmg-media-settings {
-  transform-style: inherit;
-  transition: inherit;
-  overflow: hidden;
+  border-radius: inherit;
 }
 .tmg-media-content {
-  display: flex;
-  justify-content: center;
   background: var(--tmg-media-background);
   cursor: none;
 }

@@ -6,6 +6,7 @@ export const GESTURE_TOUCH_BUILD: Partial<GestureTouchConfig> = {
   volume: true,
   brightness: true,
   timeline: true,
+  fastSwipes: !IS_MOBILE,
   threshold: 200,
   inset: 20,
   sliderTimeout: 1000,
@@ -24,8 +25,8 @@ export const GESTURE_WHEEL_BUILD: Partial<GestureWheelConfig> = {
 };
 
 export const GESTURE_BUILD: DeepPartial<GestureConfig> = {
-  click: IS_MOBILE ? false : "paused",
-  dblClick: IS_MOBILE ? "paused" : "fullscreen",
+  click: IS_MOBILE ? false : "playPause",
+  dblClick: IS_MOBILE ? "playPause" : "fullscreen",
   // touch: GESTURE_TOUCH_BUILD,
   // wheel: GESTURE_WHEEL_BUILD,
 };

@@ -17,7 +17,9 @@ export class LightPlug extends BasePlug<LightConfig> {
   protected hasStalled = false;
 
   public override wire(): void {
-    // Ctlr Config Listeners
+    // Ctlr Config Setters
+    this.ctlr.config.set("light.disabled", (v) => (this.ctlr.flags.readyState < 2 ? v : TERMINATOR), { signal: this.signal }); // getting my hooks off u, so YOLO for me
+    // ----------- Listeners
     this.ctlr.config.on("light.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("light.preview", this.handlePreview, { signal: this.signal });
     for (const k of ["controls", "stallControl"] as const) this.ctlr.config.on(`light.${k}`, this.syncControls, { init: k === "controls", signal: this.signal });
@@ -68,8 +70,8 @@ export class LightPlug extends BasePlug<LightConfig> {
     this.preview() && !this.media.status.duration && this.ctlr.when("duration", e, this.preview, this.signal); // in case start/end is a percentage
   }
 
-  protected handleClick({ target }: MouseEvent): void {
-    if (target === this.ctlr.DOM.controlsContainer) this.media.intent.paused = false;
+  protected handleClick(e: MouseEvent): void {
+    if (e.target === e.currentTarget) this.media.intent.paused = false;
   }
 
   protected preview(): boolean {

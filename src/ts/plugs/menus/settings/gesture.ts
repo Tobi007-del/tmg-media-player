@@ -1,17 +1,19 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { GesturePlug } from "@plugs/settings/gesture";
 import { capitalize, uncamelize } from "@utils/str";
-import { getMediaProps } from "@utils/media";
 import { formatMenuPx } from "@utils/str";
-import { UITuple } from "@defs/UIOptions";
 import { formatUITime } from "@utils/time";
 
-export const getMediaBools = (plug: GesturePlug) => [
-  { value: false, display: "None" },
-  ...getMediaProps(plug.media)
-    .sort()
-    .map((k) => ({ value: k, display: capitalize(uncamelize(k)) })),
-];
+const getActionOpts = (plug: GesturePlug) => {
+  return [
+    { value: false, display: "Off" },
+    ...plug.ctlr.logicActions.map((a) => {
+      const badges = [];
+      a.system ? badges.push("sys") : a.userCreated && badges.push("own"), a.disabled && badges.push("off");
+      return { value: a.id, display: a.label || capitalize(uncamelize(a.id)), badge: badges.length ? badges.join(" ΓÇó ") : undefined };
+    }),
+  ];
+};
 
 export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => ({
   id: "advanced",
@@ -33,8 +35,8 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
           getValue: () => (plug.config.click === false && plug.config.dblClick === false && !plug.config.touch.volume && !plug.config.touch.brightness && !plug.config.touch.timeline && !plug.config.wheel.volume && !plug.config.wheel.brightness && !plug.config.wheel.timeline ? "Off" : "On"),
           configPaths: ["settings.gesture.click", "settings.gesture.dblClick", "settings.gesture.touch.volume", "settings.gesture.touch.brightness", "settings.gesture.touch.timeline", "settings.gesture.wheel.volume", "settings.gesture.wheel.brightness", "settings.gesture.wheel.timeline"],
           items: [
-            { id: "gestureClick", label: "Single click", widget: "select", getValue: () => (plug.config.click === false ? "None" : capitalize(uncamelize(plug.config.click))), getOptions: () => getMediaBools(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.click = val), configPaths: ["settings.gesture.click"] },
-            { id: "gestureDblClick", label: "Double click", widget: "select", getValue: () => (plug.config.dblClick === false ? "None" : capitalize(uncamelize(plug.config.dblClick))), getOptions: () => getMediaBools(plug) as UITuple<string>[], onChange: (val: any) => (plug.config.dblClick = val), configPaths: ["settings.gesture.dblClick"] },
+            { id: "gestureClick", label: "Single click", widget: "select", getValue: () => getActionOpts(plug).find((o) => o.value === plug.config.click)?.display ?? "Off", getOptions: () => getActionOpts(plug), onChange: (val: any) => (plug.config.click = val), configPaths: ["settings.gesture.click"] },
+            { id: "gestureDblClick", label: "Double click", widget: "select", getValue: () => getActionOpts(plug).find((o) => o.value === plug.config.dblClick)?.display ?? "Off", getOptions: () => getActionOpts(plug), onChange: (val: any) => (plug.config.dblClick = val), configPaths: ["settings.gesture.dblClick"] },
             {
               id: "gestureTouchGroup",
               label: "Screen touch",
@@ -50,6 +52,7 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                   widget: "group",
                   getValue: () => (plug.config.touch.xRatio && plug.config.touch.yRatio ? "On" : "Off"),
                   items: [
+                    { id: "gestureTouchFastSwipes", label: "Fast swipes", widget: "toggle", getValue: () => (plug.config.touch.fastSwipes ? "On" : "Off"), onChange: (val: boolean) => (plug.config.touch.fastSwipes = val), configPaths: ["settings.gesture.touch.fastSwipes"], title: "Trigger fast swipe actions if the swipe is completed before the hold duration is reached" },
                     {
                       id: "gestureTouchRatio",
                       label: "Swipe ratio (X, Y)",
@@ -63,7 +66,7 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                       configPaths: ["settings.gesture.touch.xRatio", "settings.gesture.touch.yRatio"],
                     },
                     { id: "gestureTouchAxesRatio", label: "Axis dominance", widget: "range", getValue: () => String(plug.config.touch.axesRatio), getRange: () => ({ min: 0, max: 10, step: 0.25, formatTooltip: (v: number) => v.toFixed(1) }), onChange: (val: number) => (plug.config.touch.axesRatio = val), configPaths: ["settings.gesture.touch.axesRatio"], getTipHTML: () => "Minimum ratio of vertical to horizontal movement. Higher values require straighter swipes." },
-                    { id: "gestureTouchThreshold", label: "Hold duration", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "0.2", helperText: { info: "How long before a touch starts a swipe gesture, provided it did not move during the hold" }, type: "number", required: true, min: "0", max: "10", step: "any", value: () => plug.config.touch.threshold / 1000 }], getValue: () => formatUITime(plug.config.touch.threshold), onChange: (val: Record<string, any>) => (plug.config.touch.threshold = val.secs * 1000), configPaths: ["settings.gesture.touch.threshold"] },
+                    { id: "gestureTouchThreshold", label: "Hold duration", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "0.2", helperText: { info: "How long before a touch starts a swipe gesture where applicable, provided it did not move during the hold" }, type: "number", required: true, min: "0", max: "10", step: "any", value: () => plug.config.touch.threshold / 1000 }], getValue: () => formatUITime(plug.config.touch.threshold), onChange: (val: Record<string, any>) => (plug.config.touch.threshold = val.secs * 1000), configPaths: ["settings.gesture.touch.threshold"] },
                     { id: "gestureTouchInset", label: "Edge inset", widget: "range", getValue: () => formatMenuPx(plug.config.touch.inset, true), getRange: () => ({ min: 0, max: 100, step: 5, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.touch.inset = val), configPaths: ["settings.gesture.touch.inset"], getTipHTML: () => "Distance from the screen edges to ignore swipes (prevents accidental gestures)" },
                   ],
                 },

@@ -39,8 +39,8 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     for (const p of getPaths(PLAY_ITEM_BUILD, "*", { leavesOnly: true }))
       if (p.startsWith("media.")) {
         const path = p.slice(6);
-        this.media.on((!path.includes("intent") ? path : path.replace("intent", "state")) as any, (e) => !e.playItemWrite && this.item && setPath(this.item, p as any, e.currentTarget.value), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
-      } else !p.startsWith("ads.") && this.ctlr.config.on(p as any, (e) => !e.playItemWrite && this.item && setPath(this.item, p as any, e.currentTarget.value), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+        this.media.on((!path.includes("intent") ? path : path.replace("intent", "state")) as any, (e) => !e.playlistWrite && this.item && setPath(this.item, p as any, e.currentTarget.value), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+      } else !p.startsWith("ads.") && this.ctlr.config.on(p as any, (e) => !e.playlistWrite && this.item && setPath(this.item, p as any, e.currentTarget.value), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.currentItem", this.handleCurrentItemIntent, { capture: true, signal: this.signal });
     // ---- Config --------
@@ -56,13 +56,14 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     const item = this.config.content?.[e.value as number]; // #VALIDATED: mediated for cast conformity; no-opy
     if (item) {
       this.media.state.currentItem = e.value as number;
-      withMeta({ playItemWrite: true, silent: true }, () => (["settings", "media"] as const).forEach((p) => fanout(this[p], item[p], { cloneSets: true })));
+      withMeta({ playlistWrite: true, silent: true }, () => (["settings", "media"] as const).forEach((p) => fanout(this[p], item[p], { cloneSets: true })));
     }
     e.resolve(this.name);
   }
 
-  protected handleContent({ currentTarget: { value } }: REvent<CtlrConfig, "playlist.content", 1>): void {
+  protected handleContent({ currentTarget: { value }, playlistWrite }: REvent<CtlrConfig, "playlist.content", 1>): void {
     this.syncFeatures();
+    if (playlistWrite) return;
     const pmdle = this.ctlr.plug("settings.persist")?.module,
       iidx = value?.findIndex(({ media: m }) => (m.settings.metadata.id && m.settings.metadata.id === this.media.settings.metadata.id) || isSameURL(m.intent.src, this.media.intent.src)) ?? -1, // intent index
       resync = () => (silence(() => (this.media.intent.currentItem = Math.max(0, iidx))), this.media.tick("intent.currentItem")); // #RE-TRIGGER: sync intent resolution
@@ -94,7 +95,9 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     this.config.content = shuffled;
   }
   public remove(i: number, list = this.config.content): void {
-    if (list) list.splice(i, 1), i === this.media.state.currentItem && (this.media.intent.currentItem = Math.min(i, list.length - 1));
+    if (!list) return;
+    withMeta({ playlistWrite: true }, () => list.splice(i, 1));
+    if (i === this.media.state.currentItem) silence(() => (this.media.intent.currentItem = Math.min(i, list.length - 1))), this.media.tick("intent.currentItem"), silence(() => (this.media.intent.paused = true));
   }
 
   public syncFeatures(): void {
@@ -125,7 +128,7 @@ declare module "@defs/contract" {
 
 declare module "sia-reactor" {
   interface ReactorMeta {
-    playItemWrite?: boolean;
+    playlistWrite?: boolean;
     silent?: boolean; // incase timeTravel ain't augmented
   }
 }

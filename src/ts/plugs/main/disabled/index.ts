@@ -22,12 +22,12 @@ export class DisabledPlug extends BasePlug<DisabledConfig> {
       this.ctlr.plug("settings.panel")?.exitMore(), this.ctlr.plug("settings.overlay")?.show();
       silence(() => (this.media.intent.paused = true)), this.ctlr.cancelRAFLoops();
       this.media.container.classList.add("tmg-media-disabled"), this.media.pseudoContainer.classList.add("tmg-media-disabled"); // #TWINING
-      this.ctlr.DOM.containerContent?.setAttribute("inert", "");
+      this.ctlr.DOM.content?.setAttribute("inert", "");
       this.ctlr.plug("settings.keys")?.setListeners("remove");
       this.ctlr.notice("You cannot access the custom controls when disabled", "warn", null);
     } else {
       this.media.container.classList.remove("tmg-media-disabled"), this.media.pseudoContainer.classList.remove("tmg-media-disabled"); // #TWINING
-      this.ctlr.DOM.containerContent?.removeAttribute("inert");
+      this.ctlr.DOM.content?.removeAttribute("inert");
       this.ctlr.plug("settings.keys")?.setListeners();
     }
   }

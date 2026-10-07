@@ -10,7 +10,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
   public static readonly plugName = "overlay";
   public static readonly BUILD = OVERLAY_BUILD;
   public overlayDelayId = -1;
-  public whitelist: string[] = ["pictureInPicture", "settings", "settingsMenu", "controlDragging"]; // #DEFAULT: build privilege
+  public whitelist: string[] = ["pictureInPicture", "moreSettings", "menuSettings", "controlDragging"]; // #DEFAULT: build privilege
 
   constructor(ctlr: Controller, config = ctlr.settings.overlay) {
     super(ctlr, config, { visible: false });
@@ -18,7 +18,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
 
   public override wire(): void {
     // Ctlr Media Listeners
-    this.media.on("state.paused", ({ value }) => (value ? this.show() : this.delay()), { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const p of ["state.paused", "status.rewindRate"] as const) this.media.on(p, () => this[!this.playing ? "show" : "delay"](), { signal: this.signal });
     this.media.on("state.locked", ({ value }) => (value ? this.hide("force") : this.show()), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.overlay.curtain.value", ({ value }) => (this.media.container.dataset.curtain = value), { init: true, signal: this.signal });
@@ -49,8 +49,12 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
     return this.config.behavior.value !== "hidden" && !this.media.state.locked && !this.ctlr.isUIActive("playerDragging");
   }
   public canHide(manner?: "force"): boolean {
-    return this.config.behavior.value !== "persistent" && (manner === "force" || (!this.whitelist.some(this.ctlr.isUIActive) && (IS_MOBILE ? !this.media.status.waiting && !this.media.state.paused : this.config.behavior.value === "strict" || !this.media.state.paused) && !this.media.status.teasing));
+    return this.config.behavior.value !== "persistent" && (manner === "force" || (!this.whitelist.some(this.ctlr.isUIActive) && (IS_MOBILE ? !this.media.status.waiting && this.playing : this.config.behavior.value === "strict" || this.playing) && !this.media.status.teasing));
   }
+
+  protected get playing(): boolean {
+    return !this.media.state.paused || !!this.media.status.rewindRate;
+  } // might become `media.status.playing`, paused but playing content (e.g. rewinding)
 }
 
 export type * from "./types";

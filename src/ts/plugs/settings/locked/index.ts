@@ -14,7 +14,7 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   public static readonly plugName = "locked";
   public static readonly BUILD = LOCKED_BUILD;
   public lockOverlayDelayId = -1;
-  public wrapper?: HTMLDivElement;
+  public container?: HTMLDivElement;
   public control: ScreenLockButton | null = null;
 
   constructor(ctlr: Controller, config = ctlr.settings.locked) {
@@ -22,12 +22,12 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   }
 
   public override unmount(): void {
-    this.wrapper?.remove();
+    this.container?.remove();
   }
 
   public override wire(): void {
     // Event Listeners
-    this.media.container.addEventListener("click", this.handleScreenClick, { signal: this.signal });
+    this.ctlr.DOM.content?.addEventListener("click", this.handleScreenClick, { signal: this.signal }); // content not settings
     // Ctlr Media Watchers
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // ---- Config --------
@@ -47,7 +47,7 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
 
   protected enter(): void {
     this.ctlr.plug("settings.panel")?.exitMore();
-    this.wrapper ??= this.ctlr.DOM.containerContentWrapper?.appendChild(createEl("div", { className: "tmg-media-locked-wrapper tmg-media-no-pointer", innerHTML: `<p>Screen Locked</p><p>Tap to Unlock</p>` }));
+    this.container ?? this.ctlr.DOM.content?.insertAdjacentElement("afterend", (this.container = createEl("div", { className: "tmg-media-locked-container tmg-media-cover tmg-media-fill tmg-media-no-pointer tmg-media-curve", innerHTML: `<div class="tmg-media-locked-wrapper"><p>Screen Locked</p><p>Tap to Unlock</p></div>` })));
     this.control ??= ComponentRegistry.init("screenLock", this.ctlr);
     setTimeout(this.showOverlay, 0, this.signal);
     this.media.container.classList.add("tmg-media-locked", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-locked"); // #TWINING
@@ -58,12 +58,12 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
     this.hideOverlay();
     await mockAsync(parseCSSTime(this.settings.css.switchTransitionTime));
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
-    this.media.container.classList.remove("tmg-media-locked"), this.media.pseudoContainer.classList.remove("tmg-media-locked"); // #TWINING
+    this.media.container.classList.remove("tmg-media-locked", "tmg-media-locked-overlay"), this.media.pseudoContainer.classList.remove("tmg-media-locked"); // #TWINING
     this.media.state.locked = false;
   } // #STANDALONE: needs scoped behavior
 
   protected handleScreenClick(e: MouseEvent): void {
-    if (!this.config.disabled && e.target === this.media.container) this.state.visible ? this?.hideOverlay() : this?.showOverlay();
+    if (e.target === e.currentTarget && !this.config.disabled) this.state.visible ? this?.hideOverlay() : this?.showOverlay();
   }
 
   public showOverlay(): void {

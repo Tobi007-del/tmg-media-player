@@ -22,11 +22,11 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
 
   public override wire(): void {
     // Event Listeners
-    this.media.container.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal });
+    this.media.container.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal }); // overlays proof - init nd post hence root
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return !this.media.state.locked && !this.ctlr.config.disabled && e.target === this.ctlr.DOM.controlsContainer && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || !!this.media.status.floatingPlayer);
+    return e.target === this.ctlr.DOM.controlsContainer && !this.media.state.locked && !this.ctlr.config.disabled && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || !!this.media.status.floatingPlayer);
   }
 
   protected handleWheel(e: WheelEvent): void {

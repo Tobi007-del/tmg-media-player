@@ -151,7 +151,7 @@ export interface MediaSettings {
   idleWaiting: boolean;
   timePlayedMin: number; // seconds
   timeShiftPoll: number; // time shift polling ms, e.g. in YT tech
-  flushKeys: { status: Array<keyof MediaStatus>; state: Array<keyof MediaState> }; // reset on `src` change
+  flushKeys: { state: Array<keyof MediaState>; status: Array<keyof MediaStatus> }; // reset on `src` change
 }
 
 export interface MediaReport {

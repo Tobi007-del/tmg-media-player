@@ -79,7 +79,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if (!this.config.muted) for (let i = e.resultIndex, len = e.results.length; i < len; ++i) transcript += e.results[i][0].transcript;
     if (`${e.resultIndex}-${(transcript = transcript.trim().toLowerCase())}` === this.prevRes) return; // Block the interim/final duplicate fire
     this.prevRes = `${e.resultIndex}-${transcript}`;
-    !this.config.muted && (this.state.routing || this.config.toasts.behavior.value !== "strict") && this.view?.(transcript ? `${transcript}${!this.state.routing ? `... Say "${this.linked(isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake[0] : this.config.commands.voiceWake)}"!` : ""}` : this.getRouterSpeech(this.state.routing ? "Didn't catch that..." : undefined, this.state.routing ? "" : undefined), this.getRouterOptions());
+    !this.config.muted && (this.state.routing || this.config.toasts.behavior.value !== "strict") && this.view?.(transcript ? `${transcript}${!this.state.routing ? `... Say ${this.linked(isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake[0] : this.config.commands.voiceWake)}!` : ""}` : this.getRouterSpeech(this.state.routing && !IS_MOBILE ? "Didn't catch that..." : undefined, this.state.routing ? "" : undefined), this.getRouterOptions());
     const pathInput = this.container?.querySelector<HTMLInputElement>(".tmg-media-voice-path-input");
     if (pathInput) pathInput.value = transcript.trim(); // Update the Text UI
     transcript && this.ctlr.debounce("voiceProcessing", () => this.process(transcript), 500, false, this.signal); // Process after delay
@@ -112,7 +112,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     let state = this.config.muted ? "granted" : await this.request();
     if (state === "nuked" || !this.signal || this.signal?.aborted) return;
     state === "granted" && (this.config.toasts.behavior.value === "persistent" || t007.toast.isActive(this.TIDS.ROUTER)) && this.view?.(this.getRouterSpeech(), this.getRouterOptions());
-    if (this.state.routing) this.goTo(), this.teachBasics();
+    if (this.state.routing) this.goTo(), t007.toast.isActive(this.TIDS.HELPER) && this.teachBasics();
     try {
       state === "granted" ? !this.config.muted && this.recognition?.start() : this.onError({ error: "not-allowed" });
     } catch (e) {} // Silence the InvalidStateError since we might call when already on due to wake word
@@ -184,7 +184,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       if (input) input.value = type === "array" ? value.join(", ") : String(value);
       return this.view?.update(this.TIDS.ROUTER, { render: transcript || String(value), ...this.getRouterOptions(false) }), true;
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${path.split(".").map(uncam).join(" > ")} -> ${isArr(value) ? `[${value.join(", ")}]` : value}`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
+    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${path.split(".").map(uncam).join(" > ")} -> <code>${isArr(value) ? `[${value.join(", ")}]` : value}</code>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
   }
   protected submit(render = this.container?.querySelector<HTMLInputElement>(clame("word-input"))?.value.trim(), process = false): void {
     if (render) this.view?.update(this.TIDS.ROUTER, { render, ...this.getRouterOptions(false) }), !process ? this.execute(render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
@@ -214,9 +214,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.view?.(`${crumbHtml}<div class="tmg-media-voice-content"><small style="font-weight: 500;">Try ${this.config.muted ? (IS_MOBILE ? "tapping" : "clicking") : "saying"} any of these:</small><br>${inputHtml} • ${paths.map((p) => this.linked(uncam(p.split(".").pop()!))).join(" • ")}</div>`, this.getHelperOptions(actions));
   }
 
-  protected linked(text: string, value = text.toLowerCase(), isGoto = false): string {
-    return `<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${text}</u>`;
-  }
+  protected linked(text: string, value = text.toLowerCase(), isGoto = false, punc = isGoto || this.config.muted ? "" : '"'): string {
+    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${text}</u>${punc}`;
+  } // `""` is my lil UI Experiment, crafting a standard here :)
   protected stayWoke(e: Event): void {
     this.state.routing && this.ctlr.throttle("voiceWaking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.TIDS.HELPER}"],[id="${this.TIDS.ROUTER}"])`)) && this.snooze(), 500);
   }
@@ -269,7 +269,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected getRouterActions(full = true): ToastOptions["actions"] {
     return { ...(full && this.state.routing && { [`<span title='Open Actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
-  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => `"${this.linked(c)}"`).join(" or ") : `"${this.linked(this.config.commands.voiceWake)}"`} to wake me up` : this.config.muted ? "or type instead" : "a path or command!"}`): string {
+  protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => this.linked(c)).join(" or ") : this.linked(this.config.commands.voiceWake)} to wake me up` : this.config.muted ? "or type instead" : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;
   }
   protected get container() {

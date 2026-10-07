@@ -14,7 +14,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
       container: this.element,
       getKey: (opt) => opt.value as string,
       createNode: (opt) => {
-        const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display }),
+        const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display, label: opt.display }),
           check = createEl("span", { className: "tmg-media-smenu-select-check", ariaHidden: "true" });
         check.innerHTML = IconRegistry.get("check", true) || "✓";
         const label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display });
@@ -70,7 +70,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
   private syncActive(): void {
     const isMulti = this.item.getMultiple?.(),
       vals = isMulti ? (isArr(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
-    for (const li of this.element.querySelectorAll<HTMLElement>("[data-opt-val]")) {
+    for (const li of this.element.querySelectorAll<HTMLElement>("[data-opt-val]")!) {
       const active = vals.includes(li.dataset.optDisplay!) || vals.includes(li.dataset.optVal!);
       li.classList.toggle("tmg-media-smenu-option-active", active), (li.ariaSelected = String(active));
     }

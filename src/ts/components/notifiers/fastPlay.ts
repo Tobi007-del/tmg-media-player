@@ -1,8 +1,6 @@
 import { BaseNotifier, ComponentState } from "./base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import type { REvent } from "sia-reactor";
-import type { CtlrMedia } from "@defs/contract";
 
 export class FastPlayNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
   public static readonly componentName = "fastPlayNotifier";
@@ -17,17 +15,20 @@ export class FastPlayNotifier extends BaseNotifier<undefined, ComponentState, HT
 
   public override wire(): void {
     super.wire();
+    // State Listeners
+    this.state.on("active", this.handleTimeState, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.playbackRate", this.handlePlaybackRateState, { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("state.currentTime", this.handleCurrentTimeState, { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const k of ["state", "intent"] as const) this.media.on(`${k}.currentTime`, this.handleTimeState, { signal: this.signal });
+    for (const p of ["state.playbackRate", "status.rewindRate"] as const) this.media.on(p, this.handleRateState, { init: p === "state.playbackRate" && this.ctlr.flags.wired, signal: this.signal });
   }
 
-  protected handlePlaybackRateState({ value }: REvent<CtlrMedia, "state.playbackRate">): void {
-    this.text.textContent = `${value}x`;
+  protected handleRateState(): void {
+    this.text.textContent = `${this.media.status.rewindRate || this.media.state.playbackRate}x`;
+    this.el.classList.toggle("tmg-media-rewind", !!this.media.status.rewindRate);
   }
 
-  protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">): void {
-    this.el.setAttribute("data-current-time", this.ctlr.plug("settings.time")?.toTimeText(value, true) || "");
+  protected handleTimeState(): void {
+    this.state.active && this.el.setAttribute("data-current-time", this.ctlr.plug("settings.time")?.toTimeText(this.media[this.media.status.rewindRate ? "intent" : "state"].currentTime, true) || "");
   }
 }
 

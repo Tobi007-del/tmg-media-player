@@ -1,14 +1,15 @@
-import { MediaIntent } from "@defs/contract";
+import type { Action } from "@defs/action";
 
 export interface GestureGeneralConfig {
-  click: keyof MediaIntent | false;
-  dblClick: keyof MediaIntent | false;
+  click: Action["id"] | false;
+  dblClick: Action["id"] | false;
 }
 
 export interface GestureTouchConfig {
   volume: boolean;
   brightness: boolean;
   timeline: boolean;
+  fastSwipes: boolean;
   threshold: number;
   sliderTimeout: number;
   xRatio: number;

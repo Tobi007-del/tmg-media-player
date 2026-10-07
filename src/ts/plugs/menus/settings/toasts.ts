@@ -6,12 +6,16 @@ import { formatUITime } from "@utils/time";
 import { isBool } from "@utils/obj";
 import { globalState } from "@tools/runtime";
 
-export const TOAST_BOOLEAN_OPTS = [
+const toToastFormOpts = (opts: any[]) => [{ option: "Default", value: "" }, ...opts.map((o) => ({ option: o.display, value: o.value }))],
+  getActionOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.logicActions.map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const,
+  getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v == null || v === true ? "" : v / 1000) : k === "icon" && isBool(v) ? "" : v == null ? "" : v === true ? "yes" : v === false ? "no" : v),
+  parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v === "" || v == null ? undefined : v * 1000) : k === "icon" ? (v === "" ? false : v) : v === "" || v === "default" || v == null ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
+
+const TOAST_BOOLEAN_OPTS = [
   { option: "Default", value: "" },
   { option: "Yes", value: "yes" },
   { option: "No", value: "no" },
 ];
-export const toToastFormOpts = (opts: any[]) => [{ option: "Default", value: "" }, ...opts.map((o) => ({ option: o.display, value: o.value }))];
 
 export const TOAST_FORM_INPUTS = [
   { name: "icon", label: "Icon", type: "text", helperText: { info: "👋 Optional icon to display in the notification" } },
@@ -22,8 +26,6 @@ export const TOAST_FORM_INPUTS = [
   { name: "autoClose", label: "Auto close (secs)", type: "number", helperText: { info: "Blank for default, -1 for none" }, min: "-1", step: "any" },
 ] as const;
 
-export const parseToastVal = (v: any, k?: string) => (k === "autoClose" ? (v == -1 ? false : v == null ? undefined : v * 1000) : k === "icon" ? (v === "" ? false : v) : v === "" || v === "default" || v == null ? undefined : v === "yes" ? true : v === "no" || v === "none" ? false : v);
-export const getToastFormVal = (v: any, k?: string) => (k === "autoClose" ? (v === false ? -1 : v == null || v === true ? "" : v / 1000) : k === "icon" && isBool(v) ? "" : v == null ? "" : v === true ? "yes" : v === false ? "no" : v);
 export const syncToastConfig = (val: any, target: any) => {
   for (const key in val) {
     const parsed = parseToastVal(val[key], key);
@@ -36,7 +38,6 @@ export const getToastMenuInputs = (configObj: any, blacklist?: string[]) => {
   for (const input of TOAST_FORM_INPUTS) !blacklist?.includes(input.name) && inputs.push({ ...input, value: () => getToastFormVal(configObj[input.name], input.name) });
   return inputs;
 };
-const getActionOpts = (plug: ToastsPlug) => [{ option: "None", value: "none" }, ...plug.ctlr.logicActions.map((a) => ({ value: a.id, option: a.label || capitalize(uncamelize(a.id)) }))] as const;
 
 export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): SettingsMenuItem => ({
   id: "advanced",
@@ -98,7 +99,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): S
         { id: "toastsCloseOnClick", label: "Close on click", widget: "toggle", getValue: () => (plug.config.closeOnClick ? "On" : "Off"), onChange: (val: boolean) => (plug.config.closeOnClick = val), configPaths: ["settings.toasts.closeOnClick"] },
         { id: "toastsDragToClose", label: "Drag to close", widget: "toggle", getValue: () => TOAST_UI_DRAG_OPTIONS.find((o) => o.value === plug.config.dragToClose)?.display, onChange: (val: boolean) => (plug.config.dragToClose = val), configPaths: ["settings.toasts.dragToClose"] },
         { id: "toastsDragToCloseDir", label: "Drag direction", widget: "select", getValue: () => TOAST_UI_DRAG_DIRECTIONS.find((o) => o.value === plug.config.dragToCloseDir)?.display, getOptions: () => TOAST_UI_DRAG_DIRECTIONS, onChange: (val: string) => (plug.config.dragToCloseDir = val as typeof plug.config.dragToCloseDir), configPaths: ["settings.toasts.dragToCloseDir"] },
-        { id: "toastsAutoClose", label: "Auto close (secs)", widget: "input", type: "number", required: false, min: "-1", step: "any", getValue: () => formatUITime(plug.config.autoClose), onChange: (val: any) => (plug.config.autoClose = val == -1 ? false : val == null ? undefined : val * 1000), configPaths: ["settings.toasts.autoClose"], title: "Blank for default, -1 for none", helperText: { info: "Blank for default, -1 for none" }, inputs: [{ name: "secs", label: "secs", type: "number", min: "-1", step: "any", value: (v = plug.config.autoClose) => (v === false ? -1 : v == null || v === true ? "" : v / 1000) }] },
+        { id: "toastsAutoClose", label: "Auto close (secs)", widget: "input", type: "number", required: false, min: "-1", step: "any", getValue: () => formatUITime(plug.config.autoClose), onChange: (val: any) => (plug.config.autoClose = val.secs == -1 ? false : val.secs === "" || val.secs == null ? undefined : val.secs * 1000), configPaths: ["settings.toasts.autoClose"], title: "Blank for default, -1 for none", helperText: { info: "Blank for default, -1 for none" }, inputs: [{ name: "secs", label: "secs", type: "number", min: "-1", step: "any", value: (v = plug.config.autoClose) => (v === false ? -1 : v == null || v === true ? "" : v / 1000) }] },
         { id: "toastsLimit", label: "Max visible", widget: "range", getValue: () => String(plug.config.limit), getRange: () => ({ min: 1, max: 30, step: 1, formatTooltip: (v: number) => String(Math.round(v)) }), onChange: (val: number) => (plug.config.limit = val), configPaths: ["settings.toasts.limit"] },
         { id: "toastsNewestOnTop", label: "Newest on top", widget: "toggle", getValue: () => (plug.config.newestOnTop ? "On" : "Off"), onChange: (val: boolean) => (plug.config.newestOnTop = val), configPaths: ["settings.toasts.newestOnTop"] },
       ],

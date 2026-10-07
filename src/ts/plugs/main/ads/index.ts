@@ -28,7 +28,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   public override mount(): void {
-    this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-cover tmg-media-fill tmg-media-filtered" });
+    this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-cover tmg-media-fill tmg-media-curve tmg-media-filtered" });
     // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.container);
     // Post Mounting

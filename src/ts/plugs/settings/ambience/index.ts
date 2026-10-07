@@ -27,7 +27,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
     this.canvas = createEl("canvas", { className: "tmg-media-ambience-canvas tmg-media-fill" });
     this.ctx = this.canvas.getContext("2d", { alpha: false });
     // DOM Injection
-    this.wrapper.append(this.canvas), this.ctlr.DOM.containerContent?.prepend(this.wrapper);
+    this.wrapper.append(this.canvas), this.ctlr.DOM.content?.prepend(this.wrapper);
   }
   public override unmount(): void {
     this.canvas.remove();
@@ -116,4 +116,3 @@ declare module "@defs/config" {
     ambience: AmbienceConfig;
   }
 }
-

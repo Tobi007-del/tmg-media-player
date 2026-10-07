@@ -64,7 +64,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     // State Listeners
     this.state.on("scrubbing", this.handleScrubbing, { signal: this.signal });
     this.state.on("previewing", ({ value }) => (value ? (this.clearCanvases(), this.media.container.classList.add("tmg-media-previewing")) : setTimeout(() => this.media.container.classList.remove("tmg-media-previewing"), 0, this.signal)), { signal: this.signal });
-    this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelScrubNotifier")?.el.classList.toggle("tmg-media-control-active", value), { signal: this.signal });
+    this.state.on("cancelScrub", ({ value }) => this.ctlr.plug("settings.notifiers")?.comp("cancelScrubNotifier")?.[value ? "active" : "inactive"](), { signal: this.signal });
     // Config --------
     this.config.on("previewValue", this.syncPreviewText, { init: true, signal: this.signal });
     this.config.on("previews", this.syncPreviews, { init: true, signal: this.signal });
@@ -88,8 +88,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     // ---- State --------
     for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.object.${k}`, ({ value }) => (this.thumbnailCanvas[k] = value), { init: true, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.time.format", this.syncPreviewText, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.time.mode", this.syncPreviewText, { signal: this.signal });
+    for (const k of ["format", "mode"] as const) this.ctlr.config.on(`settings.time.${k}`, this.syncPreviewText, { init: k === "mode", signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
     return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(getTime(this.media, value / 100))), true) : false;
@@ -166,7 +165,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     else if (type !== "none") this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
   }
   public syncPreviewText(): void {
-    if (this.plug) this.previewContainer.dataset.previewText = `${this.plug.toTimeText(getTime(this.media, this.config.previewValue / 100), true)}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
+    this.previewContainer.dataset.previewText = `${this.plug?.toTimeText(getTime(this.media, this.config.previewValue / 100), true) || ""}  ${this.getValueChunk(this.config.previewValue)?.label || ""}`.trim();
   }
   public syncCanvases(): void {
     if (!this.previewCtx || !this.thumbnailCtx || !this.media.status.loadedData || this.ctlr.state.frameReadyPromise || this.media.pseudoElement.readyState < 1) return;

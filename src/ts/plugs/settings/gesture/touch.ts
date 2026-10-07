@@ -22,11 +22,11 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
 
   public override wire(): void {
     // Event Listeners
-    this.ctlr.DOM.controlsContainer?.addEventListener("touchstart", this.handleStart, { capture: true, signal: this.signal });
+    this.ctlr.DOM.controlsContainer?.addEventListener("touchstart", this.handleStart, { capture: true, signal: this.signal }); // overlays proof - init not post hence scoped
   }
 
   protected canHandle(e: TouchEvent): boolean {
-    return !this.ctlr.config.disabled && e.touches?.length === 1 && e.target === this.ctlr.DOM.controlsContainer && !this.ctlr.plug("settings.fastPlay")?.state.active && !this.media.state.miniplayer;
+    return e.target === e.currentTarget && e.touches?.length === 1 && !this.ctlr.config.disabled && !this.ctlr.plug("settings.fastPlay")?.state.active && !this.media.state.miniplayer;
   }
 
   protected handleStart(e: TouchEvent): void {
@@ -63,7 +63,7 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
   }
 
   protected handleXMove(e: Event, te = e as TouchEvent): void {
-    if (this.canCancel) return this.handleEnd();
+    if (this.canCancel) return this.config.fastSwipes && this.media.state.fullscreen ? te.preventDefault() : this.handleEnd();
     te.preventDefault();
     this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
     this.ctlr.throttle(
@@ -98,12 +98,16 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
     );
   }
 
-  protected handleEnd(): void {
+  protected handleEnd(e?: Event, te = e as TouchEvent): void {
     if (this.xCheck) {
       this.xCheck = false;
       this.media.container.removeEventListener("touchmove", this.handleXMove);
       this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.inactive();
       if (!this.canCancel) this.media.intent.currentTime = this.nextTime;
+      else if (e?.type === "touchend" && this.config.fastSwipes && this.media.state.fullscreen && te.changedTouches?.length) {
+        const deltaX = te.changedTouches[0].clientX - this.lastX;
+        Math.abs(deltaX) > 50 && this.ctlr.perform(deltaX > 0 ? "timeSkipFwd" : "timeSkipBwd"); // standard adult thumb
+      }
     }
     if (this.yCheck) {
       this.yCheck = false;

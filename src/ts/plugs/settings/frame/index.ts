@@ -10,6 +10,7 @@ import { silence } from "sia-reactor/modules";
 import { setTimeout } from "@utils/fn";
 import { getMediaMin, getMediaMax } from "@utils/time";
 import { NIL } from "sia-reactor";
+import { withMeta } from "sia-reactor/utils";
 
 export class FramePlug extends BasePlug<FrameConfig> {
   public static readonly plugName = "frame";
@@ -42,7 +43,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
       this.ctlr.state.frameReadyPromise = await this.ctlr.state.frameReadyPromise;
     }
     (this.exportCanvas.width = video.videoWidth || min), (this.exportCanvas.height = video.videoHeight || min);
-    this.exportCtx.filter = `${this.settings.css.filter as string}${display === "monochrome" ? " grayscale(100%)" : ""}`;
+    this.exportCtx.filter = `${withMeta({ live: true }, () => this.settings.css.filter as string)}${display === "monochrome" ? " grayscale(100%)" : ""}`;
     this.exportCtx.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
     this.exportCtx.filter = "none";
     if (raw === true) return { canvas: this.exportCanvas, context: this.exportCtx };

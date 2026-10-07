@@ -7,7 +7,7 @@ export class ButtonWidget extends BaseWidget {
     this.element = createEl("ul", { className: "tmg-media-smenu-select-list", role: "listbox" });
     const actions = this.item.actions || [{ getLabel: () => this.item.label, icon: this.item.icon, onClick: () => this.item.onChange?.(null) }];
     for (const action of actions) {
-      const btn = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", ariaLabel: action.getLabel(), title: action.getLabel(), tabIndex: 0 });
+      const btn = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", ariaLabel: action.getLabel(), title: action.getLabel(), tabIndex: 0 }, { label: action.getLabel() });
       btn.innerHTML = (action.icon ? `<span class="tmg-media-smenu-row-icon tmg-media-flex-center">${IconRegistry.get(action.icon, true) || ""}</span>` : "") + `<span class="tmg-media-smenu-row-label">${action.getLabel()}</span>`;
       btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()), { signal: this.signal });
       btn.addEventListener("keydown", (e) => e.key === "Enter" && (e.preventDefault(), action.onClick()), { signal: this.signal });

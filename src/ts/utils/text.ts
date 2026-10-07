@@ -31,7 +31,7 @@ export function parseVttText(text: string): string {
     const [_, cls, tag_n, rest] = m,
       low = tag_n.toLowerCase();
     if (/^[0-9]/.test(tag_n)) {
-      state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}${state.spans.map(() => "</span>").join("")}</span>` : state.c;
+      state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}${state.spans.map(() => "</span>").join("")}</span>` : state.c + state.spans.map(() => "</span>").join("");
       (state.p = tag_n), (state.c = state.spans.join(""));
     } else if (cls) /^(c|v|lang)$/.test(low) ? ((state.c += "</span>"), state.spans.pop()) : (state.c += `</${low}>`);
     else if (/^(b|i|u|ruby|rt)$/.test(low)) state.c += `<${low}>`;
@@ -42,7 +42,7 @@ export function parseVttText(text: string): string {
   }
   const lChunk = text.slice(state.l);
   if (lChunk) state.c += esc(lChunk);
-  return state.o + (state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}</span>` : state.c);
+  return (state.o + (state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}</span>` : state.c)).replace(/( data-badge="[^"]+")(?=[\s\S]*?\1)/g, "");
 }
 
 export function formatVttLine(p: string, maxChars: number): string[] {

@@ -114,6 +114,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
   public syncFeatures(): void {
     this.media.tech.polyfill("floatingPlayer", this.ctlr.isNativeEl && supportsPictureInPicture(false), this.config.disabled || this.config.floatingPlayer.disabled);
     this.media.tech.polyfill("pictureInPicture", this.media.features.floatingPlayer || (this.ctlr.isNativeEl && supportsPictureInPicture()), this.config.disabled);
+    !this.media.features.floatingPlayer && this.floatingWindow?.close();
   }
 
   protected override onDestroy(): void {

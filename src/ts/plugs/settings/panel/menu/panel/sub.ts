@@ -3,6 +3,7 @@ import type { SettingsMenuItem } from "../../types";
 import { BaseWidget, WidgetRegistry } from "../widgets";
 import { GroupWidget } from "../widgets/group";
 import { createEl, addSafeClicks } from "@utils/dom";
+import { parseUIBadge } from "@utils/obj";
 import { IconRegistry } from "@core/registries";
 import type { Controller } from "@core/controller";
 
@@ -58,6 +59,8 @@ export class SubMenuPanel extends BaseMenuPanel {
 
   public load(item: SettingsMenuItem): void {
     this.headerLabel.textContent = item.label;
+    const badge = parseUIBadge(item.getBadge?.());
+    badge?.label ? (this.headerLabel.dataset.badge = badge.label) : delete this.headerLabel.dataset.badge;
     if (this.item?.id === item.id) return void this.syncUI();
     if (this.widget) this.widget.element?.remove(), this.widget.destroy(), this.widget = null;
     this.item = item;

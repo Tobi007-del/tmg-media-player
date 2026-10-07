@@ -20,6 +20,7 @@ export const ACTIONS_DICT = {
   timeStepFwd: { label: "Frame: Next (while paused)" },
   timeStepBwd: { label: "Frame: Previous (while paused)" },
   captions: { label: "Captions: Show or Hide", notify: "captions", gates: ["textVisible"] },
+  captionsResetPos: { label: "Captions: Reset position", gates: ["textVisible"] },
   captionsFontSizeUp: { label: "Captions: Font size increase", gates: ["textVisible"] },
   captionsFontSizeDown: { label: "Captions: Font size decrease", gates: ["textVisible"] },
   captionsFontFamily: { label: "Captions: Rotate font family", gates: ["textVisible"] },

@@ -1,7 +1,7 @@
 import { DeepPartial } from "sia-reactor";
-import { panelConfig } from "./types";
+import { PanelConfig } from "./types";
 
-export const SETTINGS_BUILD: DeepPartial<panelConfig> = {
+export const SETTINGS_BUILD: DeepPartial<PanelConfig> = {
   autoPause: true,
   menu: {
     disabled: false,

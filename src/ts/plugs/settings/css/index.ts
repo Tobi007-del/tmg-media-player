@@ -16,7 +16,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
     const entries = Object.entries(this.config);
     this.settings.css.altImgUrl = `url(${window.TMG_MEDIA_ALT_IMG_SRC})`;
     // Blackbox Handlers
-    this.ctlr.config.get("*", (val, { target: { key, path } }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : (this.build[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
+    this.ctlr.config.get("*", (val, { target: { key, path }, live }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : live ? this.get(key) : (this.build[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !banRgx.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     // ---- Media Watchers
     for (const p of ["videoWidth", "videoHeight"] as const) this.media.watch(`status.${p}`, this.syncAspectRatio, { init: p === "videoWidth", signal: this.signal });
@@ -84,5 +84,11 @@ declare module "@defs/registries" {
 declare module "@defs/config" {
   interface Settings {
     css: CssConfig;
+  }
+}
+
+declare module "sia-reactor" {
+  interface ReactorMeta {
+    live?: boolean; // Bypasses cache for dynamic CSS properties
   }
 }

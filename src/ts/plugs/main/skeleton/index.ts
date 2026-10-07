@@ -25,7 +25,7 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
     // DOM Injection
     this.media.pseudoContainer.appendChild(this.media.pseudoElement);
     this.media.element.parentElement?.insertBefore(this.media.container, this.media.element);
-    this.injectInterface(), this.ctlr.DOM.containerContent?.prepend(this.media.element);
+    this.injectInterface(), this.ctlr.DOM.content?.prepend(this.media.element);
   }
   public override unmount(): void {
     if (this.media.pseudoElement.isConnected) this.media.element.isConnected && this.exitPseudoMode(true), this.media.container.remove();
@@ -51,21 +51,21 @@ export class SkeletonPlug extends BasePlug<SkeletonConfig> {
       this.media.container.insertAdjacentHTML(
         "beforeend",
         `<div class="tmg-media-content-wrapper">
-          <div class="tmg-media-content tmg-media-fill">
+          <div class="tmg-media-content tmg-media-fill tmg-media-curve tmg-media-flex-center">
             <div class="tmg-media-controls-container tmg-media-fill">
               <div class="tmg-media-curtain tmg-media-no-pointer tmg-media-top-curtain"></div><div class="tmg-media-curtain tmg-media-no-pointer tmg-media-bottom-curtain"></div><div class="tmg-media-curtain tmg-media-no-pointer tmg-media-cover-curtain"></div>
             </div>
           </div>
-          <div class="tmg-media-settings tmg-media-cover tmg-media-fill" inert>
+          <div class="tmg-media-settings tmg-media-cover tmg-media-fill tmg-media-curve" inert>
             <div class="tmg-media-settings-content tmg-media-fill">
               <div class="tmg-media-settings-top-panel"><button type="button" class="tmg-media-settings-close-btn">${IconRegistry.get("returnBack")}<span>Close Settings</span></button></div>
-              <div class="tmg-media-settings-bottom-panel"><p>More Settings Coming Soon!</p></div>
+              <div class="tmg-media-settings-bottom-panel"><p>Choose Your Color Palette</p></div>
             </div>
           </div>
         </div>`
       );
-    this.ctlr.DOM.containerContentWrapper = this.ctlr.queryDOM(".tmg-media-content-wrapper");
-    this.ctlr.DOM.containerContent = this.ctlr.queryDOM(".tmg-media-content");
+    this.ctlr.DOM.contentWrapper = this.ctlr.queryDOM(".tmg-media-content-wrapper");
+    this.ctlr.DOM.content = this.ctlr.queryDOM(".tmg-media-content");
     this.ctlr.DOM.controlsContainer = this.ctlr.queryDOM(".tmg-media-controls-container");
     this.ctlr.DOM.settings = this.ctlr.queryDOM(".tmg-media-settings");
     this.ctlr.DOM.settingsContent = this.ctlr.queryDOM(".tmg-media-settings-content");
@@ -114,8 +114,8 @@ declare module "@defs/registries" {
     skeleton: typeof SkeletonPlug;
   }
   interface ControllerDOMMap {
-    containerContentWrapper?: HTMLDivElement | null;
-    containerContent?: HTMLDivElement | null;
+    contentWrapper?: HTMLDivElement | null;
+    content?: HTMLDivElement | null;
     controlsContainer?: HTMLDivElement | null;
     settings?: HTMLDivElement | null;
     settingsContent?: HTMLDivElement | null;

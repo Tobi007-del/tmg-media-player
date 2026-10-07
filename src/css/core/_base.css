@@ -8,18 +8,14 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.tmg-host-container *,
-.tmg-host-container *::after,
-.tmg-host-container *::before {
-  box-sizing: border-box;
-  font-family: inherit;
-  font-feature-settings: inherit;
-}
 :where(.tmg-host-container) *,
 :where(.tmg-host-container) *::after,
 :where(.tmg-host-container) *::before {
+  box-sizing: border-box;
   padding: 0;
   margin: 0;
+  font-family: inherit;
+  font-feature-settings: inherit;
   scrollbar-width: thin;
   scrollbar-color: var(--tmg-media-brand-color) transparent;
 }
@@ -27,8 +23,14 @@
   color: currentColor;
   background-color: var(--tmg-media-brand-color);
 }
-:where(.tmg-host-container:not(.tmg-media-disabled)) :not([inert]) :is(p, h1, h2, h3, h4, h5, h6, a) {
+.tmg-host-container :is(p, h1, h2, h3, h4, h5, h6, a) {
   font-feature-settings: normal;
+}
+.tmg-host-container :is(code, pre, samp, kbd, var, tt, plaintext, math, math *) {
+  font-family: revert;
+  font-feature-settings: normal;
+}
+.tmg-host-container:not(.tmg-media-disabled) :is(p, h1, h2, h3, h4, h5, h6, a) {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -97,6 +99,10 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   position: absolute;
   inset: 0;
 }
+.tmg-media-curve {
+  border-radius: inherit;
+  overflow: hidden;
+}
 .tmg-media-flex-center {
   display: flex;
   justify-content: center;
@@ -163,8 +169,8 @@ button > :is(.tmg-media-play-icon, .tmg-media-pause-icon) {
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 /* ==== INTERACTION ==== */
-.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible), :has(dialog[open])) .tmg-media-content,
-.tmg-media-container:is(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content {
+.tmg-media-container:where(.tmg-media-locked, .tmg-media-overlay, :has(.tmg-media-content :focus-visible), :has(dialog[open])) .tmg-media-content,
+.tmg-media-container:where(:has(.tmg-media-notifier.tmg-media-control-persist, :is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) .tmg-media-content {
   cursor: auto;
 }
 .tmg-media-container.tmg-media-miniplayer :is(.tmg-media-content, .tmg-media-settings),

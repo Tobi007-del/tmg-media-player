@@ -1,5 +1,5 @@
 import { BaseTech } from "./base";
-import { type REvent, inert } from "sia-reactor";
+import { NOOP, type REvent, inert } from "sia-reactor";
 import type { Controller } from "@core/controller";
 import type { CtlrMedia, MediaIntent, MediaFeatures } from "@defs/contract";
 import type { Source, Track } from "@defs/generics";
@@ -23,6 +23,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   public static override canPlaySource(src: string): boolean {
     return VIDEO_EXTENSIONS.test(src) || AUDIO_EXTENSIONS.test(src) || !!(!MSE_ENABLED && DUMMY_VID.canPlayType("application/vnd.apple.mpegurl") && HLS_EXTENSIONS.test(src)); // Safari has native HLS support, but only if MSE is not available (iOS)
   }
+  public hostSrc: string | null = null;
   protected readonly isAlien: boolean = false;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
@@ -97,8 +98,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.on("intent.volume", this.handleVolumeIntent, this.evtOpts.CONFIG);
   }
   protected wireMuted(): void {
-    // Native 'volumechange' handles state update
-    this.config.on("intent.muted", this.handleMutedIntent, this.evtOpts.CONFIG);
+    this.config.on("intent.muted", this.handleMutedIntent, this.evtOpts.CONFIG); // Native 'volumechange' handles state update
   }
   protected wirePlaybackRate(): void {
     this.el.addEventListener("ratechange", this.setRateChangeState, this.evtOpts.EL);
@@ -249,7 +249,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
     if (e.resolved) return;
-    if (!this.wired || !isSameURL(this.el.src, e.value)) this.el.src = e.value;
+    if (!isSameURL(this.hostSrc, e.value)) this.hostSrc = this.el.src = e.value;
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -262,7 +262,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => this.ctlr?.log(err, "error", true)), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying // #EYE-SERVICE: hinged only on init
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => (this.ctlr?.log(err, "error", true), this.setPauseState())), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying; `.play()` promises hence `always` override
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -339,7 +339,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, true); // #EYE-SERVICE: hinged only on init
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture?.()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, !this.wired); // #EYE-SERVICE: hinged only on inits
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
@@ -452,6 +452,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   // --- Lifecycle ---
   protected override onDestroy(): void {
+    if (document.pictureInPictureElement === this.el) document.exitPictureInPicture()?.catch(NOOP), (this.config.state.pictureInPicture = false); // #GUARD: no shots in others' foot
     super.onDestroy();
   }
 }

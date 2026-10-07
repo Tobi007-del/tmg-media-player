@@ -50,10 +50,10 @@ body {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 .vtt-c.bg-yellow {
-  background: rgba(255, 225, 0, var(--tmg-media-captions-background-opacity));
+  background: yellow;
 }
 .vtt-c.highlight {
-  background: rgba(255, 255, 255, var(--tmg-media-captions-background-opacity));
+  background: rgba(255, 0, 247, 0.3);
 }
 .vtt-c.rainbow {
   background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);

@@ -53,25 +53,25 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
     this.ctlr.plug("settings.overlay")?.delay();
   }
   protected handleRightClick(e: PointerEvent): void {
+    if (this.ctlr.config.disabled || this.media.state.locked) return;
     e.preventDefault(), e.stopImmediatePropagation(), (e.pointerType ? e.pointerType === "mouse" : !IS_MOBILE) && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
   }
   protected handleClick(e: MouseEvent): void {
-    if (e.target !== this.ctlr.DOM.controlsContainer) return;
+    if (e.target !== this.ctlr.DOM.controlsContainer) return; // no currentTarget as async safe click
     if (this.ctlr.plug("settings.fastPlay")?.state.active && (this.ctlr.plug("settings.keys")?.playKeySeq ?? 1) < 1) return;
     if (IS_MOBILE && !this.media.state.pictureInPicture && !this.media.status.waiting && !this.media.status.ended && (!this.ctlr.plug("settings.time")?.skipNotifier || !this.ctlr.isUIActive("overlay"))) !/hidden|persistent/.test(this.settings.overlay.behavior.value) && this.media.container.classList.toggle("tmg-media-overlay");
-    if (!this.media.state.miniplayer && this.config.click) (this.media.intent[this.config.click] = !this.media.state[this.config.click] as never), this.config.click === "paused" && this.ctlr.notify?.(this.media.intent.paused ? "mediaPause" : "mediaPlay");
+    !this.media.state.miniplayer && this.config.click && this.ctlr.perform(this.config.click, e);
   }
   protected handleDblClick(e: MouseEvent): void {
-    const { clientX: x, target, detail } = e;
-    if (target !== this.ctlr.DOM.controlsContainer) return;
+    if (e.target !== e.currentTarget) return;
     const { width, left } = this.media.container.getBoundingClientRect(),
-      pos = x - left > width * 0.65 ? "right" : x - left < width * 0.35 ? "left" : "center";
+      pos = e.clientX - left > width * 0.65 ? "right" : e.clientX - left < width * 0.35 ? "left" : "center";
     if (this.state.skipping && pos !== this.skipPos) {
       this.ceaseSkip();
-      if (detail === 1) return;
+      if (e.detail === 1) return;
     }
-    if (pos === "center" && this.config.dblClick) return void ((this.media.intent[this.config.dblClick] = !this.media.state[this.config.dblClick] as never), this.config.dblClick === "paused" && this.ctlr.notify?.(this.media.intent.paused ? "mediaPause" : "mediaPlay"));
-    if (this.state.skipping && detail === 2) return;
+    if (pos === "center" && this.config.dblClick) return void this.ctlr.perform(this.config.dblClick, e);
+    if (this.state.skipping && e.detail === 2) return;
     if (!this.state.skipping) this.persistSkip(pos as "left" | "right");
     this.ctlr.plug("settings.time")?.skip(pos === "right" ? this.settings.time.skip : -this.settings.time.skip);
     rippleHandler(e, { target: this.ctlr.plug("settings.time")?.skipNotifier });
@@ -94,12 +94,12 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
 
   public persistSkip(pos: "left" | "right"): void {
     if (this.state.skipping) return;
-    this.media.container.addEventListener("click", this.handleDblClick, { signal: this.signal });
+    this.ctlr.DOM.controlsContainer?.addEventListener("click", this.handleDblClick, { signal: this.signal });
     (this.state.skipping = true), (this.skipPos = pos);
   }
   public ceaseSkip(): void {
     if (!this.state.skipping) return;
-    this.media.container.removeEventListener("click", this.handleDblClick);
+    this.ctlr.DOM.controlsContainer?.removeEventListener("click", this.handleDblClick);
     (this.state.skipping = false), (this.skipPos = null);
   }
 

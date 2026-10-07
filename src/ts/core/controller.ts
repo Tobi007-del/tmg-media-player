@@ -108,8 +108,9 @@ export class Controller {
     if (srcPick !== src && !this.media.features.sources) silence(() => (this.media.intent.src = srcPick!)); // bonus since tech can't handle sources
   }
   public useTech(TechClass: TechConstructor = HTML5Tech, reload = false): void {
+    const prevType = this.media.type;
     this.media.type = AUDIO_EXTENSIONS.test(this.media.state.src) ? "audio" : "video";
-    (reload || TechClass !== this.media.tech.constructor) && (this.media.tech = new TechClass(this)).setup(); // #RESPONSIBLE: no external setup
+    (reload || TechClass !== this.media.tech.constructor || this.media.type !== prevType) && (this.media.tech = new TechClass(this)).setup(); // #RESPONSIBLE: no external setup
   }
   public get isNativeEl(): boolean {
     return this.media.element === this.media.tech.element;

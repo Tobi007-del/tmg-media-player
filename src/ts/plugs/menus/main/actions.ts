@@ -28,7 +28,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
       label,
       widget: "group",
       getValue: () => (path === "*" ? "Choose Key" : ""),
-      getTipHTML: () => `Path: ${tempStep.fpath}<br>Current value: ${type === "array" ? `[${val.join(", ")}]` : String(val)}`,
+      getTipHTML: () => `Path: ${tempStep.fpath}<br>Current value: <code>${type === "array" ? `[${val.join(", ")}]` : String(val)}</code>`,
       actions: [
         {
           id: "confirm",
@@ -372,9 +372,7 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
     label: action.label ?? uncam(action.id),
     getBadge: () => {
       const badges = [];
-      if (action.system) badges.push("sys");
-      else if (action.userCreated) badges.push("own");
-      if (live().disabled) badges.push("off");
+      action.system ? badges.push("sys") : action.userCreated && badges.push("own"), live().disabled && badges.push("off");
       return badges.length ? { label: badges.join(" • ") } : undefined;
     },
     widget: "group",

@@ -161,7 +161,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                               id: "timelineScrubCancelTimeout",
                               label: "Cancel timeout",
                               widget: "input",
-                              inputs: [{ name: "secs", label: "secs", placeholder: "2.5", type: "number", min: "0", required: true, helperText: { info: "How long to wait before allowing you to resume seeking after a cancellation" }, value: () => plug.config.timeline.scrub.cancel.timeout / 1000 }],
+                              inputs: [{ name: "secs", label: "secs", placeholder: "2.5", type: "number", min: "0", step: "any", required: true, helperText: { info: "How long to wait before allowing you to resume seeking after a cancellation" }, value: () => plug.config.timeline.scrub.cancel.timeout / 1000 }],
                               getValue: () => formatUITime(plug.config.timeline.scrub.cancel.timeout),
                               onChange: (val: Record<string, any>) => (plug.config.timeline.scrub.cancel.timeout = val.secs * 1000),
                               configPaths: ["settings.controlPanel.timeline.scrub.cancel.timeout"],

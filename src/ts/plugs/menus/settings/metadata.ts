@@ -52,7 +52,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.audioTracks;
-      return !list.length ? [] : getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })));
+      return !list.length ? [] : getUniqueOpts(Array.from(list, (t, i) => ({ value: i, display: getTrackLabel(t, i) })));
     },
     onChange: (val: number) => (plug.media.intent.currentAudioTrack = val),
     mediaPaths: ["status.audioTracks", "state.currentAudioTrack"],
@@ -70,7 +70,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.videoTracks;
-      return !list.length ? [] : getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })));
+      return !list.length ? [] : getUniqueOpts(Array.from(list, (t, i) => ({ value: i, display: getTrackLabel(t, i) })));
     },
     onChange: (val: number) => (plug.media.intent.currentVideoTrack = val),
     mediaPaths: ["status.videoTracks", "state.currentVideoTrack"],
@@ -87,7 +87,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     }, // this = !()=>{}
     getOptions() {
       const list = plug.media.status.textTracks;
-      return !list.length ? [] : [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(list, (_t, i) => ({ value: i, display: getTrackLabel(list, i) })))];
+      return !list.length ? [] : [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(list, (t, i) => ({ value: i, display: getTrackLabel(t, i) })))];
     },
     onChange: (val: number) => ((plug.media.intent.currentTextTrack = val), val !== -1 && (plug.media.intent.textVisible ||= true)),
     mediaPaths: ["status.textTracks", "state.currentTextTrack", "state.textVisible", "features.textTracks"],

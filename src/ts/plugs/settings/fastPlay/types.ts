@@ -15,5 +15,4 @@ export interface FastPlayConfig {
 export interface FastPlayState {
   active: boolean;
   ptrActive: boolean;
-  rewinding: boolean;
 }

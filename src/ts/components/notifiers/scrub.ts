@@ -3,6 +3,7 @@ import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
 import { CtlrConfig } from "@defs/config";
 import { REvent } from "sia-reactor";
+import { IS_MOBILE } from "@utils/env";
 
 export class ScrubNotifier extends BaseNotifier<undefined, ComponentState, HTMLDivElement> {
   public static readonly componentName = "scrubNotifier";
@@ -18,7 +19,7 @@ export class ScrubNotifier extends BaseNotifier<undefined, ComponentState, HTMLD
   }
 
   protected handleTimeSkip({ value }: REvent<CtlrConfig, "settings.time.skip">): void {
-    this.el.querySelector("p")!.textContent = value > 0 ? `Double tap left or right to skip ${value} seconds` : "";
+    this.el.querySelector("p")!.textContent = value > 0 ? `Double ${IS_MOBILE ? "tap" : "click"} left or right to skip ${value} seconds` : "";
   }
 }
 

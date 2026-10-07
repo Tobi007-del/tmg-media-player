@@ -2,20 +2,20 @@
 .tmg-media-top-controls-wrapper,
 .tmg-media-big-controls-wrapper-cover,
 .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container),
-.tmg-media-container:not(.tmg-media-progress-bar, :has(.tmg-media-fast-play-notifier.tmg-media-control-active)) .tmg-media-timeline-container {
+.tmg-media-container:not(.tmg-media-progress-bar) .tmg-media-timeline-container {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--tmg-media-fade-transition-time) ease;
 }
-.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible)) :is(.tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
-.tmg-media-container:where(.tmg-media-overlay, :has(:focus-visible)):not(.tmg-media-progress-bar, :has(.tmg-media-fast-play-notifier.tmg-media-control-active)) .tmg-media-timeline-container {
+.tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) :is(.tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
+.tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)):not(.tmg-media-progress-bar) .tmg-media-timeline-container {
   opacity: 1;
   pointer-events: all;
 }
-.tmg-media-container:not(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-bottom-controls-wrapper {
+.tmg-media-container:not(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) .tmg-media-bottom-controls-wrapper {
   pointer-events: none;
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) .tmg-media-curtain {
+.tmg-media-container:is(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) .tmg-media-curtain {
   opacity: 1;
 }
 .tmg-media-container:has(.tmg-media-top-text-notifier.tmg-media-control-active) :is(.tmg-media-top-controls-wrapper, .tmg-media-top-curtain),

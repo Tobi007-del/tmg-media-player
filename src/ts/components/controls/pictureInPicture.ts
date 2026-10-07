@@ -19,6 +19,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
+    for (const k of ["loadedMetadata", "floatingPlayer"] as const) this.media.on(`status.${k}`, this.syncUI, { init: k === "loadedMetadata" && this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.pictureInPicture", this.syncARIA, { init: true, signal: this.signal });
@@ -27,6 +28,10 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   protected handleClick(): void {
     this.media.intent.pictureInPicture = !this.media.state.pictureInPicture;
+  }
+
+  public syncUI(): void {
+    this[!this.media.status.loadedMetadata && !this.media.status.floatingPlayer ? "disable" : "enable"]();
   }
 
   public syncARIA(): void {

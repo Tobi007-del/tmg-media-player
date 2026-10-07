@@ -18,20 +18,17 @@
 .tmg-host-container:is(.tmg-media-inactive, .tmg-media-disabled, #o#o#o#o#o) {
   --tmg-media-control-color: var(--tmg-media-disabled-color); /* --tmg-media-text-color: var(--tmg-media-disabled-color); */
 }
-.tmg-host-container:is(.tmg-media-disabled, .tmg-media-locked, #o#o#o#o#o) {
-  overflow: hidden;
-}
 .tmg-host-container:is(.tmg-media-disabled, #o#o#o#o#o) {
   cursor: not-allowed;
 }
 .tmg-host-container.tmg-media-disabled *,
-.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) > *:not(.tmg-media-locked-wrapper, [class$="toast-container"]) {
+.tmg-host-container.tmg-media-locked .tmg-media-content > *:not(dialog[open]) {
   pointer-events: none !important;
 }
 .tmg-host-container.tmg-media-disabled * {
   animation: none !important;
 }
-.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-settings, .tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
+.tmg-host-container:is(.tmg-media-locked, #o#o#o#o#o) *:is(.tmg-media-top-controls-wrapper, .tmg-media-controls-container > *:not(.tmg-media-captions-container), .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)) {
   display: none;
 }
 .tmg-host-container:is(.tmg-media-disabled, #o#o#o#o#o) :is(.tmg-media, .tmg-media-filtered) {

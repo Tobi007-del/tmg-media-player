@@ -95,10 +95,11 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
           onWire: (syncUI, signal) => plug.ctlr.config.on("settings.captions.secondaryTracks", syncUI, { signal }),
           getMultiple: () => plug.config.multiple,
           getValue: (curr = plug.media.state.currentTextTrack) => (plug.config.multiple ? (curr === -1 || !plug.media.state.textVisible ? ["-1"] : [String(curr), ...plug.config.secondaryTracks.map(String)]) : !plug.media.state.textVisible ? "-1" : String(curr)),
-          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (_t, i) => ({ value: i, display: getTrackLabel(plug.media.status.textTracks, i), badge: plug.config.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
-          onChange: (val: number) => {
+          getOptions: () => (plug.media.status.textTracks.length ? [{ value: -1, display: "Off" }, ...getUniqueOpts(Array.from(plug.media.status.textTracks, (t, i) => ({ value: i, display: getTrackLabel(t, i), badge: plug.config.secondaryTracks.length && i === plug.media.state.currentTextTrack ? "Main" : "" })))] : []),
+          onChange: (val: number, wasOff = !plug.media.state.textVisible) => {
             if (val !== -1) plug.media.intent.textVisible ||= true;
-            if (val === -1 || !plug.config.multiple) (plug.media.intent.currentTextTrack = val), (plug.config.secondaryTracks = []);
+            if (val === -1) plug.media.intent.textVisible = false;
+            else if (!plug.config.multiple || wasOff) (plug.media.intent.currentTextTrack = val), (plug.config.secondaryTracks = []);
             else if (plug.media.state.currentTextTrack === -1) plug.media.intent.currentTextTrack = val;
             else if (val !== plug.media.state.currentTextTrack) {
               const idx = plug.config.secondaryTracks.indexOf(val);
@@ -146,7 +147,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
               label: "Text",
               widget: "group",
               getValue: () => "",
-              items: [...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle), { id: "captionsPreviewTimeout", label: "Preview timeout", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "1.5", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "0.5", required: true, value: () => plug.config.previewTimeout / 1000 }], getValue: () => formatUITime(plug.config.previewTimeout), onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.secs * 1000), configPaths: ["settings.captions.previewTimeout"] }],
+              items: [...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle), { id: "captionsPreviewTimeout", label: "Preview timeout", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "1.5", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "0.5", step: "any", required: true, value: () => plug.config.previewTimeout / 1000 }], getValue: () => formatUITime(plug.config.previewTimeout), onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.secs * 1000), configPaths: ["settings.captions.previewTimeout"] }],
             },
             { id: "captionsAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => (plug.config.allowMediaOverride ? "On" : "Off"), onChange: (val: boolean) => (plug.config.allowMediaOverride = val), configPaths: ["settings.captions.allowMediaOverride"], title: "Allow media content to override your custom caption styling with its own styling (if available)" },
             {
@@ -155,10 +156,9 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
               widget: "button",
               getValue: () => "",
               onChange: () => {
-                const build = plug.ctlr.build.settings.captions,
-                  sache = plug.ctlr?.plug("settings.css")?.build;
-                if (sache) (plug.settings.css.currentCaptionsX = sache.currentCaptionsX!), (plug.settings.css.currentCaptionsY = sache.currentCaptionsY!), (plug.settings.css.captionsBaseShadow = sache.captionsBaseShadow!);
-                (plug.config.allowMediaOverride = build.allowMediaOverride!), (plug.config.previewTimeout = build.previewTimeout!);
+                const build = plug.ctlr.build.settings.captions;
+                plug.settings.css.captionsBaseShadow = plug.ctlr.plug("settings.css")?.build.captionsBaseShadow ?? plug.settings.css.captionsBaseShadow;
+                plug.resetCuesPos(), (plug.config.allowMediaOverride = build.allowMediaOverride!), (plug.config.previewTimeout = build.previewTimeout!);
                 STYLE_PATHS.forEach((p, _, __, _p = p.replace("captions.", "")) => setPath(plug.config as any, _p, getPath(build as any, _p)));
               },
             },

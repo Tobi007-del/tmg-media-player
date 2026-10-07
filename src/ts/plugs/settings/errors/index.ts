@@ -34,7 +34,7 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
     this.placeholder ??= ComponentRegistry.init("errorPlaceholder", this.ctlr);
     if (!this.ctlr.flags.played) return this.ctlr.plug("disabled")?.deactivate(); // #PATIENT: only after first play
     const id = `${this.ctlr.config.id}-error-dialog`;
-    if (!t007.dialog?.isActive(id)) (await t007.confirm?.(message, { id, rootElement: this.ctlr.DOM.containerContent, confirmText: "Try Again", cancelText: "Dismiss" })) ? this.reloadTech() : this.ctlr.plug("disabled")?.deactivate();
+    if (!t007.dialog?.isActive(id)) (await t007.confirm?.(message, { id, rootElement: this.ctlr.DOM.content, confirmText: "Try Again", cancelText: "Dismiss" })) ? this.reloadTech() : this.ctlr.plug("disabled")?.deactivate();
   }
 
   public reloadTech(): void {

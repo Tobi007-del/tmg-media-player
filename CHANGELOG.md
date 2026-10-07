@@ -1,5 +1,29 @@
 # tmg-media-player
 
+## 0.0.55
+
+### Patch Changes
+
+- Minor bug fixes
+
+## 0.0.54
+
+### Patch Changes
+
+- CSS liveness where needed
+
+## 0.0.53
+
+### Patch Changes
+
+- UI fixes
+
+## 0.0.52
+
+### Patch Changes
+
+- Bug fixes nd short swipt actions
+
 ## 0.0.51
 
 ### Patch Changes

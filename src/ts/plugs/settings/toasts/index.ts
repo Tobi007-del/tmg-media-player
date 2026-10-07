@@ -15,7 +15,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
   public timeouts = new Map<string, { tid: number; after: number }>();
 
   public override mount(): void {
-    this.container = this.media.container.appendChild(createEl("div", { className: "tmg-media-toasts-container tmg-media-cover tmg-media-fill tmg-media-no-pointer" }));
+    this.container = this.media.container.appendChild(createEl("div", { className: "tmg-media-toasts-container tmg-media-cover tmg-media-fill tmg-media-no-pointer tmg-media-curve" }));
     this.toast = t007.toaster({ rootElement: this.container, signal: this.signal, ...this.config }, this.ctlr.config.id);
   }
   public override unmount(): void {

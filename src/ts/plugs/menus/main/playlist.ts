@@ -28,6 +28,7 @@ export const getMainPlaylistMenu = (plug: PlaylistPlug, ctx = { editIdx: -1 }): 
   onDelete: async (idx: number) => {
     if (!plug.config.allowOverride.delete) return;
     const title = getContent(plug)[idx]?.media.settings.metadata.title || `Item ${idx + 1}`;
+    if (!plug.config.content) return t007.alert?.(`Cannot delete "${title}" from an empty playlist.`, { id: `${plug.ctlr.config.id}-playlist-del-alert`, rootElement: plug.ctlr.plug("settings.panel")?.menu?.el, confirmText: "OK" });
     if (await t007.confirm?.(`Delete "${title}" from your playlist? This cannot be undone.`, { id: `${plug.ctlr.config.id}-playlist-del-confirm`, rootElement: plug.ctlr.plug("settings.panel")?.menu?.el, confirmText: "Delete" })) plug.remove(idx);
   },
   onEdit: (idx: number) => (plug.config.allowOverride.edit ? ((ctx.editIdx = idx), plug.ctlr.plug("settings.panel")?.menu?.goTo("playlist-edit")) : undefined),

@@ -13,13 +13,13 @@ export interface SettingsMenuConfig {
   blacklist: string[];
 }
 
-export interface panelConfig {
+export interface PanelConfig {
   autoPause: boolean;
   menu: SettingsMenuConfig;
 }
 
-export interface panelState {
-  viewOpen: boolean;
+export interface PanelState {
+  moreOpen: boolean;
 }
 
 export type MenuItemWidget = "select" | "range" | "toggle" | "color" | "group" | "button" | "playlist" | "input" | "drag-select" | "limits";

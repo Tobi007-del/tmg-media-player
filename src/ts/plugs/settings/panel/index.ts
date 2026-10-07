@@ -1,15 +1,14 @@
 import { silence } from "sia-reactor/modules";
 import { BasePlug } from "../../base";
 import { SETTINGS_BUILD } from "./build";
-import type { panelConfig, panelState } from "./types";
+import type { PanelConfig, PanelState } from "./types";
 import { SettingsMenu } from "./menu";
 import { createEl } from "@utils/dom";
 import { mockAsync } from "@utils/fn";
 import { parseCSSTime } from "@utils/str";
 import type { Controller } from "@core/controller";
-import { isPOJO } from "@utils/obj";
 
-export class PanelPlug extends BasePlug<panelConfig, panelState> {
+export class PanelPlug extends BasePlug<PanelConfig, PanelState> {
   public static readonly plugName = "panel";
   public static readonly BUILD = SETTINGS_BUILD;
   public closeBtn!: HTMLButtonElement | null;
@@ -17,13 +16,13 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
   protected wasPaused = false;
 
   constructor(ctlr: Controller, config = ctlr.settings.panel) {
-    super(ctlr, config, { viewOpen: false });
+    super(ctlr, config, { moreOpen: false });
     this.menu = new SettingsMenu(this.ctlr, this.config.menu);
   }
 
   public override mount(): void {
     this.closeBtn = this.ctlr.queryDOM(".tmg-media-settings-close-btn")!;
-    this.menu.onViewClick = this.toggleView;
+    this.menu.onMoreClick = this.toggleMore;
   }
   public override unmount(): void {
     this.media.container.classList.remove("tmg-media-more-settings");
@@ -42,29 +41,29 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
 
   public async enterMore(): Promise<void> {
     if (this.ctlr.isUIActive("moreSettings")) return;
-    if (!this.viewReady) this.initView(), (this.viewReady = true);
+    if (!this.viewReady) this.initMore(), (this.viewReady = true);
     (this.wasPaused = this.media.state.paused), this.config.autoPause && silence(() => (this.media.intent.paused = true));
-    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.add("tmg-media-more-settings"), (this.state.viewOpen = true);
+    this.menu.anchored && this.menu.close(), this.media.container.classList.add("tmg-media-more-settings"), (this.state.moreOpen = true);
     await mockAsync(parseCSSTime(this.settings.css.panelTransitionTime));
     this.ctlr.plug("settings.overlay")?.show();
-    this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.containerContent?.setAttribute("inert", "");
-    !isPOJO(this.menu.anchor) && this.closeBtn?.focus();
+    this.ctlr.DOM.settings?.removeAttribute("inert"), this.ctlr.DOM.content?.setAttribute("inert", "");
+    this.menu.anchored && this.closeBtn?.focus();
   } // #STANDALONE: needs scoped behavior
   private viewReady = false;
 
   public async exitMore(): Promise<void> {
     if (!this.ctlr.isUIActive("moreSettings")) return;
-    !isPOJO(this.menu.anchor) && this.menu.close(), this.media.container.classList.remove("tmg-media-more-settings"), (this.state.viewOpen = false);
+    this.menu.anchored && this.menu.close(), this.media.container.classList.remove("tmg-media-more-settings"), (this.state.moreOpen = false);
     await mockAsync(parseCSSTime(this.settings.css.panelTransitionTime));
     this.config.autoPause && silence(() => (this.media.intent.paused = this.wasPaused));
-    this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.containerContent?.removeAttribute("inert");
+    this.ctlr.DOM.settings?.setAttribute("inert", ""), this.ctlr.DOM.content?.removeAttribute("inert");
   } // #STANDALONE: needs scoped behavior
 
-  public async toggleView(): Promise<void> {
+  public async toggleMore(): Promise<void> {
     this.ctlr.isUIActive("moreSettings") ? await this.exitMore() : await this.enterMore();
   }
 
-  private initView() {
+  private initMore() {
     // Theming
     // prettier-ignore
     const options = [{ option: "Light blue", value: "#3198f5" }, { option: "Hot pink", value: "#ff69b4" }, { option: "Fiery red", value: "#ff0033" }, { option: "Dark turquoise", value: "#00ced1" }, { option: "Custom hue", value: "custom" }, { option: "Video derived", value: "auto" }],
@@ -172,7 +171,7 @@ export class PanelPlug extends BasePlug<panelConfig, panelState> {
 
   private async showTipsDialog() {
     await this.exitMore();
-    t007.alert(this.getTipsHTML(), { id: `${this.ctlr.config.id}-tips-dialog`, rootElement: this.ctlr.DOM.containerContent, confirmText: "Got it!" });
+    t007.alert(this.getTipsHTML(), { id: `${this.ctlr.config.id}-tips-dialog`, rootElement: this.ctlr.DOM.content, confirmText: "Got it!" });
   }
 
   protected override onDestroy(): void {
@@ -188,7 +187,7 @@ declare module "@defs/registries" {
 
 declare module "@defs/config" {
   interface Settings {
-    panel: panelConfig;
+    panel: PanelConfig;
   }
 }
 

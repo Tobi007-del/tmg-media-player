@@ -141,8 +141,8 @@ export const MEDIA_SETTINGS_BUILD: Partial<MediaSettings> = {
   timePlayedMin: 3,
   timeShiftPoll: 250, // 4 times a second
   flushKeys: {
-    status: ["error", "duration", "ended", "activeCues", "readyState", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough", "seekable", "waiting", "buffered", "stalled"], // "alienated"
     state: ["currentTime"],
+    status: ["error", "duration", "ended", "activeCues", "readyState", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough", "seekable", "waiting", "buffered", "stalled"], // "alienated"
   },
 };
 

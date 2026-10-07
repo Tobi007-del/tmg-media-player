@@ -124,19 +124,19 @@ body:where(:has(.tmg-media-floating-player)) {
 .tmg-host-container[data-size-tier^="xxxx"] {
   --tmg-media-current-unit: var(--tmg-media-mobile-miniplayer-unit);
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) {
   --tmg-media-current-safe-inset-top: var(--tmg-media-current-top-wrapper-height);
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) {
   --tmg-media-current-safe-inset-bottom: var(--tmg-media-current-bottom-wrapper-height);
 }
-.tmg-media-container:not(.tmg-media-more-settings):is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:not(.tmg-media-more-settings):where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) {
   --tmg-media-current-global-safe-inset-top: var(--tmg-media-current-top-wrapper-height);
 }
-.tmg-media-container:not(.tmg-media-more-settings):is(.tmg-media-overlay, :has(:focus-visible)) {
+.tmg-media-container:not(.tmg-media-more-settings):where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) {
   --tmg-media-current-global-safe-inset-bottom: var(--tmg-media-current-bottom-wrapper-height);
 }
-.tmg-media-container:is(.tmg-media-overlay, :has(:focus-visible)),
+.tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)),
 .tmg-media-top-curtain,
 .tmg-media-bottom-curtain {
   --tmg-media-current-curtain-color: var(--tmg-media-curtain-color);

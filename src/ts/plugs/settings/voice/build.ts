@@ -29,8 +29,8 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   voiceCtxPrevious: "go back",
   voiceCtxNext: "go front",
   voiceCtxClear: "clear",
-  voiceToggleOn: ["on", "yes", "true"],
-  voiceToggleOff: ["off", "no", "false"],
+  voiceToggleOn: ["yes", "on", "true"],
+  voiceToggleOff: ["no", "off", "false"],
 }; // speech bait
 for (const k in ACTIONS_DICT) VOICE_COMMANDS[k] ??= ""; // UX boost
 

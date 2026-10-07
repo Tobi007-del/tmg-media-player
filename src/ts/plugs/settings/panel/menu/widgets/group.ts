@@ -56,7 +56,7 @@ export class GroupWidget extends BaseWidget {
   private buildRow(sub: SettingsMenuItem): HTMLElement {
     const isWidget = sub.widget === "toggle" || sub.inline,
       disabled = sub.getDisabled?.() ?? (/^(select|drag-select)$/.test(sub.widget as string) && sub.getOptions?.()?.length === 0),
-      li = createEl("li", { className: "tmg-media-smenu-group-row", tabIndex: 0, inert: disabled || undefined }, { subId: sub.id }) as SettingsRowElement,
+      li = createEl("li", { className: "tmg-media-smenu-group-row", tabIndex: 0, inert: disabled || undefined, role: "menuitem" }, { subId: sub.id, label: sub.label }) as SettingsRowElement,
       lbl = createEl("span", { className: "tmg-media-smenu-group-label", textContent: sub.label });
     li.toggleAttribute("disabled", disabled);
     if (sub.title) li.title = isFunc(sub.title) ? sub.title() : sub.title;

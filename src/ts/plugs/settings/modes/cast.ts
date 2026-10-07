@@ -1,4 +1,4 @@
-﻿import { BasePin } from "../../base";
+import { BasePin } from "../../base";
 import { type REvent } from "sia-reactor";
 import type { CtlrMedia } from "@defs/contract";
 import { loadResource } from "@utils/dom";

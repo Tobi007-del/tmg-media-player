@@ -35,7 +35,7 @@
   overflow-y: auto;
 }
 .tmg-media-voice-content:not(:has(> small)) {
-  margin-top: calc(var(--t007-toast-unit) / 3.25);
+  margin-block-start: calc(var(--t007-toast-unit) / 3.25);
 }
 .tmg-media-voice-input-wrap {
   display: flex;
@@ -46,7 +46,7 @@
 .tmg-media-voice-path-submit,
 .tmg-media-voice-word-submit {
   padding: 0 2px;
-  margin-top: 2px;
+  margin-block-start: 2px;
   color: inherit;
   font-size: inherit;
   background: transparent;

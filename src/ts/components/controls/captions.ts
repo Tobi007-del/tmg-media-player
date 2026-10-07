@@ -33,8 +33,7 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
     this.plug?.toggleVisible();
   }
   protected handleDblClick(): void {
-    const sache = this.ctlr.plug("settings.css")?.build;
-    if (sache) (this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!);
+    this.plug?.resetCuesPos();
   }
 
   public syncUI(): void {
@@ -43,7 +42,7 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   protected syncBadge(): void {
     const track = this.media.status.textTracks[this.media.state.currentTextTrack],
       c = this.plug?.config.multiple && this.plug.config.secondaryTracks.length;
-    this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase()}${c ? `+${c}` : ""}` : "");
+    this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase() || (c ? "M" : "")}${c ? `+${c}` : ""}` : "");
   }
 
   public syncARIA(): void {

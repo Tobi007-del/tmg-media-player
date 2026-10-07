@@ -99,15 +99,19 @@
 .tmg-host-container [data-badge]::before {
   content: attr(data-badge);
   position: absolute;
-  top: 1px;
   right: calc(var(--tmg-media-current-unit) / -3.5);
+}
+.tmg-host-container [data-badge]:where(:not(:has(svg)):not([data-part]))::before {
+  left: 100%;
+  right: unset;
 }
 .tmg-host-container [data-badge]::before,
 .tmg-media-control-badge {
   display: inline-flex;
   align-self: flex-start;
   padding: 0 calc(var(--tmg-media-current-unit) / 15);
-  margin-left: calc(var(--tmg-media-current-unit) / 5);
+  margin-top: 1px;
+  margin-left: calc(var(--tmg-media-current-unit) / 10);
   color: var(--tmg-media-theme-accent-color);
   font-size: calc(var(--tmg-media-current-unit) / 3.5);
   font-weight: 700;

@@ -31,11 +31,7 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
         label: "Presets",
         widget: "select",
         inline: true,
-        getOptions: () =>
-          plug.config.options.map((o) => {
-            const p = parseUIOpt(o);
-            return { value: p.value, display: p.value === 1 ? "Normal" : p.display };
-          }),
+        getOptions: () => plug.config.options.map((o, _, __, p = parseUIOpt(o)) => ({ value: p.value, display: p.display == "1" ? "Normal" : p.display })),
         getValue: () => String(plug.media.state.playbackRate),
         onChange: (val: number) => (plug.media.intent.playbackRate = val),
         mediaPaths: ["state.playbackRate"],
@@ -76,4 +72,3 @@ declare module "@defs/registries" {
     "settings.playbackRate": typeof getSettingsPlaybackRateMenu;
   }
 }
-
