@@ -141,8 +141,8 @@ export const MEDIA_SETTINGS_BUILD: Partial<MediaSettings> = {
   timePlayedMin: 3,
   timeShiftPoll: 250, // 4 times a second
   flushKeys: {
-    state: ["currentTime"],
-    status: ["error", "duration", "ended", "activeCues", "readyState", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough", "seekable", "waiting", "buffered", "stalled"], // "alienated"
+    state: ["currentTime"], // "paused" not flushed; callback? at src set
+    status: ["readyState", "error", "waiting", "stalled", "buffered", "played", "seekable", "ended", "loadedMetadata", "loadedData", "canPlay", "canPlayThrough", "activeCues"], // "alienated"
   },
 };
 
@@ -154,7 +154,7 @@ export const MEDIA_ITEM_BUILD: DeepPartial<MediaReport> = {
     tracks: MEDIA_INTENT_BUILD.tracks,
   },
   status: {
-    duration: MEDIA_STATUS_BUILD.duration,
+    duration: MEDIA_STATUS_BUILD.duration, // no need to flush
   },
   settings: {
     metadata: MEDIA_SETTINGS_BUILD.metadata as any,

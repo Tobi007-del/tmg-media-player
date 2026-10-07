@@ -262,7 +262,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => (this.ctlr?.log(err, "error", true), this.setPauseState())), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying; `.play()` promises hence `always` override
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => (this.ctlr?.log(err, "error", true), this.signal && !this.signal.aborted && this.setPauseState())), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying; `.play()` promises hence `always` override
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -339,7 +339,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture?.()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, !this.wired); // #EYE-SERVICE: hinged only on inits
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture?.()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, !this.wired && e.value); // #EYE-SERVICE: hinged only on inits
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
@@ -449,6 +449,11 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleSrcObjectSetting(e: REvent<CtlrMedia, "settings.srcObject">): void {
     if (this.el.srcObject !== e.value) this.el.srcObject = e.value; // #GUARD: no shots in the foot
+  }
+  // === HELPERS ===
+  protected override flush(): void {
+    super.flush();
+    this.config.state.paused = this.el.paused; // not flushed; callback? at src set
   }
   // --- Lifecycle ---
   protected override onDestroy(): void {

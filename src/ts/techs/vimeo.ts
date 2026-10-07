@@ -53,7 +53,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     try {
       this.destroyHost(); // Vimeo prefers a fresh iframe for new URLs to ensure clean state
       if (!(window as any).Vimeo) await loadResource(window.TMG_VIMEO_API_SRC!, "script");
-      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal.aborted) return; // src may have changed during the `await`
       const truth = this.config[this.ctlr.gospel],
         [, id = "", h = ""] = url.match(MATCH_ID_VIMEO) || [];
       this.element = this.hostDiv.querySelector("iframe")!;
@@ -301,7 +301,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   public errSnublist = ["Error", "RangeError", "TypeError"];
   protected handleHostError(err: any): void {
-    if (!this.signal || this.signal?.aborted) return;
+    if (!this.signal || this.signal.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err?.message || "Vimeo Video Not Found." }; // 5 = MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }

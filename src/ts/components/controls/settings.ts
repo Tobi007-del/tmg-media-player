@@ -9,7 +9,6 @@ export type SettingsConfig = undefined;
 export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState, HTMLButtonElement> {
   public static readonly componentName: string = "settings";
   public static readonly isControl: boolean = true;
-
   protected get plug() {
     return this.ctlr.plug("settings.panel");
   }
@@ -25,24 +24,24 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
     // Event Listeners
     addSafeClicks(this.element, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
-    for (const p of ["state.currentLevel", "state.autoLevel", "status.levels"] as const) this.ctlr.media.on(p, this.syncBadge, { init: p === "status.levels", signal: this.signal });
+    for (const p of ["state.currentLevel", "state.autoLevel", "status.levels", "status.loadedMetadata"] as const) this.media.on(p, this.syncBadge, { init: p === "status.levels", signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.settings", this.syncARIA, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.voice.commands.settings", this.syncARIA, { signal: this.signal });
   }
 
   protected handleClick(): void {
-    this.menu ? this.menu.toggle(this.el, false) : this.plug?.toggleView();
+    this.menu ? this.menu.toggle(this.el, false) : this.plug?.toggleMore();
   }
   protected handleDblClick(): void {
-    this.menu ? this.menu.toggle(this.el, true) : this.plug?.toggleView();
+    this.menu ? this.menu.toggle(this.el, true) : this.plug?.toggleMore();
   }
 
   protected syncBadge(): void {
     const item = this.menu?.getItem("quality");
-    if (!item) return void this.setBadge("");
+    if (!item) return this.setBadge("");
     const options = item.getOptions?.() as UITuple<number>[];
-    this.setBadge((this.ctlr.media.state.autoLevel ? options?.at(-1) : options?.find((o) => o.value === this.ctlr.media.state.currentLevel))?.badge || "");
+    this.setBadge((this.media.state.autoLevel ? options?.at(-1) : options?.find((o) => o.value === this.media.state.currentLevel))?.badge || "");
   }
 
   public syncARIA(): void {

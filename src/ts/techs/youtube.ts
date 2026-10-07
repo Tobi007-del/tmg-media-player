@@ -55,7 +55,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       else return (this.hostSrc = url), (this.reInitInfo = this.config.status.hostReady = true), this.host.loadVideoById(id, truth.currentTime, this.config.status.levels[truth.currentLevel as number] || "default");
       // Setup & Bulk Wiring
       if (!window.YT) await loadResource(window.TMG_YT_API_SRC!, "script"), await new Promise<void>((res, _, _prev = (window as any).onYouTubeIframeAPIReady) => (window.YT?.Player ? res() : ((window as any).onYouTubeIframeAPIReady = () => (_prev?.(), res()))));
-      if (!this.signal || this.signal?.aborted) return;
+      if (!this.signal || this.signal.aborted) return;
       this.hostSrc = url;
       this.element = this.hostDiv.querySelector("iframe")!;
       this.el.src = `https://www.youtube${truth.crossOrigin === "use-credentials" ? "" : "-nocookie"}.com/embed/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, playsinline: +truth.playsInline, loop: +truth.loop, start: truth.currentTime, rel: +truth.controls, modestbranding: +truth.controls, fs: +truth.controls, iv_load_policy: truth.controls ? 1 : 3, cc_load_policy: "1", disablekb: "1", enablejsapi: "1", origin: window.location.origin } as any).toString()}`;
@@ -285,7 +285,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     }
   }
   protected handleHostError(err: { data?: number; message?: string }): void {
-    if (!this.signal || this.signal?.aborted) return;
+    if (!this.signal || this.signal.aborted) return;
     let msg = "Unknown YouTube Error";
     if (err.data === 2 || err.data === 100) msg = "YouTube Video Not Found";
     else if (err.data === 101 || err.data === 150) msg = "Playback disabled by owner";

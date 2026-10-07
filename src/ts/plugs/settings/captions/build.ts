@@ -162,5 +162,5 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
     ],
   },
   allowMediaOverride: true,
-  previewTimeout: 1500,
+  previewTimeout: 2500,
 };

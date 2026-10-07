@@ -10,7 +10,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
 
   public override wire(): void {
     // Ctlr Media Listeners
-    this.ctlr.media.on("state.locked", this.syncListeners, { signal: this.signal });
+    this.media.on("state.locked", this.syncListeners, { signal: this.signal });
     // ---- State --------
     this.ctlr.state.on("mediaIntersecting", this.syncListeners, { signal: this.signal });
     // ---- Config --------

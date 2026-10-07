@@ -39,7 +39,7 @@ export class HLSTech extends HTML5Tech {
       this.destroyHls();
       const isAudio = this.config.type === "audio",
         HLS = ((window as any).Hls ?? (await loadResource(window.TMG_HLS_JS_SRC!, "script"), (window as any).Hls)) as typeof Hls;
-      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal.aborted) return; // src may have changed during the `await`
       if (!HLS?.isSupported()) return this.ctlr.notice("HLS is not supported in this browser", "error", null);
       this.hostSrc = src;
       this.host = new HLS({ autoStartLoad: true, startPosition: this.config[this.ctlr.gospel].currentTime, enableWorker: isAudio, defaultAudioCodec: isAudio ? "mp4a.40.2" : undefined }); // tells hls.js to behave if it's an audio-only manifest
@@ -125,7 +125,7 @@ export class HLSTech extends HTML5Tech {
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
-    if (!this.signal || this.signal?.aborted) return;
+    if (!this.signal || this.signal.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err.message ?? "Fatal HLS error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }

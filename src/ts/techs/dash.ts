@@ -43,7 +43,7 @@ export class DashTech extends HTML5Tech {
       // Setup & Compatibility
       this.destroyDash();
       const DASHJS = ((window as any).dashjs ?? (await loadResource(window.TMG_DASH_JS_SRC!, "script"), (window as any).dashjs)) as typeof dashjs;
-      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal.aborted) return; // src may have changed during the `await`
       if (!DASHJS?.supportsMediaSource()) return this.ctlr.notice("DASH is not supported in this browser", "error", null);
       const truth = this.config[this.ctlr.gospel];
       this.hostSrc = src;
@@ -130,7 +130,7 @@ export class DashTech extends HTML5Tech {
     e.resolve(this.name);
   }
   protected handleHostError(err: any): void {
-    if (!this.signal || this.signal?.aborted) return;
+    if (!this.signal || this.signal.aborted) return;
     this.config.status.error = { ...err, code: err?.code ?? 5, message: err.error ?? err.message ?? "Fatal DASH error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }

@@ -110,7 +110,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
   public async start(): Promise<void> {
     let state = this.config.muted ? "granted" : await this.request();
-    if (state === "nuked" || !this.signal || this.signal?.aborted) return;
+    if (state === "nuked" || !this.config) return; // only death i know hence abort over config check
     state === "granted" && (this.config.toasts.behavior.value === "persistent" || t007.toast.isActive(this.TIDS.ROUTER)) && this.view?.(this.getRouterSpeech(), this.getRouterOptions());
     if (this.state.routing) this.goTo(), t007.toast.isActive(this.TIDS.HELPER) && this.teachBasics();
     try {
@@ -215,7 +215,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   protected linked(text: string, value = text.toLowerCase(), isGoto = false, punc = isGoto || this.config.muted ? "" : '"'): string {
-    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${text}</u>${punc}`;
+    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${isGoto ? text : value}</u>${punc}`;
   } // `""` is my lil UI Experiment, crafting a standard here :)
   protected stayWoke(e: Event): void {
     this.state.routing && this.ctlr.throttle("voiceWaking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.TIDS.HELPER}"],[id="${this.TIDS.ROUTER}"])`)) && this.snooze(), 500);

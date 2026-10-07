@@ -51,6 +51,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
       srcObject: true, metadata: true, timePlayedMin: true, flushKeys: true, ...features
     })); // dynamics baby!
   }
+  // --- Lifecycle ---
   protected override onSetup(): void {
     this.mount(), this.onAwaken();
   }
@@ -75,7 +76,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     if ((this.el as any) !== this.config.element) (this.ctlr.mutating = true), this.el.replaceWith(this.config.element), setTimeout(() => (this.ctlr.mutating = false), 0, this.signal);
   }
 
-  // --- THE WIRING ---
+  // === WIRING ===
   public wire(): void {
     // Variables Assignments
     (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained if element was replaced in mount
@@ -114,7 +115,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG);
   }
 
-  // --- THE HANDLERS ---
+  // === HANDLERS ===
   protected handleFeatures({ type, target }: REvent<CtlrMedia, "features">): void {
     if (type === "update") return this.wireFeature(target.key);
     if (type === "init") for (const feature of Object.keys(target.value)) this.wireFeature(feature as keyof MediaFeatures);
@@ -147,7 +148,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     this.config.features.live = v;
   }
 
-  // --- THE HELPERS ---
+  // === HELPERS ===
   protected flush(): void {
     for (const path of this.config.settings.flushKeys.status) this.config.status[path] = deepClone(MEDIA_STATUS_BUILD[path]) as never;
     for (const path of this.config.settings.flushKeys.state) this.config.state[path] = deepClone(MEDIA_STATE_BUILD[path]) as never;

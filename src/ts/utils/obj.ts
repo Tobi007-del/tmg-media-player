@@ -18,7 +18,7 @@ export function isUIOption<T>(opt: UIOption<T>): opt is UITuple<T> {
 // Assignment & Derivation
 export function setHTMLConfig<T extends object>(target: T, attr: string, value: string): void {
   const v = value.trim(),
-    parsed = v.includes(",") ? v.split(",").map((p) => p.trim()) : v === "true" ? true : v === "false" ? false : v === "null" ? null : /^\d+$/.test(v) ? Number(v) : v;
+    parsed = v === "[]" ? [] : v === "{}" ? {} : v.includes(",") ? v.split(",").map((p) => p.trim()).filter(Boolean) : v === "true" ? true : v === "false" ? false : v === "null" ? null : /^\d+$/.test(v) ? Number(v) : v;
   setPath(target, attr.replace("tmg--", "") as any, parsed, "--", (p) => camelize(p));
 }
 

@@ -46,7 +46,7 @@ export class ShakaTech extends HTML5Tech {
       if (this.host) return this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection }), this.host.load((this.hostSrc = src), this.config[this.ctlr.gospel].currentTime);
       // Setup & Compatibility
       const SHAKA = (window as any).shaka ?? (await loadResource(window.TMG_SHAKA_JS_SRC!, "script"), (window as any).shaka);
-      if (!this.signal || this.signal?.aborted) return; // src may have changed during the `await`
+      if (!this.signal || this.signal.aborted) return; // src may have changed during the `await`
       if (!SHAKA.Player.isBrowserSupported()) return this.ctlr.notice("Shaka Player is not supported in this browser", "error", null);
       SHAKA.polyfill.installAll(); // Mandatory Shaka architecture step
       this.hostSrc = src;
@@ -143,7 +143,7 @@ export class ShakaTech extends HTML5Tech {
   // }
   // --- API Logic ---
   protected handleHostError(err: any): void {
-    if (!this.signal || this.signal?.aborted) return;
+    if (!this.signal || this.signal.aborted) return;
     this.config.status.error = { code: err.code ?? 5, message: err.message ?? `Shaka Error: Category ${err.category}`, native: err };
     this.config.status.waiting = false;
   }

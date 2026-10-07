@@ -16,10 +16,11 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   public override wire(): void {
     // Features Gating
     this.media.on("features.pictureInPicture", this.gate, { init: true, signal: this.signal });
+    this.media.on("features.floatingPlayer", this.syncUI, { init: true, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    for (const k of ["loadedMetadata", "floatingPlayer"] as const) this.media.on(`status.${k}`, this.syncUI, { init: k === "loadedMetadata" && this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("status.loadedMetadata", this.syncUI, { signal: this.signal });
     this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.pictureInPicture", this.syncARIA, { init: true, signal: this.signal });
@@ -31,7 +32,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   }
 
   public syncUI(): void {
-    this[!this.media.status.loadedMetadata && !this.media.status.floatingPlayer ? "disable" : "enable"]();
+    this[!this.media.status.loadedMetadata && !this.media.features.floatingPlayer ? "disable" : "enable"]();
   }
 
   public syncARIA(): void {

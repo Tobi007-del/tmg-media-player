@@ -50,8 +50,8 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     if (t.matches(":has(:is(input,[role='slider']):is(:hover, :active))")) return e.preventDefault();
     dataTransfer!.effectAllowed = "move";
     this.draggingEl = t;
-    requestAnimationFrame(() => (t.classList.add("tmg-media-control-dragging"), this.ctlr.media.container.classList.add("tmg-media-control-dragging")), this.signal);
-    this.safeTimeoutId = setTimeout(() => (t.classList.remove("tmg-media-control-dragging"), this.ctlr.media.container.classList.remove("tmg-media-control-dragging")), 1000, this.signal);
+    requestAnimationFrame(() => (t.classList.add("tmg-media-control-dragging"), this.media.container.classList.add("tmg-media-control-dragging")), this.signal);
+    this.safeTimeoutId = setTimeout(() => (t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging")), 1000, this.signal);
     if (t.dataset.dragId !== "wrapper" || t.parentElement?.dataset.dragId !== "wrapper") return;
     const { path, shell } = this.getShellPath(t, true);
     setPath(this.plug.slots, path, shell);
@@ -64,7 +64,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
 
   protected handleDragEnd(e: DragEvent, t = e.target as HTMLElement): void {
     if (!t?.tagName) return;
-    t.classList.remove("tmg-media-control-dragging"), this.ctlr.media.container.classList.remove("tmg-media-control-dragging");
+    t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging");
     this.replaced = this.draggingEl = null;
     if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") setPath(this.plug.slots, this.getShellPath(t), t);
     this.syncConfig(), this.teachBasics(t.dataset.controlId as any);
@@ -132,7 +132,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
         pos = (p: string, z: string) => (p === "center" ? "center-center" : (`${p.startsWith("top") ? "top" : "bottom"}-${z === "left" ? "left" : z === "right" ? "right" : "center"}` as any)),
         startPos = pos(loc.path, loc.zone),
         emptyZones: { pos: string; zone: HTMLElement }[] = [],
-        cleanup = () => (el?.classList.remove("tmg-media-control-dragging"), this.ctlr.media.container.classList.remove("tmg-media-control-dragging"), highlightZone(), (this.teaching = false)),
+        cleanup = () => (el?.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging"), highlightZone(), (this.teaching = false)),
         highlightZone = (z?: HTMLElement) => (emptyZones.forEach((x) => x.zone.classList.remove("tmg-media-dragover")), z?.classList.add("tmg-media-dragover"));
       for (const r of ["top", "bottom.1", "bottom.2", "bottom.3"])
         for (const z of ["left", "center", "right"]) {
@@ -140,7 +140,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
             slot = row[z as "left" | "center" | "right"];
           if (!(slot instanceof HTMLElement) && slot.zone && !slot.zone.querySelector('[data-control-id]:not([data-control-id="spacer"])') && pos(r, z) !== startPos) emptyZones.push({ pos: pos(r, z), zone: slot.zone });
         }
-      el?.classList.add("tmg-media-control-dragging"), this.ctlr.media.container.classList.add("tmg-media-control-dragging"), this.ctlr.plug("settings.overlay")?.show();
+      el?.classList.add("tmg-media-control-dragging"), this.media.container.classList.add("tmg-media-control-dragging"), this.ctlr.plug("settings.overlay")?.show();
       const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-text-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
       await mockAsync(3500);
       if (!toast.isActive(tId)) return;
