@@ -151,7 +151,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     clearInterval(this.anchorIntervalId);
     this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-open", "tmg-media-smenu-down"), this.media.container.classList.remove("tmg-media-menu-settings");
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element);
-    (this.anchor as HTMLElement)?.focus?.(), (this.anchor = undefined);
+    this.anchor = undefined;
   }
   public get isOpen(): boolean {
     return this.menuOpen;

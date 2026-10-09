@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.60
+
+### Patch Changes
+
+- Fixed menu anchor btn force focus
+
 ## 0.0.59
 
 ### Patch Changes
