@@ -12,7 +12,7 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-time-btn tmg-media-control-text-btn", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-time-btn tmg-media-control-text-btn tmg-media-show-in-micro", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

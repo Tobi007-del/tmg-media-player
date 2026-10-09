@@ -14,7 +14,7 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
   public static readonly BUILD = ERRORS_BUILD;
   protected placeholder: ErrorPlaceholder | null = null;
 
-  constructor(ctlr: Controller, config = ctlr.config.settings.errors) {
+  constructor(ctlr: Controller, config = ctlr.settings.errors) {
     super(ctlr, config, { message: "" });
   }
 

@@ -7,7 +7,7 @@ export class AirPlayNotifier extends BaseNotifier<undefined, ComponentState, HTM
   public static readonly triggers = ["airplay"];
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-airplay-notifier", innerHTML: IconRegistry.get("airplay") }));
+    return (this.element = createEl("div", { className: "tmg-media-airplay-notifier tmg-center-notifier", innerHTML: IconRegistry.get("airplay") }));
   }
 }
 

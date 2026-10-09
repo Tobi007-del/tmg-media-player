@@ -16,7 +16,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
   public override create() {
     this.paths = canMorphSVG(IconRegistry.get("objectFitContain", true), IconRegistry.get("objectFitCover", true), IconRegistry.get("objectFitFill", true));
-    return (this.element = createEl("button", { className: "tmg-media-object-fit-btn", type: "button", innerHTML: this.paths ? IconRegistry.get("objectFitCover", true).replace('class=""', 'class="tmg-media-object-fit-icon"') : IconRegistry.get("objectFitContain") + IconRegistry.get("objectFitCover") + IconRegistry.get("objectFitFill") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-object-fit-btn tmg-media-hide-in-pip", type: "button", innerHTML: this.paths ? IconRegistry.get("objectFitCover", true).replace('class=""', 'class="tmg-media-object-fit-icon"') : IconRegistry.get("objectFitContain") + IconRegistry.get("objectFitCover") + IconRegistry.get("objectFitFill") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

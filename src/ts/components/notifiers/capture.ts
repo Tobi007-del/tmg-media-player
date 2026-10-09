@@ -8,7 +8,7 @@ export class CaptureNotifier extends BaseNotifier<undefined, ComponentState, HTM
   public static readonly triggers = ["capture"];
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-capture-notifier", innerHTML: IconRegistry.get("capture") }));
+    return (this.element = createEl("div", { className: "tmg-media-capture-notifier tmg-center-notifier", innerHTML: IconRegistry.get("capture") }));
   }
 }
 

@@ -7,7 +7,7 @@ export class CastNotifier extends BaseNotifier<undefined, ComponentState, HTMLDi
   public static readonly triggers = ["cast"];
 
   public override create() {
-    return (this.element = createEl("div", { className: "tmg-media-cast-notifier", innerHTML: IconRegistry.get("cast") }));
+    return (this.element = createEl("div", { className: "tmg-media-cast-notifier tmg-center-notifier", innerHTML: IconRegistry.get("cast") }));
   }
 }
 

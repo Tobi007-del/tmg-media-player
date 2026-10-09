@@ -12,9 +12,9 @@ export class PlaybackRateNotifier extends BaseNotifier<undefined, ComponentState
   public downDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-playback-rate-notifier-content tmg-media-notifier-content" });
-    this.upDiv = createEl("div", { className: "tmg-media-playback-rate-up-notifier", innerHTML: IconRegistry.get("doubleTriangleRight") });
-    this.downDiv = createEl("div", { className: "tmg-media-playback-rate-down-notifier", innerHTML: IconRegistry.get("doubleTriangleLeft") });
+    this.content = createEl("div", { className: "tmg-media-playback-rate-notifier-content tmg-media-notifier-content tmg-center-notifier" });
+    this.upDiv = createEl("div", { className: "tmg-media-playback-rate-up-notifier tmg-center-notifier", innerHTML: IconRegistry.get("doubleTriangleRight") });
+    this.downDiv = createEl("div", { className: "tmg-media-playback-rate-down-notifier tmg-center-notifier", innerHTML: IconRegistry.get("doubleTriangleLeft") });
     return this.bindNodes([this.content, this.upDiv, this.downDiv]);
   }
 

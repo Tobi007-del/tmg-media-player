@@ -12,6 +12,7 @@
 }
 .t007-toast[id^="tmg-media-voice-helper-"] .t007-toast-actions-wrapper {
   flex-shrink: 0;
+  justify-content: center;
   width: calc(var(--t007-toast-unit) * 3.1);
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button {

@@ -90,7 +90,7 @@ export class LightPlug extends BasePlug<LightConfig> {
   }
 
   protected syncControls(): void {
-    this.media.container.classList.toggle("tmg-media-low-light", this.config.controls !== true);
+    this.media.container.classList.toggle("tmg-media-low-light", !this.config.disabled && this.config.controls !== true);
     for (const c of this.ctlr.queryDOM("[data-control-id]", true)) {
       c.dataset.lightControl = String(inBoolArrOpt(this.config.controls, c.dataset.controlId!));
       c.dataset.stallControl = String(c.dataset.controlId === this.config.stallControl);

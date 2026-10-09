@@ -35,8 +35,6 @@ import { doubleTriangleLeft } from "./doubleTriangleLeft";
 import { doubleTriangleRight } from "./doubleTriangleRight";
 import { tripleTriangleLeft } from "./tripleTriangleLeft";
 import { tripleTriangleRight } from "./tripleTriangleRight";
-import { fwd } from "./fwd";
-import { bwd } from "./bwd";
 import { forward10 } from "./forward10";
 import { backward10 } from "./backward10";
 import { castPlaceholder } from "./castPlaceholder";
@@ -103,8 +101,6 @@ IconRegistry.registerAll({
   doubleTriangleRight,
   tripleTriangleLeft,
   tripleTriangleRight,
-  fwd,
-  bwd,
   forward10,
   backward10,
   pipPlaceholder,

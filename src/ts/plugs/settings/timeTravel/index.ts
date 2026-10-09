@@ -42,7 +42,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
 
   protected handleConsoleDisabled(e: REvent<CtlrConfig, "settings.timeTravel.console.disabled">): void {
     if (e.value) this.console?.destroy(), (this.console = undefined);
-    else this.console ||= new TimeTravelConsole(this.module, { title: `TMG Controller ${getCtlrIdx(this.ctlr) + 1} Tape`, color: this.ctlr.config.settings.css.brandColor as string, container: this.media.state.fullscreen ? this.media.container : undefined, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
+    else this.console ||= new TimeTravelConsole(this.module, { title: `TMG Controller ${getCtlrIdx(this.ctlr) + 1} Tape`, color: this.ctlr.settings.css.brandColor as string, container: this.media.state.fullscreen ? this.media.container : undefined, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
   }
 
   protected handlePersist(e: REvent<CtlrConfig, "settings.timeTravel.persist">, pmdle = this.ctlr.plug("settings.persist")?.module): void {

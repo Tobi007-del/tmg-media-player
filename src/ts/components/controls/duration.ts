@@ -13,7 +13,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-duration-btn tmg-media-control-text-btn", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-duration-btn tmg-media-control-text-btn tmg-media-show-in-micro", textContent: "-:--" }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

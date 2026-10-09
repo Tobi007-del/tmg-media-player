@@ -35,12 +35,15 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
     if (!navigator.mediaSession || (queryPictureInPicture() && !this.media.state.pictureInPicture)) return;
     navigator.mediaSession.metadata = new MediaMetadata(this.media.settings.metadata as MediaMetadataInit);
     const set = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args);
-    set("play", () => (this.media.intent.paused = false));
-    set("pause", () => (this.media.intent.paused = true));
-    set("seekbackward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(-this.settings.time.skip) : null);
-    set("seekforward", this.ctlr.plug("settings.time") ? () => this.ctlr.plug("settings.time")?.skip(this.settings.time.skip) : null);
-    set("previoustrack", this.media.features.previousItem ? this.ctlr.plug("playlist")!.previous : null);
-    set("nexttrack", this.media.features.nextItem ? this.ctlr.plug("playlist")!.next : null);
+    set("play", () => this.ctlr.perform("playPause")), set("pause", () => this.ctlr.perform("playPause"));
+    set("seekto", (d) => (this.media.intent.currentTime = d.seekTime ?? 0));
+    set("seekbackward", (d) => this.ctlr.perform("timeSkipBwd", undefined, undefined, d.seekOffset));
+    set("seekforward", (d) => this.ctlr.perform("timeSkipFwd", undefined, undefined, d.seekOffset));
+    set("previoustrack", this.media.features.previousItem ? () => this.ctlr.perform("previous") : null);
+    set("nexttrack", this.media.features.nextItem ? () => this.ctlr.perform("next") : null);
+    set("skipad", this.media.features.adSkip ? () => this.ctlr.perform("adSkip") : null);
+    set("enterpictureinpicture" as any, this.media.features.pictureInPicture ? () => (this.media.intent.pictureInPicture = true) : null);
+    set("togglemicrophone" as any, this.media.features.voice ? () => (this.settings.voice.active.value = !this.settings.voice.active.value) : null);
   }
 }
 

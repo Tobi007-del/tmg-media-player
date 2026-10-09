@@ -10,8 +10,8 @@ export class FwdBwdNotifier extends BaseNotifier<undefined, ComponentState, HTML
   public bwdDiv!: HTMLDivElement;
 
   public override create() {
-    this.fwdDiv = createEl("div", { className: "tmg-media-fwd-notifier", innerHTML: IconRegistry.get("fwd") });
-    this.bwdDiv = createEl("div", { className: "tmg-media-bwd-notifier", innerHTML: IconRegistry.get("bwd") });
+    this.fwdDiv = createEl("div", { className: "tmg-media-fwd-notifier", innerHTML: IconRegistry.get("tripleTriangleRight") });
+    this.bwdDiv = createEl("div", { className: "tmg-media-bwd-notifier", innerHTML: IconRegistry.get("tripleTriangleLeft") });
     return this.bindNodes([this.fwdDiv, this.bwdDiv]);
   }
 }

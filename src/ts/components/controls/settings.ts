@@ -17,7 +17,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
   }
 
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-settings-btn", type: "button", innerHTML: IconRegistry.get("settings") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-settings-btn tmg-media-show-in-micro", type: "button", innerHTML: IconRegistry.get("settings") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

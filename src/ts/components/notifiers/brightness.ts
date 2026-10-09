@@ -14,10 +14,10 @@ export class BrightnessNotifier extends BaseNotifier<undefined, ComponentState, 
   public darkDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-brightness-notifier-content tmg-media-notifier-content" });
-    this.upDiv = createEl("div", { className: "tmg-media-brightness-up-notifier", innerHTML: IconRegistry.get("brightnessHigh", true) });
-    this.downDiv = createEl("div", { className: "tmg-media-brightness-down-notifier", innerHTML: IconRegistry.get("brightnessLow", true) });
-    this.darkDiv = createEl("div", { className: "tmg-media-brightness-dark-notifier", innerHTML: IconRegistry.get("brightnessDark", true) });
+    this.content = createEl("div", { className: "tmg-media-brightness-notifier-content tmg-media-notifier-content tmg-center-notifier" });
+    this.upDiv = createEl("div", { className: "tmg-media-brightness-up-notifier tmg-center-notifier", innerHTML: IconRegistry.get("brightnessHigh", true) });
+    this.downDiv = createEl("div", { className: "tmg-media-brightness-down-notifier tmg-center-notifier", innerHTML: IconRegistry.get("brightnessLow", true) });
+    this.darkDiv = createEl("div", { className: "tmg-media-brightness-dark-notifier tmg-center-notifier", innerHTML: IconRegistry.get("brightnessDark", true) });
     return this.bindNodes([this.content, this.upDiv, this.downDiv, this.darkDiv]);
   }
 

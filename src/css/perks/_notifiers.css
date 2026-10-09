@@ -64,9 +64,11 @@
   opacity: 1;
 }
 .tmg-media-notifier:empty,
-.tmg-media-container:is(.tmg-media-replay, .tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) :is(.tmg-media-play-notifier, .tmg-media-pause-notifier),
 .tmg-media-notifiers-container:has(.tmg-media-cancel-scrub-notifier.tmg-media-control-active) .tmg-media-scrub-notifier {
   display: none;
+}
+.tmg-media-container:is(.tmg-media-replay, .tmg-media-miniplayer, .tmg-media-floating-player, .tmg-media-mobile) :is(.tmg-media-play-notifier, .tmg-media-pause-notifier) {
+  visibility: hidden;
 }
 .tmg-media-fast-play-notifier:not(.tmg-media-rewind)::before,
 .tmg-media-fast-play-notifier.tmg-media-rewind::after {

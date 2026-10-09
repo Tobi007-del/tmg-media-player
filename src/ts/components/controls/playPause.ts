@@ -13,7 +13,7 @@ export class PlayPauseButton extends BaseComponent<PlayPauseConfig, ComponentSta
 
   public override create() {
     this.paths = canMorphSVG(IconRegistry.get("play", true), IconRegistry.get("pause", true));
-    return (this.element = createEl("button", { className: "tmg-media-play-pause-btn", innerHTML: this.paths ? IconRegistry.get("play", true).replace('class=""', 'class="tmg-media-play-pause-icon"') + IconRegistry.get("replay") : IconRegistry.get("play") + IconRegistry.get("pause") + IconRegistry.get("replay") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-play-pause-btn tmg-media-show-in-micro", innerHTML: this.paths ? IconRegistry.get("play", true).replace('class=""', 'class="tmg-media-play-pause-icon"') + IconRegistry.get("replay") : IconRegistry.get("play") + IconRegistry.get("pause") + IconRegistry.get("replay") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

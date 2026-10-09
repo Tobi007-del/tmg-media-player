@@ -75,11 +75,11 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   }
   public previous(): void {
     const min = getMediaMin(this.media);
-    if (safeNum(this.media.state.currentTime) - min > this.media.settings.timePlayedMin) this.media.intent.currentTime = min;
-    else this.media.features.previousItem && this.moveTo(this.media.state.currentItem - 1);
+    if (safeNum(this.media.state.currentTime) - min > this.media.settings.timePlayedMin) return (this.media.intent.currentTime = min), this.ctlr.notify?.("mediaPrevious");
+    this.media.features.previousItem && this.moveTo(this.media.state.currentItem - 1);
   }
   public next(): void {
-    this.config.content && this.media.features.nextItem && this.moveTo(this.media.state.currentItem + 1);
+    this.media.features.nextItem && this.moveTo(this.media.state.currentItem + 1);
   }
 
   public sort(order: "asc" | "desc" = this.state.sortOrder === "asc" ? "desc" : "asc", list = this.config.content): void {

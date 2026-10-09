@@ -36,8 +36,8 @@ export class TimePlug extends BasePlug<TimeConfig> {
     // ---- Config --------
     this.ctlr.config.on("settings.time.whitelist", this.handleWhitelist, { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("timeSkipFwd", { fn: this.handleKeySkipFwd, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.learn("timeSkipBwd", { fn: this.handleKeySkipBwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeSkipFwd", { fn: this.handleSkipFwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeSkipBwd", { fn: this.handleSkipBwd, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeStart", undefined, this.signal);
     this.ctlr.learn("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration) }, this.signal);
     this.ctlr.learn("timePreviousChapter", { fn: this.previousChapter, keyboard: { phase: "keydown" } }, this.signal);
@@ -91,13 +91,13 @@ export class TimePlug extends BasePlug<TimeConfig> {
     notifier?.setAttribute("data-skip", String(Math.trunc(Math.abs(duration))));
   }
 
-  protected handleKeySkipFwd(_: KeyboardEvent, mod: KeyMod): void {
+  protected handleSkipFwd(_: KeyboardEvent, mod: KeyMod, offset: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
-    this.skip(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip);
+    this.skip(offset != null ? Math.abs(offset) : this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip);
   }
-  protected handleKeySkipBwd(_: KeyboardEvent, mod: KeyMod): void {
+  protected handleSkipBwd(_: KeyboardEvent, mod: KeyMod, offset: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
-    this.skip(-(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip));
+    this.skip(offset != null ? -Math.abs(offset) : -(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip));
   }
 
   public previousChapter(): void {

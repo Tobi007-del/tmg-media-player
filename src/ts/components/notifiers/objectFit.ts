@@ -13,10 +13,10 @@ export class ObjectFitNotifier extends BaseNotifier<undefined, ComponentState, H
   public fillDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-object-fit-notifier-content tmg-media-notifier-content" });
-    this.containDiv = createEl("div", { className: "tmg-media-object-fit-contain-notifier", innerHTML: IconRegistry.get("objectFitContain", true) });
-    this.coverDiv = createEl("div", { className: "tmg-media-object-fit-cover-notifier", innerHTML: IconRegistry.get("objectFitCover", true) });
-    this.fillDiv = createEl("div", { className: "tmg-media-object-fit-fill-notifier", innerHTML: IconRegistry.get("objectFitFill", true) });
+    this.content = createEl("div", { className: "tmg-media-object-fit-notifier-content tmg-media-notifier-content tmg-center-notifier" });
+    this.containDiv = createEl("div", { className: "tmg-media-object-fit-contain-notifier tmg-center-notifier", innerHTML: IconRegistry.get("objectFitContain", true) });
+    this.coverDiv = createEl("div", { className: "tmg-media-object-fit-cover-notifier tmg-center-notifier", innerHTML: IconRegistry.get("objectFitCover", true) });
+    this.fillDiv = createEl("div", { className: "tmg-media-object-fit-fill-notifier tmg-center-notifier", innerHTML: IconRegistry.get("objectFitFill", true) });
     return this.bindNodes([this.content, this.containDiv, this.coverDiv, this.fillDiv]);
   }
 

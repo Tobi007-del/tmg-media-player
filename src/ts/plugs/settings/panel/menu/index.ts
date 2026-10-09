@@ -31,8 +31,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.element = createEl("div", { className: "tmg-media-settings-menu tmg-media-no-pointer", inert: true });
     this.el.addEventListener("keydown", (e: KeyboardEvent, active = getActiveEl(this.el.ownerDocument) as HTMLElement) => {
       if ((e.key === "Enter" || e.key === " ") && active && !active.matches("input,textarea,[contenteditable]") && active.tagName !== "BUTTON" && active.closest(".tmg-media-smenu-panel-active")) e.preventDefault(), active.click();
-      else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopPropagation(), active.click();
-      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopPropagation(), this.goBack(true);
+      else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopImmediatePropagation(), active.click();
+      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopImmediatePropagation(), this.goBack(true);
     });
     return this.element;
   }
@@ -141,7 +141,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
     if (this.anchor) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
     this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-open"), this.el.classList.remove("tmg-media-smenu-closed"), this.media.container.classList.add("tmg-media-menu-settings");
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
     initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, typeahead: true, selector: `.tmg-media-smenu-panel-active ${MENU_FOCUS_SELECTOR}` });
   }
   public close(): void {

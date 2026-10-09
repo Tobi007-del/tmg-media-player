@@ -9,9 +9,10 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /^media\.intent\.(preload|crossOrigin|controls|controlsList)/,
       /^media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
       /^settings\.(techOrder|persist|css|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
-      /^settings\.keys\.(rankedMatch|overrides|blocks|moddedlist)/,
+      /^settings\.keys\.(rankedMatch|linkedPhase|overrides|blocks|moddedlist)/,
       /^settings\.timeTravel\.(console|module)/,
       "settings.modes.pictureInPicture.floatingPlayer.css",
+      "settings.notifiers.centerBlocks",
       /\.(whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because nodes (like volume) are already blocked above
     ],
     blacklist: [

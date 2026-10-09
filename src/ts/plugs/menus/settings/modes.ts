@@ -103,12 +103,12 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   getDisabled: () => plug.config.pictureInPicture.floatingPlayer.disabled,
                   inputs: [
                     { name: "w", label: "Width (px)", type: "number", required: true, min: "160", max: () => String(globalState.dimensions.window.width), value: () => plug.config.pictureInPicture.floatingPlayer.width },
-                    { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(globalState.dimensions.window.height), value: () => plug.config.pictureInPicture.floatingPlayer.height }
+                    { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(globalState.dimensions.window.height), value: () => plug.config.pictureInPicture.floatingPlayer.height },
                   ],
                   getValue: () => `${formatMenuPx(plug.config.pictureInPicture.floatingPlayer.width, true)} × ${formatMenuPx(plug.config.pictureInPicture.floatingPlayer.height, true)}`,
                   onChange: (val: any) => (val.w !== undefined && (plug.config.pictureInPicture.floatingPlayer.width = val.w), val.h !== undefined && (plug.config.pictureInPicture.floatingPlayer.height = val.h)),
-                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.width", "settings.modes.pictureInPicture.floatingPlayer.height", "settings.modes.pictureInPicture.floatingPlayer.disabled"]
-                }
+                  configPaths: ["settings.modes.pictureInPicture.floatingPlayer.width", "settings.modes.pictureInPicture.floatingPlayer.height", "settings.modes.pictureInPicture.floatingPlayer.disabled"],
+                },
               ],
             },
           ],
@@ -130,11 +130,11 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
               getDisabled: () => plug.config.miniplayer.disabled,
               inputs: [
                 { name: "x", label: "X (%)", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100) },
-                { name: "y", label: "Y (%)", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100) }
+                { name: "y", label: "Y (%)", type: "number", required: true, min: "0", max: "100", value: () => safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100) },
               ],
               getValue: () => `${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerX as string)), 100)}%, ${safeNum(Math.round(parseFloat(plug.settings.css.currentMiniplayerY as string)), 100)}%`,
               onChange: (val: any) => (val.x !== undefined && (plug.settings.css.currentMiniplayerX = `${val.x}%`), val.y !== undefined && (plug.settings.css.currentMiniplayerY = `${val.y}%`)),
-              configPaths: ["settings.css.currentMiniplayerX", "settings.css.currentMiniplayerY", "settings.modes.miniplayer.disabled"]
+              configPaths: ["settings.css.currentMiniplayerX", "settings.css.currentMiniplayerY", "settings.modes.miniplayer.disabled"],
             },
             {
               id: "modesMiniplayerSize",
@@ -143,11 +143,11 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
               getDisabled: () => plug.config.miniplayer.disabled,
               inputs: [
                 { name: "w", label: "Width (px)", type: "number", required: true, min: "160", max: () => String(getClientWH(plug.media.container.parentElement).clientWidth), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth) },
-                { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(getClientWH(plug.media.container.parentElement).clientHeight), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight) }
+                { name: "h", label: "Height (px)", type: "number", required: true, min: "90", max: () => String(getClientWH(plug.media.container.parentElement).clientHeight), value: () => Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight) },
               ],
               getValue: () => `${formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerWidth as string) || plug.media.container.clientWidth), true)} × ${formatMenuPx(Math.round(parseFloat(plug.settings.css.currentMiniplayerHeight as string) || plug.media.container.clientHeight), true)}`,
               onChange: (val: any) => (val.w !== undefined && (plug.settings.css.currentMiniplayerWidth = `${val.w}px`), val.h !== undefined && (plug.settings.css.currentMiniplayerHeight = `${val.h}px`)),
-              configPaths: ["settings.css.currentMiniplayerWidth", "settings.css.currentMiniplayerHeight", "settings.modes.miniplayer.disabled"]
+              configPaths: ["settings.css.currentMiniplayerWidth", "settings.css.currentMiniplayerHeight", "settings.modes.miniplayer.disabled"],
             },
             { id: "modesMiniplayerMinWidth", label: "Min window width", widget: "range", getValue: () => formatMenuPx(plug.config.miniplayer.minWindowWidth, true), getDisabled: () => plug.config.miniplayer.disabled, getRange: () => ({ min: 160, max: globalState.dimensions.window.width, step: 10, formatTooltip: formatMenuPx }), onChange: (val: number) => (plug.config.miniplayer.minWindowWidth = val), configPaths: ["settings.modes.miniplayer.minWindowWidth", "settings.modes.miniplayer.disabled"], getTipHTML: () => "The minimum width the browser must be to allow the miniplayer to appear" },
           ],
@@ -202,4 +202,3 @@ declare module "@defs/registries" {
     "settings.modes": typeof getSettingsModesMenu;
   }
 }
-

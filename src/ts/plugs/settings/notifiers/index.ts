@@ -52,6 +52,7 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
 
   public reset(token = "", flush = false): void {
     flush && this.ctlr.cancelRAFLoop("notifying"), this.container.setAttribute("data-notify", token);
+    this.media.container.classList.toggle("tmg-media-center-blocked", !!token && this.config.centerBlocks.some((k) => token.startsWith(k)));
   }
 
   public notify(key: string): void {

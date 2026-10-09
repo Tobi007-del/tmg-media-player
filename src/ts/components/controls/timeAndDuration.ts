@@ -18,7 +18,7 @@ export class TimeAndDurationButton extends BaseComponent<TimeAndDurationConfig, 
 
   public override create() {
     // Variables Assignments
-    this.element = createEl("button", { className: "tmg-media-time-and-duration-btn tmg-media-control-text-btn" }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { className: "tmg-media-time-and-duration-btn tmg-media-control-text-btn tmg-media-show-in-micro" }, { draggableControl: "", controlId: this.name });
     this.time = createEl("span", { className: "tmg-media-current-time", textContent: "-:--" });
     this.bridge = createEl("span", { className: "tmg-media-time-bridge", textContent: "/" });
     this.duration = createEl("span", { className: "tmg-media-duration-time", textContent: "-:--" });

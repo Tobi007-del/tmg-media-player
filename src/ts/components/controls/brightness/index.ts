@@ -24,7 +24,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
     // Variables Assignments
     this.paths = canMorphSVG(IconRegistry.get("brightnessHigh", true), IconRegistry.get("brightnessLow", true), IconRegistry.get("brightnessDark", true));
     this.slider = new BrightnessSlider(this.ctlr, this.config);
-    this.element = createEl("div", { className: "tmg-media-brightness-container tmg-media-vb-container" }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("div", { className: "tmg-media-brightness-container tmg-media-vb-container tmg-media-hide-in-pip" }, { draggableControl: "", controlId: this.name });
     this.button = createEl("button", { className: "tmg-media-dark-btn tmg-media-vb-btn", type: "button", innerHTML: this.paths ? `<svg viewBox="0 0 25 25" class="tmg-media-brightness-icon"><path d="${this.paths[0][0]}"></path></svg>` : IconRegistry.get("brightnessHigh") + IconRegistry.get("brightnessLow") + IconRegistry.get("brightnessDark") });
     this.sliderWrapper = createEl("span", { className: "tmg-media-brightness-slider-wrapper tmg-media-vb-slider-wrapper" });
     const sliderEl = this.slider.create();

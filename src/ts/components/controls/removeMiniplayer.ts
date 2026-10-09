@@ -13,7 +13,7 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
   }
 
   public override create(): HTMLButtonElement {
-    this.element = createEl("button", { className: "tmg-media-miniplayer-remove-btn", type: "button", innerHTML: IconRegistry.get("removeMiniplayer") }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { className: "tmg-media-miniplayer-remove-btn tmg-media-show-in-micro", type: "button", innerHTML: IconRegistry.get("removeMiniplayer") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 

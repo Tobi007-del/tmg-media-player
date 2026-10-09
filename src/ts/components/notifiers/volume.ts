@@ -14,10 +14,10 @@ export class VolumeNotifier extends BaseNotifier<undefined, ComponentState, HTML
   public mutedDiv!: HTMLDivElement;
 
   public override create() {
-    this.content = createEl("div", { className: "tmg-media-volume-notifier-content tmg-media-notifier-content" });
-    this.upDiv = createEl("div", { className: "tmg-media-volume-up-notifier", innerHTML: IconRegistry.get("volumeHigh", true) });
-    this.downDiv = createEl("div", { className: "tmg-media-volume-down-notifier", innerHTML: IconRegistry.get("volumeLow", true) });
-    this.mutedDiv = createEl("div", { className: "tmg-media-volume-muted-notifier", innerHTML: IconRegistry.get("volumeMuted", true) });
+    this.content = createEl("div", { className: "tmg-media-volume-notifier-content tmg-media-notifier-content tmg-center-notifier" });
+    this.upDiv = createEl("div", { className: "tmg-media-volume-up-notifier tmg-center-notifier", innerHTML: IconRegistry.get("volumeHigh", true) });
+    this.downDiv = createEl("div", { className: "tmg-media-volume-down-notifier tmg-center-notifier", innerHTML: IconRegistry.get("volumeLow", true) });
+    this.mutedDiv = createEl("div", { className: "tmg-media-volume-muted-notifier tmg-center-notifier", innerHTML: IconRegistry.get("volumeMuted", true) });
     return this.bindNodes([this.content, this.upDiv, this.downDiv, this.mutedDiv]);
   }
 

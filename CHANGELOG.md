@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.59
+
+### Patch Changes
+
+- Settings menu keys bug fixes
+
 ## 0.0.58
 
 ### Patch Changes

@@ -13,7 +13,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
 
   public override create() {
     this.paths = canMorphSVG(IconRegistry.get("enterFullscreen", true), IconRegistry.get("exitFullscreen", true));
-    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn", type: "button", innerHTML: this.paths ? IconRegistry.get("enterFullscreen", true).replace('class=""', 'class="tmg-media-fullscreen-icon"') : IconRegistry.get("enterFullscreen") + IconRegistry.get("exitFullscreen") }, { draggableControl: "", controlId: this.name }));
+    return (this.element = createEl("button", { className: "tmg-media-fullscreen-btn tmg-media-show-in-micro", type: "button", innerHTML: this.paths ? IconRegistry.get("enterFullscreen", true).replace('class=""', 'class="tmg-media-fullscreen-icon"') : IconRegistry.get("enterFullscreen") + IconRegistry.get("exitFullscreen") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {

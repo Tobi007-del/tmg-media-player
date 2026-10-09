@@ -17,8 +17,8 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     for (const p of ["disabled", "settings.keys.disabled"] as const) this.ctlr.config.on(p, this.syncListeners, { signal: this.signal });
     // Post Wiring
     this.ctlr.flags.wired ? this.syncListeners() : this.ctlr.state.wonce("readyState", this.syncListeners, { signal: this.signal }); // #HEAVY: waits for !light
-    this.ctlr.learn("playPause", { fn: this.handlePlayKeyDown, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.learn(" ", { fn: this.handlePlayKeyDown, keyboard: { phase: "keydown" }, system: true, label: "Playback: Play or Pause" }, this.signal);
+    this.ctlr.learn("playPause", { fn: this.handlePlayPause, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn(" ", { fn: this.handlePlayPause, keyboard: { phase: "keydown" }, system: true, label: "Playback: Play or Pause" }, this.signal);
     this.ctlr.learn("arrowleft", { fn: this.handleArrowLeft, keyboard: { phase: "keydown" }, notify: "bwd", system: true, label: "Time: Skip backward" }, this.signal);
     this.ctlr.learn("arrowright", { fn: this.handleArrowRight, keyboard: { phase: "keydown" }, notify: "fwd", system: true, label: "Time: Skip forward" }, this.signal);
     super.wire();
@@ -30,7 +30,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
     if (action !== false) {
       this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
-      if (this.playKeySeq === 1 && /^( |playPause)$/.test(action)) e.stopImmediatePropagation(), this.handlePlayKeyDown();
+      if (this.playKeySeq === 1 && /^( |playPause)$/.test(action)) e.stopImmediatePropagation(), this.handlePlayPause();
     }
     if (this.playKeySeq > 0) {
       const fastPlug = this.ctlr.plug("settings.fastPlay");
@@ -39,7 +39,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     }
   }
 
-  protected handlePlayKeyDown(e?: KeyboardEvent | MouseEvent): void {
+  protected handlePlayPause(e?: KeyboardEvent | MouseEvent): void {
     if (!e || e.type !== "keydown") return void ((this.media.intent.paused = !this.media.state.paused), this.ctlr.notify?.(this.media.intent.paused ? "mediaPause" : "mediaPlay"));
     this.playKeySeq++;
     this.playKeySeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.speedUp(e.shiftKey ? "backwards" : "forwards");

@@ -12,7 +12,7 @@ export class ExpandMiniplayerButton extends BaseComponent<ExpandMiniplayerConfig
   }
 
   public override create(): HTMLButtonElement {
-    this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn", type: "button", innerHTML: IconRegistry.get("expandMiniplayer") }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { className: "tmg-media-miniplayer-expand-btn tmg-media-show-in-micro", type: "button", innerHTML: IconRegistry.get("expandMiniplayer") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 

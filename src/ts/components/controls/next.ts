@@ -13,7 +13,7 @@ export class NextButton extends BaseComponent<NextConfig, ComponentState, HTMLBu
   }
 
   public override create() {
-    this.element = createEl("button", { className: "tmg-media-next-btn", type: "button", innerHTML: IconRegistry.get("next") }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("button", { className: "tmg-media-next-btn tmg-media-show-in-micro", type: "button", innerHTML: IconRegistry.get("next") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 

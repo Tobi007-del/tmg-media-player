@@ -24,7 +24,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     // Variables Assignments
     this.paths = canMorphSVG(IconRegistry.get("volumeHigh", true), IconRegistry.get("volumeLow", true), IconRegistry.get("volumeMuted", true));
     this.slider = new VolumeSlider(this.ctlr, this.config);
-    this.element = createEl("div", { className: "tmg-media-volume-container tmg-media-vb-container" }, { draggableControl: "", controlId: this.name });
+    this.element = createEl("div", { className: "tmg-media-volume-container tmg-media-vb-container tmg-media-show-in-micro" }, { draggableControl: "", controlId: this.name });
     this.button = createEl("button", { className: "tmg-media-mute-btn tmg-media-vb-btn", type: "button", innerHTML: this.paths ? `<svg viewBox="0 0 25 25" class="tmg-media-volume-icon"><path d="${this.paths[0][0]}"></path></svg>` : IconRegistry.get("volumeHigh") + IconRegistry.get("volumeLow") + IconRegistry.get("volumeMuted") });
     this.sliderWrapper = createEl("span", { className: "tmg-media-volume-slider-wrapper tmg-media-vb-slider-wrapper" });
     const sliderEl = this.slider.create();

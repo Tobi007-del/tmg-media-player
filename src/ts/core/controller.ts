@@ -189,7 +189,7 @@ export class Controller {
     RAFLoop(this.config.id + key, fn, signal, getWindow(this.media.container));
   }
   public cancelTimeout(type: "throttle" | "debounce", key: string): void {
-    cancelTimeout(type, this.config.id + key, getWindow(this.media.container));
+    cancelTimeout(type, this.config.id + key);
   }
   public cancelRAFLoop(key: string): void {
     cancelRAFLoop(this.config.id + key);

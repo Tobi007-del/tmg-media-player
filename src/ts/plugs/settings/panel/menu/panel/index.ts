@@ -16,7 +16,7 @@ export abstract class BaseMenuPanel extends Controllable {
     super(ctlr, config);
     this.element = createEl("div", { className: `tmg-media-smenu-panel tmg-media-cover tmg-media-no-pointer ${className}` });
     this.element.append((this.content = createEl("div", { className: "tmg-media-smenu-panel-content" })));
-    this.content.addEventListener("scroll", () => (this.savedScroll = this.content.scrollTop), { passive: true, signal: this.signal });
+    this.content.addEventListener("scroll", () => this.isActive && (this.savedScroll = this.content.scrollTop), { passive: true, signal: this.signal });
   }
 
   public enter(dir: PanelDir = "forward", restore = false): void {
@@ -24,7 +24,7 @@ export abstract class BaseMenuPanel extends Controllable {
     this.element.classList.remove("tmg-media-smenu-panel-exit", "tmg-media-smenu-panel-active");
     (this.element.dataset.dir = dir), this.element.style.removeProperty("display"), this.element.removeAttribute("inert");
     void this.element.offsetWidth, this.element.classList.add("tmg-media-smenu-panel-active");
-    restore && setTimeout(() => this.isActive && (this.lastFocused?.focus(), (this.content.scrollTop = this.savedScroll)), 50, this.signal);
+    restore && setTimeout(() => this.isActive && (this.lastFocused?.focus({ preventScroll: true }), (this.content.scrollTop = this.savedScroll)), 50, this.signal);
   }
   public exit(dir: PanelDir = "backward"): void {
     const active = getActiveEl(this.element.ownerDocument) as HTMLElement;
@@ -43,7 +43,7 @@ export abstract class BaseMenuPanel extends Controllable {
       () => {
         if (!this.isActive) return;
         const active = this.element.querySelector<HTMLElement>(".tmg-media-smenu-option-active");
-        (active || this.element.querySelector<HTMLElement>(selector))?.focus(), !active && (this.content.scrollTop = 0);
+        (active || this.element.querySelector<HTMLElement>(selector))?.focus({ preventScroll: true }), !active && (this.content.scrollTop = 0);
       },
       50,
       this.signal
