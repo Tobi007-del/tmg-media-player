@@ -3,10 +3,11 @@ import { ToastOptions } from "@t007/toast";
 export interface FrameConfig {
   disabled: boolean;
   fps: number;
-  toast: ToastOptions;
-  goodTime: {
+  main: {
+    usePoster: boolean;
     searchDuration: number;
     minSaturation: number;
     minBrightness: number;
   };
+  toast: ToastOptions;
 }

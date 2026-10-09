@@ -13,6 +13,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /^settings\.timeTravel\.(console|module)/,
       "settings.modes.pictureInPicture.floatingPlayer.css",
       "settings.notifiers.centerBlocks",
+      "settings.frame.main",
       /\.(whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because nodes (like volume) are already blocked above
     ],
     blacklist: [

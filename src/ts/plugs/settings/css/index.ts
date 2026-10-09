@@ -33,7 +33,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
 
   protected async handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">, keys = Object.keys(this.settings.css.syncWithMedia)): Promise<void> {
     if (!value || !keys.some((k) => this.settings.css.syncWithMedia[k])) return;
-    const color = await this.ctlr.plug("settings.frame")?.getMainColor(undefined, this.media.features.frameCapture ? "" : undefined);
+    const color = await this.ctlr.plug("settings.frame")?.getMainColor();
     for (const k of keys) if (this.settings.css.syncWithMedia[k]) this.settings.css[k] = String(color ?? this.build[k]);
   }
 

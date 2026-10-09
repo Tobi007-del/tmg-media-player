@@ -46,7 +46,7 @@ export class Meta extends BaseComponent<MetaConfig, ComponentState, HTMLDivEleme
     if (val !== true) val ? (this.profile.src = val) : this.profile.removeAttribute("src");
   }
   public syncTitle(): void {
-    if (this.settings.controlPanel.title !== true) this.title.textContent = this.settings.controlPanel.title || "";
+    if (this.settings.controlPanel.title !== true) this.title.textContent = this.title.dataset.mediaTitle = this.settings.controlPanel.title || "";
   }
   public syncArtist(): void {
     if (this.settings.controlPanel.artist !== true) this.artist.textContent = this.settings.controlPanel.artist || "";

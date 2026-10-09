@@ -80,7 +80,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     frame?.url ? toast?.success(tId, { render: `Captured ${fTxt}`, image: frame.url, actions: { Save, Share }, onClose: () => URL.revokeObjectURL(frame.url), autoClose: this.config.toast.autoClose }) : toast?.error(tId, { render: `Failed capturing ${fTxt}` });
   }
 
-  public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), searchDuration: s = this.config.goodTime.searchDuration, saturation: sat = this.config.goodTime.minSaturation, brightness: bri = this.config.goodTime.minBrightness } = NIL): Promise<number | undefined> {
+  public async getGoodTime({ time: t = safeNum(this.media.state.currentTime), searchDuration: s = this.config.main.searchDuration, saturation: sat = this.config.main.minSaturation, brightness: bri = this.config.main.minBrightness } = NIL): Promise<number | undefined> {
     const end = clamp(getMediaMin(this.media), t + s, getMediaMax(this.media)),
       seq = ++this.findSeq;
     for (; t <= end; t += 0.333) {
@@ -92,8 +92,8 @@ export class FramePlug extends BasePlug<FrameConfig> {
   }
   private findSeq = 0;
 
-  public async getMainColor(time?: number, poster = this.media.state.poster, config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
-    return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas);
+  public async getMainColor(time?: number, poster = this.config.main.usePoster || !this.media.features.frameCapture ? this.media.state.poster : "", config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
+    return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas).catch((err) => (this.ctlr.log(err, "error", true), null)); // #LESS: error not worth notifying
   }
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
