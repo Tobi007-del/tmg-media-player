@@ -5,7 +5,7 @@ import { SubMenuPanel } from "./panel/sub";
 import type { BaseMenuPanel, PanelDir } from "./panel";
 import { MENU_FOCUS_SELECTOR } from "../build";
 import { createEl } from "@utils/dom";
-import { getActiveEl, isArr, isFunc, isStr, isNum } from "@t007/utils";
+import { getActiveEl, isArr, isFunc, isStr, isNum, NIL } from "@t007/utils";
 import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
 import { requestAnimationFrame, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
@@ -28,11 +28,11 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public onMoreClick?: () => void;
 
   public override create(): HTMLElement {
-    this.element = createEl("div", { className: "tmg-media-smenu-overlay tmg-media-no-pointer", inert: true });
+    this.element = createEl("div", { className: "tmg-media-settings-menu tmg-media-no-pointer", inert: true });
     this.el.addEventListener("keydown", (e: KeyboardEvent, active = getActiveEl(this.el.ownerDocument) as HTMLElement) => {
       if ((e.key === "Enter" || e.key === " ") && active && !active.matches("input,textarea,[contenteditable]") && active.tagName !== "BUTTON" && active.closest(".tmg-media-smenu-panel-active")) e.preventDefault(), active.click();
-      else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopImmediatePropagation(), active.click();
-      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopImmediatePropagation(), this.goBack(true);
+      else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopPropagation(), active.click();
+      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopPropagation(), this.goBack(true);
     });
     return this.element;
   }
@@ -140,8 +140,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
     if (this.anchor) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
-    this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-overlay-open"), this.el.classList.remove("tmg-media-smenu-overlay-closed");
-    this.media.container.classList.add("tmg-media-menu-settings"), this.el.classList.toggle("tmg-media-smenu-context", !this.anchored);
+    this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-open"), this.el.classList.remove("tmg-media-smenu-closed"), this.media.container.classList.add("tmg-media-menu-settings");
     initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e?.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
     initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, typeahead: true, selector: `.tmg-media-smenu-panel-active ${MENU_FOCUS_SELECTOR}` });
   }
@@ -150,7 +149,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.menuOpen = false;
     this.lastClosedTime = performance.now();
     clearInterval(this.anchorIntervalId);
-    this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-overlay-open", "tmg-media-smenu-drop-down"), this.media.container.classList.remove("tmg-media-menu-settings");
+    this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-open", "tmg-media-smenu-down"), this.media.container.classList.remove("tmg-media-menu-settings");
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element);
     (this.anchor as HTMLElement)?.focus?.(), (this.anchor = undefined);
   }
@@ -203,14 +202,16 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
 
   private reposition(anchor = this.anchor): void {
     if (!anchor && !this.menuOpen) return;
-    const { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
-      menuWidth = this.el.offsetWidth || 320,
-      { top: aTop, left: aLeft, width: aWidth } = !anchor ? { top: 0, left: 0, width: 0 } : isPOJO(anchor) ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
-      y = !anchor ? `calc(100% - var(--tmg-media-current-global-safe-inset-bottom))` : aTop - cTop,
-      x = !anchor ? `calc(100% - var(--tmg-media-current-safe-inset-x) - ${menuWidth}px)` : clamp(this.safeMargin, aLeft - cLeft + aWidth / 2 - menuWidth / 2, cWidth - menuWidth - this.safeMargin);
+    const menuWidth = this.el.offsetWidth || 320,
+      fallback = !anchor || !this.ctlr.plug("settings.overlay")?.state.visible,
+      { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
+      { top: aTop, left: aLeft, width: aWidth } = fallback ? NIL : isPOJO(anchor) ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
+      y = fallback ? `calc(100% - var(--tmg-media-current-global-safe-inset-bottom))` : aTop - cTop,
+      x = fallback ? `calc(100% - var(--tmg-media-current-safe-inset-x) - ${menuWidth}px)` : clamp(this.safeMargin, aLeft - cLeft + aWidth / 2 - menuWidth / 2, cWidth - menuWidth - this.safeMargin);
     if (this.lastAnchorX === x && this.lastAnchorY === y) return;
+    (this.lastAnchorX = x), (this.lastAnchorY = y);
     this.el.style.setProperty("--tmg-smenu-anchor-x", isStr(x) ? x : `${x}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", isStr(y) ? y : `${y}px`);
-    this.el.classList.toggle("tmg-media-smenu-drop-down", isNum(y) && y < cHeight / 2), (this.lastAnchorX = x), (this.lastAnchorY = y);
+    this.el.classList.toggle("tmg-media-smenu-fallback", fallback), this.el.classList.toggle("tmg-media-smenu-down", isNum(y) && y < cHeight / 2);
   }
   public safeMargin = 12;
 }

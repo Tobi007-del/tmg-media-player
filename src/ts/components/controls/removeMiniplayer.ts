@@ -25,8 +25,7 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
     // Ctlr Media Listeners
     this.media.on("state.miniplayer", () => this[this.canShow ? "show" : "hide"](), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.escape", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.escape", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.escape`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

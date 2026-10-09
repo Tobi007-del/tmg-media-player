@@ -91,7 +91,7 @@ export class Timeline extends RangeInput<TimelineConfig> {
     for (const k of ["format", "mode"] as const) this.ctlr.config.on(`settings.time.${k}`, this.syncPreviewText, { init: k === "mode", signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
-    return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(getTime(this.media, value / 100))), true) : false;
+    return super.scrub(value, bypass) ? (!bypass && (this.media.intent.currentTime = safeNum(getTime(this.media, this.config.value / 100))), true) : false;
   }
 
   protected handleCurrentTime({ value, rejectable, resolved }: REvent<CtlrMedia, "state.currentTime" | "intent.currentTime">): void {

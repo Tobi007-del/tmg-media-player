@@ -54,7 +54,7 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   }
   protected handleRightClick(e: PointerEvent): void {
     if (this.ctlr.config.disabled || this.media.state.locked) return;
-    e.preventDefault(), e.stopImmediatePropagation(), (e.pointerType ? e.pointerType === "mouse" : !IS_MOBILE) && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
+    e.preventDefault(), e.stopPropagation(), (e.pointerType ? e.pointerType === "mouse" : !IS_MOBILE) && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
   }
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return; // no currentTarget as async safe click

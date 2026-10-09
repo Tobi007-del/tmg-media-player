@@ -2,15 +2,18 @@ import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatActionTooltip } from "@utils/keys";
+import { canMorphSVG } from "@utils/str";
 
 export type TheaterConfig = undefined;
 
 export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, HTMLButtonElement> {
   public static readonly componentName: string = "theater";
   public static readonly isControl: boolean = true;
+  protected paths?: string[][] | null;
 
   public override create() {
-    this.element = createEl("button", { className: "tmg-media-theater-btn", type: "button", innerHTML: IconRegistry.get("enterTheater") + IconRegistry.get("exitTheater") }, { draggableControl: "", controlId: this.name });
+    this.paths = canMorphSVG(IconRegistry.get("enterTheater", true), IconRegistry.get("exitTheater", true));
+    this.element = createEl("button", { className: "tmg-media-theater-btn", type: "button", innerHTML: this.paths ? IconRegistry.get("enterTheater", true).replace('class=""', 'class="tmg-media-theater-icon"') : IconRegistry.get("enterTheater") + IconRegistry.get("exitTheater") }, { draggableControl: "", controlId: this.name });
     return this.hide(), this.element;
   }
 
@@ -20,15 +23,19 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.theater", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.theater", () => (this.syncUI(), this.syncARIA()), { init: this.ctlr.flags.wired, signal: this.signal });
     for (const p of ["state.miniplayer", "status.floatingPlayer", "state.fullscreen"] as const) this.media.on(p, () => this[this.canShow ? "show" : "hide"](), { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.theater", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.theater", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.theater`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {
     this.media.intent.theater = !this.media.state.theater;
+  }
+
+  public syncUI(): void {
+    const strs = this.paths?.[this.media.state.theater ? 1 : 0];
+    strs && this.el.querySelectorAll("path").forEach((p, i) => strs[i] && p.setAttribute("d", strs[i]));
   }
 
   public syncARIA(): void {

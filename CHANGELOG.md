@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.57
+
+### Patch Changes
+
+- Bug fixes
+
 ## 0.0.56
 
 ### Patch Changes

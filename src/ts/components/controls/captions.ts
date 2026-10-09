@@ -25,8 +25,7 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
     for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.captions.secondaryTracks", this.syncBadge, { signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.captions", this.syncARIA, { signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.captions", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.captions`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

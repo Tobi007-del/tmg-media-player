@@ -63,13 +63,13 @@ export const KEYS_MODS_ACTIONS = ["timeSkip", "volume", "brightness", "playbackR
 
 export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   disabled: false,
-  strictMatch: false,
-  rankedMatch: true,
   overrides: KEYS_OVERIDES,
   shortcuts: KEYS_SHORTCUTS,
   blocks: KEYS_BLOCKS,
   whitelist: KEYS_WHITELIST,
   moddedlist: [" ", "arrowleft", "arrowright", ...Object.keys(KEYS_SHORTCUTS).filter((k) => KEYS_MODS_ACTIONS.some((m) => k.startsWith(m))), "capture"],
+  linkedPhase: true,
+  showOverlay: true,
   mods: {
     disabled: false,
     timeSkip: {
@@ -89,7 +89,6 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
     }, // ">|<" has shift
     captionsFontSize: {},
   },
-  showOverlay: true,
   phase: {
     value: "keyup",
     options: [

@@ -26,7 +26,7 @@ export class BrightnessSlider extends RangeInput<RangeInputConfig, RangeState> {
     this.ctlr.config.on("settings.brightness.max", this.handleBrightnessMax, { init: true, signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
-    return super.scrub(value, bypass) ? (this.plug?.handleSliderInput(value), true) : false;
+    return super.scrub(value, bypass) ? !bypass && (this.plug?.handleSliderInput(this.config.value), true) : false;
   }
 
   protected handleBrightnessState({ value }: REvent<CtlrMedia, "state.brightness">): void {

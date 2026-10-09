@@ -148,7 +148,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
 
   protected handleWheel(e: WheelEvent): void {
     if (this.config.wheel.disabled) return;
-    e.preventDefault(), e.stopImmediatePropagation();
+    e.preventDefault(), e.stopPropagation();
     !this.tx ? this.useTx(true) : this.ctlr.debounce(`${this.config.label}WheelTx`, this.useTx, 200);
     const dimension = this.isVertical ? getWindow(this.el).innerHeight : getWindow(this.el).innerWidth,
       pos = clamp(0, Math.abs(-e.deltaY), dimension * this.config.wheel.axisRatio) / (dimension * this.config.wheel.axisRatio);
@@ -156,7 +156,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   }
   protected handleKeyDown(e: KeyboardEvent, key = e.key?.toLowerCase()): void {
     if (/^(arrowleft|arrowdown|arrowright|arrowup)$/.test(key)) {
-      e.preventDefault(), e.stopImmediatePropagation();
+      e.preventDefault(), e.stopPropagation();
       !this.tx ? this.useTx(true) : this.ctlr.debounce(`${this.config.label}KeyTx`, this.useTx, 200);
       this.scrub(this.config.value + (/^(arrowleft|arrowdown)$/.test(key) ? -1 : 1) * (e.shiftKey ? 2 : 1) * (this.config.step === "any" ? 1 : this.config.step));
     }
@@ -240,7 +240,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
 
   protected tx: Transaction | null = null;
   protected useTx(bool = false): void {
-    bool ? (this.tx = startTx(`${this.config.label} scrub`)) : this.tx && this.config.stall(() => (endTx(this.tx!), (this.tx = null)));
+    bool ? (this.tx = startTx(`${this.config.label} ${this.marksActive ? "seek" : "scrub"}`)) : this.tx && this.config.stall(() => (endTx(this.tx!), (this.tx = null)));
   }
 }
 

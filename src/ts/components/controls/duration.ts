@@ -25,8 +25,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
     this.media.on("status.isLive", (e) => (this.el.classList.toggle("tmg-media-live-badge", e.value), this.media.container.classList.toggle("tmg-media-is-live", e.value), this.syncARIA()), { init: true, signal: this.signal }); // #BLIND SPOT: numb reactive edge case
     // ---- Config --------
     this.ctlr.config.on("settings.time.format", () => (this.syncUI(), this.syncARIA()), { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.keys.shortcuts.timeFormat", this.syncARIA, { signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.timeFormat", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.timeFormat`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

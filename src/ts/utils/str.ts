@@ -77,3 +77,11 @@ export function fuzzyChunkMatch(targets: string | string[], transcript: string, 
   }
   return null;
 }
+
+export function canMorphSVG(...svgs: string[]): string[][] | null {
+  if (svgs.length < 2) return null;
+  const parse = (s: string) => [...s.matchAll(/<path[^>]*d=["']([^"']+)["'][^>]*>/gi)].map((m) => m[1]),
+    paths = svgs.map(parse),
+    p0 = paths[0];
+  return p0.length && paths.every((p) => p.length === p0.length && p.every((d, i) => d.match(/[a-zA-Z]/g)?.join("") === p0[i].match(/[a-zA-Z]/g)?.join(""))) ? paths : null;
+}

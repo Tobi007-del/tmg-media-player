@@ -26,7 +26,7 @@ export class VolumeSlider extends RangeInput<RangeInputConfig, RangeState> {
     this.ctlr.config.on("settings.volume.max", this.handleVolumeMax, { init: true, signal: this.signal });
   }
   protected override scrub(value: number, bypass?: boolean): boolean {
-    return super.scrub(value, bypass) ? (this.plug?.handleSliderInput(value), true) : false;
+    return super.scrub(value, bypass) ? !bypass && (this.plug?.handleSliderInput(this.config.value), true) : false;
   }
 
   protected handleVolumeState({ value }: REvent<CtlrMedia, "state.volume">): void {

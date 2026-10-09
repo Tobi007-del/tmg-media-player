@@ -6,6 +6,7 @@ import { setTimeout, clamp } from "sia-reactor/utils";
 import { Toast, ToastOptions } from "@t007/toast";
 import { NOOP, REvent } from "sia-reactor";
 import { CtlrConfig } from "@defs/config";
+import { IconRegistry } from "@core/registries";
 
 export class ToastsPlug extends BasePlug<ToastsConfig> {
   public static readonly plugName = "toasts";
@@ -16,7 +17,9 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
 
   public override mount(): void {
     this.container = this.media.container.appendChild(createEl("div", { className: "tmg-media-toasts-container tmg-media-cover tmg-media-fill tmg-media-no-pointer tmg-media-curve" }));
-    this.toast = t007.toaster({ rootElement: this.container, signal: this.signal, ...this.config }, this.ctlr.config.id);
+    const t = t007.toaster({ rootElement: this.container, signal: this.signal, ...this.config }, this.ctlr.config.id),
+      fmt = (opts: any, raw = opts?.icon, icon = (raw && IconRegistry.get(raw, true)) || raw) => (icon ? { ...opts, icon } : opts);
+    this.toast = new Proxy(t, { apply: (t, _, [msg, opts]) => t(msg, fmt(opts)), get: (t, k) => (k === "update" ? (id: any, opts: any) => t.update(id, fmt(opts)) : (t as any)[k]) });
   }
   public override unmount(): void {
     this.container.remove();

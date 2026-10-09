@@ -2,6 +2,7 @@ import { BaseComponent, ComponentState } from "@components/base";
 import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatActionTooltip } from "@utils/keys";
+import { canMorphSVG } from "@utils/str";
 
 export type PictureInPictureConfig = undefined;
 
@@ -9,8 +10,11 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   public static readonly componentName: string = "pictureInPicture";
   public static readonly isControl: boolean = true;
 
+  protected paths?: string[][] | null;
+
   public override create() {
-    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: IconRegistry.get("enterPip") + IconRegistry.get("exitPip") }, { draggableControl: "", controlId: this.name }));
+    this.paths = canMorphSVG(IconRegistry.get("enterPip", true), IconRegistry.get("exitPip", true));
+    return (this.element = createEl("button", { className: "tmg-media-picture-in-picture-btn", type: "button", innerHTML: this.paths ? IconRegistry.get("enterPip", true).replace('class=""', 'class="tmg-media-picture-in-picture-icon"') : IconRegistry.get("enterPip") + IconRegistry.get("exitPip") }, { draggableControl: "", controlId: this.name }));
   }
 
   public override wire(): void {
@@ -21,10 +25,9 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("status.loadedMetadata", this.syncUI, { signal: this.signal });
-    this.media.on("state.pictureInPicture", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.pictureInPicture", () => (this.syncUI(), this.syncARIA()), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.pictureInPicture", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.pictureInPicture", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.pictureInPicture`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {
@@ -32,7 +35,9 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   }
 
   public syncUI(): void {
-    this[!this.media.status.loadedMetadata && !this.media.features.floatingPlayer ? "disable" : "enable"]();
+    const strs = this.paths?.[this.media.state.pictureInPicture ? 1 : 0];
+    strs && this.el.querySelectorAll("path").forEach((p, i) => strs[i] && p.setAttribute("d", strs[i]));
+    this[!this.media.state.pictureInPicture && !this.media.status.loadedMetadata && !this.media.features.floatingPlayer ? "disable" : "enable"]();
   }
 
   public syncARIA(): void {

@@ -28,22 +28,21 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     action !== false && this.ctlr.throttle("keyDown", () => (this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keydown", action), e, this.getMod(e))), 30);
   }
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
-    if (action !== false) this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
+    if (action !== false) {
+      this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
+      if (this.playKeySeq === 1 && /^( |playPause)$/.test(action)) e.stopImmediatePropagation(), this.handlePlayKeyDown();
+    }
+    if (this.playKeySeq > 0) {
+      const fastPlug = this.ctlr.plug("settings.fastPlay");
+      if (this.playKeySeq > 1 && fastPlug?.state.active && !fastPlug.state.ptrActive) fastPlug.slowDown();
+      this.playKeySeq = 0;
+    }
   }
 
   protected handlePlayKeyDown(e?: KeyboardEvent | MouseEvent): void {
     if (!e || e.type !== "keydown") return void ((this.media.intent.paused = !this.media.state.paused), this.ctlr.notify?.(this.media.intent.paused ? "mediaPause" : "mediaPlay"));
     this.playKeySeq++;
-    this.playKeySeq === 1 && (e.currentTarget as Window)?.addEventListener("keyup", this.handlePlayKeyUp, { signal: this.signal });
     this.playKeySeq === 2 && this.settings.fastPlay.key && this.ctlr.plug("settings.fastPlay")?.speedUp(e.shiftKey ? "backwards" : "forwards");
-  }
-
-  protected handlePlayKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
-    action && this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show();
-    if (action !== false && /^( |playPause)$/.test(action)) e.stopImmediatePropagation(), this.playKeySeq === 1 && this.handlePlayKeyDown();
-    const fastPlug = this.ctlr.plug("settings.fastPlay");
-    if (this.playKeySeq > 1 && fastPlug?.state.active && !fastPlug.state.ptrActive) fastPlug.slowDown();
-    (this.playKeySeq = 0), (e.currentTarget as Window)?.removeEventListener("keyup", this.handlePlayKeyUp);
   }
 
   protected handleArrowLeft(_: KeyboardEvent, mod: KeyMod): void {

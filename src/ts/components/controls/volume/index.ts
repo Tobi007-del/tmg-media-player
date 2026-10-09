@@ -3,6 +3,7 @@ import { IconRegistry } from "@core/registries";
 import { createEl } from "@utils/dom";
 import { formatActionTooltip } from "@utils/keys";
 import { setTimeout } from "@utils/fn";
+import { canMorphSVG } from "@utils/str";
 import { VolumeSlider, type VolumeSliderConfig } from "./slider";
 
 export type VolumeConfig = VolumeSliderConfig;
@@ -14,15 +15,17 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
   protected button!: HTMLButtonElement;
   protected sliderWrapper!: HTMLSpanElement;
   protected delayActiveId?: number;
+  protected paths?: string[][] | null;
   protected get plug() {
     return this.ctlr.plug("settings.volume");
   }
 
   public override create(): HTMLElement {
     // Variables Assignments
+    this.paths = canMorphSVG(IconRegistry.get("volumeHigh", true), IconRegistry.get("volumeLow", true), IconRegistry.get("volumeMuted", true));
     this.slider = new VolumeSlider(this.ctlr, this.config);
     this.element = createEl("div", { className: "tmg-media-volume-container tmg-media-vb-container" }, { draggableControl: "", controlId: this.name });
-    this.button = createEl("button", { className: "tmg-media-mute-btn tmg-media-vb-btn", type: "button", innerHTML: IconRegistry.get("volumeHigh") + IconRegistry.get("volumeLow") + IconRegistry.get("volumeMuted") });
+    this.button = createEl("button", { className: "tmg-media-mute-btn tmg-media-vb-btn", type: "button", innerHTML: this.paths ? `<svg viewBox="0 0 25 25" class="tmg-media-volume-icon"><path d="${this.paths[0][0]}"></path></svg>` : IconRegistry.get("volumeHigh") + IconRegistry.get("volumeLow") + IconRegistry.get("volumeMuted") });
     this.sliderWrapper = createEl("span", { className: "tmg-media-volume-slider-wrapper tmg-media-vb-slider-wrapper" });
     const sliderEl = this.slider.create();
     // DOM Injection
@@ -45,8 +48,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     // State Listeners
     this.slider.config.on("value", this.delayActive, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.volume", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("state.muted", this.syncARIA, { signal: this.signal });
+    for (const k of ["volume", "muted"] as const) this.media.on(`state.${k}`, () => (this.syncUI(), this.syncARIA()), { init: k === "volume" && this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.keys.shortcuts.mute", this.syncARIA, { signal: this.signal });
   }
@@ -67,6 +69,11 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
     if (this.slider.el.matches(":active")) return this.delayActive();
     clearTimeout(this.delayActiveId), this.slider.inactive();
     this.slider.config.previewValue = this.slider.config.value;
+  }
+
+  public syncUI(): void {
+    const strs = this.paths?.[this.media.state.muted || this.media.state.volume === 0 ? 2 : this.media.state.volume < 50 ? 1 : 0];
+    strs && this.button.querySelectorAll("path").forEach((p, i) => strs[i] && p.setAttribute("d", strs[i]));
   }
 
   public syncARIA(): void {

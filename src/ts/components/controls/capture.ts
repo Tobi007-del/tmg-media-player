@@ -22,8 +22,7 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.shortcuts.capture", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.capture", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.capture`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

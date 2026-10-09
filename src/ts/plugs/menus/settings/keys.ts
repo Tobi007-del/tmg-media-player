@@ -26,7 +26,6 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
           configPaths: ["settings.keys.disabled"],
           items: [
             { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
-            { id: "keyboardStrictMatch", label: "Strict match", widget: "toggle", getValue: () => (plug.config.strictMatch ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strictMatch = val), configPaths: ["settings.keys.strictMatch"], title: "Require exact key combo match for actions (e.g., Shift+f will not trigger the action for f)." },
             { id: "keyboardShowOverlay", label: "Show overlay", widget: "toggle", getValue: () => (plug.config.showOverlay ? "On" : "Off"), onChange: (val: boolean) => (plug.config.showOverlay = val), configPaths: ["settings.keys.showOverlay"], title: "Force the player controls overlay to appear when pressing keys." },
             { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase to trigger actions when not explicitly specified" },
             {

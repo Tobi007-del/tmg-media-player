@@ -24,8 +24,7 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
     // Event Listeners
     this.iconBtn.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.shortcuts.cast", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.cast", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.cast`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

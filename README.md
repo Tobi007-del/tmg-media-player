@@ -169,7 +169,7 @@ player.configure({
   settings: {
     controlPanel: {
       timeline: {
-        previews: { address: "previews/frame$.jpg", spf: 10 },
+        previews: { address: "previews/frame$.jpg", spf: 10 }, // or { address: "preview/frame-sprite.jpg", cols: 5, rows: 5 }
         tooltip: true,
       },
     },
@@ -231,7 +231,41 @@ player.configure({
 await player.attach(document.querySelector("video"));
 ```
 
-Playlists support shuffle, loop, and per-item start/end times.
+Playlists support shuffle, loop, ads, and per-item start/end times.
+
+---
+
+### Ads
+
+Integrate VAST ad tags seamlessly using the `ads.rolls` array. You can schedule pre-rolls, mid-rolls, and post-rolls using exact times (in seconds) or percentages:
+
+```js
+const player = new tmg.Player();
+
+player.configure({
+  ads: {
+    rolls: [
+      {
+        time: 0, // Pre-roll
+        url: "https://pubads.g.doubleclick.net/gampad/ads?...output=vast",
+        badge: "Advertisement",
+        "media.settings.metadata.artist": "Sponsored Brand",
+        "media.settings.metadata.links.title": "https://brand.com/"
+      },
+      {
+        time: "50%", // Mid-roll at 50%
+        url: "https://pubads.g.doubleclick.net/gampad/ads?...output=vast"
+      },
+      {
+        time: -5, // Post-roll 5 seconds before the end
+        url: "https://pubads.g.doubleclick.net/gampad/ads?...output=vast"
+      }
+    ]
+  }
+});
+
+await player.attach(document.querySelector("video"));
+```
 
 ---
 
@@ -400,6 +434,10 @@ captionsPlug.settings.css.currentCaptionsY = "50px";
 ```
 
 The system uses dedicated registries (`PlugRegistry`, `ComponentRegistry`, `TechRegistry`) so you can inject or rip out entire chunks of the player architecture effortlessly. For a deep dive on how to structure Plugs, Components, and Techs, refer to our [Architecture documentation on GitHub](https://github.com/Tobi007-del/tmg-media-player/blob/main/.agents/AGENTS.md).
+
+### UI & Icon Animations
+
+If you decide to replace the default icons with your own custom SVGs (via the `IconRegistry`) and it detects that your SVGs share the same underlying structure (the same sequence of drawing commands), **it will automatically interpolate them** during state changes (e.g. Play to Pause, Enter to Exit Fullscreen).
 
 ---
 

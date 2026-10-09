@@ -24,8 +24,7 @@ export class BigPreviousButton extends BaseComponent<BigPreviousConfig, Componen
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
     this.ctlr.config.on("playlist.content", this.syncUI, { signal: this.signal, init: true, depth: 1 });
-    this.ctlr.config.on("settings.keys.shortcuts.previous", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.previous", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.previous`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

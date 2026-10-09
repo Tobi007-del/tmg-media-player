@@ -6,7 +6,7 @@ import { HTML5Tech } from "@techs/html5";
 import type { TechConstructor } from "@techs/base";
 import { PlugConstructor as PC, type BasePlug as Plug } from "@plugs/base";
 import { guardAllMethods, guardMethod } from "@t007/utils";
-import { setTimeout, throttle, cancelRAFLoop, RAFLoop, mockAsync, debounce } from "@utils/fn";
+import { setTimeout, throttle, cancelTimeout, cancelRAFLoop, RAFLoop, mockAsync, debounce } from "@utils/fn";
 import { getSizeTier, getWindow } from "@utils/dom";
 import { createEl, observeIntersection, observeResize } from "@utils/dom";
 import { collator, capitalize, uncamelize } from "@utils/str";
@@ -187,6 +187,9 @@ export class Controller {
   }
   public RAFLoop(key: string, fn: Function, signal = this.signal): void {
     RAFLoop(this.config.id + key, fn, signal, getWindow(this.media.container));
+  }
+  public cancelTimeout(type: "throttle" | "debounce", key: string): void {
+    cancelTimeout(type, this.config.id + key, getWindow(this.media.container));
   }
   public cancelRAFLoop(key: string): void {
     cancelRAFLoop(this.config.id + key);

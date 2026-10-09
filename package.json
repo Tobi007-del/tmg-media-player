@@ -1,6 +1,6 @@
 {
   "name": "tmg-media-player",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "description": "A feature-rich, Web media player implementation for The Movie Garden initiative",
   "author": "Oketade Oluwatobiloba <tobioketade007@gmail.com>",
   "license": "MIT",
@@ -115,11 +115,11 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@t007/dialog": "^0.0.50",
-    "@t007/input": "^0.0.49",
-    "@t007/toast": "^0.0.56",
-    "@t007/utils": "^0.0.51",
-    "sia-reactor": "^0.0.53"
+    "@t007/dialog": "^0.0.51",
+    "@t007/input": "^0.0.50",
+    "@t007/toast": "^0.0.57",
+    "@t007/utils": "^0.0.52",
+    "sia-reactor": "^0.0.54"
   },
   "allowScripts": {
     "@parcel/watcher": true,

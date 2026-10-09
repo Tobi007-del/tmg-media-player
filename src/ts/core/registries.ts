@@ -165,8 +165,8 @@ export class IconRegistry extends BaseRegistry<string> {
   private static instance = new IconRegistry();
 
   public static get<K extends keyof IconRegistryMap>(name: K, raw?: boolean, token?: RegExp | string): IconRegistryMap[K] | string;
-  public static get(name: string, raw = false, token = /\btmg-media-[^\s"']+\s*/g) {
-    return (raw ? this.instance.get(name)?.replace(token, "") : this.instance.get(name)) || `<svg></svg>`;
+  public static get(name: string, raw = false, token = /\btmg-media-[^\s"']+-icon(?=[\s"']|$)\s*/g) {
+    return (raw ? this.instance.get(name)?.replace(token, "") : this.instance.get(name)) || "";
   }
   public static register<K extends keyof IconRegistryMap>(name: K, svg: IconRegistryMap[K]): void;
   public static register(name: string, svg: string): void {
@@ -175,8 +175,10 @@ export class IconRegistry extends BaseRegistry<string> {
   public static unregister(name: keyof IconRegistryMap): void {
     this.instance.unregister(name as string);
   }
-  // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
   public static registerAll(icons: Record<keyof IconRegistryMap, IconRegistryMap[keyof IconRegistryMap]>): void {
     for (const k in icons) this.instance.register(k, icons[k as keyof IconRegistryMap]);
+  } // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
+  public static getKeys(): string[] {
+    return this.instance.items.map((i) => i.name);
   }
 }

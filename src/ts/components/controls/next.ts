@@ -23,8 +23,7 @@ export class NextButton extends BaseComponent<NextConfig, ComponentState, HTMLBu
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.shortcuts.next", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.next", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.next`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

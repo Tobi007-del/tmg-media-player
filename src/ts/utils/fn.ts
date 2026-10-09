@@ -3,7 +3,7 @@ import { uid } from "@t007/utils";
 import { limited as limitedOrig, LimitedOptions, LimitedHandle } from "@t007/utils";
 
 // ============ Timer Helpers ============
-export { setTimeout, setInterval, requestAnimationFrame, throttle, debounce, RAFLoop, cancelRAFLoop } from "@t007/utils";
+export { setTimeout, setInterval, requestAnimationFrame, throttle, debounce, RAFLoop, cancelTimeout, cancelRAFLoop } from "@t007/utils";
 
 // ============ Async Helpers ============
 export { mockAsync, breath, deepBreath } from "@t007/utils";

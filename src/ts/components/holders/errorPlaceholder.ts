@@ -29,8 +29,7 @@ export class ErrorPlaceholder extends BaseComponent<ErrorPlaceholderConfig, Comp
     // Plug Listeners
     this.plug?.state.on("message", this.syncUI, { init: true, signal: this.signal });
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.keys.shortcuts.reload", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.reload", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.reload`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

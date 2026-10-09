@@ -19,10 +19,9 @@ export class CastButton extends BaseComponent<CastConfig, ComponentState, HTMLBu
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.cast", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.cast", this.syncARIA, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.cast", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.cast", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.cast`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

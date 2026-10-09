@@ -1,4 +1,4 @@
-export const doubleTriangleLeft = `<svg viewBox="0 0 30 24"><path d="M22,5.14V19.14L11,12.14L22,5.14Z" /><path d="M11,5.14V19.14L0,12.14L11,5.14Z" /></svg>`;
+export const doubleTriangleLeft = `<svg viewBox="0 0 30 24"><path d="M26,5V19L15,12Z" /><path d="M15,5V19L4,12Z" /></svg>`;
 
 declare module "@defs/registries" {
   interface IconRegistryMap {

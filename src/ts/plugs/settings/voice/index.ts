@@ -120,6 +120,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected stop(): void {
     (this.state.routing = false), this.recognition?.abort();
     for (const k in this.TIDS) t007.toast?.dismiss(this.TIDS[k as keyof typeof this.TIDS]);
+    for (const k of ["voiceSleeping", "voiceProcessing"]) this.ctlr.cancelTimeout("debounce", k);
   }
 
   protected wakeUp(): void {
@@ -158,8 +159,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
           const score = getLevenshteinSimilarity(leaf, transcript);
           if (score > this.config.process.accuracy && score > highest) (highest = score), (match = paths[i]);
         } // Fuzzy Match: Check if the user said the last word of any valid path
-      if (match && this.ctlr.isLogical(this.goTo(match), true)) return this.execute(transcript, match, true), true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
-      else if (isSubmit) {
+      if (match) {
+        if (this.ctlr.isLogical(this.goTo(match), true)) return this.execute(transcript, match, true), true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
+      } else if (isSubmit) {
         const path = this.state.ctx === "*" ? transcript : `${this.state.ctx}.${camelize(transcript)}`,
           val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, mirror(path)) : undefined;
         if (val !== undefined && this.ctlr.isLogical(this.goTo(path), true, val)) return this.execute(transcript, path, true), true; // Hey dev or explorer, here u go!
@@ -215,7 +217,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   protected linked(text: string, value = text.toLowerCase(), isGoto = false, punc = isGoto || this.config.muted ? "" : '"'): string {
-    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${isGoto ? text : value}</u>${punc}`;
+    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${isGoto || this.config.muted ? text : value}</u>${punc}`;
   } // `""` is my lil UI Experiment, crafting a standard here :)
   protected stayWoke(e: Event): void {
     this.state.routing && this.ctlr.throttle("voiceWaking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.TIDS.HELPER}"],[id="${this.TIDS.ROUTER}"])`)) && this.snooze(), 500);
@@ -267,7 +269,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return full ? { id: this.TIDS.ROUTER, actions: this.getRouterActions(), onClose: (_, user) => user && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
   }
   protected getRouterActions(full = true): ToastOptions["actions"] {
-    return { ...(full && this.state.routing && { [`<span title='Open Actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my Voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
+    return { ...(full && this.state.routing && { [`<span title='Open actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
   protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => this.linked(c)).join(" or ") : this.linked(this.config.commands.voiceWake)} to wake me up` : this.config.muted ? "or type instead" : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;

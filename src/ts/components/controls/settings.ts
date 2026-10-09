@@ -26,8 +26,7 @@ export class SettingsButton extends BaseComponent<SettingsConfig, ComponentState
     // Ctlr Media Listeners
     for (const p of ["state.currentLevel", "state.autoLevel", "status.levels", "status.loadedMetadata"] as const) this.media.on(p, this.syncBadge, { init: p === "status.levels", signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.settings", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.settings", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.settings`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {

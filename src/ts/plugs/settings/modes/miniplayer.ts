@@ -174,7 +174,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.resizers = RESIZE_DIRS.map((dir) => {
       const el = createEl("div", { className: `tmg-media-miniplayer-resize-handle tmg-media-miniplayer-resize-${dir}`, ariaHidden: "true" });
       el.addEventListener("pointerdown", (e) => this.handleResizeStart(e, dir), { signal: this.signal });
-      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?.build) => (e.stopImmediatePropagation(), sache && ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!))), { signal: this.signal });
+      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?.build) => (e.stopPropagation(), sache && ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!))), { signal: this.signal });
       return this.media.container.append(el), el;
     });
   }

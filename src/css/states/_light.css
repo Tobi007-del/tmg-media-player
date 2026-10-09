@@ -16,7 +16,7 @@
 .tmg-media-container.tmg-media-stall .tmg-media-big-controls-wrapper > * {
   display: none;
 }
-.tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-big-controls-wrapper-cover, [data-control-id="bigPlayPause"][data-stall-control="true"] .tmg-media-play-icon),
+.tmg-media-container:is(.tmg-media-light, .tmg-media-stall) :is(.tmg-media-big-controls-wrapper-cover, [data-control-id="bigPlayPause"][data-stall-control="true"] :is(.tmg-media-play-icon, .tmg-media-play-pause-icon)),
 .tmg-media-container.tmg-media-low-light [data-control-id][data-light-control="true"],
 .tmg-media-container.tmg-media-stall [data-control-id][data-stall-control="true"] {
   display: flex;

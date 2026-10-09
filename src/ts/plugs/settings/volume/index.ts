@@ -49,6 +49,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     // ---- Config ---------
     this.ctlr.config.on("settings.volume.min", (e) => this.handleMin(e.value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.volume.max", (e) => this.handleMax(e.value), { init: true, signal: this.signal });
+    this.ctlr.config.on("settings.volume.factor", () => this.setGainTarget(), { signal: this.signal });
     // Post Wiring
     this.ctlr.learn("mute", { fn: this.handleKeyMute }, this.signal);
     this.ctlr.learn("volumeUp", { fn: this.handleKeyVolumeUp, keyboard: { phase: "keydown" } }, this.signal);
@@ -60,7 +61,7 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     if (isNext) this.nextLevel = null;
     if (e.resolved) return;
     this.setValueState(e.value, isNext);
-    this.ctlr.isNativeEl && this.gainNode?.gain.setTargetAtTime((e.value / 100) * 2, this.ctime, 0.05);
+    this.ctlr.isNativeEl && this.setGainTarget(e.value);
     if (!isNext && e.value > 0) this.media.settings.defaultMuted = false; // youtube courtesy
     if (this.ctlr.isNativeEl || !this.ctlr.flags.wired) this.media.state.volume = this.shadowVolume = e.value;
     // e.resolve(this.name); // #UMBRELLA: must envelope logic
@@ -96,13 +97,16 @@ export class VolumePlug extends BaseSliderPlug<VolumeConfig, VolumeState> {
     const DCN = this.media.element._tmgDynamicsCompressorNode;
     if (DCN) (DCN.threshold.value = -30), (DCN.knee.value = 20), (DCN.ratio.value = 12), (DCN.attack.value = 0.003), (DCN.release.value = 0.25);
     this.state.audioSetup = true;
-    this.ctlr.isNativeEl && this.gainNode?.gain.setTargetAtTime((this.media.state.volume / 100) * 2, this.ctime, 0.05);
+    this.ctlr.isNativeEl && this.setGainTarget();
   }
   protected disconnectAudio(): void {
     if (!this.state.audioSetup) return;
-    this.media.element.volume = clamp(0, (this.gainNode?.gain?.value ?? 2) / 2, 1);
+    this.media.element.volume = clamp(0, this.media.state.volume / 100, 1);
     disconnectFromAudioManager(this.media.element);
     this.state.audioSetup = false;
+  }
+  public setGainTarget(value = this.media.state.volume, time = 0.05): void {
+    this.gainNode?.gain.setTargetAtTime((value / 100) * this.config.factor, this.ctime, time);
   }
 
   protected override onDestroy(): void {

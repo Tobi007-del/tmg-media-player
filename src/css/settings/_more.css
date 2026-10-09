@@ -7,7 +7,7 @@
 .tmg-media-container.tmg-media-more-settings .tmg-media-content :is(.tmg-media, .tmg-media-filtered) {
   filter: var(--tmg-media-settings-filter);
 }
-.tmg-media-container.tmg-media-more-settings .tmg-media-settings-btn svg {
+.tmg-media-container:is(.tmg-media-more-settings, .tmg-media-menu-settings) .tmg-media-settings-btn svg {
   transform: rotate(30deg);
 }
 .tmg-media-content-wrapper,

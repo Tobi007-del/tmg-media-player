@@ -19,10 +19,9 @@ export class AirPlayButton extends BaseComponent<AirPlayConfig, ComponentState, 
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
-    this.media.on("state.airplay", this.syncARIA, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.airplay", this.syncARIA, { signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.keys.shortcuts.airplay", this.syncARIA, { init: true, signal: this.signal });
-    this.ctlr.config.on("settings.voice.commands.airplay", this.syncARIA, { signal: this.signal });
+    for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.airplay`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
   protected handleClick(): void {
