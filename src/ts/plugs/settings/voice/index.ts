@@ -77,16 +77,16 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.snooze();
     let transcript = "";
     if (!this.config.muted) for (let i = e.resultIndex, len = e.results.length; i < len; ++i) transcript += e.results[i][0].transcript;
-    if (`${e.resultIndex}-${(transcript = transcript.trim().toLowerCase())}` === this.prevRes) return; // Block the interim/final duplicate fire
-    this.prevRes = `${e.resultIndex}-${transcript}`;
+    transcript = transcript.trim().toLowerCase();
     !this.config.muted && (this.state.routing || this.config.toasts.behavior.value !== "strict") && this.view?.(transcript ? `${transcript}${!this.state.routing ? `... Say ${this.linked(isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake[0] : this.config.commands.voiceWake)}!` : ""}` : this.getRouterSpeech(this.state.routing && !IS_MOBILE ? "Didn't catch that..." : undefined, this.state.routing ? "" : undefined), this.getRouterOptions());
     const pathInput = this.container?.querySelector<HTMLInputElement>(".tmg-media-voice-path-input");
-    if (pathInput) pathInput.value = transcript.trim(); // Update the Text UI
-    transcript && this.ctlr.debounce("voiceProcessing", () => this.process(transcript), 500, false, this.signal); // Process after delay
+    if (pathInput) pathInput.value = transcript; // Update the Text UI
+    transcript && this.ctlr.debounce("voiceProcessing", () => `${e.resultIndex}-${transcript}` !== this.prevRes && ((this.prevRes = `${e.resultIndex}-${transcript}`), this.process(transcript)), 500, false, this.signal); // Process after delay
   }
-  private prevRes = "";
+  private prevRes: string | false = false;
   protected onEnd(): void {
-    this.config && this.config.active.value && this.shouldListen() && this.start();
+    this.prevRes = false;
+    this.config?.active.value && this.shouldListen() && this.start();
   }
   protected onError(e: any): void {
     if (e.error.endsWith("not-allowed")) this.config.muted ? this.start() : (this.config.active.value = false), this.view?.error("Microphone access revoked. Please check your settings.", { tag: "tmg-mard" });
@@ -118,7 +118,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     } catch (e) {} // Silence the InvalidStateError since we might call when already on due to wake word
   }
   protected stop(): void {
-    (this.state.routing = false), this.recognition?.abort();
+    (this.state.routing = this.prevRes = false), this.recognition?.abort();
     for (const k in this.TIDS) t007.toast?.dismiss(this.TIDS[k as keyof typeof this.TIDS]);
     for (const k of ["voiceSleeping", "voiceProcessing"]) this.ctlr.cancelTimeout("debounce", k);
   }
@@ -130,7 +130,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   } // #STANDALONE: needs scoped behavior
   protected sleep(): void {
     if (!this.state.routing) return;
-    this.state.routing = false;
+    this.state.routing = this.prevRes = false;
     this.clearCtx(), t007.toast?.dismiss(this.TIDS.HELPER), !this.config.active.value || this.config.toasts.behavior.value !== "persistent" ? t007.toast?.dismiss(this.TIDS.ROUTER) : this.view?.(this.getRouterSpeech(), this.getRouterOptions());
   } // #STANDALONE: needs scoped behavior
 

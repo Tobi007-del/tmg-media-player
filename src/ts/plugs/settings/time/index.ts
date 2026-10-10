@@ -59,7 +59,7 @@ export class TimePlug extends BasePlug<TimeConfig> {
   protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), { intent: int, state: s, status: st, settings: set } = this.media): void {
     if (st.ads) return;
     (curr < this.config.min || curr > this.config.max) && silence(() => (s.loop ? (int.currentTime = this.config.min) : (int.paused = true))); // "Time Clamp Guard" if transaction
-    if (st.readyState && curr && this.ctlr.flags.wired) (this.writing = true), (this.config.start = curr > set.timePlayedMin && curr < this.actualEnd - set.timePlayedMin ? curr : this.config.min), (this.writing = false);
+    if (st.readyState && curr && this.ctlr.flags.wired) (this.writing = true), (this.config.start = curr > set.timePlayedMin && (st.isLive ? !st.ended : curr < this.actualEnd - set.timePlayedMin) ? curr : this.config.min), (this.writing = false);
   }
   private writing = false;
 

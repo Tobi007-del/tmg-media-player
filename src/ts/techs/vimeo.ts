@@ -33,7 +33,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       // Modes
       fullscreen: supportsFullscreen(), pictureInPicture: supportsPictureInPicture(),
       // States
-      autoplay: true, loop: true, playsInline: true, controls: true, crossOrigin: true,
+      autoplay: true, loop: true, playsInline: true, controls: true, live: true, crossOrigin: true, 
       // Lists
       textTracks: true, audioTracks: true, levels: true,
       // Currents

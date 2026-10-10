@@ -35,8 +35,8 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       // Modes
       pictureInPicture: !isAudio && supportsPictureInPicture(), fullscreen: !isAudio && supportsFullscreen(),
       // Markup & States
-      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, preload: true, 
-      crossOrigin: true, controls: true, controlsList: true, sources: true, tracks: true,
+      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, controls: true, live: true,
+      crossOrigin: true, preload: true, controlsList: true, sources: true, tracks: true,
       // Lists
       textTracks: canTxtTrack, videoTracks: !isAudio && canVidTrack, audioTracks: canAudTrack,
       // Currents

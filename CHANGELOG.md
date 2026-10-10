@@ -1,5 +1,23 @@
 # tmg-media-player
 
+## 0.0.64
+
+### Patch Changes
+
+- Time start respect live
+
+## 0.0.63
+
+### Patch Changes
+
+- Bug fixes on live logic
+
+## 0.0.62
+
+### Patch Changes
+
+- Voice bug fixes
+
 ## 0.0.61
 
 ### Patch Changes

@@ -32,7 +32,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       // Modes
       fullscreen: supportsFullscreen(),
       // States
-      autoplay: true, loop: true, playsInline: true, controls: true, crossOrigin: true,
+      autoplay: true, loop: true, playsInline: true, controls: true, live: true, crossOrigin: true, 
       // Lists
       textTracks: true, levels: true, 
       // Currents
