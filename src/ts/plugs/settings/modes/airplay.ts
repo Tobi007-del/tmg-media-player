@@ -34,8 +34,6 @@ export class ModesAirPlayPin extends BasePin<ModesPlug, ModesAirPlayConfig, Mode
     this.ctlr.config.watch("settings.modes.airplay.disabled", this.syncFeatures, { signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.airplay", this.handleAirPlayIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal });
-    // Post Wiring
-    this.ctlr.learn("airplay", undefined, this.signal);
   }
 
   protected handleAvailabilityChange(e: any, can = e.availability === "available"): void {

@@ -38,7 +38,6 @@ export class TimePlug extends BasePlug<TimeConfig> {
     // Post Wiring
     this.ctlr.learn("timeSkipFwd", { fn: this.handleSkipFwd, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeSkipBwd", { fn: this.handleSkipBwd, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.learn("timeStart", undefined, this.signal);
     this.ctlr.learn("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration) }, this.signal);
     this.ctlr.learn("timePreviousChapter", { fn: this.previousChapter, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeNextChapter", { fn: this.nextChapter, keyboard: { phase: "keydown" } }, this.signal);

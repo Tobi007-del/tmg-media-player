@@ -131,7 +131,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     e.resolve(this.name);
   }
   protected handleLiveIntent(e: REvent<CtlrMedia, "intent.live">): void {
-    if (e.resolved || !this.wired) return void (!e.resolved && e.resolve(this.name));
+    if (e.resolved) return;
     this.ctlr.when("loadedData", e, (seekable = this.config.status.seekable) => e.value && seekable.length && (this.config.intent.currentTime = seekable.end(seekable.length - 1) - 1)); // #FACADED: silenced intent actual op
     e.resolve(this.name);
   }

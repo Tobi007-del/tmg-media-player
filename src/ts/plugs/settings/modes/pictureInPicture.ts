@@ -33,8 +33,6 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     // ---- Media Listeners
     this.media.on("intent.pictureInPicture", this.handlePictureInPictureIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.pictureInPicture", this.handlePictureInPictureState, { init: this.ctlr.flags.wired, signal: this.signal });
-    // Post Wiring
-    this.ctlr.learn("pictureInPicture", undefined, this.signal);
   }
 
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {

@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.65
+
+### Patch Changes
+
+- Live logic fixes
+
 ## 0.0.64
 
 ### Patch Changes

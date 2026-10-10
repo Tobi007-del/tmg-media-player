@@ -20,8 +20,6 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     this.ctlr.config.watch("settings.modes.theater.disabled", this.syncFeatures, { signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.theater", this.handleTheaterIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    // Post Wiring
-    this.ctlr.learn("theater", undefined, this.signal);
   }
 
   protected handleTheaterIntent(e: REvent<CtlrMedia, "intent.theater">): void {

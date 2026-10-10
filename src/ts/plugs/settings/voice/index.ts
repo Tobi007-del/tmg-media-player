@@ -62,7 +62,6 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.ctlr.config.on("disabled", this.syncListener, { signal: this.signal });
     this.ctlr.config.on("devMode", () => this.state.routing && this.predict(), { signal: this.signal });
     this.ctlr.learn("voiceWake", { voice: { stage: "anytime", match: "chunk" } }, this.signal);
-    this.ctlr.learn("voiceSleep", undefined, this.signal);
     this.ctlr.learn("voiceQuit", { voice: { stage: "anytime" } }, this.signal);
     this.ctlr.learn("voiceMute", { voice: { stage: "anytime" } }, this.signal);
     this.ctlr.learn("voiceSubmit", { fn: () => this.submit(), voice: { stage: "pre-route" } }, this.signal);

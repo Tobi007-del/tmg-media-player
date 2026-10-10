@@ -50,8 +50,6 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
     this.media.on("intent.currentTime", this.handleCurrentTimeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.volume", this.handleVolumeIntent, { capture: true, signal: this.signal });
     this.media.on("intent.muted", this.handleMutedIntent, { capture: true, signal: this.signal });
-    // Post Wiring
-    this.ctlr.learn("cast", undefined, this.signal);
   }
 
   protected handleCastIntent(e: REvent<CtlrMedia, "intent.cast">): void {

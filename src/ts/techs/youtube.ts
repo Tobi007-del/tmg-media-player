@@ -268,11 +268,14 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       case STATE.PLAYING:
         st.error = null; // UX boost
         st.ended = st.seeking = st.waiting = s.paused = false;
+        clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentStats, set.timeShiftPoll, this.signal)); // updates 10 times a sec
+        if (st.readyState > 3) break;
+        const data = this.host!.getVideoData();
         st.duration = this.host!.getDuration();
-        st.isLive = (this.host!.getVideoData() as any).isLive ?? false; // #PAMPERING: observed quirk
-        st.canPlay = st.loadedData = true;
+        st.isLive = (data as any).isLive ?? false; // #PAMPERING: observed quirk
+        this.syncMetadata(data), this.syncCurrentStats();
         st.readyState = 4; // HAVE ENOUGH DATA
-        this.syncMetadata(), clearInterval(this.intervalId), (this.intervalId = setInterval(this.syncCurrentStats, set.timeShiftPoll, this.signal)); // updates 10 times a sec
+        st.canPlay = st.loadedData = true;
         break;
       case STATE.PAUSED:
       case STATE.ENDED:
@@ -280,7 +283,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         st.ended = e.data === STATE.ENDED;
         st.seeking = false;
         if (!set.idleWaiting) st.waiting = false;
-        clearInterval(this.intervalId), this.syncCurrentStats();
+        this.syncCurrentStats(), clearInterval(this.intervalId);
         break;
     }
   }
@@ -296,14 +299,14 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   protected syncCurrentStats(): void {
     if (!this.host) return;
     const { status: st, settings: set, state: s } = this.config;
-    s.currentTime = st.ended ? st.duration : this.host!.getCurrentTime(); // they can be lazy
-    st.buffered = createTimeRanges([[0, this.host!.getVideoLoadedFraction() * st.duration]]);
-    st.seekable = createTimeRanges([[st.isLive ? Math.max(0, st.duration - 43200) : 0, st.duration]]); // yt has a 12-Hour max DVR
     if (st.isLive) {
       st.canSeekLive = true;
       st.duration = Math.max(0, this.host!.getDuration() - 3600); // yt has a 1-Hour latency approx.
       s.live = st.duration - s.currentTime <= set.liveTolerance;
     } else if (st.duration) st.ended = s.currentTime === st.duration; // UX boost
+    s.currentTime = st.ended ? st.duration : this.host!.getCurrentTime(); // they can be lazy
+    st.buffered = createTimeRanges([[0, this.host!.getVideoLoadedFraction() * st.duration]]);
+    st.seekable = createTimeRanges([[st.isLive ? Math.max(0, st.duration - 43200) : 0, st.duration]]); // yt has a 12-Hour max DVR
   }
   public syncMetadata(data = this.host!.getVideoData(), meta = this.config.settings.metadata): void {
     data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined, links: { title: data.video_id ? `https://youtube.com/watch?v=${data.video_id}` : undefined } }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
@@ -311,17 +314,17 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   // --- Lifecycle ---
   protected reInitInfo = false;
   protected setInitInfo(data = this.config.status.hostReady && this.host!.getVideoData(), isShort = this.hostSrc?.includes("/shorts/")): void {
-    if (!this.host || !data || (this.reInitInfo = false)) return;
+    if (!this.host || !data) return;
     // Status (Infos & Lists)
     this.config.status.duration = this.host.getDuration();
     this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // #PAMPERING: observed quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;
+    this.syncMetadata(data), this.syncCurrentStats();
     this.config.status.readyState = 1; // HAVE METADATA
     this.config.status.loadedMetadata = true;
-    // Settings & Post-Init
-    this.syncCurrentStats(), this.syncMetadata(data);
+    this.reInitInfo = false;
   }
   public setPublicPoster(id = "", hq = `https://img.youtube.com/vi/${id}/hqdefault.jpg`, maxres = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`): void {
     if (!this.config.settings.metadata.allowMediaOverride) return;
