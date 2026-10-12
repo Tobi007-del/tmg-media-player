@@ -17,7 +17,7 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   }
 
   constructor(ctlr: Controller, config: Config, state?: State) {
-    super(ctlr, config, { label: "", cmd: "", active: false, disabled: false, hidden: false, keyShortcut: "", voiceCommand: "", ...state } as State);
+    super(ctlr, config, { label: "", cmd: "", cmdKey: "", active: false, disabled: false, hidden: false, ...state } as State);
   }
   protected override onSetup(): void {
     this.mount?.();
@@ -62,11 +62,10 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   public setBadge(val: string): void {
     val ? (this.el.dataset.badge = val) : delete this.el.dataset.badge;
   }
-  protected setBtnARIA(dblAction?: string, target: HTMLElement = this.el): void {
+  protected setBtnARIA(dblAction?: string, target: HTMLElement = this.el, ks = this.state.cmdKey ? this.settings.keys.shortcuts[this.state.cmdKey] : undefined): void {
     this.state.label && target.setAttribute("aria-label", this.state.label);
-    this.state.keyShortcut && target.setAttribute("aria-keyShortcuts", parseForARIAKS(this.state.keyShortcut));
-    if (dblAction) target.setAttribute("aria-description", `Double-press to ${dblAction}`);
-    else target.hasAttribute("aria-description") && target.removeAttribute("aria-description");
+    ks ? target.setAttribute("aria-keyShortcuts", parseForARIAKS(ks)) : target.removeAttribute("aria-keyShortcuts");
+    dblAction ? target.setAttribute("aria-description", `Double-press to ${dblAction}`) : target.hasAttribute("aria-description") && target.removeAttribute("aria-description");
   }
 }
 

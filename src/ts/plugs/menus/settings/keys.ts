@@ -54,9 +54,9 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
               id: "keyboardLists",
               label: "Constraints",
               widget: "group",
-              hidden: () => !plug.ctlr.config.devMode,
+              hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode },
               getValue: () => (plug.config.overrides.length || plug.config.blocks.length || plug.config.whitelist.length ? "On" : "Off"),
-              configPaths: ["devMode", "settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],
+              configPaths: ["settings.keys.overrides", "settings.keys.blocks", "settings.keys.whitelist"],
               items: [
                 {
                   id: "keyboardOverrides",

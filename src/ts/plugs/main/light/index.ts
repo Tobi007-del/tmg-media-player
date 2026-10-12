@@ -23,6 +23,8 @@ export class LightPlug extends BasePlug<LightConfig> {
     this.ctlr.config.on("light.disabled", this.handleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("light.preview", this.handlePreview, { signal: this.signal });
     for (const k of ["controls", "stallControl"] as const) this.ctlr.config.on(`light.${k}`, this.syncControls, { init: k === "controls", signal: this.signal });
+    // ---- Media Listeners
+    this.media.on("state.src", this.refresh, { signal: this.signal });
     // Post Wiring
     super.wire();
   }
@@ -37,8 +39,7 @@ export class LightPlug extends BasePlug<LightConfig> {
       this.media.container.classList.remove("tmg-media-light", "tmg-media-low-light");
       !this.ctlr.flags.wired && this.hasStalled && this.ctlr.setReadyState(2); // restoring order
     } else {
-      (this.cache.currentTime = this.cache.muted = undefined), (this.config.preview.tease = this.config.preview.tease); // force trigger
-      this.media.container.classList.add("tmg-media-light");
+      this.refresh(), this.media.container.classList.add("tmg-media-light");
       for (const k of this.shadow.keys) this.media.get(`state.${k}`, this.getMediaState, { signal: this.signal }), this.media.set(`state.${k}`, this.mediaStateHook, { signal: this.signal }), this.media.on(`intent.${k}`, this.handleMediaIntent, { capture: true, signal: this.signal }); // #VIRTUAL: reliable return value // #DICTATOR: reliable authority // #ISOLATION: peak compromise
       this.ctlr.state.set("readyState", this.readyStateHook, { signal: this.signal }); // #DICTATOR: reliable authority
       this.media.watch("state.paused", this.eject, { signal: this.signal });
@@ -79,6 +80,9 @@ export class LightPlug extends BasePlug<LightConfig> {
     if (!tease) return tease;
     for (const k of this.cache.keys) this.cache[k] ??= this.media[this.ctlr.gospel][k] as any;
     return lighten(() => ((this.media.intent.currentTime = this.shadow.currentTime = this.config.preview[this.config.preview.tease ? "min" : "max"]), this.config.preview.tease && ((this.media.intent.muted = this.shadow.muted = true), (this.media.intent.paused = this.shadow.paused = false)))), tease;
+  }
+  protected refresh(): void {
+    if (!this.config.disabled) (this.cache.currentTime = this.cache.muted = undefined), (this.config.preview.tease = this.config.preview.tease); // force trigger
   }
 
   protected eject(): void {

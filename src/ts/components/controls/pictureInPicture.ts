@@ -42,7 +42,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
 
   public syncARIA(): void {
     this.state.label = this.media.state.pictureInPicture ? "Exit picture in picture" : "Picture in picture";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "pictureInPicture"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

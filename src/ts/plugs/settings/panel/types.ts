@@ -24,8 +24,9 @@ export interface PanelState {
 
 export type MenuItemWidget = "select" | "range" | "toggle" | "color" | "group" | "button" | "playlist" | "input" | "drag-select" | "limits";
 
-export interface SettingsRowElement extends HTMLElement {
+export interface SettingsRowEl extends HTMLElement {
   widget?: BaseWidget;
+  _ac?: AbortController;
 }
 
 export interface SettingsMenuRangeConfig {
@@ -40,6 +41,12 @@ export interface SettingsMenuRangeConfig {
   formatTooltip?: (val: number) => string;
 }
 
+export interface MenuItemHidden {
+  configPaths?: Paths<CtlrConfig>[];
+  mediaPaths?: Paths<CtlrMedia>[];
+  is(): boolean;
+}
+
 export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title" | "hidden" | "min" | "max"> & {
   id: string;
   label: string;
@@ -50,8 +57,8 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   widget: MenuItemWidget;
   min?: string | number | (() => string | number);
   max?: string | number | (() => string | number);
-  /** Hide the row based on custom logic */
-  hidden?: boolean | (() => boolean);
+  /** Hide the row statically or dynamically via reactive paths */
+  hidden?: boolean | MenuItemHidden;
   /** Hide the row if this feature flag is falsy */
   feature?: keyof MediaFeatures;
   /** Whether the widget should be rendered directly inside the parent group (inline) rather than opening a sub-panel */
@@ -67,8 +74,12 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   getMultiple?(): boolean;
   /** For "limits" */
   getLimits?(): { name: string; type?: string; label: string; min?: number; max?: number; step?: number; start?: number | null; end?: number | null }[];
+  /** Whether drag-select options can be deleted (controls delete button visibility) */
+  canDelete?(): boolean;
   /** Called when a drag-select option is deleted */
   onDelete?(idx: number): void;
+  /** Whether drag-select options can be edited (controls edit button visibility) */
+  canEdit?(): boolean;
   /** Called when a drag-select option is edited */
   onEdit?(idx: number): void;
   /** For "select" and "color", list of options */
@@ -91,6 +102,8 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   footerActions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void; getDisabled?: () => boolean; hidden?: () => boolean }[];
   /** For general widgets, optional helper text/HTML to show below the widget */
   getTipHTML?: () => string;
+  /** Whether drag-select options can be reordered (controls drag handle visibility) */
+  canReorder?(): boolean;
   /** For "drag-select", called when a drag/drop reorder occurs */
   onReorder?: (oldIdx: number, newIdx: number) => void;
 };

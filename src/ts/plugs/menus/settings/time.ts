@@ -15,8 +15,7 @@ export const getSettingsTimeMenu = (plug: TimePlug): SettingsMenuItem => ({
       label: "Limits",
       getBadge: () => ({ label: "beta" }),
       widget: "group",
-      hidden: () => !plug.ctlr.config.devMode,
-      configPaths: ["devMode"],
+      hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode },
       getValue: () => "On",
       items: [
         {
@@ -28,9 +27,9 @@ export const getSettingsTimeMenu = (plug: TimePlug): SettingsMenuItem => ({
           getTipHTML: () => "Supports seconds or percent (10%). <b>Start</b> and <b>end</b> are preferences (for autoplay), not strict locks. <b>End</b> allows negative values.",
           getLimits: () => [
             { name: "time", type: "text", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip },
-            { name: "time", type: "text", label: "Start and end", start: plug.config.start ?? 0, end: plug.config.end },
+            { name: "time", type: "text", label: "Start and end", start: plug.config.start, end: plug.config.end },
           ],
-          onChange: (val: Record<string, any>) => fanout(plug.config, { min: val.time_min, max: val.time_max, skip: val.time_step, start: val.time_start, end: val.time_end }, { skipUndef: true }),
+          onChange: (val: Record<string, any>) => fanout(plug.config, { min: val.time_min, max: val.time_max, skip: val.time_step, start: val.time_start, end: val.time_end }),
         },
       ],
     },

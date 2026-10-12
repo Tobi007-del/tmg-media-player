@@ -35,8 +35,8 @@ import { doubleTriangleLeft } from "./doubleTriangleLeft";
 import { doubleTriangleRight } from "./doubleTriangleRight";
 import { tripleTriangleLeft } from "./tripleTriangleLeft";
 import { tripleTriangleRight } from "./tripleTriangleRight";
-import { forward10 } from "./forward10";
-import { backward10 } from "./backward10";
+import { forward } from "./forward";
+import { backward } from "./backward";
 import { castPlaceholder } from "./castPlaceholder";
 import { airplayPlaceholder } from "./airplayPlaceholder";
 import { errorPlaceholder } from "./errorPlaceholder";
@@ -101,8 +101,8 @@ IconRegistry.registerAll({
   doubleTriangleRight,
   tripleTriangleLeft,
   tripleTriangleRight,
-  forward10,
-  backward10,
+  forward,
+  backward,
   pipPlaceholder,
   castPlaceholder,
   airplayPlaceholder,

@@ -1,12 +1,13 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import { formatMediaTime } from "@utils/time";
 import { capitalize } from "@utils/str";
-import { isStr, isNum, getUniqueOpts } from "@utils/obj";
+import { isStr, isNum, getUniqueOpts, inPanel } from "@utils/obj";
 import type { MetadataPlug } from "../../settings/metadata";
 import { getTrackLabel } from "@utils/media";
 import { formatSize } from "@utils/file";
 import { UITuple } from "@defs/UIOptions";
 import { silence } from "sia-reactor/modules";
+import { formatActionTooltip } from "@utils/keys";
 
 export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] => [
   { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => (plug.media.state.loop ? "On" : "Off"), getDisabled: () => plug.media.status.isLive && !plug.ctlr.settings.time.max, onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop", "status.isLive"], configPaths: ["settings.time.max"] },
@@ -16,7 +17,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     icon: "quality",
     widget: "select",
     feature: "levels",
-    hidden: () => plug.media.status.levels.length <= 1,
+    hidden: { mediaPaths: ["status.levels"], is: () => plug.media.status.levels.length <= 1 },
     getTipHTML: (bw = plug.media.status.bandwidth) => `Adjust ${plug.media.type} quality or use auto (adaptive). <br> ${bw ? `<small>Last checked network speed was ~<b>${formatSize(bw, 1).replace(/(?:(B|bytes))$/i, "bps")}</b>.</small>` : ""}`,
     getValue() {
       const list = plug.media.status.levels,
@@ -45,7 +46,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     icon: "audioTrack",
     widget: "select",
     feature: "audioTracks",
-    hidden: () => plug.media.status.audioTracks.length <= 1,
+    hidden: { mediaPaths: ["status.audioTracks"], is: () => plug.media.status.audioTracks.length <= 1 },
     getValue() {
       if (plug.media.state.currentAudioTrack === -1 || !plug.media.status.audioTracks.length) return "";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentAudioTrack)?.display || "";
@@ -63,7 +64,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     icon: "videoTrack",
     widget: "select",
     feature: "videoTracks",
-    hidden: () => plug.media.status.videoTracks.length <= 1,
+    hidden: { mediaPaths: ["status.videoTracks"], is: () => plug.media.status.videoTracks.length <= 1 },
     getValue() {
       if (plug.media.state.currentVideoTrack === -1 || !plug.media.status.videoTracks.length) return "";
       return (this.getOptions!() as UITuple<number>[]).find((o) => o.value === plug.media.state.currentVideoTrack)?.display || "";
@@ -98,7 +99,6 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     icon: "chapters",
     widget: "select",
     feature: "currentChapter",
-    hidden: () => plug.media.settings.metadata.chapterInfo.length <= 1,
     getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters.<br><small>Viewing <b>${plug.media.state.currentChapter + 1}</b> of <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
     getValue() {
       const list = plug.media.settings.metadata.chapterInfo;
@@ -109,8 +109,13 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
       return !list.length ? [] : list.map((c: any, i: number) => ({ value: i, display: c.title || `Chapter ${i + 1}`, infoText: isNum(c.startTime) ? formatMediaTime({ time: c.startTime }) : undefined }));
     },
     onChange: (val: number) => silence(() => (plug.media.intent.currentChapter = val)),
+    hidden: {
+      is: () => plug.media.settings.metadata.chapterInfo.length <= 1 || inPanel(plug.settings.controlPanel, "chapters"),
+      mediaPaths: ["settings.metadata.chapterInfo"],
+      configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"],
+    },
     mediaPaths: ["settings.metadata.chapterInfo", "state.currentChapter"],
-    actions: [{ id: "previousChapter", getLabel: () => "Previous", icon: "previous", onClick: () => plug.ctlr.perform("timePreviousChapter"), getDisabled: () => !plug.media.features.previousChapter } as const, { id: "nextChapter", getLabel: () => "Next", icon: "next", onClick: () => plug.ctlr.perform("timeNextChapter"), getDisabled: () => !plug.media.features.nextChapter } as const],
+    actions: [{ id: "previousChapter", getLabel: () => `Previous${formatActionTooltip(plug.settings, "timePreviousChapter")}`, icon: "previous", onClick: () => plug.ctlr.perform("timePreviousChapter"), getDisabled: () => !plug.media.features.previousChapter } as const, { id: "nextChapter", getLabel: () => `Next${formatActionTooltip(plug.settings, "timeNextChapter")}`, icon: "next", onClick: () => plug.ctlr.perform("timeNextChapter"), getDisabled: () => !plug.media.features.nextChapter } as const],
   },
 ];
 

@@ -46,7 +46,7 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
 
   public syncARIA(): void {
     this.state.label = getTrackKind(this.media.status.textTracks[this.media.state.currentTextTrack], true);
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.captions), (this.state.voiceCommand = this.settings.voice.commands.captions));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "captions"));
     this.el.title = `${this.state.label} ${this.state.cmd} ↔ Double click→ Reset position`;
     this.setBtnARIA("Reset captions position");
   }

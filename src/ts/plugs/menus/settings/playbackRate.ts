@@ -59,7 +59,7 @@ export const getSettingsPlaybackRateMenu = (plug: PlaybackRatePlug): SettingsMen
             configPaths: ["settings.playbackRate.min", "settings.playbackRate.max", "settings.playbackRate.skip"],
             getValue: ({ min, max, skip } = plug.config) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "),
             getLimits: () => [{ name: "playbackRate", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }],
-            onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.playbackRate_min, max: val.playbackRate_max, skip: val.playbackRate_step }, { skipUndef: true }),
+            onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.playbackRate_min, max: val.playbackRate_max, skip: val.playbackRate_step }),
           },
         ],
       },

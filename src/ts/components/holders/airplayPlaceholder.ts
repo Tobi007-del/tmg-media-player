@@ -33,7 +33,7 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.airplay ? "Stop airplaying" : "AirPlay to Display";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.airplay), (this.state.voiceCommand = this.settings.voice.commands.airplay));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "airplay"));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

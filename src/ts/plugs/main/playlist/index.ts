@@ -101,10 +101,12 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   }
 
   public syncFeatures(): void {
-    this.media.tech.polyfill("playlist", this.config.content || (!this.media.status.ads && this.config.allowOverride.add)), this.media.tech.polyfill("currentItem", this.config.content);
+    this.media.tech.polyfill("playlist", this.config.content || (!this.media.status.ads && canOverride(this.config, "add"))), this.media.tech.polyfill("currentItem", this.config.content);
     this.media.tech.polyfill("previousItem", this.media.state.currentItem > 0), this.media.tech.polyfill("nextItem", this.config.content && this.media.state.currentItem < this.config.content.length - 1);
   }
 }
+
+export const canOverride = (config: PlaylistConfig, action: "add" | "edit" | "move" | "remove") => config.allowOverride === true || (config.allowOverride && config.allowOverride[action] === true);
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {

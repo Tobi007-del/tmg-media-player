@@ -5,12 +5,11 @@ import { SubMenuPanel } from "./panel/sub";
 import type { BaseMenuPanel, PanelDir } from "./panel";
 import { MENU_FOCUS_SELECTOR } from "../build";
 import { createEl } from "@utils/dom";
-import { getActiveEl, isArr, isFunc, isStr, isNum, NIL } from "@t007/utils";
+import { getActiveEl, isArr, isStr, isNum, isObj, NIL, isPOJO } from "@t007/utils";
 import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
 import { requestAnimationFrame, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { OrderedRegistry } from "@core/registries";
-import { isPOJO } from "sia-reactor/utils";
 // Side-effect imports so all widgets self-register
 import "./widgets/select";
 import "./widgets/range";
@@ -70,8 +69,10 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   private mergeItem(item: SettingsMenuItem): SettingsMenuItem {
     const existing = this.getItem(item.id);
     if (!existing) {
-      if (item.configPaths) for (const path of item.configPaths) this.ctlr.config.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
-      if (item.mediaPaths) for (const path of item.mediaPaths) this.media.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
+      if (isObj(item.hidden)) {
+        if (item.hidden.configPaths) for (const path of item.hidden.configPaths) this.ctlr.config.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
+        if (item.hidden.mediaPaths) for (const path of item.hidden.mediaPaths) this.media.on(path, () => this.menuOpen && this.syncMain(), { signal: this.signal });
+      }
     }
     if (existing) {
       if (item.items) {
@@ -193,7 +194,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private syncMain(): void {
-    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(isFunc(item.hidden) ? item.hidden() : item.hidden) && (!item.feature || !!this.media.features[item.feature])));
+    this.mainPanel.sync(this.registry.getAll().filter((item) => !this.config.blacklist.includes(item.id) && !(item.hidden === true || (item.hidden && item.hidden.is())) && (!item.feature || !!this.media.features[item.feature])));
     this.menuOpen && requestAnimationFrame(() => this.syncHeight(this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1]), this.signal);
   }
   private syncHeight(panel: BaseMenuPanel, height = panel.contentHeight): void {

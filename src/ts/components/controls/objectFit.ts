@@ -42,7 +42,7 @@ export class ObjectFitButton extends BaseComponent<ObjectFit, ComponentState, HT
 
   public syncARIA(): void {
     this.state.label = this.plug?.toLabel(this.plug?.nextFit) || "";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.objectFit), (this.state.voiceCommand = this.settings.voice.commands.objectFit));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "objectFit"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

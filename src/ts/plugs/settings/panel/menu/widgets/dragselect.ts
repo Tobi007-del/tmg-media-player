@@ -23,23 +23,29 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
           label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display }),
           editBtn = this.item.onEdit ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-edit-btn", innerHTML: IconRegistry.get("edit", true) || "✎", type: "button", title: "Edit" }) : null,
           deleteBtn = this.item.onDelete ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-delete-btn", innerHTML: IconRegistry.get("bin", true) || "✕", type: "button", title: "Delete" }) : null;
+        const canReorder = this.item.canReorder ? this.item.canReorder() : !!this.item.onReorder,
+          canEdit = this.item.canEdit ? this.item.canEdit() : !!this.item.onEdit,
+          canDelete = this.item.canDelete ? this.item.canDelete() : !!this.item.onDelete;
         if (opt.style) label.setAttribute("style", opt.style);
         if (opt.badge) label.append(createEl("span", { className: "tmg-media-control-badge", textContent: opt.badge }));
         dragHandle ? li.append(dragHandle, label) : li.append(label);
+        if (dragHandle) dragHandle.style.display = canReorder ? "" : "none";
         if (isNum(opt.progress)) li.append(createEl("div", { className: "tmg-media-smenu-select-progress tmg-media-cover" }, {}, { width: `${opt.progress}%` }));
         opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
         if (editBtn) {
+          editBtn.style.display = canEdit ? "" : "none";
           editBtn.onclick = (e) => {
             e.stopPropagation();
-            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === opt.value);
+            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
             if (i !== -1) this.item.onEdit?.(i);
           };
           li.append(editBtn);
         }
         if (deleteBtn) {
+          deleteBtn.style.display = canDelete ? "" : "none";
           deleteBtn.onclick = (e) => {
             e.stopPropagation();
-            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === opt.value);
+            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
             if (i !== -1) this.item.onDelete?.(i);
           };
           li.append(deleteBtn);
@@ -72,7 +78,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
               navigator.vibrate?.([50]), ctlr.cancelRAFLoop("listItemDragging"), scrollerator.reset();
               li.classList.remove("tmg-media-smenu-dragging"), (li.style.top = ""), placeholder.parentElement?.replaceChild(li, placeholder);
               const newIdx = [...el.querySelectorAll(".tmg-media-smenu-select-option")].indexOf(li),
-                oldIdx = (item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === opt.value);
+                oldIdx = (item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
               newIdx !== -1 && oldIdx !== -1 && newIdx !== oldIdx && item.onReorder?.(oldIdx, newIdx);
               for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.removeEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp);
             }
@@ -82,7 +88,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         li.onclick = (e) => {
           if (!this.item.onChange || li.classList.contains("tmg-media-smenu-dragging") || (dragHandle && dragHandle.contains(e.target as Node))) return;
           if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
-          this.item.onChange?.(opt.value);
+          this.item.onChange?.(li.dataset.optVal as T);
           this.currentValue = li.dataset.optDisplay!;
           this.syncActive(), this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal);
         };
@@ -101,6 +107,12 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         const progressEl = node.querySelector<HTMLElement>(".tmg-media-smenu-select-progress");
         if (isNum(opt.progress)) progressEl ? (progressEl.style.width = `${opt.progress}%`) : node.append(createEl("div", { className: "tmg-media-smenu-select-progress tmg-media-cover" }, {}, { width: `${opt.progress}%` }));
         else progressEl?.remove();
+        const dragHandle = node.querySelector<HTMLElement>(".tmg-media-smenu-drag-handle"),
+          editBtn = node.querySelector<HTMLElement>(".tmg-media-smenu-edit-btn"),
+          deleteBtn = node.querySelector<HTMLElement>(".tmg-media-smenu-delete-btn");
+        if (dragHandle) dragHandle.style.display = (this.item.canReorder ? this.item.canReorder() : !!this.item.onReorder) ? "" : "none";
+        if (editBtn) editBtn.style.display = (this.item.canEdit ? this.item.canEdit() : !!this.item.onEdit) ? "" : "none";
+        if (deleteBtn) deleteBtn.style.display = (this.item.canDelete ? this.item.canDelete() : !!this.item.onDelete) ? "" : "none";
         node.dataset.optVal = opt.value as string;
         node.dataset.optDisplay = opt.display;
         node.ariaSelected = String(opt.display === this.currentValue || node.dataset.optVal === this.currentValue);

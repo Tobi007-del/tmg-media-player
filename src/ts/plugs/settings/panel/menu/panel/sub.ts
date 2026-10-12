@@ -25,7 +25,6 @@ export class SubMenuPanel extends BaseMenuPanel {
   protected override onSetup(): void {
     this.buildShell();
   }
-
   protected override onDestroy(): void {
     this.widget?.destroy();
   }
@@ -34,18 +33,8 @@ export class SubMenuPanel extends BaseMenuPanel {
     const header = createEl("div", { className: "tmg-media-smenu-sub-header" });
     this.backBtn = createEl("button", { type: "button", className: "tmg-media-smenu-back-btn", ariaLabel: "Back", title: "Back ↔ Double click→with history", innerHTML: `<span class="tmg-media-smenu-back-arrow">${IconRegistry.get("goBack", true) || "&#8249;"}</span>`, tabIndex: 0 });
     this.headerLabel = createEl("span", { className: "tmg-media-smenu-sub-title", tabIndex: -1 });
-    addSafeClicks(
-      this.backBtn,
-      (e) => (e.stopPropagation(), this.onBack?.(false)),
-      (e) => (e.stopPropagation(), this.onBack?.(true)),
-      { signal: this.signal }
-    );
-    addSafeClicks(
-      this.headerLabel,
-      (e) => (e.stopPropagation(), this.onBack?.(false)),
-      (e) => (e.stopPropagation(), this.onBack?.(true)),
-      { signal: this.signal }
-    );
+    // prettier-ignore
+    for (const el of [this.backBtn, this.headerLabel]) addSafeClicks(el, (e) => (e.stopPropagation(), this.onBack?.(false)), (e) => (e.stopPropagation(), this.onBack?.(true)), { signal: this.signal });
     this.headerActions = createEl("div", { className: "tmg-media-smenu-sub-actions" });
     header.append(this.backBtn, this.headerLabel, this.headerActions);
     this.widgetSlot = createEl("div", { className: "tmg-media-smenu-widget-slot" });
@@ -62,13 +51,15 @@ export class SubMenuPanel extends BaseMenuPanel {
     const badge = parseUIBadge(item.getBadge?.());
     badge?.label ? (this.headerLabel.dataset.badge = badge.label) : delete this.headerLabel.dataset.badge;
     if (this.item?.id === item.id) return void this.syncUI();
-    if (this.widget) this.widget.element?.remove(), this.widget.destroy(), this.widget = null;
+    if (this.widget) this.widget.element?.remove(), this.widget.destroy(), (this.widget = null);
     this.item = item;
-    const widget = WidgetRegistry.create(item, this.ctlr);
+    const widget = (this.widget = WidgetRegistry.create(item, this.ctlr));
     if (!widget) return;
     if (widget instanceof GroupWidget) widget.onSubItemClick = (sub) => this.onSubItemClick?.(sub);
-    this.widget = widget;
     this.widgetSlot.append(widget.render());
+    if (item.configPaths) for (const path of item.configPaths) this.ctlr.config.on(path, this.syncUI, { signal: widget.signal });
+    if (item.mediaPaths) for (const path of item.mediaPaths) this.media.on(path, this.syncUI, { signal: widget.signal });
+    item.onWire?.(this.syncUI, widget.signal);
     // Populate actions
     this.headerActions.innerHTML = "";
     if (item.actions) {
@@ -79,7 +70,7 @@ export class SubMenuPanel extends BaseMenuPanel {
         action.icon ? (btn.innerHTML = IconRegistry.get(action.icon, true) || label) : (btn.textContent = label);
         if (action.getDisabled) btn.disabled = action.getDisabled();
         if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
-        btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()), { signal: this.signal });
+        btn.addEventListener("click", (e) => (e.stopPropagation(), action.onClick()), { signal: widget.signal });
         this.headerActions.append(btn);
       }
     }
@@ -92,7 +83,7 @@ export class SubMenuPanel extends BaseMenuPanel {
         const btn = createEl("button", { className: "tmg-media-smenu-input-btn", type: "button", textContent: action.getLabel() });
         if (action.getDisabled) btn.disabled = action.getDisabled();
         if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
-        btn.addEventListener("click", () => action.onClick(), { signal: this.signal }), actionsWrap.append(btn);
+        btn.addEventListener("click", () => action.onClick(), { signal: widget.signal }), actionsWrap.append(btn);
       }
       this.footerSlot.append(actionsWrap);
     }

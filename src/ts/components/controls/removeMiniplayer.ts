@@ -34,7 +34,7 @@ export class RemoveMiniplayerButton extends BaseComponent<RemoveMiniplayerConfig
 
   public syncARIA(): void {
     this.state.label = "Remove miniplayer";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.escape), (this.state.voiceCommand = this.settings.voice.commands.escape));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "escape"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

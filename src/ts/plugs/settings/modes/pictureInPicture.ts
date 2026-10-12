@@ -19,7 +19,6 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     return ModesPlug;
   }
   public static readonly BUILD = MODES_PICTURE_IN_PICTURE_BUILD;
-  public floating = false; // a quick notice flag
   public floatingWindow: (Window & typeof globalThis) | null = null;
   protected placeholder: PiPPlaceholder | null = null;
   protected pseudoPlaceholder: PiPPlaceholder | null = null;
@@ -41,7 +40,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     if (!this.ctlr.isNativeEl && this.config.floatingPlayer.disabled) return e.reject(this.name);
     if (e.value && this.media.state.fullscreen) silence(() => (this.media.intent.fullscreen = false));
     if (!pipActive && this.media.features.floatingPlayer) {
-      e.value ? !this.floating && this.initFloatingPlayer() : this.floating && this.floatingWindow?.close();
+      e.value ? !this.floatingWindow && this.initFloatingPlayer() : this.floatingWindow?.close();
       e.resolve(this.name);
     } // tech will handle PiP toggle if not using floating player
   }
@@ -51,23 +50,20 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     if (value) {
       this.placeholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr);
       this.media.container.classList.add("tmg-media-picture-in-picture"), this.media.pseudoContainer.classList.add("tmg-media-in-picture-in-picture");
-      this.ctlr.plug("settings.overlay")?.show();
       silence(() => (this.media.intent.miniplayer = false));
       this.ctlr.plug("settings.metadata")?.syncSession();
     } else {
       await mockAsync(180);
       this.media.container.classList.remove("tmg-media-picture-in-picture"), this.media.pseudoContainer.classList.remove("tmg-media-in-picture-in-picture");
       this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
-      this.ctlr.plug("settings.overlay")?.delay();
     }
   }
 
   protected async initFloatingPlayer(): Promise<void> {
-    if (this.floating) return;
+    if (this.floatingWindow) return;
     (window as any).documentPictureInPicture?.window?.close?.();
     silence(() => (this.media.intent.miniplayer = false));
     this.floatingWindow = await (window as any).documentPictureInPicture.requestWindow(this.config.floatingPlayer);
-    this.floating = true;
     this.floatingWindow!.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
     await breath(this.floatingWindow!); // rendering style to keep UI visible during heavy lifting
     const cssTexts = [],
@@ -100,7 +96,6 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
   }
 
   protected handleFloatingPlayerClose(): void {
-    this.floating = false;
     this.floatingWindow = null;
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-floating-player"), this.media.pseudoContainer.classList.remove("tmg-media-in-floating-player");

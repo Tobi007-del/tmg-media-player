@@ -78,7 +78,7 @@ export class VolumeControl extends BaseComponent<VolumeConfig, ComponentState> {
 
   public syncARIA(): void {
     this.state.label = this.media.state.muted || this.media.state.volume === 0 ? "Unmute" : "Mute";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.mute), (this.state.voiceCommand = this.settings.voice.commands.mute));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "mute"));
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }

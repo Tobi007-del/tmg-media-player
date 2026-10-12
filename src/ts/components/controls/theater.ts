@@ -40,7 +40,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.theater ? "Default view" : "Cinema mode";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.theater), (this.state.voiceCommand = this.settings.voice.commands.theater));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "theater"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

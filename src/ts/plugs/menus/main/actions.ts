@@ -60,7 +60,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
           id: `${NAV_NODE_ID(actionId, stepTag, path)}-value`,
           label: "Value",
           widget: type === "boolean" ? "toggle" : ("input" as const),
-          hidden: () => tempStep.op === "toggle",
+          hidden: { is: () => tempStep.op === "toggle" },
           getValue: () => (type === "boolean" ? (tempStep.value ? "On" : "Off") : tempStep.value !== undefined ? String(tempStep.value) : ""),
           onChange: (v: any) => {
             if (type === "boolean") {
@@ -197,7 +197,7 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
 function makeActionContent(action: Action, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem[] {
   const live = () => (ctlr.actions.entries[action.id] || {}) as Action;
   return [
-    { id: `actions-disabled-${action.id}`, label: "Disable", widget: "toggle", getValue: () => (live().disabled ? "On" : "Off"), onChange: (val: boolean) => (live().disabled = val || undefined), configPaths: ["devMode", `actions.entries.${action.id}.disabled` as any], hidden: () => !ctlr.config.devMode },
+    { id: `actions-disabled-${action.id}`, label: "Disable", widget: "toggle", getValue: () => (live().disabled ? "On" : "Off"), onChange: (val: boolean) => (live().disabled = val || undefined), configPaths: [`actions.entries.${action.id}.disabled` as any], hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode } },
     {
       id: `actions-label-${action.id}`,
       label: "Action label",
@@ -354,10 +354,10 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
             idx > -1 ? c.splice(idx, 1) : c.push(val as any);
             if (!c.length) _live.gates = undefined;
           },
-          configPaths: ["devMode", `actions.entries.${action.id}.gates` as any],
-          hidden: () => !ctlr.config.devMode,
+          configPaths: [`actions.entries.${action.id}.gates` as any],
+          hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode },
         },
-        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenlist.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: () => !ctlr.config.devMode, configPaths: ["devMode", `actions.entries.${action.id}.zen` as any] },
+        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenlist.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode }, configPaths: [`actions.entries.${action.id}.zen` as any] },
       ],
     },
   ];
@@ -377,7 +377,7 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
     },
     widget: "group",
     getValue: () => formatAction(action.system ? action.id : ctlr.settings.keys.shortcuts[action.id], ctlr.settings.voice.commands[action.id]) || "None",
-    configPaths: [`actions.entries.${action.id}` as any, `settings.keys.shortcuts.${action.id}` as any],
+    configPaths: ["devMode", `actions.entries.${action.id}` as any, `settings.keys.shortcuts.${action.id}` as any],
     onWire: (syncUI, signal) => {
       ctlr.config.on(`actions.entries.${action.id}.disabled` as any, () => (syncUI(), ctlr.plug("settings.panel")?.menu.syncUI(`actions-detail-${action.id}`)), { signal });
     },

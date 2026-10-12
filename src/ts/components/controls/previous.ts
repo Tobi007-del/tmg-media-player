@@ -32,7 +32,7 @@ export class PreviousButton extends BaseComponent<PrevConfig, ComponentState, HT
 
   public syncARIA(): void {
     this.state.label = "Previous";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.previous), (this.state.voiceCommand = this.settings.voice.commands.previous));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "previous"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

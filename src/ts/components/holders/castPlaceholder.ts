@@ -33,7 +33,7 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
 
   public syncARIA(): void {
     this.state.label = this.media.state.cast ? "Stop casting" : "Cast to Display";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.cast), (this.state.voiceCommand = this.settings.voice.commands.cast));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "cast"));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

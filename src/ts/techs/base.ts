@@ -107,7 +107,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   protected wireCurrentChapter(): void {
     this.config.set("intent.currentChapter", (term) => (isNum(term) ? term : this.config.settings.metadata.chapterInfo.findIndex((c) => c.title === term)), { signal: this.signal }); // #VALIDATOR: intent type conformation
     this.config.on("intent.currentChapter", this.handleCurrentChapterIntent, this.evtOpts.CONFIG);
-    this.config.on("state.currentTime", this.onCurrentTimeState, this.evtOpts.CONFIG);
+    this.config.on("state.currentTime", this.onCurrentTimeState, this.evtOpts.CONFIG), this.onCurrentTimeState();
   }
   // ive Content Wiring
   protected wireLive(): void {

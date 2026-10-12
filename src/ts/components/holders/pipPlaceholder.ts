@@ -1,7 +1,7 @@
 import { BaseComponent, ComponentState } from "../base";
 import { createEl } from "@utils/dom";
 import { IconRegistry } from "@core/registries";
-import { formatActionTooltip } from "../../super/utils";
+import { formatActionTooltip } from "@utils/keys";
 
 export type PiPPlaceholderConfig = undefined;
 
@@ -33,7 +33,7 @@ export class PiPPlaceholder extends BaseComponent<PiPPlaceholderConfig, Componen
 
   public syncARIA(): void {
     this.state.label = this.media.state.pictureInPicture ? "Exit picture in picture" : "Picture in picture";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.pictureInPicture), (this.state.voiceCommand = this.settings.voice.commands.pictureInPicture));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "pictureInPicture"));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

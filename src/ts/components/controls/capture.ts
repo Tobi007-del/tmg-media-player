@@ -34,7 +34,7 @@ export class CaptureButton extends BaseComponent<CaptureConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = "Capture frame";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.capture), (this.state.voiceCommand = this.settings.voice.commands.capture));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "capture"));
     this.el.title = `${this.state.label} ${this.state.cmd} ↔ Double click→ B&W (+alt)`;
     this.setBtnARIA("Capture monochrome frame");
   }

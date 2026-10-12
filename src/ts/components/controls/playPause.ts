@@ -36,7 +36,7 @@ export class PlayPauseButton extends BaseComponent<PlayPauseConfig, ComponentSta
 
   public syncARIA(): void {
     this.state.label = this.media.status.ended ? "Replay" : this.media.state.paused ? "Play" : "Pause";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.playPause), (this.state.voiceCommand = this.settings.voice.commands.playPause));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "playPause"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.67
+
+### Patch Changes
+
+- Infinite loop bug fixes
+
+## 0.0.66
+
+### Patch Changes
+
+- Light mode refresh nd bug fixes
+
 ## 0.0.65
 
 ### Patch Changes

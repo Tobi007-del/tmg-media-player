@@ -5,12 +5,14 @@ export interface PlayItemConfig extends Pick<Required<CtlrConfig>, "media" | "se
 
 export type PlaylistConfig = {
   content: Inert<PlayItemConfig[]> | null;
-  allowOverride: {
-    add: boolean;
-    delete: boolean;
-    move: boolean;
-    edit: boolean;
-  };
+  allowOverride:
+    | boolean
+    | {
+        add: boolean;
+        edit: boolean;
+        move: boolean;
+        remove: boolean;
+      };
 };
 
 export interface PlaylistState {

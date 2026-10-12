@@ -8,8 +8,8 @@ import { BigPreviousButton } from "./controls/bigPrevious";
 import { PreviousButton } from "./controls/previous";
 import { PlayPauseButton } from "./controls/playPause";
 import { NextButton } from "./controls/next";
-import { Forward10Button } from "./controls/forward10";
-import { Backward10Button } from "./controls/backward10";
+import { ForwardButton } from "./controls/forward";
+import { BackwardButton } from "./controls/backward";
 import { TimeButton } from "./controls/time";
 import { DurationButton } from "./controls/duration";
 import { TimeAndDurationButton } from "./controls/timeAndDuration";
@@ -29,7 +29,8 @@ import { BrightnessControl } from "./controls/brightness";
 import { CaptionsView } from "./captionsView";
 import { CaptionsButton } from "./controls/captions";
 import { ScreenLockButton } from "./screenLock";
-import { ChapterButton } from "./controls/chapter";
+import { ChaptersButton } from "./controls/chapters";
+import { PlaylistButton } from "./controls/playlist";
 import { CastButton } from "./controls/cast";
 import { AirPlayButton } from "./controls/airplay";
 import { VoiceButton } from "./controls/voice";
@@ -49,8 +50,8 @@ for (const Comp of [
   PreviousButton,
   PlayPauseButton,
   NextButton,
-  Forward10Button,
-  Backward10Button,
+  ForwardButton,
+  BackwardButton,
   TimeButton,
   DurationButton,
   TimeAndDurationButton,
@@ -70,7 +71,8 @@ for (const Comp of [
   CaptionsView,
   CaptionsButton,
   ScreenLockButton,
-  ChapterButton,
+  ChaptersButton,
+  PlaylistButton,
   CastButton,
   AirPlayButton,
   VoiceButton,

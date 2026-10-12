@@ -4,10 +4,10 @@ import { MEDIA_ITEM_BUILD } from "@consts/media";
 
 export const PLAYLIST_BUILD: DeepPartial<PlaylistConfig> = {
   allowOverride: {
-    add: true,
-    delete: true,
+    add: false,
+    edit: false,
     move: true,
-    edit: true,
+    remove: false,
   },
   content: null,
 };

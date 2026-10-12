@@ -30,7 +30,7 @@ export class AirPlayButton extends BaseComponent<AirPlayConfig, ComponentState, 
 
   public syncARIA(): void {
     this.state.label = this.media.state.airplay ? "AirPlay Active" : "AirPlay";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.airplay), (this.state.voiceCommand = this.settings.voice.commands.airplay));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "airplay"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

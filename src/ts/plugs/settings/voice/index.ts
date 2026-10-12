@@ -194,9 +194,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const crumbHtml = this.history.length < 2 ? "" : `<div class="tmg-media-voice-crumb-wrap">` + this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small style="${active ? "font-weight: 500;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, true)}</small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ") + `</div>`,
       actions: ToastOptions["actions"] = {};
     if (this.media.features.voiceItems) {
-      actions[`<span title='Clear context${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxClear, this.config.commands.voiceCtxClear)}'>×</span>`] = () => this.clearCtx(false);
-      actions[`<span title='Go back${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxPrevious, this.config.commands.voiceCtxPrevious)}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
-      actions[`<span title='Go forward${formatActionTooltip(this.settings.keys.shortcuts.voiceCtxNext, this.config.commands.voiceCtxNext)}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
+      actions[`<span title='Clear context${formatActionTooltip(this.settings, "voiceCtxClear")}'>×</span>`] = () => this.clearCtx(false);
+      actions[`<span title='Go back${formatActionTooltip(this.settings, "voiceCtxPrevious")}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
+      actions[`<span title='Go forward${formatActionTooltip(this.settings, "voiceCtxNext")}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
     }
     if (this.ctlr.isLogical(this.state.ctx, true)) {
       const value = getPath(this.ctlr.logicRoot as any, mirror(this.state.ctx)),
@@ -204,7 +204,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
         showInput = this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type !== "boolean"),
         showSubmit = this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")),
         display = type === "array" ? value.join(", ") : value ?? "",
-        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-word-input" placeholder="${display || "Type value..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings.keys.shortcuts.voiceSubmit, this.config.commands.voiceSubmit)}' class="tmg-media-voice-word-submit">↳</button>` : ""}</div>` : "",
+        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-word-input" placeholder="${display || "value 1, value 2, value 3, ..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings, "voiceSubmit")}' class="tmg-media-voice-word-submit">↳</button>` : ""}</div>` : "",
         // prettier-ignore
         hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}):</small> ${inputHtml}` : type === "array" ? `comma-separated values:</small> ${inputHtml}` : `the exact text:</small> ${inputHtml}`;
       return void this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${showInput ? '<small style="font-weight: 500;">' : ""}Try ${this.config.muted ? (showInput ? "typing" : IS_MOBILE ? "tapping" : "clicking") : "saying"} ${hints}</div>`, this.getHelperOptions(actions));
@@ -268,7 +268,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     return full ? { id: this.TIDS.ROUTER, actions: this.getRouterActions(), onClose: (_, user) => user && (this.config.active.value = false), signal: this.signal, ...this.config.toasts.router, ...this.getRouterOptions(false) } : { icon: this.config.toasts.router.icon, type: this.config.muted ? "warning" : this.config.toasts.router.type };
   }
   protected getRouterActions(full = true): ToastOptions["actions"] {
-    return { ...(full && this.state.routing && { [`<span title='Open actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my voice${formatActionTooltip(this.settings.keys.shortcuts.voiceMute, this.config.commands.voiceMute)}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
+    return { ...(full && this.state.routing && { [`<span title='Open actions'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(null), menu?.goTo("actions")) }), [`<span title='${this.config.muted ? "Unmute" : "Mute"} my voice${formatActionTooltip(this.settings, "voiceMute")}'>${IconRegistry.get(this.config.muted ? "volumeMuted" : "volumeHigh", true)}</span>`]: () => (this.config.muted = !this.config.muted) };
   }
   protected getRouterSpeech(firstHalf = this.config.muted ? "Snubbing..." : "Listening...", secondHalf = `${this.config.muted ? (IS_MOBILE ? "Tap" : "Click") : "Say"} ${!this.state.routing ? `${isArr(this.config.commands.voiceWake) ? this.config.commands.voiceWake.map((c = "") => this.linked(c)).join(" or ") : this.linked(this.config.commands.voiceWake)} to wake me up` : this.config.muted ? "or type instead" : "a path or command!"}`): string {
     return `${firstHalf} ${secondHalf}`;

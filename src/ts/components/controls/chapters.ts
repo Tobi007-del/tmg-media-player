@@ -4,8 +4,8 @@ import { createEl } from "@utils/dom";
 
 export type ChapterConfig = undefined;
 
-export class ChapterButton extends BaseComponent<ChapterConfig, ComponentState, HTMLButtonElement> {
-  public static readonly componentName = "chapter";
+export class ChaptersButton extends BaseComponent<ChapterConfig, ComponentState, HTMLButtonElement> {
+  public static readonly componentName = "chapters";
   public static readonly isControl: boolean = true;
   public textEl!: HTMLSpanElement;
   public iconEl!: HTMLSpanElement;
@@ -24,14 +24,14 @@ export class ChapterButton extends BaseComponent<ChapterConfig, ComponentState, 
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("state.currentChapter", this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("settings.metadata.chapterInfo", this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("settings.metadata.chapterInfo", this.syncUI, { signal: this.signal });
     // Post Wiring
     this.syncARIA();
   }
 
-  protected async handleClick(): Promise<void> {
-    const view = this.ctlr.plug("settings.panel");
-    if (view) view.menu.open(this.el), view.menu.goTo("chapters");
+  protected handleClick(): void {
+    const menu = this.ctlr.plug("settings.panel")?.menu;
+    if (menu) menu.isOpen && menu.anchor === this.el ? menu.close() : (menu.open(this.el), menu.goTo("chapters"));
   }
 
   protected syncUI(): void {
@@ -48,6 +48,6 @@ export class ChapterButton extends BaseComponent<ChapterConfig, ComponentState, 
 
 declare module "@defs/registries" {
   interface ComponentRegistryMap {
-    chapter: typeof ChapterButton;
+    chapters: typeof ChaptersButton;
   }
 }

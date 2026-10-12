@@ -78,7 +78,7 @@ export class BrightnessControl extends BaseComponent<BrightnessConfig, Component
 
   public syncARIA(): void {
     this.state.label = this.media.state.dark || this.media.state.brightness === 0 ? "Brighten" : "Darken";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.dark), (this.state.voiceCommand = this.settings.voice.commands.dark));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "dark"));
     this.button.title = this.state.label + this.state.cmd;
     this.setBtnARIA(undefined, this.button);
   }

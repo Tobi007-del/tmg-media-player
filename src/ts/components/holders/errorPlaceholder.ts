@@ -42,7 +42,7 @@ export class ErrorPlaceholder extends BaseComponent<ErrorPlaceholderConfig, Comp
   }
   public syncARIA(): void {
     this.state.label = "Reload player";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.reload), (this.state.voiceCommand = this.settings.voice.commands.reload));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "reload"));
     this.iconBtn.title = this.state.label + this.state.cmd;
     this.setBtnARIA("", this.iconBtn);
   }

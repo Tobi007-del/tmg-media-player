@@ -37,7 +37,7 @@ export class DurationButton extends BaseComponent<DurationConfig, ComponentState
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextFormat}`;
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.timeFormat), (this.state.voiceCommand = this.settings.voice.commands.timeFormat));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "timeFormat"));
     this.el.title = !this.media.status.isLive || this.media.state.live ? this.state.label + this.state.cmd : "Skip ahead to live broadcast";
     this.setBtnARIA();
   }

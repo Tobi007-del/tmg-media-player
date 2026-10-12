@@ -41,7 +41,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
           items: [
             {
               id: "layoutAllControls",
-              label: "All controls",
+              label: "Controls",
               widget: "group",
               getValue: () => "",
               configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"],
@@ -85,7 +85,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       getTipHTML: () => "Custom points of interest on the timeline to easily jump to when desired",
                       getOptions: () => plug.config.timeline.marks.map((m, i) => ({ value: String(i), display: m.label || `Marker ${i + 1}`, infoText: `${m.start}%` + (m.end ? ` - ${m.end}%` : "") })),
                       getDisabled: () => false,
-                      onDelete: (idx: number) => plug.config.timeline.marks.splice(idx, 1),
+                      onDelete: (idx: number, mark = plug.config.timeline.marks[idx]) => mark && t007.confirm?.(`Remove "${mark.label || `Marker ${idx + 1}`}" from your bookmarks? This cannot be undone.`, { id: `${plug.ctlr.config.id}-marker-del-confirm`, rootElement: plug.ctlr.plug("settings.panel")?.menu?.el, confirmText: "Delete" })?.then((ok) => ok && plug.config.timeline.marks.splice(idx, 1)),
                       onEdit: (idx: number) => ((ctx.markerEditIdx = idx), plug.ctlr.plug("settings.panel")?.menu.goTo("timeline-marker-edit")),
                       actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.panel")?.menu.goTo("timeline-marker-add") }],
                       configPaths: ["settings.controlPanel.timeline.marks"],
@@ -126,7 +126,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                 },
                 {
                   id: "timelineSeekGroup",
-                  label: "Seeking",
+                  label: "Time seeking",
                   widget: "group",
                   getValue: () => (plug.config.timeline.disabled || plug.config.timeline.readonly || !inPanel(plug.config, "timeline") ? "Off" : "On"),
                   configPaths: ["settings.controlPanel.timeline.disabled", "settings.controlPanel.timeline.readonly"],

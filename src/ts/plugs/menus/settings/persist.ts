@@ -14,8 +14,7 @@ export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => (
       label: "Persistence",
       widget: "group",
       getValue: () => "On",
-      hidden: () => !plug.ctlr.config.devMode,
-      configPaths: ["devMode"],
+      hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode },
       items: [
         { id: "persistThrottle", label: "Save throttle", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "2.5", helperText: { info: "How often the player saves state changes. Higher numbers = fewer saves but less accurate resumption." }, type: "number", min: "0", step: "any", required: true, value: () => plug.module.config.throttle / 1000 }], getValue: () => formatUITime(plug.module.config.throttle), onChange: (val: Record<string, any>) => (plug.config.throttle = val.secs * 1000), configPaths: ["settings.persist.throttle"] },
         { id: "persistStrict", label: "Strict resume", widget: "toggle", getValue: () => (plug.module.config.strict ? "On" : "Off"), onChange: (val: boolean) => (plug.config.strict = val), configPaths: ["settings.persist.strict"], title: "Force save immediately before page closes or reloads for accurate resumption, might restore cleared data." },
@@ -26,8 +25,7 @@ export const getSettingsPersistMenu = (plug: PersistPlug): SettingsMenuItem => (
           getValue: () => "Clear",
           getTipHTML: () => "Permanently wipe all saved player settings and state from your storage",
           onChange: async () => {
-            const ok = await t007.confirm?.("Are you sure you want to clear all saved data? This cannot be undone.", { id: `${plug.ctlr.config.id}-clear-dialog`, rootElement: plug.media.container, confirmText: "Proceed" });
-            if (!ok) return;
+            if (!(await t007.confirm?.("Are you sure you want to clear all saved data? This cannot be undone.", { id: `${plug.ctlr.config.id}-clear-dialog`, rootElement: plug.media.container, confirmText: "Proceed" }))) return;
             const typed = await t007.prompt("This permanently deletes all saved settings, preferences and state from your storage. It cannot be undone.", "", { id: `${plug.ctlr.config.id}-clear-prompt`, rootElement: plug.media.container, confirmText: "Clear", placeholder: plug.config.clearConfirm, label: "Confirmation", required: true, pattern: plug.config.clearConfirm });
             if (typed?.trim() === plug.config.clearConfirm) await plug.ctlr.toast?.promise(Promise.resolve(plug.module.clear()), { pending: "Clearing storage...", success: { render: "Storage cleared successfully!", autoClose: 10000, actions: { "Restart now": () => (plug.module.clear(), window.location.reload()) } }, error: "Failed to clear storage.", tag: "tmg-prst", signal: plug.signal } as any);
           },
@@ -42,4 +40,3 @@ declare module "@defs/registries" {
     "settings.persist": typeof getSettingsPersistMenu;
   }
 }
-

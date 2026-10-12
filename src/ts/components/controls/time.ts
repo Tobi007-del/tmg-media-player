@@ -40,8 +40,8 @@ export class TimeButton extends BaseComponent<TimeConfig, ComponentState, HTMLBu
   }
   public syncARIA(): void {
     this.state.label = `Show ${this.plug?.nextMode}`;
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.timeMode), (this.state.voiceCommand = this.settings.voice.commands.timeMode));
-    this.el.title = this.state.label + this.state.cmd + ` / Double click→ Show ${this.plug?.nextFormat} ${formatActionTooltip(this.settings.keys.shortcuts.timeFormat, this.settings.voice.commands.timeFormat)}`;
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "timeMode"));
+    this.el.title = this.state.label + this.state.cmd + ` / Double click→ Show ${this.plug?.nextFormat} ${formatActionTooltip(this.settings, "timeFormat")}`;
     this.setBtnARIA("Switch time format");
   }
 }

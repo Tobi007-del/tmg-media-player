@@ -10,7 +10,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
   public static readonly plugName = "overlay";
   public static readonly BUILD = OVERLAY_BUILD;
   public overlayDelayId = -1;
-  public whitelist: string[] = ["pictureInPicture", "moreSettings", "menuSettings", "controlDragging"]; // #DEFAULT: build privilege
+  public whitelist: string[] = ["pictureInPicture", "cast", "airplay", "moreSettings", "menuSettings", "controlDragging"]; // #DEFAULT: build privilege
 
   constructor(ctlr: Controller, config = ctlr.settings.overlay) {
     super(ctlr, config, { visible: false });
@@ -19,6 +19,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
   public override wire(): void {
     // Ctlr Media Listeners
     for (const p of ["state.paused", "status.rewindRate"] as const) this.media.on(p, () => this[!this.playing ? "show" : "delay"](), { signal: this.signal });
+    for (const p of this.whitelist) p in this.media.state && this.media.on(`state.${p}` as any, ({ value }) => this[value ? "show" : "delay"](), { signal: this.signal });
     this.media.on("state.locked", ({ value }) => (value ? this.hide("force") : this.show()), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.overlay.curtain.value", ({ value }) => (this.media.container.dataset.curtain = value), { init: true, signal: this.signal });

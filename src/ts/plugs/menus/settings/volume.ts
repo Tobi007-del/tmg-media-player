@@ -9,7 +9,7 @@ export const getSettingsVolumeMenu = (plug: VolumePlug): SettingsMenuItem => ({
   icon: "settings",
   widget: "group",
   getValue: () => "",
-  items: [{ id: "limits", label: "Limits", getBadge: () => ({ label: "beta" }), widget: "group", hidden: () => !plug.ctlr.config.devMode, configPaths: ["devMode"], getValue: () => "On", items: [{ id: "volumeLimits", label: "Volume", widget: "limits", configPaths: ["settings.volume.skip", "settings.volume.min", "settings.volume.max"], getValue: ({ min, max, skip } = plug.config) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "volume", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }], onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.volume_min, max: val.volume_max, skip: val.volume_step }, { skipUndef: true }) }] }],
+  items: [{ id: "limits", label: "Limits", getBadge: () => ({ label: "beta" }), widget: "group", hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode }, getValue: () => "On", items: [{ id: "volumeLimits", label: "Volume", widget: "limits", configPaths: ["settings.volume.skip", "settings.volume.min", "settings.volume.max"], getValue: ({ min, max, skip } = plug.config) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "volume", label: "Clamp bounds", min: plug.config.min, max: plug.config.max, step: plug.config.skip }], onChange: (val: Record<string, number>) => fanout(plug.config, { min: val.volume_min, max: val.volume_max, skip: val.volume_step }) }] }],
 });
 
 declare module "@defs/registries" {

@@ -36,7 +36,7 @@ export class BigNextButton extends BaseComponent<BigNextConfig, ComponentState, 
   }
   public syncARIA(): void {
     this.state.label = "Next";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.next), (this.state.voiceCommand = this.settings.voice.commands.next));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "next"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

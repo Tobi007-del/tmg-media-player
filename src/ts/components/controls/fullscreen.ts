@@ -38,7 +38,7 @@ export class FullscreenButton extends BaseComponent<FullscreenConfig, ComponentS
 
   public syncARIA(): void {
     this.state.label = this.media.state.fullscreen ? "Exit full screen" : "Full screen";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.fullscreen), (this.state.voiceCommand = this.settings.voice.commands.fullscreen));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "fullscreen"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }

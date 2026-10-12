@@ -109,7 +109,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
           mediaPaths: ["status.textTracks", "state.currentTextTrack", "state.textVisible"],
           configPaths: ["settings.captions.multiple"],
         },
-        { id: "captionsMulti", label: "Multiple captions", widget: "toggle", inline: true, feature: "textsVisible", hidden: () => plug.media.status.textTracks.length < 2, getValue: () => (plug.config.multiple ? "On" : "Off"), onChange: (val: boolean) => !(plug.config.multiple = val) && (plug.config.secondaryTracks = []), mediaPaths: ["status.textTracks"], configPaths: ["settings.captions.multiple"] },
+        { id: "captionsMulti", label: "Multiple captions", widget: "toggle", inline: true, feature: "textsVisible", hidden: { mediaPaths: ["status.textTracks"], is: () => plug.media.status.textTracks.length < 2 }, getValue: () => (plug.config.multiple ? "On" : "Off"), onChange: (val: boolean) => !(plug.config.multiple = val) && (plug.config.secondaryTracks = []), configPaths: ["settings.captions.multiple"] },
         {
           id: "captionsSubtitleStyle",
           label: "Styles",
@@ -172,7 +172,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
       icon: "settings",
       widget: "group",
       getValue: () => "",
-      items: [{ id: "limits", label: "Limits", widget: "group", getValue: () => "On", items: [{ id: "captionsSizeLimits", label: "Caption size", widget: "limits", configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"], getValue: ({ min, max, skip } = plug.config.font.size) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }], onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }, { skipUndef: true }) }] }],
+      items: [{ id: "limits", label: "Limits", widget: "group", getValue: () => "On", items: [{ id: "captionsSizeLimits", label: "Caption size", widget: "limits", configPaths: ["settings.captions.font.size.min", "settings.captions.font.size.max", "settings.captions.font.size.skip"], getValue: ({ min, max, skip } = plug.config.font.size) => [isDef(min) && `≥ ${min}`, isDef(max) && `≤ ${max}`, isDef(skip) && `± ${skip}`].filter(Boolean).join(" • "), getLimits: () => [{ name: "captionSize", label: "Clamp bounds", min: plug.config.font.size.min, max: plug.config.font.size.max, step: plug.config.font.size.skip }], onChange: (val: Record<string, number>) => fanout(plug.config.font.size, { min: val.captionSize_min, max: val.captionSize_max, skip: val.captionSize_step }) }] }],
     },
   ];
 };

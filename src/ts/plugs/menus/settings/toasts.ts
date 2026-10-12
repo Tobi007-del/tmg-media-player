@@ -68,7 +68,7 @@ export const getSettingsToastsMenu = (plug: ToastsPlug, ctx = { editId: "" }): S
                 infoText: formatUITime(rem, false, false),
                 progress: Math.round(((r.after - rem) / r.after) * 100),
               })),
-            onDelete: (idx: number, id = Object.keys(plug.config.reminders)[idx]) => id && delete plug.config.reminders[id],
+            onDelete: (idx: number, id = Object.keys(plug.config.reminders)[idx], rem = plug.config.reminders[id]) => rem && t007.confirm?.(`Remove "${rem.message}" from your reminders? This cannot be undone.`, { id: `${plug.ctlr.config.id}-reminder-del-confirm`, rootElement: plug.ctlr.plug("settings.panel")?.menu?.el, confirmText: "Delete" })?.then((ok) => ok && delete plug.config.reminders[id]),
             onEdit: (idx: number, id = Object.keys(plug.config.reminders)[idx]) => id && ((ctx.editId = id), plug.ctlr.plug("settings.panel")?.menu.goTo("toastsEditReminder")),
             onWire: (syncUI, signal) => globalState.on("clock", () => Object.keys(plug.config.reminders).length && syncUI(), { signal }),
             actions: [{ id: "add", getLabel: () => "Add", icon: "add", onClick: () => plug.ctlr.plug("settings.panel")?.menu.goTo("toastsCreateReminder") }],

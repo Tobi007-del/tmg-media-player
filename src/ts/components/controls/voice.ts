@@ -37,8 +37,8 @@ export class VoiceButton extends BaseComponent<VoiceConfig, ComponentState, HTML
 
   public syncARIA(): void {
     this.state.label = this.settings.voice.active.value ? "Quit" : "Wake up";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]), (this.state.voiceCommand = this.settings.voice.commands[this.settings.voice.active.value ? "voiceQuit" : "voiceWake"]));
-    this.el.title = this.state.label + this.state.cmd + ` / Double click→ Sleep${formatActionTooltip(this.settings.keys.shortcuts.voiceSleep, this.settings.voice.commands.voiceSleep)}`;
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = this.settings.voice.active.value ? "voiceQuit" : "voiceWake"));
+    this.el.title = this.state.label + this.state.cmd + ` / Double click→ Sleep${formatActionTooltip(this.settings, "voiceSleep")}`;
     this.setBtnARIA("sleep (stop routing)");
   }
 }

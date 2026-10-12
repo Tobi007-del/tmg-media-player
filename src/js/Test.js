@@ -1,4 +1,5 @@
 tmg.consts.CONFIG_BUILD.noPlugList = [];
+// tmg.consts.CONFIG_BUILD.playlist.allowOverride = true;
 
 const ap = new tmg.Player({
   "settings.controlPanel.timeline.previews": true,

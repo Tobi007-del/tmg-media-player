@@ -30,7 +30,7 @@ export class CastButton extends BaseComponent<CastConfig, ComponentState, HTMLBu
 
   public syncARIA(): void {
     this.state.label = this.media.state.cast ? "Stop casting" : "Cast to TV";
-    this.state.cmd = formatActionTooltip((this.state.keyShortcut = this.settings.keys.shortcuts.cast), (this.state.voiceCommand = this.settings.voice.commands.cast));
+    this.state.cmd = formatActionTooltip(this.settings, (this.state.cmdKey = "cast"));
     this.el.title = this.state.label + this.state.cmd;
     this.setBtnARIA();
   }
