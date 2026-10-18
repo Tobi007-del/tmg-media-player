@@ -2,6 +2,7 @@ import { BasePlug } from "../../base";
 import type { KeyMod, KeyPhase, KeysConfig, KeyMods } from "./types";
 import { KEYS_BUILD } from "./build";
 import { keyEventAllowed as allowed } from "@utils/keys";
+import { endTx, startTx, Transaction } from "sia-reactor/modules";
 
 export class KeysPlug extends BasePlug<KeysConfig> {
   public static readonly plugName = "keys";
@@ -25,9 +26,12 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   }
 
   protected handleKeyDown(e: KeyboardEvent, action = allowed(e, this.config)): void {
-    action !== false && this.ctlr.throttle("keyDown", () => (this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keydown", action), e, this.getMod(e))), 30);
+    if (action === false) return;
+    !this.tx && this.useTx(true);
+    this.ctlr.throttle("keyDown", () => (this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keydown", action), e, this.getMod(e))), 30);
   }
   protected handleKeyUp(e: KeyboardEvent, action = allowed(e, this.config)): void {
+    this.useTx();
     if (action !== false) {
       this.config.showOverlay && this.ctlr.plug("settings.overlay")?.show(), this.ctlr.perform(this.getHook("keyup", action), e, this.getMod(e));
       if (this.playKeySeq === 1 && /^( |playPause)$/.test(action)) e.stopImmediatePropagation(), this.handlePlayPause();
@@ -72,12 +76,17 @@ export class KeysPlug extends BasePlug<KeysConfig> {
   public getMod(e: KeyboardEvent): KeyMod {
     return this.config.mods.disabled ? "" : e.ctrlKey || e.metaKey ? "ctrl" : e.altKey ? "alt" : e.shiftKey ? "shift" : "";
   }
-  public getModded(action: keyof KeyMods, mod: KeyMod, base: number): number {
+  public getModded(action: keyof KeyMods, mod: KeyMod = "", base = 0): number {
     return mod ? this.config.mods[action]?.[mod] ?? base : base;
   }
   public getWindows(): Window[] {
     const floater = this.ctlr.plug("settings.modes")?.pictureInPicture?.floatingWindow;
     return floater ? [window, floater] : [window];
+  }
+
+  protected tx: Transaction | null = null;
+  protected useTx(bool = false): void {
+    bool ? (this.tx = startTx("Key down gesture")) : this.tx && (endTx(this.tx!), (this.tx = null));
   }
 }
 

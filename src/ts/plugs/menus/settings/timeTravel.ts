@@ -1,17 +1,9 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { TimeTravelPlug } from "@plugs/settings/timeTravel";
-import { isArr } from "@t007/utils";
-import { capitalize, uncamelize } from "@utils/str";
+import { isArr, isObj } from "@t007/utils";
+import { fpath, fvalue } from "@utils/str";
 
-const formatEntry = (entry: any, index: number) => {
-  if (!entry) return { display: `(${index + 1}) Unknown`, infoText: "" };
-  if (entry.nodes) return { display: `(${index + 1}) ${entry.label || `Batch of ${entry.nodes.length}`}`, infoText: "" };
-  const rawPath = entry.path ? String(entry.path) : "change",
-    typeStr = rawPath.startsWith("state.") ? " state" : rawPath.startsWith("intent.") ? " intent" : "",
-    // prettier-ignore
-    p = rawPath.replace(/^(intent|state|config)\./, "").split(".").pop() || rawPath;
-  return { display: `(${index + 1}) ${capitalize(uncamelize(p))}${typeStr}`, infoText: entry.to == null ? "" : String(entry.to) };
-};
+const formatEntry = (entry: any, index: number) => ({ display: `${index + 1}) ${!entry ? "Unknown" : entry.nodes ? entry.label || `Batch of ${entry.nodes.length}` : fpath(entry.rid === "media" ? `media.${entry.path}` : entry.path)}`, infoText: !entry || entry.nodes  ? "" : fvalue(entry.to) });
 
 export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuItem => ({
   id: "advanced",
@@ -27,7 +19,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
       widget: "group",
       getValue: () => (plug.config.module.limit ? "On" : "Off"),
       configPaths: ["settings.timeTravel.module.limit"],
-      getTipHTML: () => "🌌 Step through the space-time continuum. Rewind mistakes, replay interactions, and witness the magic firsthand.",
+      getTipHTML: () => "🌌 Step through the space-time continuum. Rewind your mistakes, replay interactions.",
       actions: [{ id: "toggleConsole", getLabel: () => (plug.config.console.disabled ? "Show console" : "Hide console"), onClick: () => (plug.config.console.disabled = !plug.config.console.disabled), hidden: () => !plug.ctlr.config.devMode }],
       onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("timeTravel"))) => {
         for (const k of ["devMode", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
@@ -59,22 +51,23 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
             { id: "redo", icon: "returnBack", getLabel: () => "Redo", onClick: () => plug.module.redo(), getDisabled: () => !plug.module.canRedo },
           ],
           footerActions: [
-            { id: "clear", getLabel: () => "Clear", onClick: () => plug.module.clear(), getDisabled: () => !plug.module.state.history.length },
+            { id: "prune", getLabel: () => "Prune", onClick: () => plug.module.prune(), getDisabled: () => !plug.module.canRedo },
+            { id: "reset", getLabel: () => "Reset", onClick: () => plug.module.reset(), getDisabled: () => !plug.module.state.history.length },
             { id: "playPause", getLabel: () => (plug.module.state.paused ? "Play" : "Pause"), onClick: () => (plug.module.state.paused ? plug.module.play() : plug.module.pause()), getDisabled: () => !plug.module.canRedo },
             { id: "rewind", getLabel: () => "Rewind", onClick: () => plug.module.rewind(), getDisabled: () => !plug.module.state.paused || !plug.module.state.currentFrame },
-            { id: "toggleTrack", getLabel: () => (plug.module.state.tracking ? "Untrack" : "Track"), onClick: () => (plug.module.state.tracking ? plug.module.untrack() : plug.module.track()) },
             {
               id: "toggleWhitelist",
-              getLabel: (w = plug.config.module.whitelist as string[] | undefined) => (w?.[0] === "state" || w?.[0]?.[0] === "state" ? "Intents" : "States"),
+              getLabel: (w = plug.config.module.whitelist as any) => ((isArr(w) ? w[0] : w?.media?.[0] || w?.[0]) === "state" ? "Intents" : "States"),
               onClick: (w = plug.config.module.whitelist as any) => {
-                const isState = w?.[0] === "state" || w?.[0]?.[0] === "state";
-                plug.config.module.whitelist = isArr(w) ? [isState ? "intent" : "state"] : { ...w, 0: [isState ? "intent" : "state"] };
+                const isState = (isArr(w) ? w[0] : w?.media?.[0] || w?.[0]) === "state",
+                  next = [isState ? "intent" : "state"];
+                plug.config.module.whitelist = isArr(w) ? next : { ...w, ...(w?.media ? { media: next } : { 0: next }) };
               },
               hidden: () => !plug.ctlr.config.devMode,
             },
           ],
         },
-        { id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => (plug.config.persist ? "On" : "Off"), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" },
+        { id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => plug.config.persist, getBadge: () => ({ label: "labs" }), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" },
       ],
     },
   ],
@@ -85,4 +78,3 @@ declare module "@defs/registries" {
     "settings.timeTravel": typeof getSettingsTimeTravelMenu;
   }
 }
-

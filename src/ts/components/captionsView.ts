@@ -6,12 +6,15 @@ import { createEl } from "@utils/dom";
 import { formatVttLine, parseVttText } from "@utils/text";
 import { isDef, isObj } from "@utils/obj";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
+import { startTx, endTx, Transaction, transaction } from "sia-reactor/modules";
+import { getTrackNum } from "@utils/media";
 
 export type CaptionsViewConfig = {
   secOrder?: number;
   isMain?: boolean;
   ofMedia?: boolean;
-  lang?: string;
+  language?: string;
+  trackIdx?: number;
 };
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
@@ -45,9 +48,9 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     // Ctlr State Listeners
     this.ctlr.state.on("dimensions.container.width", this.rerender, { init: true, signal: this.signal });
     // ---- Config --------
-    this.config.isMain && this.ctlr.config.on("settings.captions.secondaryTracks", this.syncBadge, { signal: this.signal });
     this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.rerender, { signal: this.signal });
     // ---- Media ---------
+    this.config.isMain && this.media.on("state.secondaryTextTracks", this.syncBadge, { signal: this.signal });
     this.media.on("state.objectFit", this.rerender, { signal: this.signal });
   }
 
@@ -128,14 +131,14 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   protected dragY?: string;
 
   public syncBadge(): void {
-    this.settings.captions.multiple && this.settings.captions.secondaryTracks.length && (this.config.lang || this.config.isMain) ? this.el.firstElementChild?.setAttribute("data-badge", this.config.lang?.toUpperCase() || "M") : this.el.firstElementChild?.removeAttribute("data-badge");
+    this.settings.captions.multiple && this.media.state.secondaryTextTracks.length && (this.config.language || this.config.isMain) ? this.el.firstElementChild?.setAttribute("data-badge", `${this.config.language?.toUpperCase() || "M"}${getTrackNum(this.media.status.textTracks, this.config.isMain ? this.media.state.currentTextTrack : this.config.trackIdx!)}`) : this.el.firstElementChild?.removeAttribute("data-badge");
   }
   public syncKaraoke(): void {
     if (this.timeNodes) for (const { el, time } of this.timeNodes) el.toggleAttribute("data-past", safeNum(this.media.state.currentTime) > time), el.toggleAttribute("data-future", !el.hasAttribute("data-past"));
   }
 
   protected handleDragStart(e: PointerEvent): void {
-    this.el.setPointerCapture(e.pointerId);
+    this.el.setPointerCapture(e.pointerId), this.useTx(true);
     const { left, top } = getComputedStyle(this.el);
     (this.lastPosX = parseFloat(left)), (this.lastPosY = parseFloat(top));
     (this.lastPtrX = e.clientX), (this.lastPtrY = e.clientY);
@@ -159,7 +162,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   private prevEY?: number;
 
   protected handleDragEnd(): void {
-    this.ctlr.cancelRAFLoop("captionsDragging");
+    this.ctlr.cancelRAFLoop("captionsDragging"), this.useTx();
     this.media.container.classList.remove("tmg-media-captions-dragging");
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) this.el.removeEventListener(evt, evt === "pointermove" ? this.handleDragging : this.handleDragEnd);
   }
@@ -167,7 +170,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   public resetPos(): void {
     if (this.config.isMain) {
       const sache = this.ctlr.plug("settings.css")?.build;
-      if (sache) (this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!);
+      sache && transaction(() => ((this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!)), "Captions position reset");
     } else {
       if (this.dragX === this.el.style.getPropertyValue("--tmg-media-current-captions-x")) (this.dragX = undefined), this.el.style.removeProperty("--tmg-media-current-captions-x");
       if (this.dragY === this.el.style.getPropertyValue("--tmg-media-current-captions-y")) this.el.style.setProperty("--tmg-media-current-captions-y", (this.dragY = this.orderDragY!));
@@ -179,6 +182,11 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   }
   public get canOverride(): boolean {
     return this.settings.captions.allowMediaOverride || (!this.config.isMain && !this.config.ofMedia);
+  }
+
+  protected tx: Transaction | null = null;
+  protected useTx(bool = false): void {
+    this.config.isMain && (bool ? (this.tx = startTx("Captions drag")) : this.tx && this.ctlr.config.stall(() => (endTx(this.tx!), (this.tx = null))));
   }
 
   protected override onDestroy(): void {

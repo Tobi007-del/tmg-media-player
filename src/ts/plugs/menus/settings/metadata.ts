@@ -10,7 +10,7 @@ import { silence } from "sia-reactor/modules";
 import { formatActionTooltip } from "@utils/keys";
 
 export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] => [
-  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => (plug.media.state.loop ? "On" : "Off"), getDisabled: () => plug.media.status.isLive && !plug.ctlr.settings.time.max, onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop", "status.isLive"], configPaths: ["settings.time.max"] },
+  { id: "loop", label: "Loop", icon: "loop", widget: "toggle", feature: "loop", getValue: () => plug.media.state.loop, getDisabled: () => plug.media.status.isLive && !plug.ctlr.settings.time.max, onChange: (val: boolean) => (plug.media.intent.loop = val), mediaPaths: ["state.loop", "status.isLive"], configPaths: ["settings.time.max"] },
   {
     id: "quality",
     label: "Quality",
@@ -98,6 +98,7 @@ export const getSettingsMetadataMenu = (plug: MetadataPlug): SettingsMenuItem[] 
     label: "Chapters",
     icon: "chapters",
     widget: "select",
+    closeOnSelect: false,
     feature: "currentChapter",
     getTipHTML: (len = plug.media.settings.metadata.chapterInfo.length) => (len ? `Navigate through your ${plug.media.type}'s chapters.<br><small>Viewing <b>${plug.media.state.currentChapter + 1}</b> of <b>${plug.media.settings.metadata.chapterInfo.length}</b>.</small>` : ""),
     getValue() {

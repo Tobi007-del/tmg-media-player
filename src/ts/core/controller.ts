@@ -18,7 +18,7 @@ import { isArr, isFunc, isStr } from "@utils/obj";
 import { silence, transaction } from "sia-reactor/modules";
 import { AUDIO_EXTENSIONS } from "@utils/match";
 import { MediaType } from "@defs/generics";
-import { STATE_BUILD } from "@consts/config";
+import { STATE_BUILD, ZENLIST } from "@consts/config";
 
 // --- CONTROLLER (The Orchestrator) ---
 export class Controller {
@@ -46,7 +46,7 @@ export class Controller {
   // --- DOM ---
   public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
   public hash = "#tmg-auto-gen";
-  public zenlist = ["moreSettings"]; // #DEFAULT: build privilege; block actions while UI is active
+  public zenList = ZENLIST; // #DEFAULT: build privilege; block actions while UI is active
   public mutating = true; // for external watchers that need to know
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
@@ -155,11 +155,11 @@ export class Controller {
   }
   public perform(id?: string, ...args: any[]): boolean {
     const act = id && this.actions.entries[id];
-    if (!act || act.disabled || (!act.zen && this.zenlist.some(this.isUIActive))) return false;
+    if (!act || act.disabled || (!act.zen && this.zenList.some(this.isUIActive))) return false;
     const can = !act.gates?.some((g) => !this.media.features[g]);
     transaction((root = act.logic?.length ? (this.logicRoot as any) : undefined) => {
       if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, mirror(path)) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
-      can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: this.config.id + act.id, renotify: true, ...act.toast });
+      can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: act.id, renotify: true, ...act.toast });
     }, act.label ?? act.id);
     return can;
   }

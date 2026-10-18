@@ -2,6 +2,8 @@ import { DeepPartial } from "sia-reactor";
 import { IS_IOS, IS_MOBILE } from "@utils/env";
 import { ModesFullscreenConfig, ModesPictureInPictureConfig, ModesMiniplayerConfig, ModesConfig, ModesTheaterConfig, ModesCastConfig, ModesAirPlayConfig } from "./types";
 import { supportsFullscreen } from "@utils/dom";
+import { TIME_TRAVEL_BUILD, TIME_TRAVEL_DOCKLIST } from "@plugs/settings/timeTravel/build";
+import { OVERLAY_WHITELIST } from "@plugs/settings/overlay/build";
 
 export const RESIZE_DIRS = ["n", "ne", "e", "se", "s", "sw", "w", "nw"] as const;
 
@@ -29,6 +31,9 @@ export const MODES_FULLSCREEN_BUILD: Partial<ModesFullscreenConfig> = {
 export const MODES_THEATER_BUILD: Partial<ModesTheaterConfig> = {
   disabled: IS_MOBILE,
 };
+
+export const MODES_THEATER_SNUBLIST: string[] = ["fullscreen", "miniplayer", "floatingPlayer"];
+
 
 export const MODES_PICTURE_IN_PICTURE_BUILD: Partial<ModesPictureInPictureConfig> = {
   disabled: false,
@@ -68,3 +73,7 @@ export const MODES_BUILD: DeepPartial<ModesConfig> = {
   // cast: MODES_CAST_BUILD,
   // airplay: MODES_AIRPLAY_BUILD,
 };
+
+TIME_TRAVEL_BUILD.module.whitelist.config.push("settings.css.currentMiniplayerX", "settings.css.currentMiniplayerY", "settings.css.currentMiniplayerWidth", "settings.css.currentMiniplayerHeight");
+TIME_TRAVEL_DOCKLIST.push("state.fullscreen", "state.pictureInPicture");
+OVERLAY_WHITELIST.push("pictureInPicture", "cast", "airplay");

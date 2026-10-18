@@ -1,12 +1,12 @@
 import { BaseComponent, type ComponentState } from "@components/base";
-import type { SettingsMenuItem, SettingsMenuConfig } from "../types";
+import type { SettingsMenuItem, SettingsMenuConfig } from "./types";
 import { MainMenuPanel } from "./panel/main";
 import { SubMenuPanel } from "./panel/sub";
 import type { BaseMenuPanel, PanelDir } from "./panel";
 import { MENU_FOCUS_SELECTOR } from "../build";
 import { createEl } from "@utils/dom";
 import { getActiveEl, isArr, isStr, isNum, isObj, NIL, isPOJO } from "@t007/utils";
-import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation } from "@t007/utils/hooks/vanilla";
+import { initArrowNavigation, initOutsideClick, initFocusTrap, removeArrowNavigation, removeOutsideClick, removeFocusTrap, syncFocusTrap, syncArrowNavigation, syncOutsideClick } from "@t007/utils/hooks/vanilla";
 import { requestAnimationFrame, setInterval } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { OrderedRegistry } from "@core/registries";
@@ -50,6 +50,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     // ---- Media Listeners
     this.media.on("state.paused", ({ value }) => !value && this.close(), { signal: this.signal });
     this.media.on("features", () => this.menuOpen && this.syncUI(), { signal: this.signal });
+    this.media.on("status.floatingPlayer", () => this.menuOpen && (syncOutsideClick(this.element), syncFocusTrap(this.element)), { signal: this.signal });
     // ---- State --------
     for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${k}`, () => this.menuOpen && this.syncUI(), { signal: this.signal });
     this.ctlr.config.on("settings.panel.menu.blacklist", () => this.menuOpen && this.syncUI(), { signal: this.signal });
@@ -138,8 +139,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (this.menuOpen || performance.now() - this.lastClosedTime < 50) return;
     (this.anchor = anchor), (this.menuOpen = true), !this.mainPanel && this.mount();
     if (!preserveStack) this.navStack = [];
-    if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none");
-    else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none");
+    if (this.navStack.length === 0) this.syncMain(), this.subPanels.forEach((p) => this.hidePanel(p)), this.showPanel(this.mainPanel, "none", preserveStack);
+    else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none", preserveStack);
     if (this.anchor) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
     this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-open"), this.el.classList.remove("tmg-media-smenu-closed"), this.media.container.classList.add("tmg-media-menu-settings");
     initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
@@ -217,4 +218,4 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public safeMargin = 12;
 }
 
-export type * from "../types";
+export type * from "./types";

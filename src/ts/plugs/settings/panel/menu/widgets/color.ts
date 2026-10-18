@@ -6,6 +6,7 @@ import { parseUIOpt } from "@utils/obj";
 export class ColorWidget<T = unknown> extends BaseWidget<T> {
   private renderSwatches!: ReturnType<typeof createListRenderer<UITuple<T>>>;
   private freeInput!: HTMLInputElement;
+  private field!: HTMLElement;
   private currentValue!: string;
 
   public override render(): HTMLElement {
@@ -17,16 +18,7 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
       createNode: (opt) => {
         const btn = createEl("button", { type: "button", className: "tmg-media-smenu-color-swatch", title: opt.display, ariaLabel: opt.display }, { colorVal: opt.value as string });
         btn.style.setProperty("--swatch", opt.value as string);
-        btn.addEventListener(
-          "click",
-          () => {
-            this.item.onChange?.(opt.value);
-            this.currentValue = btn.ariaLabel ?? btn.dataset.colorVal!;
-            this.freeInput.value = btn.dataset.colorVal!;
-            this.syncActive();
-          },
-          { signal: this.signal }
-        );
+        btn.addEventListener("click", () => ((this.freeInput.value = btn.dataset.colorVal!), this.syncColor("onChange", opt.value as string)), { signal: this.signal });
         return btn;
       },
       updateNode: (node, opt) => {
@@ -37,25 +29,33 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
         node.classList.toggle("tmg-media-smenu-color-active", opt.display === this.currentValue || node.dataset.colorVal === this.currentValue);
       },
     });
-    const field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free" });
-    (this.freeInput = field.inputEl).addEventListener(
-      "input",
-      () => {
-        this.item.onChange?.(this.freeInput.value as T);
-        const activeBtn = this.element.querySelector<HTMLElement>(`[data-color-val="${this.freeInput.value}"]`);
-        this.currentValue = activeBtn?.ariaLabel ?? this.freeInput.value;
-        this.syncActive();
-      },
-      { signal: this.signal }
-    );
+    const field = (this.field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free" }));
+    ((this.freeInput = field.inputEl) as any).t007Field = field;
+    this.freeInput.addEventListener("input", this.handleColor, { signal: this.signal });
+    this.freeInput.addEventListener("change", this.handleColor, { signal: this.signal });
     return this.element.append(grid, field), this.syncUI(), this.element;
   }
   public override syncUI(): void {
-    this.currentValue = this.item.getValue() || "";
+    this.currentValue = (this.item.getValue() as string) ?? "";
     const activeBtn = this.element.querySelector<HTMLElement>(`:is([aria-label="${this.currentValue}"], [data-color-val="${this.currentValue}"])`);
-    if (this.freeInput) this.freeInput.value = activeBtn?.dataset.colorVal ?? this.currentValue;
-    this.renderSwatches((this.item.getOptions?.() ?? []).map((o) => parseUIOpt(o)));
+    if (this.freeInput) {
+      this.freeInput.value = activeBtn?.dataset.colorVal ?? this.currentValue;
+      this.field?.style.setProperty("--input-color", this.freeInput.value);
+    }
+    this.renderSwatches((this.item.getOptions?.() ?? []).map(parseUIOpt));
     this.syncActive();
+  }
+
+  private syncColor(type: "onInput" | "onChange" = "onChange", value = this.freeInput.value): void {
+    const activeBtn = this.element.querySelector<HTMLElement>(`[data-color-val="${value}"]`);
+    this.currentValue = activeBtn?.ariaLabel ?? value;
+    this.field.style.setProperty("--input-color", value);
+    this.syncActive();
+    (type === "onInput" ? this.item.onInput ?? this.item.onChange : this.item.onChange)?.(value as T);
+  }
+
+  private handleColor(e: Event): void {
+    this.syncColor(e.type === "input" ? "onInput" : "onChange");
   }
 
   private syncActive(): void {

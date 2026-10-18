@@ -1,5 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { LightConfig } from "./types";
+import { TIME_BUILD } from "@plugs/settings/time/build";
 
 export const LIGHT_BUILD: DeepPartial<LightConfig> = {
   disabled: false,
@@ -13,3 +14,5 @@ export const LIGHT_BUILD: DeepPartial<LightConfig> = {
   controls: ["meta", "bigPlayPause", "fullscreenOrientation"],
   stallControl: "bigPlayPause",
 };
+
+TIME_BUILD.whitelist.push("light.preview.min", "light.preview.max");

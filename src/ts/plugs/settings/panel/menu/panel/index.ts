@@ -8,9 +8,9 @@ export type PanelDir = "forward" | "backward" | "none";
 
 export abstract class BaseMenuPanel extends Controllable {
   public readonly element: HTMLElement;
-  protected readonly content: HTMLElement;
-  protected savedScroll = 0;
-  protected lastFocused: HTMLElement | null = null;
+  public readonly content: HTMLElement;
+  public savedScroll = 0;
+  public lastFocused: HTMLElement | null = null;
 
   constructor(ctlr: Controller, config: any, className: string) {
     super(ctlr, config);

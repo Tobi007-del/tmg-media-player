@@ -34,7 +34,7 @@ graph TD
 ### The Core Difference
 In S.I.A, there are no rigid adapters, no context providers, and no direct method calls from the UI to the video. 
 - You want to pause? The UI doesn't call `player.pause()`. It writes to the tree: `intent.paused = true`.
-- Plugs listen to the Controller. A gesture plug or a voice-control plug doesn't need to hack into the UI—it just writes intents directly to the tree.
+- Plugs listen to the Controller. A gesture plug or a voice-control plug doesn't need to hack into the UI: it just writes intents directly to the tree.
 - If a specific Plug needs to enhance an action (like a custom Volume Plug taking over volume rendering instead of the native video tech), it intercepts the intent (Higher Power).
 - The video pauses. The Tech writes to the tree: `state.paused = true`.
 - The UI automatically updates.

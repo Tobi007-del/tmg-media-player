@@ -3,7 +3,7 @@ import { createEl } from "@utils/dom";
 import { ComponentRegistry } from "@core/registries";
 import type { RangeInput } from "@components/rangeInput";
 import { parseUIOpts } from "@utils/obj";
-import { SettingsMenuRangeConfig } from "../../types";
+import { SettingsMenuRangeConfig } from "../types";
 import { fanout } from "sia-reactor/utils";
 
 export class RangeWidget extends BaseWidget {
@@ -16,14 +16,14 @@ export class RangeWidget extends BaseWidget {
     this.element = createEl("div", { className: "tmg-media-smenu-range-wrapper" });
     this.valueLabel = createEl("span", { className: "tmg-media-smenu-range-value" });
     if (comp) {
-      comp.config.on("value", ({ value }) => (this.item.onChange?.(value!), (this.valueLabel.textContent = String(this.item.getValue() || ""))));
+      comp.config.on("value", ({ value }) => (this.item.onChange?.(value!), (this.valueLabel.textContent = String(this.item.getValue() ?? ""))));
       this.element.append(this.valueLabel, (this.comp = comp).element);
     }
     return this.syncUI(), this.element;
   }
 
   public override syncUI(): void {
-    this.valueLabel.textContent = String(this.item.getValue() || "");
+    this.valueLabel.textContent = String(this.item.getValue() ?? "");
     if (!this.comp) return;
     const cfg = this.item.getRange!()!;
     if (this.lastRange.min !== cfg.min || this.lastRange.max !== cfg.max) fanout(this.comp.config, this.getConfig(cfg));
@@ -31,7 +31,7 @@ export class RangeWidget extends BaseWidget {
   }
 
   private getRangeValue(): number {
-    const v = parseFloat(String(this.item.getValue() || ""));
+    const v = parseFloat(String(this.item.getValue() ?? ""));
     return isNaN(v) ? this.item.getRange!()!.min : v;
   }
 

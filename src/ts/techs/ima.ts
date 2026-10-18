@@ -84,7 +84,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   // --- Core Intents ---
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    // this.host[e.value ? "pause" : "resume"](); // replay not working
+    // this.host[e.value ? "pause" : "resume"](); // resume is buggy nd IMA is mad!!
     e.resolve(this.name);
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
@@ -124,7 +124,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
     const render = `<span class="tmg-media-ads-toast-meta">${this.plug.state.roll!.badge}<span class="tmg-media-ads-toast-count"> • ${data.adPosition} of ${data.totalAds}</span></span>`;
     if (!t007.toast?.isActive(this.TIDS.SKIP)) return void this.ctlr.toast?.(render, { id: this.TIDS.SKIP, signal: this.signal, actions: offset === -1 ? false : { [`<span title='Skip ad${formatActionTooltip(this.settings, "skipAd")}' class="tmg-media-ads-toast-skip"></span>`]: this.plug.skipRoll }, ...this.plug.state.roll!.toasts.skip });
     this.ctlr.toast?.update(this.TIDS.SKIP, { render });
-    if ((this.skipBtn ??= this.ctlr.queryDOM(".tmg-media-ads-toast-skip"))) (this.skipBtn.innerHTML = `Skip ${this.config.features.adSkip ? `<span>${IconRegistry.get("next")}</span>` : ` in ${Math.max(1, Math.ceil(offset - data.currentTime))}`}`), this.skipBtn.classList.toggle("tmg-media-control-disabled", !this.config.features.adSkip);
+    if ((this.skipBtn ??= this.ctlr.queryDOM(".tmg-media-ads-toast-skip"))) (this.skipBtn.innerHTML = `Skip ${this.config.features.adSkip ? `<span>${IconRegistry.get("next")}</span>` : ` in ${Math.ceil(offset - data.currentTime) || 1}`}`), this.skipBtn.classList.toggle("tmg-media-control-disabled", !this.config.features.adSkip);
   }
   private skipBtn: HTMLButtonElement | null = null;
 }

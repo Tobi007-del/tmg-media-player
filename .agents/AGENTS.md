@@ -235,6 +235,18 @@ Canonical example: `volume.ts` on `media.intent.volume` and `media.intent.muted`
 
 ---
 
+## Planned Architecture: Background Low-Power Engine (Reactive Hibernation)
+
+- Leverages `Controllable.hibernate()` and `Controllable.awaken()`.
+- When the tab is hidden (`docVisibilityState === "hidden"`) or the player is scrolled offscreen without audio:
+  - `hibernate()` aborts the instance signal, instantly cutting all tech and plugin listeners.
+  - Background processes stop updating **State** (Facts).
+  - Because the user is absent, nothing writes to **Intent** (Requests).
+  - The entire reactive bus drops completely silent with zero CPU cycles or memory churn.
+  - On restore, `awaken()` links a fresh signal and calls `onAwaken()`. In `wire()`, `this.hibernated` allows tech to reconnect without flushing state or flickering.
+
+---
+
 ## Registry System
 
 - `PlugRegistry` (OrderedRegistry): `register`, `registerBefore`, `registerAfter`, `registerPriority`

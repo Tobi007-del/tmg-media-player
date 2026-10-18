@@ -1,5 +1,5 @@
 import { BaseMenuPanel } from ".";
-import type { SettingsMenuItem } from "../../types";
+import type { SettingsMenuItem } from "../types";
 import { BaseWidget, WidgetRegistry } from "../widgets";
 import { GroupWidget } from "../widgets/group";
 import { createEl, addSafeClicks } from "@utils/dom";

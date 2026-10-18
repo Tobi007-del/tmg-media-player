@@ -35,7 +35,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       // Modes
       pictureInPicture: !isAudio && supportsPictureInPicture(), fullscreen: !isAudio && supportsFullscreen(),
       // Markup & States
-      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, controls: true, live: true,
+      poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, controls: true,
       crossOrigin: true, preload: true, controlsList: true, sources: true, tracks: true,
       // Lists
       textTracks: canTxtTrack, videoTracks: !isAudio && canVidTrack, audioTracks: canAudTrack,
@@ -254,7 +254,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handleCurrentTimeIntent(e: REvent<CtlrMedia, "intent.currentTime">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedData", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
+    this.ctlr.when("loadedMetadata", e, (min = getMediaMin(this.config), max = getMediaMax(this.config), val = clamp(min, e.value, max), finite = Number.isFinite(val)) => {
       if (e.value < min || e.value > max || !finite) e.reject(this.name); // Out of bounds
       if (finite) this.el.currentTime = clamp(min, e.value, max);
     }); // tested nd trusted status due to reactive dynamics

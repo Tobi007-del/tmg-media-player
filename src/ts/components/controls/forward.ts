@@ -22,7 +22,7 @@ export class ForwardButton extends BaseComponent<ForwardConfig, ComponentState, 
   }
 
   protected handleClick(): void {
-    this.ctlr.perform("timeSkipFwd");
+    this.ctlr.plug("settings.time")?.skipFwd();
   }
 
   public syncUI(): void {

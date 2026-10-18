@@ -18,8 +18,9 @@ export function isUIOption<T>(opt: UIOption<T>): opt is UITuple<T> {
 // Assignment & Derivation
 export function setHTMLConfig<T extends object>(target: T, attr: string, value: string): void {
   const v = value.trim(),
+    // prettier-ignore
     parsed = v === "[]" ? [] : v === "{}" ? {} : v.includes(",") ? v.split(",").map((p) => p.trim()).filter(Boolean) : v === "true" ? true : v === "false" ? false : v === "null" ? null : /^\d+$/.test(v) ? Number(v) : v;
-  setPath(target, attr.replace("tmg--", "") as any, parsed, "--", (p) => camelize(p));
+  setPath(target, attr.replace("tmg--", "") as any, parsed, "--", camelize);
 }
 
 export function getBoolOrStr(value: string | boolean): string | boolean {
@@ -27,17 +28,16 @@ export function getBoolOrStr(value: string | boolean): string | boolean {
 }
 
 export function getUIOpt<T = unknown>(opts: UIOption<T>[] | undefined, value: T, key: "display" | "value" = "display"): string {
-  if (opts)
-    for (const opt of opts) {
-      const p = parseUIOpt<T>(opt);
-      if (p.value === value) return p[key] as string;
-    }
+  for (const opt of opts ?? []) {
+    const p = parseUIOpt<T>(opt);
+    if (p.value === value) return p[key] as string;
+  }
   return String(value);
 }
 
-export function getUniqueOpts<T>(options: UITuple<T>[]) {
+export function getUniqueOpts<T>(opts: UITuple<T>[]) {
   const groups = new Map<string, UITuple<T>[]>();
-  for (const opt of options) {
+  for (const opt of opts) {
     let group = groups.get(opt.display);
     !group && groups.set(opt.display, (group = [])), group.push(opt);
   }
@@ -57,11 +57,13 @@ export function parseUIBadge(badge?: string | { label?: string; value?: string }
 }
 
 // Control Panel Utilities
-export function parsePanelBottomObj(obj: Partial<ControlPanelBottomTuple> | Control[][] | Control[] | unknown, arr?: false): ControlPanelBottomTuple | false;
-export function parsePanelBottomObj(obj: Partial<ControlPanelBottomTuple> | Control[][] | Control[] | unknown, arr: true): Control[] | false;
-export function parsePanelBottomObj(obj: Partial<ControlPanelBottomTuple> | Control[][] | Control[] | unknown = [], arr = false): ControlPanelBottomTuple | Control[] | false {
-  if (!isObj(obj) && !isArr(obj)) return false;
-  const [third = [], second = [], first = []] = isObj<Partial<ControlPanelBottomTuple>>(obj) ? (Object.values(obj).reverse() as Control[][]) : isArr((obj as Control[][])[0]) ? [...(obj as Control[][])].reverse() : [obj as Control[]];
+export function parsePanelBottomObj(obj: ControlPanelConfig["bottom"], arr?: false): ControlPanelBottomTuple;
+export function parsePanelBottomObj(obj: ControlPanelConfig["bottom"], arr: true): Control[];
+export function parsePanelBottomObj(obj: false, arr?: boolean): false;
+export function parsePanelBottomObj(obj: any = [], arr = false, _isObj = false): ControlPanelBottomTuple | Control[] | false {
+  if (obj === false) return false;
+  if ((_isObj = isObj<Partial<ControlPanelBottomTuple>>(obj)) && obj["1"] && obj["2"] && obj["3"]) return arr ? [...obj["3"], ...obj["2"], ...obj["1"]] : (obj as ControlPanelBottomTuple);
+  const [third = [], second = [], first = []] = _isObj ? Object.values(obj).reverse() : isArr(obj[0]) ? [...obj].reverse() : [obj];
   return arr ? ([...third, ...second, ...first] as Control[]) : ({ 1: first, 2: second, 3: third } as ControlPanelBottomTuple);
 }
 
@@ -85,12 +87,7 @@ export function getPanelLocation(b: ControlPanelConfig, id: AnyControl) {
 }
 
 export function inPanel(b: ControlPanelConfig, id: AnyControl): boolean {
-  if ((isArr(b.top) && b.top.includes(id)) || (isArr(b.center) && b.center.includes(id))) return true;
-  if (b.bottom) {
-    const dB = parsePanelBottomObj(b.bottom);
-    if (dB) for (const k in dB) if ((dB as any)[k]?.includes(id)) return true;
-  }
-  return false;
+  return (b.top && b.top.includes(id)) || (b.center && b.center.includes(id)) || (b.bottom && parsePanelBottomObj(b.bottom, true).includes(id));
 }
 
 export function insertPanelCtrl(current: AnyControl[], defaults: readonly AnyControl[], id: AnyControl, _didx = defaults.indexOf(id)): void {

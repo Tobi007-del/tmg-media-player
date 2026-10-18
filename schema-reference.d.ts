@@ -31,7 +31,7 @@ export interface Settings {
   notifiers: NotifiersConfig;
   objectFit: ObjectFitConfig;
   overlay: OverlayConfig;
-  panel: panelConfig;
+  panel: PanelConfig;
   persist: PersistConfig;
   playbackRate: PlaybackRateConfig;
   poster: PosterConfig;
@@ -66,9 +66,6 @@ export interface MockController {
 
 // --- Nested Types & Interfaces ---
 
-import { BaseComponent } from ".";
-import { Controller } from "@core/controller";
-
 export interface ComponentConstructor<T extends BaseComponent = BaseComponent> {
   new (ctlr: Controller, config?: any, state?: any): T;
   componentName: string;
@@ -78,16 +75,11 @@ export interface ComponentConstructor<T extends BaseComponent = BaseComponent> {
 export interface ComponentState {
   label: string;
   cmd: string;
+  cmdKey: Action["id"];
   active: boolean;
   hidden: boolean;
   disabled: boolean;
-  keyShortcut: string | string[];
-  voiceCommand: string | string[];
 }
-
-import { RangeInputConfig } from "../../rangeInput";
-
-
 
 export interface TimelineConfig extends RangeInputConfig {
   previews:
@@ -104,9 +96,6 @@ export interface TimelineConfig extends RangeInputConfig {
   playedMarks: boolean;
   advertMarks: boolean;
 }
-
-import { AptRange } from "@defs/generics";
-import { ComponentState } from "../base";
 
 export interface RangeInputDiv {
   value: number;
@@ -162,10 +151,6 @@ export interface RangeState extends ComponentState {
   cancelScrub: boolean;
 }
 
-import { Controller } from "@core/controller";
-import { BasePlug, BasePin } from ".";
-import type { PlugRegistryMap, PinRegistryMap } from "@defs/registries";
-
 export interface PlugConstructor<T extends BasePlug = BasePlug> {
   new (ctlr: Controller, config?: any): T;
   plugName: string;
@@ -187,11 +172,11 @@ export interface PinConstructor<T extends BasePin = BasePin, PC extends PlugCons
 
 export interface AdRoll {
   url: string;
-  time: number | string; // preroll, postroll, midroll - positives, negatives, percents
+  time: number | string; // preroll, postroll, midroll - positives, negatives, percents; so yeah! everything
   badge: string; // show "Sponsored" in the skip toast
   played: boolean;
   media: MediaReport;
-  toasts: Record<"meta" | "skip", ToastOptions>;
+  toasts: Record<"prep" | "meta" | "skip", ToastOptions>; // since IMA wants to play "god" so "skip" is cosmetic
 }
 
 export interface AdsConfig {
@@ -209,9 +194,6 @@ export interface AdsState {
 
 export type DisabledConfig = boolean;
 
-import { PosterPreview } from "@defs/generics";
-import { Control } from "../../settings/controlPanel";
-
 export interface LightConfig {
   disabled: boolean;
   preview: PosterPreview;
@@ -219,26 +201,23 @@ export interface LightConfig {
   stallControl: string;
 }
 
-import { CtlrConfig } from "@defs/config";
-import type { Inert } from "sia-reactor";
-
 export interface PlayItemConfig extends Pick<Required<CtlrConfig>, "media" | "settings" | "ads"> {}
 
 export type PlaylistConfig = {
   content: Inert<PlayItemConfig[]> | null;
-  allowOverride: {
-    add: boolean;
-    delete: boolean;
-    move: boolean;
-    edit: boolean;
-  };
+  allowOverride:
+    | boolean
+    | {
+        add: boolean;
+        edit: boolean;
+        move: boolean;
+        remove: boolean;
+      };
 };
 
 export interface PlaylistState {
   sortOrder: "asc" | "desc";
 }
-
-import { UISettings } from "@defs/UIOptions";
 
 export interface SkeletonConfig {
   exclusivePlay: UISettings<boolean | "audio" | "video">;
@@ -268,22 +247,14 @@ export interface AutoConfig {
   };
 }
 
-import { OptRange } from "@defs/generics";
-import { SliderState } from "@plugs/base/slider";
-
 export interface BrightnessConfig extends OptRange {}
 
 export interface BrightnessState extends SliderState {}
-
-import { DeepPartial } from "sia-reactor";
-import { OptRange } from "@defs/generics";
-import { UISettings, UIOption } from "@defs/UIOptions";
 
 export type CueLike = (TextTrackCue | { text: string }) & DeepPartial<{ id: string; text: string; align: string; region: { id: string; width: number; lines: number; viewportAnchorX: number; viewportAnchorY: number; scroll: string }; position: number | "auto"; positionAlign: string; line: number | string; lineAlign: string; snapToLines: boolean; size: number; vertical: "" | "lr" | "rl" }>;
 
 export interface CaptionsConfig {
   multiple: boolean;
-  secondaryTracks: number[];
   font: {
     family: UISettings<string>;
     size: OptRange & {
@@ -316,10 +287,6 @@ export interface CaptionsConfig {
 export interface CaptionsState {
   snubbingCurrentTextTrack: boolean;
 }
-
-import type { TimelineConfig } from "@components/controls/timeline/types";
-import { CONTROLS, ROWS_ARR } from "./build";
-import { UISettings } from "@defs/UIOptions";
 
 export type Control = (typeof CONTROLS)[number];
 export type AnyControl = Control | "spacer";
@@ -369,8 +336,6 @@ export type CssConfig = CSSMap & {
   syncWithMedia: Record<string, boolean>; // not a live synced key
 };
 
-import { ERROR_CODES } from "./build";
-
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
 export interface ErrorsConfig extends Record<ErrorCode | number, string> {}
@@ -395,33 +360,30 @@ export interface FastPlayConfig {
 export interface FastPlayState {
   active: boolean;
   ptrActive: boolean;
-  rewinding: boolean;
 }
-
-import { ToastOptions } from "@t007/toast";
 
 export interface FrameConfig {
   disabled: boolean;
   fps: number;
-  toast: ToastOptions;
-  goodTime: {
+  main: {
+    usePoster: boolean;
     searchDuration: number;
     minSaturation: number;
     minBrightness: number;
   };
+  toast: ToastOptions;
 }
 
-import { MediaIntent } from "@defs/contract";
-
 export interface GestureGeneralConfig {
-  click: keyof MediaIntent | false;
-  dblClick: keyof MediaIntent | false;
+  click: Action["id"] | false;
+  dblClick: Action["id"] | false;
 }
 
 export interface GestureTouchConfig {
   volume: boolean;
   brightness: boolean;
   timeline: boolean;
+  fastSwipes: boolean;
   threshold: number;
   sliderTimeout: number;
   xRatio: number;
@@ -447,11 +409,6 @@ export type GestureConfig = GestureGeneralConfig & {
 export interface GestureState {
   skipping: boolean;
 }
-
-import { KEYS_MODS, KeysSettings } from "sia-reactor/utils";
-import type { UISettings } from "@defs/UIOptions";
-import type { Action } from "@defs/action";
-import { KEYS_MODS_ACTIONS } from "./build";
 
 export type KeyPhase = "keydown" | "keyup" | "none" | "";
 export type KeyMod = (typeof KEYS_MODS)[number] | "";
@@ -548,19 +505,14 @@ export interface ModesConfig {
   airplay: ModesAirPlayConfig;
 }
 
-import { ComponentRegistryMap } from "@defs/registries";
-
 export interface NotifiersConfig {
   disabled: boolean;
-  whitelist: Array<keyof ComponentRegistryMap>;
+  centerBlocks: string[];
 }
 
 export interface NotifiersState {
   events: string[];
 }
-
-import { objectFits } from "./build";
-import type { UIOption } from "@defs/UIOptions";
 
 export type ObjectFit = (typeof objectFits)[number];
 
@@ -578,34 +530,17 @@ export interface OverlayState {
   visible: boolean;
 }
 
-import type { UIOption } from "@defs/UIOptions";
-import type { MediaFeatures } from "@defs/contract";
-import type { BaseWidget } from "./menu/widgets";
-import type { Paths } from "sia-reactor";
-import type { CtlrMedia } from "@defs/contract";
-import type { CtlrConfig } from "@defs/config";
-import type { IconRegistryMap } from "@defs/registries";
-import type { FieldOptions } from "@t007/input";
-
 export interface SettingsMenuConfig {
   disabled: boolean;
   showMore: boolean;
   blacklist: string[];
 }
 
-export interface panelConfig {
-  autoPause: boolean;
-  menu: SettingsMenuConfig;
-}
-
-export interface panelState {
-  viewOpen: boolean;
-}
-
 export type MenuItemWidget = "select" | "range" | "toggle" | "color" | "group" | "button" | "playlist" | "input" | "drag-select" | "limits";
 
-export interface SettingsRowElement extends HTMLElement {
+export interface SettingsRowEl extends HTMLElement {
   widget?: BaseWidget;
+  _ac?: AbortController;
 }
 
 export interface SettingsMenuRangeConfig {
@@ -620,6 +555,12 @@ export interface SettingsMenuRangeConfig {
   formatTooltip?: (val: number) => string;
 }
 
+export interface MenuItemHidden {
+  configPaths?: Paths<CtlrConfig>[];
+  mediaPaths?: Paths<CtlrMedia>[];
+  is(): boolean;
+}
+
 export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title" | "hidden" | "min" | "max"> & {
   id: string;
   label: string;
@@ -630,25 +571,31 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   widget: MenuItemWidget;
   min?: string | number | (() => string | number);
   max?: string | number | (() => string | number);
-  /** Hide the row based on custom logic */
-  hidden?: boolean | (() => boolean);
+  /** Hide the row statically or dynamically via reactive paths */
+  hidden?: boolean | MenuItemHidden;
   /** Hide the row if this feature flag is falsy */
   feature?: keyof MediaFeatures;
   /** Whether the widget should be rendered directly inside the parent group (inline) rather than opening a sub-panel */
   inline?: boolean;
   /** Return the current human-readable value badge shown on the row (or array of active values/displays for multi) */
-  getValue(): string | string[] | undefined | null;
+  getValue(): T | boolean | number | string | string[] | undefined | null;
   /** Whether the sub-panel should remain open after a selection is made (defaults to true for single selects) */
   closeOnSelect?: boolean;
   /** Called when the user commits a new value */
-  onChange?(value: T | Record<string, string | number | undefined>): void;
-  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max"> & { name?: string; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
+  onChange?(value: T | Record<string, string | number | undefined>): any;
+  /** Called when the user interactively inputs or drags a value */
+  onInput?(value: T | Record<string, string | number | undefined>): any;
+  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max" | "hidden"> & { name?: string; hidden?: boolean; compact?: boolean; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
   /** Whether this widget (e.g. select) supports selecting multiple options */
   getMultiple?(): boolean;
   /** For "limits" */
   getLimits?(): { name: string; type?: string; label: string; min?: number; max?: number; step?: number; start?: number | null; end?: number | null }[];
+  /** Whether drag-select options can be deleted (controls delete button visibility) */
+  canDelete?(): boolean;
   /** Called when a drag-select option is deleted */
   onDelete?(idx: number): void;
+  /** Whether drag-select options can be edited (controls edit button visibility) */
+  canEdit?(): boolean;
   /** Called when a drag-select option is edited */
   onEdit?(idx: number): void;
   /** For "select" and "color", list of options */
@@ -671,6 +618,8 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   footerActions?: { id?: string; getLabel: () => string; icon?: keyof IconRegistryMap; onClick: () => void; getDisabled?: () => boolean; hidden?: () => boolean }[];
   /** For general widgets, optional helper text/HTML to show below the widget */
   getTipHTML?: () => string;
+  /** Whether drag-select options can be reordered (controls drag handle visibility) */
+  canReorder?(): boolean;
   /** For "drag-select", called when a drag/drop reorder occurs */
   onReorder?: (oldIdx: number, newIdx: number) => void;
 };
@@ -678,14 +627,18 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
 // The magic utility that doesn't kill your union types
 type DOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 
-import { PersistConfig as ReactorPersistConfig } from "sia-reactor/modules";
+export interface PanelConfig {
+  autoPause: boolean;
+  menu: SettingsMenuConfig;
+}
+
+export interface PanelState {
+  moreOpen: boolean;
+}
 
 export interface PersistConfig extends ReactorPersistConfig<any> {
   clearConfirm: string;
 }
-
-import { OptRange } from "@defs/generics";
-import type { UIOption } from "@defs/UIOptions";
 
 export interface PlaybackRateConfig extends OptRange {
   options: UIOption<number>[];
@@ -706,9 +659,6 @@ export interface SleepTimerConfig {
   minutes: number[];
 }
 
-import { OptRange } from "@defs/generics";
-import { TimeFormat, TimeMode } from "@utils/time";
-
 export interface TimeConfig extends OptRange {
   mode: TimeMode;
   format: TimeFormat;
@@ -718,22 +668,18 @@ export interface TimeConfig extends OptRange {
   whitelist: string[];
 }
 
-import { TimeTravelConsoleConfig } from "sia-reactor/adapters/vanilla";
-import { TimeTravelConfig as ReactorTimeTravelConfig } from "sia-reactor/modules";
-
 export interface TimeTravelConfig {
   module: ReactorTimeTravelConfig<any>;
   console: TimeTravelConsoleConfig & { disabled: boolean };
   persist: boolean;
 }
 
-import { ToastOptions } from "@t007/toast";
-
 export interface ToastReminder extends ToastOptions {
   id: string;
   message: string;
   after: number;
   target?: number;
+  repeat?: boolean;
   actionId?: string; // run via ctlr.execute when reminder fires
 }
 
@@ -774,10 +720,9 @@ export interface VoiceState {
   routing: boolean;
 }
 
-import { OptRange } from "@defs/generics";
-import { SliderState } from "@plugs/base/slider";
-
-export interface VolumeConfig extends OptRange {}
+export interface VolumeConfig extends OptRange {
+  factor: number;
+}
 
 export interface VolumeState extends SliderState {
   audioSetup: boolean;

@@ -2,6 +2,8 @@ import { DeepPartial } from "sia-reactor";
 import type { AdRoll, AdsConfig } from "./types";
 import { MEDIA_ITEM_BUILD } from "@consts/media";
 
+export const AD_ROLL_FORMATTED: unique symbol = Symbol.for("TMG_MEDIA_AD_ROLL_FORMATTED");
+
 export const ADS_BUILD: AdsConfig = {
   rolls: [],
   settings: {
@@ -29,14 +31,21 @@ export const AD_ROLL_BUILD: DeepPartial<AdRoll> = {
     },
   },
   toasts: {
+    prep: {
+      render: "Advertisement break",
+      compact: true,
+      position: "top-left",
+      autoClose: 5000,
+      tag: "tmg-adpr",
+    },
     meta: {
       position: "bottom-left",
       autoClose: false,
     },
     skip: {
+      compact: true,
       position: "bottom-right",
       autoClose: false,
-      compact: true,
     },
   },
 };

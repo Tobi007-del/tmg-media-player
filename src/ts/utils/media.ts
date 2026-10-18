@@ -165,14 +165,21 @@ export function getTrackLabel(track: any, index: number, safe = true): string {
     } catch {}
   return label || (safe && index > -1 ? `Track ${index + 1}` : "");
 }
-export function getTrackKind(track: any, capped = false, ssId = track?.vssId || track?.originalTextId): string {
+export function getTrackKind<C extends boolean>(track: any, capped: C = false as C, ssId = track?.vssId || track?.originalTextId): (C extends true ? "Captions" | "Subtitles" : "captions" | "subtitles") | "" {
   const kind = !track ? "" : (track.kind || track.type || "").toLowerCase() || (ssId ? (ssId.includes("cc") ? "captions" : "subtitles") : "captions");
   return capped ? capitalize(kind) : kind;
 }
 export const getTrackLang = (track: any): string => (!track ? "" : track.language || track.languageCode || track.srclang || "");
+export function getTrackNum(list: any, idx: number, key = getTrackLabel(list[idx], idx)): string {
+  if (!key) return "";
+  let total = 0,
+    num = 0;
+  for (let i = 0, len = list.length; i < len; i++) getTrackLabel(list[i], i) === key && (++total, i === idx && (num = total));
+  return total > 1 ? String(num) : "";
+}
 export function setCurrentTrack(medium: HTMLMediaElement, type: TrackType = "Text", term: any, flush = false, list = (medium as any)[`${type.toLowerCase()}Tracks`]): void {
   const idx = getTrackIdx(medium, type, term, list);
-  if (list && type !== "Video") for (let i = 0; i < list.length; i++) type === "Text" ? (list[i].mode = i === idx ? "showing" : flush ? "disabled" : "hidden") : (list[i].enabled = i === idx);
+  if (list && type !== "Video") for (let i = 0, len = list.length; i < len; i++) type === "Text" ? (list[i].mode = i === idx ? "showing" : flush ? "disabled" : "hidden") : (list[i].enabled = i === idx);
   else list?.[idx] && (list[idx].selected = true);
 }
 

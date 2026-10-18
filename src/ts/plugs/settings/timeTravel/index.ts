@@ -1,5 +1,5 @@
 import { BasePlug } from "../../base";
-import { TIME_TRAVEL_BUILD } from "./build";
+import { TIME_TRAVEL_BUILD, TIME_TRAVEL_DOCKLIST } from "./build";
 import type { TimeTravelConfig } from "./types";
 import { createReactorSync, fanout } from "sia-reactor/utils";
 import { createTxPathMerger, TimeTravelModule } from "sia-reactor/modules";
@@ -14,7 +14,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   public static readonly BUILD = TIME_TRAVEL_BUILD;
   public module!: TimeTravelModule<any>;
   public console?: TimeTravelConsole | undefined;
-  public dockList: string[] = ["state.fullscreen", "state.pictureInPicture"]; // #DEFAULT: build privilege
+  public dockList = TIME_TRAVEL_DOCKLIST;
 
   public override mount(): void {
     // Variables Assignment
@@ -22,7 +22,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
     const pmdle = this.ctlr.plug("settings.persist")?.module;
     // Utility Injection
     pmdle?.attach(this.module.state, "timeTravel.state");
-    this.media.use(this.module), pmdle && !pmdle.state.hydrated && (this.module.untrack(), pmdle.state.once("hydrated", this.module.track, { signal: this.signal }));
+    this.module.attach(this.media, "media").setup(this.ctlr.config, "config"), pmdle && !pmdle.state.hydrated && (this.module.untrack(), pmdle.state.once("hydrated", this.module.track, { signal: this.signal }));
   }
 
   public override wire(): void {
@@ -46,8 +46,9 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   protected handlePersist(e: REvent<CtlrConfig, "settings.timeTravel.persist">, pmdle = this.ctlr.plug("settings.persist")?.module): void {
-    if (pmdle?.config) isArr(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : !pmdle.config.whitelist && (pmdle.config.whitelist = {} as any);
-    if (pmdle?.config) (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
+    if (!pmdle) return;
+    isArr(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : (pmdle.config.whitelist ||= {} as any);
+    (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
   }
 
   public redock(scoped = false) {

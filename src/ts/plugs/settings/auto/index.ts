@@ -54,7 +54,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   protected autonextMedia(): void {
     if (!this.canMovePlaylist || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.countdown < 0 || !this.media.features.nextItem || this.media.state.paused || this.media.status.waiting) return;
     this.canMovePlaylist = false;
-    const count = Math.max(1, this.toNextTime("round")),
+    const count = this.toNextTime() || 1,
       m = this.ctlr.config.playlist.content[this.media.state.currentItem + 1].media,
       type = m.intent.src && AUDIO_EXTENSIONS.test(m.intent.src) ? "audio" : "video";
     const nVTId = this.ctlr.toast?.("", {
@@ -65,9 +65,9 @@ export class AutoPlug extends BasePlug<AutoConfig> {
         <span>${this.ctlr.plug("settings.time")?.toTimeText(NaN)}</span>
       </span>
       <span class="tmg-media-next-info">
-        <p class="tmg-media-next-meta">Next ${capitalize(type)} in <span class="tmg-media-next-countdown">${count}</span></p>${m.settings.metadata.title ? `<p class="tmg-media-next-title">${m.settings.metadata.title}</p>` : ""}${m.settings.metadata.artist ? `<p class="tmg-media-next-artist">${m.settings.metadata.artist}</p>` : ""}
+        <p class="tmg-media-next-meta">Next ${capitalize(type)} in <span class="tmg-media-next-countdown">${Math.round(count)}</span></p>${m.settings.metadata.title ? `<p class="tmg-media-next-title">${m.settings.metadata.title}</p>` : ""}${m.settings.metadata.artist ? `<p class="tmg-media-next-artist">${m.settings.metadata.artist}</p>` : ""}
       </span>`,
-      onTimeUpdate: (time: number, el = this.ctlr.queryDOM(".tmg-media-next-countdown")) => el && (el.textContent = String(Math.round((count * 1000 - time) / 1000) || 1)),
+      onTimeUpdate: (time: number, el = this.ctlr.queryDOM(".tmg-media-next-countdown")) => el && (el.textContent = String(Math.round(count - time / 1000) || 1)),
       onClose: (elapsed?: boolean) => void (removeListeners(), elapsed && this.ctlr.plug("playlist")?.next()),
       signal: this.signal,
       ...this.config.next.toast,
@@ -86,8 +86,8 @@ export class AutoPlug extends BasePlug<AutoConfig> {
   }
   private nextClup?: (() => void) | null;
 
-  public toNextTime(method: "ceil" | "floor" | "round" = "round", time = this.media.state.currentTime): number {
-    return Math[method](safeNum((this.ctlr.plug("settings.time")?.actualEnd ?? this.media.status.duration) - time)) / this.media.state.playbackRate;
+  public toNextTime(time = this.media.state.currentTime): number {
+    return safeNum((this.ctlr.plug("settings.time")?.actualEnd ?? this.media.status.duration) - time) / this.media.state.playbackRate;
   } // u can't have missed anything in the last second
   private get usingPreviewPoster(): boolean {
     return !!this.nextPreview?.poster && !isSameURL(this.nextPreview.poster, window.TMG_MEDIA_ALT_IMG_SRC);

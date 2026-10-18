@@ -4,7 +4,7 @@ import { force, getPath, setPath, mirror } from "sia-reactor/utils";
 import { limited } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
-import { capitalize, camelize, uncamelize, fuzzyBlobMatch, fuzzyChunkMatch, getLevenshteinSimilarity, luid } from "@utils/str";
+import { capitalize, camelize, uncamelize, fuzzyBlobMatch, fuzzyChunkMatch, getLevenshteinSimilarity, luid, uncam, fpath, fvalue } from "@utils/str";
 import { formatActionTooltip } from "@utils/keys";
 import { type ToastOptions } from "@t007/toast";
 import { REvent } from "sia-reactor";
@@ -20,7 +20,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   public static readonly plugName = "voice";
   public static readonly BUILD = VOICE_BUILD;
   protected recognition?: any;
-  protected teachBasics = limited(() => this.view?.(`Follow the guides at the ${(this.config.toasts.helper.position || "bottom-left").replace("-", " ")}. Click ⚙ for settings`, { ...tutorialOpts(() => (this.teachBasics.block(), t007.toast?.dismiss(this.TIDS.TEACHER))), id: this.TIDS.TEACHER, signal: this.signal }), { key: `${luid()}_voice_basics`, maxTimes: 6, perSession: 2 });
+  protected teachBasics = limited(() => this.view?.(`Follow the guides at the ${(this.config.toasts.helper.position || "bottom-left").replace("-", " ")}. Click ⚙ for settings`, { ...tutorialOpts(this.teachBasics.block), id: this.TIDS.TEACHER, signal: this.signal }), { key: `${luid()}_voice_basics`, maxTimes: 6, perSession: 2 });
   protected snublist: Array<Action["id"]> = ["voiceToggleOn", "voiceToggleOff"] as const;
   protected readonly TIDS = { ROUTER: `tmg-media-voice-router-for-${this.ctlr.config.id}`, HELPER: `tmg-media-voice-helper-for-${this.ctlr.config.id}`, TEACHER: `tmg-media-voice-teacher-for-${this.ctlr.config.id}` };
   protected history: string[] = ["*"];
@@ -136,7 +136,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected trigger(transcript: string, stage: VoiceStage = this.config.process.stage.value): boolean {
     for (const act of Object.values(this.ctlr.actions.entries)) {
       const cmd = this.config.commands[act.id];
-      if (!cmd?.length || (act.id !== "voiceWake" && !this.config.process.allowCommands) || this.snublist.includes(act.id) || (act.voice?.stage || this.config.process.stage.value) !== stage || (act.id === "voiceWake" && this.state.routing)) continue;
+      if (!cmd?.length || (act.id !== "voiceWake" && !this.config.process.allowCommands) || this.snublist.includes(act.id) || (act.voice?.stage || this.config.process.stage.value) !== stage || (act.id === "voiceWake" && this.state.routing) || act.gates?.some((g) => !this.media.features[g])) continue;
       if (((act.voice?.match || this.config.process.match.value) === "chunk" ? fuzzyChunkMatch : fuzzyBlobMatch)(cmd, transcript, this.config.process.accuracy)) return this.ctlr.perform(act.id) && this.view?.success(`Triggered <b>${act.label ?? capitalize(uncamelize(act.id))}</b>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), true;
     }
     return false;
@@ -183,9 +183,9 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     if ((this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")) && !isSubmit) {
       const input = this.container?.querySelector<HTMLInputElement>(clame("word-input"));
       if (input) input.value = type === "array" ? value.join(", ") : String(value);
-      return this.view?.update(this.TIDS.ROUTER, { render: transcript || String(value), ...this.getRouterOptions(false) }), true;
+      return this.view?.update(this.TIDS.ROUTER, { render: transcript || fvalue(value), ...this.getRouterOptions(false) }), true;
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${path.split(".").map(uncam).join(" > ")} -> <code>${isArr(value) ? `[${value.join(", ")}]` : value}</code>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
+    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${fpath(path)} -> <code>${fvalue(value)}</code>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
   }
   protected submit(render = this.container?.querySelector<HTMLInputElement>(clame("word-input"))?.value.trim(), process = false): void {
     if (render) this.view?.update(this.TIDS.ROUTER, { render, ...this.getRouterOptions(false) }), !process ? this.execute(render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
@@ -284,8 +284,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     this.stop(), super.onDestroy();
   }
 }
-const uncam = (str: string) => capitalize(uncamelize(str)),
-  clame = (sfx: string) => `.tmg-media-voice-${sfx}`;
+const clame = (sfx: string) => `.tmg-media-voice-${sfx}`;
 
 export type * from "./types";
 export * from "./build";

@@ -6,7 +6,6 @@ export type CueLike = (TextTrackCue | { text: string }) & DeepPartial<{ id: stri
 
 export interface CaptionsConfig {
   multiple: boolean;
-  secondaryTracks: number[];
   font: {
     family: UISettings<string>;
     size: OptRange & {

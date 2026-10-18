@@ -36,8 +36,8 @@ export class TimePlug extends BasePlug<TimeConfig> {
     // ---- Config --------
     this.ctlr.config.on("settings.time.whitelist", this.handleWhitelist, { init: true, signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("timeSkipFwd", { fn: this.handleSkipFwd, keyboard: { phase: "keydown" } }, this.signal);
-    this.ctlr.learn("timeSkipBwd", { fn: this.handleSkipBwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeSkipFwd", { fn: this.skipFwd, keyboard: { phase: "keydown" } }, this.signal);
+    this.ctlr.learn("timeSkipBwd", { fn: this.skipBwd, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeEnd", { fn: () => (this.media.intent.currentTime = this.media.status.duration) }, this.signal);
     this.ctlr.learn("timePreviousChapter", { fn: this.previousChapter, keyboard: { phase: "keydown" } }, this.signal);
     this.ctlr.learn("timeNextChapter", { fn: this.nextChapter, keyboard: { phase: "keydown" } }, this.signal);
@@ -58,7 +58,7 @@ export class TimePlug extends BasePlug<TimeConfig> {
   protected handleCurrentTimeState({ value }: REvent<CtlrMedia, "state.currentTime">, curr = safeNum(value), { intent: int, state: s, status: st, settings: set } = this.media): void {
     if (st.ads) return;
     (curr < this.config.min || curr > this.config.max) && silence(() => (s.loop ? (int.currentTime = this.config.min) : (int.paused = true))); // "Time Clamp Guard" if transaction
-    if (st.readyState && curr && this.ctlr.flags.wired) (this.writing = true), (this.config.start = curr > set.timePlayedMin && (st.isLive ? !st.ended : curr < this.actualEnd - set.timePlayedMin) ? curr : this.config.min), (this.writing = false);
+    if (st.readyState && curr && this.ctlr.flags.wired) (this.writing = true), (this.config.start = curr > set.minTimePlayed && (st.isLive ? !st.ended : curr < this.actualEnd - set.minTimePlayed) ? curr : this.config.min), (this.writing = false);
   }
   private writing = false;
 
@@ -90,11 +90,11 @@ export class TimePlug extends BasePlug<TimeConfig> {
     notifier?.setAttribute("data-skip", String(Math.trunc(Math.abs(duration))));
   }
 
-  protected handleSkipFwd(_: KeyboardEvent, mod: KeyMod, offset: number): void {
+  protected skipFwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
     this.skip(offset != null ? Math.abs(offset) : this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip);
   }
-  protected handleSkipBwd(_: KeyboardEvent, mod: KeyMod, offset: number): void {
+  protected skipBwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
     this.skip(offset != null ? -Math.abs(offset) : -(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip));
   }

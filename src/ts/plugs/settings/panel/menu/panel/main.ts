@@ -1,5 +1,5 @@
 import { BaseMenuPanel } from ".";
-import type { SettingsMenuItem, SettingsMenuConfig, SettingsRowEl } from "../../types";
+import type { SettingsMenuItem, SettingsMenuConfig, SettingsRowEl } from "../types";
 import { createEl, createListRenderer } from "@utils/dom";
 import { WidgetRegistry } from "../widgets";
 import type { Controller } from "@core/controller";

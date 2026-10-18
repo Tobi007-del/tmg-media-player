@@ -1,7 +1,7 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import { Controller } from "@core/controller";
 import { syncToastConfig, getToastMenuInputs } from "../settings/toasts";
-import { capitalize, camelize, uncamelize } from "@utils/str";
+import { capitalize, camelize, uncam, fpath, fvalue } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
 import { getPath, mirror } from "sia-reactor/utils";
 import { isFunc, getBoolOrStr, isArr, parseUIOpt } from "@utils/obj";
@@ -9,7 +9,6 @@ import { requestAnimationFrame } from "@utils/fn";
 import { formatAction } from "@utils/keys";
 import { NOOP } from "sia-reactor";
 
-const uncam = (s: string) => capitalize(uncamelize(s));
 const toId = (label: string) => camelize(label.toLowerCase().replace(/[^a-z0-9\s]/g, "")) || "";
 const OPS: ActionLogicOp[] = ["set", "increment", "decrement", "toggle"];
 
@@ -22,13 +21,13 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
     val = path === "*" ? undefined : getPath(root, mirror(path));
   if (ctlr.isLogical(path, true, val, true)) {
     const type = isArr(val) ? "array" : typeof val,
-      tempStep: ActionLogic = { path, fpath: path.split(".").map(uncam).join(" > "), op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
+      tempStep: ActionLogic = { path, fpath: fpath(path), op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
     return {
       id: NAV_NODE_ID(actionId, stepTag, path),
       label,
       widget: "group",
       getValue: () => (path === "*" ? "Choose Key" : ""),
-      getTipHTML: () => `Path: ${tempStep.fpath}<br>Current value: <code>${type === "array" ? `[${val.join(", ")}]` : String(val)}</code>`,
+      getTipHTML: () => `Path: ${tempStep.fpath}<br>Current value: <code>${fvalue(val)}</code>`,
       actions: [
         {
           id: "confirm",
@@ -61,7 +60,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
           label: "Value",
           widget: type === "boolean" ? "toggle" : ("input" as const),
           hidden: { is: () => tempStep.op === "toggle" },
-          getValue: () => (type === "boolean" ? (tempStep.value ? "On" : "Off") : tempStep.value !== undefined ? String(tempStep.value) : ""),
+          getValue: () => (type === "boolean" ? !!tempStep.value : tempStep.value !== undefined ? String(tempStep.value) : ""),
           onChange: (v: any) => {
             if (type === "boolean") {
               tempStep.value = !!v;
@@ -101,13 +100,12 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
         name: "path",
         label: "Path",
         type: "text",
-        placeholder: childPaths.map((p) => p.split(".").pop()).join(", "),
-        helperText: { info: "Type the exact property name to navigate directly, or just pick from the list above" },
+        helperText: { info: "Type to navigate directly, or pick from the list above" },
       },
     ],
     getValue: () => "",
     onChange: (v: Record<string, string>) => {
-      const typed = String(v.path ?? "").trim(),
+      const typed = camelize(v.path ?? "").trim(),
         match = typed ? childPaths.find((p) => p.split(".").pop()?.toLowerCase() === typed.toLowerCase()) : null;
       if (match) return void requestAnimationFrame(() => ctlr.plug("settings.panel")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
       const fullPath = path === "*" ? typed : `${path}.${typed}`,
@@ -117,12 +115,12 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
       if (typed && val !== undefined && menu) !menu.getItem(id) && menu.register(buildPathNavNode(actionId, stepTag, fullPath, root, ctlr, onConfirm, existingStep)), requestAnimationFrame(() => menu.goTo(id), ctlr.signal);
     },
   };
-  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : ""), getTipHTML: () => (path === "*" ? `Media controls the ${ctlr.media.type} (volume, fullscreen, etc.). Settings controls configuration values.` : `Drilling into ${path.split(".").map(uncam).join(" > ")}, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
+  return { id: NAV_NODE_ID(actionId, stepTag, path), label, widget: "group", getValue: () => (path === "*" ? "Pick a path" : ""), getTipHTML: () => (path === "*" ? `Media controls the ${ctlr.media.type} (volume, fullscreen, etc.). Settings controls configuration values.` : `Drilling into ${fpath(path)}, pick a sub-property or type its name above`), items: [...childNodes, directInput] };
 }
 
 const makeLogicNavTree = (actionId: string, stepTag: string, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem => buildPathNavNode(actionId, stepTag, "*", ctlr.logicRoot, ctlr, onConfirm, existingStep);
 
-const stepLabel = (step: ActionLogic) => (step.path ? `${(step.fpath ??= step.path.split(".").map(uncam).join(" > "))} (${step.op ?? "set"}${step.value !== undefined ? ` ${isArr(step.value) ? `[${step.value.join(", ")}]` : step.value}` : ""})` : "Empty step");
+const stepLabel = (step: ActionLogic) => (step.path ? `${(step.fpath ??= fpath(step.path))} (${step.op ?? "set"}${fvalue(step.value)})` : "Empty step");
 
 function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem {
   const navTree = makeLogicNavTree(
@@ -153,7 +151,7 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
       return len ? `${len} step${len !== 1 ? "s" : ""}` : "None"; // bashed len -> strict alternative
     },
     getDisabled: () => !hasLogicSupport,
-    getOptions: () => liveLogic().map((step, i) => ({ value: String(i), display: stepLabel(step), title: step.value !== undefined ? `Value: ${step.value}` : undefined })),
+    getOptions: () => liveLogic().map((step, i) => ({ value: i, display: stepLabel(step), title: step.value !== undefined ? `Value: ${step.value}` : undefined })),
     onReorder: (from: number, to: number) => {
       const steps = liveLogic();
       steps.splice(to, 0, ...steps.splice(from, 1));
@@ -197,7 +195,7 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
 function makeActionContent(action: Action, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem[] {
   const live = () => (ctlr.actions.entries[action.id] || {}) as Action;
   return [
-    { id: `actions-disabled-${action.id}`, label: "Disable", widget: "toggle", getValue: () => (live().disabled ? "On" : "Off"), onChange: (val: boolean) => (live().disabled = val || undefined), configPaths: [`actions.entries.${action.id}.disabled` as any], hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode } },
+    { id: `actions-disabled-${action.id}`, label: "Disable", widget: "toggle", getValue: () => !!live().disabled, onChange: (val: boolean) => (live().disabled = val || undefined), configPaths: [`actions.entries.${action.id}.disabled` as any], hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode } },
     {
       id: `actions-label-${action.id}`,
       label: "Action label",
@@ -229,6 +227,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           label: "Key(s)",
           type: "text",
           placeholder: "f, Shift+f",
+          compact: true,
           value: () => {
             const s = action.system ? action.id : ctlr.settings.keys.shortcuts[action.id];
             return isArr(s) ? s.join(", ") : s ?? "";
@@ -239,9 +238,10 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           name: "phase",
           label: "Phase",
           type: "select",
+          compact: true,
           options: ctlr.settings.keys.phase.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().keyboard?.phase ?? "",
-          helperText: { info: "Whether to trigger the action on keydown or keyup" },
+          helperText: { info: "Trigger on keydown or keyup?" },
         },
       ],
       getValue: () => formatAction(action.system ? action.id : ctlr.settings.keys.shortcuts[action.id]) || "None",
@@ -276,17 +276,19 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           name: "stage",
           label: "Stage",
           type: "select",
+          compact: true,
           options: ctlr.settings.voice.process.stage.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.stage ?? "",
-          helperText: { info: "When this command is allowed to trigger the action" },
+          helperText: { info: "When allowed to trigger the action" },
         },
         {
           name: "match",
           label: "Match",
           type: "select",
+          compact: true,
           options: ctlr.settings.voice.process.match.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.match ?? "",
-          helperText: { info: "Whether it should match everything said or just a part" },
+          helperText: { info: "Match all said or a part?" },
         },
       ],
       getValue: () => formatAction("", ctlr.settings.voice.commands[action.id]) || "None",
@@ -357,7 +359,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           configPaths: [`actions.entries.${action.id}.gates` as any],
           hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode },
         },
-        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenlist.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => (live().zen ? "On" : "Off"), onChange: (val: boolean) => (live().zen = val), hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode }, configPaths: [`actions.entries.${action.id}.zen` as any] },
+        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenList.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => !!live().zen, onChange: (val: boolean) => (live().zen = val), hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode }, configPaths: [`actions.entries.${action.id}.zen` as any] },
       ],
     },
   ];
@@ -461,7 +463,7 @@ export const getActionsMenu = (ctlr: Controller): SettingsMenuItem => {
         },
         widget: "group",
         getValue: () => String(ctlr.logicActions.length),
-        getTipHTML: () => "Actions are player-wide commands. Use + to create your own, pair them with keyboard shortcuts, voice triggers, or chain logic steps.",
+        getTipHTML: () => "Actions are player-wide commands. Use + to create; pair with keyboard and voice triggers.",
         onWire: (syncUI, signal) => {
           const watcher = () => {
             const sig = getSig();

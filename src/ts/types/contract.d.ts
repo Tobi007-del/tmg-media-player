@@ -57,6 +57,7 @@ export interface MediaState {
   currentItem: number; // Playlist Item
   currentChapter: number;
   currentTextTrack: number; // Subtitle
+  secondaryTextTracks: number[]; // Premium not baseline; for the learners & flexers
   currentAudioTrack: number; // Language (English - Spanish)
   currentVideoTrack: number; // Angle
   currentLevel: number; // Quality (280p - 4K)
@@ -149,7 +150,7 @@ export interface MediaSettings {
   minDVRWindow: number; // seconds for live seek
   // --- Lifecycles ---
   idleWaiting: boolean;
-  timePlayedMin: number; // seconds
+  minTimePlayed: number; // seconds
   timeShiftPoll: number; // time shift polling ms, e.g. in YT tech
   flushKeys: { state: Array<keyof MediaState>; status: Array<keyof MediaStatus> }; // reset on `src` change
 }

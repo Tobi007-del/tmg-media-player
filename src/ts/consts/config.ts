@@ -8,13 +8,12 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
     devlist: [
       /^media\.intent\.(preload|crossOrigin|controls|controlsList)/,
       /^media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
-      /^settings\.(techOrder|persist|css|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
+      /^settings\.(techOrder|persist|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
       /^settings\.keys\.(rankedMatch|linkedPhase|overrides|blocks|moddedlist)/,
       /^settings\.timeTravel\.(console|module)/,
-      "settings.modes.pictureInPicture.floatingPlayer.css",
       "settings.notifiers.centerBlocks",
       "settings.frame.main",
-      /\.(whitelist|blacklist|min|max|skip|start|end)($|\.)/, // Safe because nodes (like volume) are already blocked above
+      /\.(whitelist|blacklist|min|max|skip|start|end|css)($|\.)/, // Safe because nodes (like volume) are already blocked above
     ],
     blacklist: [
       /^media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
@@ -53,3 +52,6 @@ export const STATE_BUILD: CtlrState = {
   },
   pseudoActive: false,
 };
+
+export const ZENLIST: string[] = [];
+

@@ -21,10 +21,6 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
     super(ctlr, config, { visible: false });
   }
 
-  public override unmount(): void {
-    this.container?.remove();
-  }
-
   public override wire(): void {
     // Event Listeners
     this.ctlr.DOM.content?.addEventListener("click", this.handleScreenClick, { signal: this.signal }); // content not settings
@@ -87,6 +83,7 @@ export class LockedPlug extends BasePlug<LockedConfig, LockedState> {
   }
 
   protected override onDestroy(): void {
+    this.container?.remove();
     this.control?.destroy(), super.onDestroy();
   }
 }

@@ -7,7 +7,7 @@ export const getSettingsAmbienceMenu = (plug: AmbiencePlug): SettingsMenuItem =>
   icon: "ambience",
   widget: "toggle",
   feature: "ambience",
-  getValue: () => (plug.media.state.ambience ? "On" : "Off"),
+  getValue: () => plug.media.state.ambience,
   onChange: (val: boolean) => (plug.media.intent.ambience = val),
   title: "Toggle background ambient light effects",
   mediaPaths: ["state.ambience", "features.ambience"],

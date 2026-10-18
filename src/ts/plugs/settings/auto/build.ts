@@ -1,6 +1,7 @@
 import { AutoConfig } from "./types";
 import { DeepPartial } from "sia-reactor";
 import { capitalize } from "@utils/str";
+import { TIME_BUILD } from "@plugs/settings/time/build";
 
 export const APT_AUTOPLAY_OPTIONS = ["in-view", "out-view", "in-view-always", "out-view-always", "in-window-always", "out-window-always"] as const;
 
@@ -31,3 +32,5 @@ export const AUTO_BUILD: DeepPartial<AutoConfig> = {
     },
   },
 };
+
+TIME_BUILD.whitelist.push("settings.auto.next.countdown");

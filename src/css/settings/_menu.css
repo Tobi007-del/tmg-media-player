@@ -189,7 +189,7 @@
 .tmg-media-smenu-group-label,
 .tmg-media-smenu-select-label {
   flex-grow: 1;
-  max-width: 80%;
+  max-width: 79%;
   margin-right: auto;
 }
 .tmg-media-smenu-select-label {
@@ -406,6 +406,11 @@
 }
 .tmg-media-limits-field {
   flex: 1;
+}
+.tmg-media-smenu-input-row {
+  min-width: 0;
+  display: flex;
+  gap: calc(var(--tmg-media-current-unit) / 3) calc(var(--tmg-media-current-unit) / 2);
 }
 .tmg-media-smenu-limits-btn,
 .tmg-media-smenu-input-btn {

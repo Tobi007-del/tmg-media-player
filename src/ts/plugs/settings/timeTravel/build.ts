@@ -1,10 +1,15 @@
 import { DeepPartial } from "sia-reactor";
 import { TimeTravelConfig } from "./types";
 
-export const TIME_TRAVEL_BUILD: DeepPartial<TimeTravelConfig> = {
+export const TIME_TRAVEL_BUILD: DeepPartial<TimeTravelConfig> & { module: { whitelist: { config: string[] } } } = {
   module: {
-    whitelist: ["intent"], // for undoing actions while "state" for reliving time itself
-    blacklist: ["intent.paused"],
+    whitelist: {
+      media: ["intent"], // for undoing actions while "state" for reliving time itself
+      config: [],
+    },
+    blacklist: {
+      media: ["intent.paused"],
+    },
     mirrorReads: true,
     mirrorWrites: true,
   },
@@ -15,3 +20,6 @@ export const TIME_TRAVEL_BUILD: DeepPartial<TimeTravelConfig> = {
   },
   persist: false,
 };
+
+export const TIME_TRAVEL_DOCKLIST: string[] = [];
+

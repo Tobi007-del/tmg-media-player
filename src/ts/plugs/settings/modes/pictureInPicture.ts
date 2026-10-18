@@ -34,38 +34,40 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.media.on("state.pictureInPicture", this.handlePictureInPictureState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
-  protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
+  protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">, isPiPActive = this.ctlr.isUIActive("pictureInPicture"), canHandle = !isPiPActive && this.media.features.floatingPlayer): void {
     if (e.resolved) return;
-    const pipActive = this.ctlr.isUIActive("pictureInPicture");
-    if (!this.ctlr.isNativeEl && this.config.floatingPlayer.disabled) return e.reject(this.name);
-    if (e.value && this.media.state.fullscreen) silence(() => (this.media.intent.fullscreen = false));
-    if (!pipActive && this.media.features.floatingPlayer) {
-      e.value ? !this.floatingWindow && this.initFloatingPlayer() : this.floatingWindow?.close();
-      e.resolve(this.name);
-    } // tech will handle PiP toggle if not using floating player
+    const isActive = isPiPActive || this.ctlr.isUIActive("floatingPlayer") || this.media.status.shapeShifting === "pictureInPicture";
+    if (e.value && !isActive) {
+      this.media.status.shapeShifting = "pictureInPicture"; // can't catch native tech
+      if (this.media.state.fullscreen) {
+        silence(() => (this.media.intent.fullscreen = false));
+        if (canHandle) return this.media.wonce("state.fullscreen", this.initFloatingPlayer, { signal: this.signal }), e.resolve(this.name);
+      }
+      canHandle && this.initFloatingPlayer();
+    } else !e.value && this.floatingWindow?.close(); // looser safer
+    canHandle && e.resolve(this.name);
   }
 
   protected async handlePictureInPictureState({ value }: REvent<CtlrMedia, "state.pictureInPicture">): Promise<void> {
     if (this.floatingWindow) return;
     if (value) {
+      this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
       this.placeholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr);
       this.media.container.classList.add("tmg-media-picture-in-picture"), this.media.pseudoContainer.classList.add("tmg-media-in-picture-in-picture");
-      silence(() => (this.media.intent.miniplayer = false));
       this.ctlr.plug("settings.metadata")?.syncSession();
     } else {
       await mockAsync(180);
       this.media.container.classList.remove("tmg-media-picture-in-picture"), this.media.pseudoContainer.classList.remove("tmg-media-in-picture-in-picture");
-      this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
     }
   }
 
   protected async initFloatingPlayer(): Promise<void> {
     if (this.floatingWindow) return;
-    (window as any).documentPictureInPicture?.window?.close?.();
-    silence(() => (this.media.intent.miniplayer = false));
-    this.floatingWindow = await (window as any).documentPictureInPicture.requestWindow(this.config.floatingPlayer);
-    this.floatingWindow!.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
-    await breath(this.floatingWindow!); // rendering style to keep UI visible during heavy lifting
+    (window as any).documentPictureInPicture?.window?.close?.(), this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
+    this.floatingWindow = await (window as any).documentPictureInPicture.requestWindow(this.config.floatingPlayer).catch(() => (this.media.status.shapeShifting = false));
+    if (!this.floatingWindow) return;
+    this.floatingWindow.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
+    await breath(this.floatingWindow); // rendering style to keep UI visible during heavy lifting
     const cssTexts = [],
       { whitelist, blacklist } = this.config.floatingPlayer.css,
       hrefList = whitelist.url.concat([window.TMG_MEDIA_CSS_SRC, window.T007_TOAST_CSS_SRC, window.T007_INPUT_CSS_SRC, window.T007_DIALOG_CSS_SRC].filter((src) => (isStr(src) ? src : false)) as string[]); // CSS too experimental; needs a link (href) :)
@@ -75,18 +77,18 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
       } catch {
         continue;
       }
-    this.floatingWindow!.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
+    this.floatingWindow.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
     await Promise.allSettled(hrefList.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
     this.ctlr.plug("skeleton")?.enterPseudoMode();
     (this.pseudoPlaceholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr)) && this.media.pseudoContainer.prepend(this.pseudoPlaceholder.el);
     this.media.container.classList.add("tmg-media-floating-player", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-in-floating-player");
-    this.floatingWindow!.document.body.append(this.media.container);
-    this.floatingWindow!.document.documentElement.id = document.documentElement.id;
-    this.floatingWindow!.document.documentElement.className = document.documentElement.className;
-    for (const attr of document.documentElement.getAttributeNames()) this.floatingWindow!.document.documentElement.setAttribute(attr, document.documentElement.getAttribute(attr)!);
-    observeMutation(this.floatingWindow!.document.documentElement, handleDOMMutation, { childList: true, subtree: true }, this.signal);
-    this.floatingWindow!.addEventListener("resize", this.handleFloatingPlayerResize, { signal: this.signal });
-    this.floatingWindow!.addEventListener("pagehide", this.handleFloatingPlayerClose, { signal: this.signal });
+    this.floatingWindow.document.body.append(this.media.container);
+    this.floatingWindow.document.documentElement.id = document.documentElement.id;
+    this.floatingWindow.document.documentElement.className = document.documentElement.className;
+    for (const attr of document.documentElement.getAttributeNames()) this.floatingWindow.document.documentElement.setAttribute(attr, document.documentElement.getAttribute(attr)!);
+    observeMutation(this.floatingWindow.document.documentElement, handleDOMMutation, { childList: true, subtree: true }, this.signal);
+    this.floatingWindow.addEventListener("resize", this.handleFloatingPlayerResize, { signal: this.signal });
+    this.floatingWindow.addEventListener("pagehide", this.handleFloatingPlayerClose, { signal: this.signal });
     this.ctlr.plug("settings.keys")?.setListeners();
     this.media.state.pictureInPicture = this.media.status.floatingPlayer = true;
   } // #STANDALONE: needs scoped behavior
@@ -100,14 +102,13 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-floating-player"), this.media.pseudoContainer.classList.remove("tmg-media-in-floating-player");
     this.ctlr.plug("skeleton")?.exitPseudoMode();
-    this.ctlr.plug("settings.modes")?.miniplayer?.autoToggle();
     this.media.state.pictureInPicture = this.media.status.floatingPlayer = false;
   }
 
   public syncFeatures(): void {
     this.media.tech.polyfill("floatingPlayer", this.ctlr.isNativeEl && supportsPictureInPicture(false), this.config.disabled || this.config.floatingPlayer.disabled);
-    this.media.tech.polyfill("pictureInPicture", this.media.features.floatingPlayer || (this.ctlr.isNativeEl && supportsPictureInPicture()), this.config.disabled);
-    !this.media.features.floatingPlayer && this.floatingWindow?.close();
+    this.media.tech.polyfill("pictureInPicture", this.media.features.floatingPlayer, this.config.disabled);
+    // this.media.state.pictureInPicture && this.media.features.pictureInPicture && silence(() => (this.media.intent.pictureInPicture = false)), this.media.wonce("state.pictureInPicture", () => silence(() => (this.media.intent.pictureInPicture = true)), { signal: this.signal });
   }
 
   protected override onDestroy(): void {

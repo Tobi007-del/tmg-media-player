@@ -1,4 +1,4 @@
-import type { SettingsMenuItem } from "../../types";
+import type { SettingsMenuItem } from "../types";
 import { Controllable } from "@core/controllable";
 import { BaseRegistry } from "@core/registries";
 import type { Controller } from "@core/controller";

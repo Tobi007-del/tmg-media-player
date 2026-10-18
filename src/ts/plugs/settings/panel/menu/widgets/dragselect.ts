@@ -2,6 +2,7 @@ import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer, getElSiblingAt } from "@utils/dom";
 import { isArr, isFunc, parseUIOpt, isNum } from "@utils/obj";
 import { clamp } from "@utils/num";
+import { setTimeout } from "@utils/fn";
 import { initVScrollerator } from "@t007/utils/hooks/vanilla";
 import { IconRegistry } from "@core/registries";
 import { UITuple } from "@defs/UIOptions";
@@ -18,7 +19,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
       container: el,
       getKey: (opt) => opt.value as string,
       createNode: (opt) => {
-        const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display }),
+        const li = Object.assign(createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optDisplay: opt.display, label: opt.display }), { optVal: opt.value as T }),
           dragHandle = this.item.onReorder ? createEl("span", { className: "tmg-media-smenu-drag-handle", innerHTML: IconRegistry.get("dragIndicator", true) || "☰" }) : null,
           label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display }),
           editBtn = this.item.onEdit ? createEl("button", { className: "tmg-media-smenu-sub-action-btn tmg-media-smenu-edit-btn", innerHTML: IconRegistry.get("edit", true) || "✎", type: "button", title: "Edit" }) : null,
@@ -34,67 +35,82 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         opt.infoText && li.append(createEl("span", { className: "tmg-media-smenu-select-info", textContent: isFunc(opt.infoText) ? opt.infoText() : opt.infoText }));
         if (editBtn) {
           editBtn.style.display = canEdit ? "" : "none";
-          editBtn.onclick = (e) => {
-            e.stopPropagation();
-            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
-            if (i !== -1) this.item.onEdit?.(i);
-          };
+          editBtn.addEventListener(
+            "click",
+            (e) => {
+              e.stopPropagation();
+              const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === li.optVal);
+              if (i !== -1) this.item.onEdit?.(i);
+            },
+            { signal: this.signal }
+          );
           li.append(editBtn);
         }
         if (deleteBtn) {
           deleteBtn.style.display = canDelete ? "" : "none";
-          deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
-            if (i !== -1) this.item.onDelete?.(i);
-          };
+          deleteBtn.addEventListener(
+            "click",
+            (e) => {
+              e.stopPropagation();
+              const i = (this.item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === li.optVal);
+              if (i !== -1) this.item.onDelete?.(i);
+            },
+            { signal: this.signal }
+          );
           li.append(deleteBtn);
         }
         if (dragHandle) {
-          dragHandle.onpointerdown = (e) => {
-            if (e.button !== 0 || li.classList.contains("tmg-media-smenu-dragging")) return;
-            e.preventDefault(), navigator.vibrate?.([50]);
-            const scrollEl = (el.closest(".tmg-media-smenu-panel-content") || el.parentElement) as HTMLElement,
-              initialOffsetY = el.getBoundingClientRect().top,
-              initialScrollY = scrollEl.scrollTop,
-              placeholder = createEl("li", { className: "tmg-media-smenu-drag-placeholder" }, {}, { cssText: `height:${li.offsetHeight}px;width:${li.offsetWidth}px;` }),
-              scrollerator = initVScrollerator({ margin: 60, car: scrollEl });
-            li.parentElement!.insertBefore(placeholder, li.nextElementSibling), li.classList.add("tmg-media-smenu-dragging"), (li.style.top = `${clamp(0, e.clientY - initialOffsetY - li.offsetHeight / 2, el.offsetHeight - li.offsetHeight)}px`);
-            const onPointerMove = (evt: Event) => {
-              const ev = evt as PointerEvent;
-              ev.preventDefault();
-              ctlr.RAFLoop(
-                "listItemDragging",
-                () => {
-                  const liTop = clamp(0, scrollEl.scrollTop - initialScrollY + ev.clientY - initialOffsetY - li.offsetHeight / 2, el.offsetHeight - li.offsetHeight),
-                    afterLine = getElSiblingAt(ev.clientY, "y", el.querySelectorAll<HTMLElement>(".tmg-media-smenu-select-option:not(.tmg-media-smenu-dragging)"));
-                  (li.style.top = `${liTop}px`), scrollerator.drive(ev.clientY, !(liTop > 0 && liTop < el.offsetHeight - li.offsetHeight), scrollEl.getBoundingClientRect().top);
-                  afterLine ? el.insertBefore(placeholder, afterLine) : el.append(placeholder);
-                },
-                this.signal
-              );
-            };
-            function onPointerUp() {
-              navigator.vibrate?.([50]), ctlr.cancelRAFLoop("listItemDragging"), scrollerator.reset();
-              li.classList.remove("tmg-media-smenu-dragging"), (li.style.top = ""), placeholder.parentElement?.replaceChild(li, placeholder);
-              const newIdx = [...el.querySelectorAll(".tmg-media-smenu-select-option")].indexOf(li),
-                oldIdx = (item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value == li.dataset.optVal);
-              newIdx !== -1 && oldIdx !== -1 && newIdx !== oldIdx && item.onReorder?.(oldIdx, newIdx);
-              for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.removeEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp);
-            }
-            for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.addEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp, { passive: false, signal: this.signal });
-          };
+          dragHandle.addEventListener(
+            "pointerdown",
+            (e) => {
+              if (e.button !== 0 || li.classList.contains("tmg-media-smenu-dragging")) return;
+              e.preventDefault(), navigator.vibrate?.([50]);
+              const scrollEl = (el.closest(".tmg-media-smenu-panel-content") || el.parentElement) as HTMLElement,
+                initialOffsetY = el.getBoundingClientRect().top,
+                initialScrollY = scrollEl.scrollTop,
+                placeholder = createEl("li", { className: "tmg-media-smenu-drag-placeholder" }, {}, { cssText: `height:${li.offsetHeight}px;width:${li.offsetWidth}px;` }),
+                scrollerator = initVScrollerator({ margin: 60, car: scrollEl });
+              li.parentElement!.insertBefore(placeholder, li.nextElementSibling), li.classList.add("tmg-media-smenu-dragging"), (li.style.top = `${clamp(0, e.clientY - initialOffsetY - li.offsetHeight / 2, el.offsetHeight - li.offsetHeight)}px`);
+              const onPointerMove = (evt: Event) => {
+                const ev = evt as PointerEvent;
+                ev.preventDefault();
+                ctlr.RAFLoop(
+                  "listItemDragging",
+                  () => {
+                    const liTop = clamp(0, scrollEl.scrollTop - initialScrollY + ev.clientY - initialOffsetY - li.offsetHeight / 2, el.offsetHeight - li.offsetHeight),
+                      afterLine = getElSiblingAt(ev.clientY, "y", el.querySelectorAll<HTMLElement>(".tmg-media-smenu-select-option:not(.tmg-media-smenu-dragging)"));
+                    (li.style.top = `${liTop}px`), scrollerator.drive(ev.clientY, !(liTop > 0 && liTop < el.offsetHeight - li.offsetHeight), scrollEl.getBoundingClientRect().top);
+                    afterLine ? el.insertBefore(placeholder, afterLine) : el.append(placeholder);
+                  },
+                  this.signal
+                );
+              };
+              function onPointerUp() {
+                navigator.vibrate?.([50]), ctlr.cancelRAFLoop("listItemDragging"), scrollerator.reset();
+                li.classList.remove("tmg-media-smenu-dragging"), (li.style.top = ""), placeholder.parentElement?.replaceChild(li, placeholder);
+                const newIdx = [...el.querySelectorAll(".tmg-media-smenu-select-option")].indexOf(li),
+                  oldIdx = (item.getOptions?.() ?? []).findIndex((o) => parseUIOpt(o).value === li.optVal);
+                newIdx !== -1 && oldIdx !== -1 && newIdx !== oldIdx && item.onReorder?.(oldIdx, newIdx);
+                for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.removeEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp);
+              }
+              for (const evt of ["pointermove", "pointerup", "pointercancel"]) el.ownerDocument.addEventListener(evt, evt === "pointermove" ? onPointerMove : onPointerUp, { passive: false, signal: this.signal });
+            },
+            { signal: this.signal }
+          );
         }
-        li.onclick = (e) => {
-          if (!this.item.onChange || li.classList.contains("tmg-media-smenu-dragging") || (dragHandle && dragHandle.contains(e.target as Node))) return;
-          if (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
-          this.item.onChange?.(li.dataset.optVal as T);
-          this.currentValue = li.dataset.optDisplay!;
-          this.syncActive(), this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal);
-        };
+        li.addEventListener(
+          "click",
+          (e) => {
+            if (!this.item.onChange || li.classList.contains("tmg-media-smenu-dragging") || (dragHandle && dragHandle.contains(e.target as Node))) return;
+            if (li.dataset.optDisplay === this.currentValue || (li.optVal as any) == this.currentValue) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
+            this.item.onChange?.(li.optVal) != null && ((this.currentValue = li.dataset.optDisplay!), this.syncActive());
+            this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal);
+          },
+          { signal: this.signal }
+        );
         return li;
       },
-      updateNode: (node, opt) => {
+      updateNode: (node: HTMLElement & { optVal?: T }, opt) => {
         if (node.classList.contains("tmg-media-smenu-dragging")) return;
         const label = node.querySelector<HTMLElement>(".tmg-media-smenu-select-label")!;
         label.className = `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`;
@@ -113,9 +129,9 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
         if (dragHandle) dragHandle.style.display = (this.item.canReorder ? this.item.canReorder() : !!this.item.onReorder) ? "" : "none";
         if (editBtn) editBtn.style.display = (this.item.canEdit ? this.item.canEdit() : !!this.item.onEdit) ? "" : "none";
         if (deleteBtn) deleteBtn.style.display = (this.item.canDelete ? this.item.canDelete() : !!this.item.onDelete) ? "" : "none";
-        node.dataset.optVal = opt.value as string;
+        node.optVal = opt.value as T;
         node.dataset.optDisplay = opt.display;
-        node.ariaSelected = String(opt.display === this.currentValue || node.dataset.optVal === this.currentValue);
+        node.ariaSelected = String(opt.display === this.currentValue || (node.optVal as any) == this.currentValue);
       },
     });
     return this.syncUI(), this.element;
@@ -123,7 +139,7 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
 
   public override syncUI(): void {
     if (!this.renderRows) return;
-    const val = this.item.getValue() || "";
+    const val = this.item.getValue() ?? "";
     this.currentValue = isArr(val) ? val.join(", ") : String(val);
     this.renderRows((this.item.getOptions?.() ?? []).map(parseUIOpt));
     this.syncActive();
@@ -131,10 +147,9 @@ export class DragSelectWidget<T = unknown> extends BaseWidget<T> {
 
   private syncActive(): void {
     if (!this.item.onChange) return;
-    for (const li of this.element.querySelectorAll<HTMLElement>("[data-opt-val]")) {
-      const active = li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue;
-      li.classList.toggle("tmg-media-smenu-option-active", active);
-      li.ariaSelected = String(active);
+    for (const li of this.element.querySelectorAll<HTMLElement & { optVal?: T }>(".tmg-media-smenu-select-option")) {
+      const active = li.dataset.optDisplay === this.currentValue || (li.optVal as any) == this.currentValue;
+      li.classList.toggle("tmg-media-smenu-option-active", active), (li.ariaSelected = String(active));
     }
   }
 }

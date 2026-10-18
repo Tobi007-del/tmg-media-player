@@ -9,6 +9,7 @@ import type { ControlPanelDraggable, PanelShell, PanelSlot, AnyControl, ControlP
 import { Paths } from "sia-reactor";
 import { tutorialOpts } from "../toasts";
 import { luid } from "@utils/str";
+import { transaction } from "sia-reactor/modules";
 
 export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlPanelDraggable> {
   public static readonly pinName = "draggable";
@@ -67,7 +68,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging");
     this.replaced = this.draggingEl = null;
     if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") setPath(this.plug.slots, this.getShellPath(t), t);
-    this.syncConfig(), this.teachBasics(t.dataset.controlId as any);
+    transaction(this.syncConfig, "Control panel reorder"), this.teachBasics(t.dataset.controlId as any);
   }
 
   protected handleDragEnter(e: DragEvent): void {
@@ -141,7 +142,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
           if (!(slot instanceof HTMLElement) && slot.zone && !slot.zone.querySelector('[data-control-id]:not([data-control-id="spacer"])') && pos(r, z) !== startPos) emptyZones.push({ pos: pos(r, z), zone: slot.zone });
         }
       el?.classList.add("tmg-media-control-dragging"), this.media.container.classList.add("tmg-media-control-dragging"), this.ctlr.plug("settings.overlay")?.show();
-      const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-text-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(() => (this.teachBasics.block(), toast.dismiss(tId))), autoClose: false, onClose: cleanup, signal: this.signal });
+      const tId = toast(`Did you know you can drag the <b style="color: var(--tmg-media-text-color);">Title</b> around${id !== "meta" ? " too" : ""}?`, { ...tutorialOpts(this.teachBasics.block), pauseOnHover: false, autoClose: false, onClose: cleanup, signal: this.signal });
       await mockAsync(3500);
       if (!toast.isActive(tId)) return;
       toast(`You can move it from here...`, { id: tId, position: startPos });

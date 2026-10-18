@@ -3,7 +3,7 @@ import { BaseTech } from "@techs/base";
 import { IMATech } from "@techs/ima";
 import { mergeObjs, deepClone, parsePathObj } from "sia-reactor/utils";
 import type { AdsConfig, AdRoll, AdsState } from "./types";
-import { ADS_BUILD, AD_ROLL_BUILD } from "./build";
+import { ADS_BUILD, AD_ROLL_BUILD, AD_ROLL_FORMATTED } from "./build";
 import { createEl, loadResource } from "@utils/dom";
 import { getMediaMax } from "@utils/time";
 import { REvent } from "sia-reactor";
@@ -27,16 +27,11 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     super(ctlr, config, { roll: null });
   }
 
-  public override mount(): void {
-    this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-cover tmg-media-fill tmg-media-curve tmg-media-filtered" });
-    // DOM Injection
-    this.ctlr.DOM.controlsContainer?.prepend(this.container);
-    // Post Mounting
-  }
   protected async initSDK(): Promise<void> {
     if (this.media.status.IMAReady) return;
     try {
       if ("undefined" === typeof google || "undefined" === typeof google.ima) await loadResource(window.TMG_IMA_SDK_SRC!, "script");
+      this.ctlr.DOM.controlsContainer?.prepend((this.container = createEl("div", { className: "tmg-media-ads-container tmg-media-cover tmg-media-fill tmg-media-curve tmg-media-filtered" })));
       google.ima.settings.setVpaidMode(this.config.settings.vpaidMode), google.ima.settings.setNumRedirects(this.config.settings.maxRedirects);
       google.ima.settings.setLocale(this.config.settings.locale), google.ima.settings.setFeatureFlags({ audioPosterImageEnabled: true, audioPosterImageDefaultUrl: window.TMG_MEDIA_ALT_IMG_SRC });
       this.displayContainer = new google.ima.AdDisplayContainer(this.container);
@@ -49,13 +44,10 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
       this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
     }
   }
-  public override unmount(): void {
-    this.container?.remove();
-  }
 
   public override wire(): void {
     // Ctlr Config Setters
-    this.ctlr.config.set("ads.rolls", (v) => v.map((r) => mergeObjs(deepClone(AD_ROLL_BUILD), parsePathObj(r))), { init: true, signal: this.signal });
+    this.ctlr.config.set("ads.rolls", (v) => (v ? (v.map((r: any) => (r && r[AD_ROLL_FORMATTED] ? r : ((r = mergeObjs(deepClone(AD_ROLL_BUILD) as any, parsePathObj(r))), (r[AD_ROLL_FORMATTED] = true), r))) as any) : v), { init: true, signal: this.signal });
     // ---- Media Watchers
     for (const p of ["tech", "status.IMAReady"] as const) this.media.watch(p, this.syncFeatures, { signal: this.signal });
     // ----------- Listeners
@@ -72,7 +64,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   }
 
   protected handleAdsStatus({ value }: REvent<CtlrMedia, "status.ads">): void {
-    this.media.container.classList.toggle("tmg-media-ads", value); //, this.media.container.classList.toggle("tmg-media-ima", value); // replay or link awayy?
+    this.media.container.classList.toggle("tmg-media-ads", value); //, this.media.container.classList.toggle("tmg-media-ima", value); -> protecting u from these madmen, just freeze
     const tl = this.ctlr.plug("settings.controlPanel")?.comp("timeline");
     if (tl) value ? ((this.prevReadonly = tl.config.readonly), (tl.config.readonly = true)) : (tl.config.readonly = this.prevReadonly);
   }
@@ -117,7 +109,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     this.media.tech.destroy();
     (this.media.tech = this.bgTech!).awaken();
     this.media.status.ads = false;
-    this.handleRolls();
+    silence(() => (this.media.intent.paused = false)), this.handleRolls();
   }
   protected handleAllCompleted(): void {
     this.handleResumeRequest(), this.manager?.destroy(), (this.manager = this.state.roll = null);
@@ -145,8 +137,12 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     if (time > this.prevTime) {
       let max = -1;
       for (let i = 0, len = adPoints.length; i < len; i++) {
-        const pnt = adPoints[i];
+        const pnt = adPoints[i],
+          roll = this.points.get(pnt);
         if (pnt > this.prevTime && pnt <= time && pnt >= max) max = pnt;
+        if (!roll || pnt <= 0) continue;
+        const prepTime = pnt - roll.toasts.prep.autoClose / 1000; // Batman :)
+        prepTime > this.prevTime && prepTime <= time && this.ctlr.toast?.(roll.toasts.prep.render ?? roll.badge, { signal: this.signal, ...roll.toasts.prep });
       }
       max !== -1 && this.playRoll(this.points.get(max));
     }
@@ -157,12 +153,12 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
   public syncFeatures(): void {
     this.config.rolls.length && this.initSDK(); // #HEAVY: still in light
     this.media.tech.polyfill("ads", this.media.status.IMAReady && (this.state.roll || this.config.rolls.length));
-    this.media.tech.polyfill("adSkip", this.manager?.getAdSkippableState());
+    this.media.tech.polyfill("adSkip", this.manager?.getAdSkippableState()); // false && -> rather a broken skip than non-resumable ad and content
   }
 
   protected override onDestroy(): void {
-    this.manager?.destroy(), this.loader?.destroy();
-    super.onDestroy();
+    this.container?.remove();
+    this.manager?.destroy(), this.loader?.destroy(), super.onDestroy();
   }
 }
 

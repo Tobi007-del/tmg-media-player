@@ -48,7 +48,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
       // Currents
       currentChapter: true,
       // Settings
-      srcObject: true, metadata: true, timePlayedMin: true, flushKeys: true, ...features
+      srcObject: true, metadata: true, minTimePlayed: true, flushKeys: true, ...features
     })); // dynamics baby!
   }
   // --- Lifecycle ---
@@ -85,7 +85,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
     // Bulk Wiring
     this.wireSrc(), this.wireCurrentTime(), this.wireDuration(), this.wirePaused(), this.wireEnded(), this.wireFeatures();
     // Post Wiring
-    (this.ctlr.flags.wired || !this.ctlr.isNativeEl) && this.flush();
+    !this.hibernated && (this.ctlr.flags.wired || !this.ctlr.isNativeEl) && this.flush();
     !this.ctlr.flags.wired && force(() => fanout(this.config.status, { ...this.config.status, ...(this.ctlr.isNativeEl && getMediaStatus(this.el as any, true)) }, { skipUndef: true })); // async init proof
     silence(() => (fanout(this.config.intent, this.config[this.ctlr.gospel]), fanout(this.config.settings))); // contemplating intent only
     force(() => this.config.tick(), !this.ctlr.flags.wired), (this.wired = true); // state isn't volatile but it must touch
@@ -112,7 +112,7 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   // ive Content Wiring
   protected wireLive(): void {
     this.config.on("intent.live", this.handleLiveIntent, this.evtOpts.CONFIG);
-    this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG);
+    this.config.watch("status.isLive", this.onIsLiveStatus, this.evtOpts.CONFIG), this.onIsLiveStatus();
   }
 
   // === HANDLERS ===
@@ -137,14 +137,14 @@ export abstract class BaseTech<El extends HTMLElement = HTMLElement> extends Con
   }
   // Dog Feeders
   protected onCurrentTimeState(): void {
-    const time = this.config.state.currentTime;
+    const time = this.config.state.currentTime; // VIRTUAL truth
     if (time === this.lastTime) return;
     const chapters = this.config.settings.metadata.chapterInfo;
     if (chapters.length) this.config.state.currentChapter = getMediaChapter(chapters, time);
     this.lastTime = time;
   }
   private lastTime = -1;
-  protected onIsLiveStatus(v: boolean): void {
+  protected onIsLiveStatus(v = this.media.status.isLive): void {
     this.config.features.live = v;
   }
 

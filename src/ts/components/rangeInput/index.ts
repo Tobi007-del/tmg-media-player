@@ -48,6 +48,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handlePointerDown, { signal: this.signal });
     this.el.addEventListener("keydown", this.handleKeyDown, { signal: this.signal });
+    this.el.addEventListener("keyup", () => this.useTx(), { signal: this.signal });
     this.el.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal });
     this.el.addEventListener("mouseover", () => (this.rect = this.el.getBoundingClientRect()), { signal: this.signal });
     this.el.addEventListener("mousemove", this.handleInput, { signal: this.signal });
@@ -149,17 +150,15 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   protected handleWheel(e: WheelEvent): void {
     if (this.config.wheel.disabled) return;
     e.preventDefault(), e.stopPropagation();
-    !this.tx ? this.useTx(true) : this.ctlr.debounce(`${this.config.label}WheelTx`, this.useTx, 200);
+    !this.tx ? this.useTx(true) : this.ctlr.debounce(`${this.config.label}WheelTx`, this.useTx, 350);
     const dimension = this.isVertical ? getWindow(this.el).innerHeight : getWindow(this.el).innerWidth,
       pos = clamp(0, Math.abs(-e.deltaY), dimension * this.config.wheel.axisRatio) / (dimension * this.config.wheel.axisRatio);
     this.scrub(this.config.value + (-e.deltaY >= 0 ? pos : -pos) * (this.config.max - this.config.min));
   }
   protected handleKeyDown(e: KeyboardEvent, key = e.key?.toLowerCase()): void {
-    if (/^(arrowleft|arrowdown|arrowright|arrowup)$/.test(key)) {
-      e.preventDefault(), e.stopPropagation();
-      !this.tx ? this.useTx(true) : this.ctlr.debounce(`${this.config.label}KeyTx`, this.useTx, 200);
-      this.scrub(this.config.value + (/^(arrowleft|arrowdown)$/.test(key) ? -1 : 1) * (e.shiftKey ? 2 : 1) * (this.config.step === "any" ? 1 : this.config.step));
-    }
+    if (!/^(arrowleft|arrowdown|arrowright|arrowup)$/.test(key)) return;
+    e.preventDefault(), e.stopPropagation(), !this.tx && this.useTx(true);
+    this.scrub(this.config.value + (/^(arrowleft|arrowdown)$/.test(key) ? -1 : 1) * (e.shiftKey ? 2 : 1) * (this.config.step === "any" ? 1 : this.config.step));
   }
 
   protected handleResize(): void {
@@ -232,7 +231,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (range <= 0) return;
     for (let i = 0, len = marks.length; i < len; i++) {
       const m = marks[i],
-        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${m.type || "base"}-mark`, title: m.label || `${m.start}${m.end && m.end > m.start + 1 ? ` - ${m.end}` : ""}  Mark`, tabIndex: this.marksActive ? 0 : -1, onclick: this.marksActive ? () => this.scrub(m.start) : undefined, onkeydown: this.marksActive ? (e) => (/^(Enter| )$/.test(e.key) ? this.scrub(m.start) : null) : undefined }, undefined);
+        el = createEl("div", { className: `tmg-media-range-mark tmg-media-range-${m.type || "base"}-mark`, title: m.label || `${Math.round(m.start)}%${m.end && m.end > m.start + 1 ? ` - ${Math.round(m.end)}%` : ""}  Marked`, tabIndex: this.marksActive ? 0 : -1, onclick: this.marksActive ? () => this.scrub(m.start) : undefined, onkeydown: this.marksActive ? (e) => (/^(Enter| )$/.test(e.key) ? this.scrub(m.start) : null) : undefined }, undefined);
       this.syncElPos(el, (m.start - this.config.min) / range, false), this.syncElPos(el, m.end ? (m.end - m.start) / range : 0, true), els.push(el);
     }
     this.marksWrapper.append(...els);

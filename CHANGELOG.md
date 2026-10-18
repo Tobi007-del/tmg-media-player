@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.68
+
+### Patch Changes
+
+- Undo playlist nd project-wide bug fixes
+
 ## 0.0.67
 
 ### Patch Changes

@@ -55,7 +55,7 @@ export class ShakaTech extends HTML5Tech {
       this.host.addEventListener("trackschanged", () => {
         this.config.status.isLive = this.host.isLive();
         const [aMap, vMap, lMap] = [new Map(), new Map(), new Map()];
-        for (const v of this.host.getVariantTracks()) v.height && v.bandwidth && lMap.set(`${v.height}_${v.bandwidth}`, v), v.language && aMap.set(`${v.language}_${v.audioRoles?.join(",")}`, v), vMap.set(v.videoRoles?.join(","), v);
+        for (const v of this.host.getVariantTracks()) v.height && v.bandwidth && lMap.set(`${v.height}_${v.bandwidth}`, v), v.language && aMap.set(`${v.language}_${v.audioRoles}`, v), vMap.set(String(v.videoRoles), v);
         this.config.status.textTracks = inert(this.host.getTextTracks());
         this.config.status.audioTracks = inert([...aMap.values()]);
         this.config.status.videoTracks = inert([...vMap.values()]);
@@ -152,8 +152,8 @@ export class ShakaTech extends HTML5Tech {
     this.config.status.bandwidth = Math.round(this.host.getStats().estimatedBandwidth); // Grab bandwidth stats directly from Shaka's internal engine (bps)
     const active = this.host.getVariantTracks().find((t: any) => t.active);
     if (!active) return;
-    this.config.state.currentAudioTrack = (this.config.status.audioTracks as any[]).findIndex((t) => t.language === active.language && t.audioRoles?.join(",") === active.audioRoles?.join(","));
-    this.config.state.currentVideoTrack = (this.config.status.videoTracks as any[]).findIndex((t) => t.videoRoles?.join(",") === active.videoRoles?.join(","));
+    this.config.state.currentAudioTrack = (this.config.status.audioTracks as any[]).findIndex((t) => t.language === active.language && String(t.audioRoles) === String(active.audioRoles));
+    this.config.state.currentVideoTrack = (this.config.status.videoTracks as any[]).findIndex((t) => String(t.videoRoles) === String(active.videoRoles));
     this.config.state.currentLevel = (this.config.status.levels as any[]).findIndex((l) => l.id === active.id || (l.height === active.height && l.bandwidth === active.bandwidth));
   }
   // --- Lifecycle ---

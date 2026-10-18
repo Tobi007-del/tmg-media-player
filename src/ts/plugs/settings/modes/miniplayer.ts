@@ -8,7 +8,7 @@ import { inDocView, getWindow, createEl, getClientWH } from "@utils/dom";
 import { setTimeout } from "@utils/fn";
 import { clamp } from "@utils/num";
 import { INTERACTIVE_SELECTOR } from "@t007/utils";
-import { silence } from "sia-reactor/modules";
+import { silence, startTx, endTx, Transaction, transaction } from "sia-reactor/modules";
 import { globalState } from "@tools/runtime";
 
 export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig> {
@@ -30,7 +30,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.ctlr.config.on("settings.modes.miniplayer.lockToWindow", ({ value }) => this.media.container.classList.toggle("tmg-media-miniplayer-lock-to-window", value), { init: true, signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.miniplayer", this.handleMiniplayerIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
-    this.media.on("state.paused", ({ value }) => !value && this.autoToggle(), { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const k of ["paused", "fullscreen", "pictureInPicture"] as const) this.media.on(`state.${k}`, ({ value }) => !value && this.autoToggle(), { signal: this.signal });
     // ---- State --------
     this.ctlr.state.on("parentIntersecting", () => this.ctlr.flags.wired && this.autoToggle(), { signal: this.signal }); // #HEAVY: waits for !light
     globalState.on("dimensions.window.width", () => !this.media.state.fullscreen && this.autoToggle(), { signal: this.signal });
@@ -52,7 +52,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   } // #STANDALONE: partner courtesy
 
   protected exit(behavior?: ScrollBehavior): void {
-    if (behavior && inDocView(this.media.pseudoContainer)) this.media.pseudoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
+    behavior && inDocView(this.media.pseudoContainer) && this.media.pseudoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
     this.ctlr.plug("skeleton")?.exitPseudoMode();
     this.media.container.classList.remove("tmg-media-miniplayer"), this.media.pseudoContainer.classList.remove("tmg-media-in-miniplayer");
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
@@ -73,7 +73,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     else if (active && (bool === false || this.shouldExit())) silence(() => (this.media.intent.miniplayer = false));
   }
   public shouldEnter(): boolean {
-    return !this.media.state.pictureInPicture && !this.media.state.fullscreen && !this.ctlr.state.parentIntersecting && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth && !this.media.state.paused;
+    return !this.ctlr.state.parentIntersecting && !this.media.state.paused && !this.media.status.shapeShifting && !this.media.state.pictureInPicture && !this.media.state.fullscreen && getWindow(this.media.container).innerWidth >= this.config.minWindowWidth;
   }
   public shouldExit(): boolean {
     return this.ctlr.state.parentIntersecting || getWindow(this.media.container).innerWidth < this.config.minWindowWidth;
@@ -92,7 +92,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected handleDragStart(e: globalThis.Event, target = e.target as HTMLElement, clientX = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches[0].clientX, clientY = (e as MouseEvent).clientY ?? (e as TouchEvent).targetTouches[0].clientY): void {
     if (!this.ctlr.isUIActive("miniplayer") || target.scrollWidth >= target.clientWidth + 3 || [this.ctlr.DOM.topControlsWrapper, this.ctlr.DOM.bottomControlsWrapper, this.ctlr.DOM.captionsContainer].some((w) => w?.contains(target)) || target.closest(`:is(${INTERACTIVE_SELECTOR},.tmg-media-miniplayer-resize-handle,[class$='toast-container'])`)) return;
     const { left, top } = getComputedStyle(this.media.container); // console.log(target.scrollWidth, target.clientWidth, target.scrollWidth >= target.clientWidth + 3);
-    (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(top)), (this.lastMiniplayerPtrX = clientX), (this.lastMiniplayerPtrY = clientY);
+    this.useTx(true), (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(top)), (this.lastMiniplayerPtrX = clientX), (this.lastMiniplayerPtrY = clientY);
     (this.nextMiniplayerX = this.settings.css.currentMiniplayerX as string), (this.nextMiniplayerY = this.settings.css.currentMiniplayerY as string), (this.wildMiniplayerX = this.nextMiniplayerX), (this.wildMiniplayerY = this.nextMiniplayerY);
     document.addEventListener("mousemove", this.handleDragging, { signal: this.signal }), document.addEventListener("touchmove", this.handleDragging, { passive: false, signal: this.signal });
     for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"] as const) document.addEventListener(type, this.handleDragEnd, { signal: this.signal });
@@ -124,7 +124,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.ctlr.cancelRAFLoop("miniplayerDragging");
     this.media.container.classList.remove("tmg-media-player-dragging");
     this.media.container.style.setProperty("left", this.wildMiniplayerX, "important"), this.media.container.style.setProperty("top", this.wildMiniplayerY, "important"), this.media.container.style.removeProperty("transform");
-    setTimeout(() => ((this.settings.css.currentMiniplayerX = this.nextMiniplayerX), (this.settings.css.currentMiniplayerY = this.nextMiniplayerY), ["transition", "left", "top"].forEach((prop) => this.media.container.style.removeProperty(prop))), 0, this.signal);
+    setTimeout(() => ((this.settings.css.currentMiniplayerX = this.nextMiniplayerX), (this.settings.css.currentMiniplayerY = this.nextMiniplayerY), ["transition", "left", "top"].forEach((prop) => this.media.container.style.removeProperty(prop)), this.useTx()), 0, this.signal);
     document.removeEventListener("mousemove", this.handleDragging), document.removeEventListener("touchmove", this.handleDragging);
     for (const type of ["mouseup", "mouseleave", "touchend", "touchcancel"] as const) document.removeEventListener(type, this.handleDragEnd);
   }
@@ -140,7 +140,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected resizeStartTop = 0;
 
   protected handleResizeStart(e: PointerEvent, dir: ResizeDir): void {
-    e.stopPropagation(), e.preventDefault();
+    e.stopPropagation(), e.preventDefault(), this.useTx(true, "resize");
     const { left, top } = getComputedStyle(this.media.container),
       { width, height } = this.ctlr.state.dimensions.container;
     (this.resizeDir = dir), (this.resizeStartX = e.clientX), (this.resizeStartY = e.clientY), (this.resizeStartW = width), (this.resizeStartH = height), (this.resizeStartLeft = parseFloat(left)), (this.resizeStartTop = parseFloat(top));
@@ -165,7 +165,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   private prevWH?: { clientWidth: number; clientHeight: number } | null;
 
   protected handleResizeEnd(): void {
-    this.ctlr.cancelRAFLoop("miniplayerResizing");
+    this.ctlr.cancelRAFLoop("miniplayerResizing"), this.useTx();
     this.resizeDir = this.prevWH = null;
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) document.removeEventListener(evt, evt === "pointermove" ? this.handleResizing : this.handleResizeEnd);
   }
@@ -174,7 +174,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
     this.resizers = RESIZE_DIRS.map((dir) => {
       const el = createEl("div", { className: `tmg-media-miniplayer-resize-handle tmg-media-miniplayer-resize-${dir}`, ariaHidden: "true" });
       el.addEventListener("pointerdown", (e) => this.handleResizeStart(e, dir), { signal: this.signal });
-      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?.build) => (e.stopPropagation(), sache && ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!))), { signal: this.signal });
+      el.addEventListener("dblclick", (e, sache = this.ctlr.plug("settings.css")?.build) => (e.stopPropagation(), sache && transaction(() => ((this.settings.css.currentMiniplayerWidth = sache.currentMiniplayerWidth!), (this.settings.css.currentMiniplayerHeight = sache.currentMiniplayerHeight!)), "Miniplayer size reset")), { signal: this.signal });
       return this.media.container.append(el), el;
     });
   }
@@ -185,6 +185,11 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
 
   public syncFeatures(): void {
     this.media.tech.polyfill("miniplayer", this.ctlr.isNativeEl, this.config.disabled);
+  }
+
+  protected tx: Transaction | null = null;
+  protected useTx(bool = false, key = "move"): void {
+    bool ? (this.tx = startTx(`Miniplayer ${key}`)) : this.tx && this.ctlr.config.stall(() => (endTx(this.tx!), (this.tx = null)));
   }
 
   protected override onDestroy(): void {

@@ -25,8 +25,8 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
           getValue: () => (plug.config.disabled ? "Off" : "On"),
           configPaths: ["settings.keys.disabled"],
           items: [
-            { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
-            { id: "keyboardShowOverlay", label: "Show overlay", widget: "toggle", getValue: () => (plug.config.showOverlay ? "On" : "Off"), onChange: (val: boolean) => (plug.config.showOverlay = val), configPaths: ["settings.keys.showOverlay"], title: "Force the player controls overlay to appear when pressing keys." },
+            { id: "keyboardDisabled", label: "Disable", widget: "toggle", getValue: () => plug.config.disabled, onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.keys.disabled"] },
+            { id: "keyboardShowOverlay", label: "Show overlay", widget: "toggle", getValue: () => plug.config.showOverlay, onChange: (val: boolean) => (plug.config.showOverlay = val), configPaths: ["settings.keys.showOverlay"], title: "Force the player controls overlay to appear when pressing keys." },
             { id: "keyboardPhase", label: "Default phase", widget: "select", getOptions: () => plug.config.phase.options!, getValue: () => getUIOpt(plug.config.phase.options, plug.config.phase.value), onChange: (val: any) => (plug.config.phase.value = val), configPaths: ["settings.keys.phase"], getTipHTML: () => "The default key phase to trigger actions when not explicitly specified" },
             {
               id: "keyboardMods",
@@ -34,7 +34,7 @@ export const getSettingsKeysMenu = (plug: KeysPlug): SettingsMenuItem => ({
               widget: "group",
               getValue: () => (plug.config.mods.disabled ? "Off" : "On"),
               items: [
-                { id: "keyboardModsDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.mods.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.mods.disabled = val), configPaths: ["settings.keys.mods.disabled"], title: "Allow holding Shift/Ctrl/Cmd to modify steps (e.g. holding Shift to seek 10s instead of 5s)" },
+                { id: "keyboardModsDisabled", label: "Disable", widget: "toggle", getValue: () => plug.config.mods.disabled, onChange: (val: boolean) => (plug.config.mods.disabled = val), configPaths: ["settings.keys.mods.disabled"], title: "Allow holding Shift/Ctrl/Cmd to modify steps (e.g. holding Shift to seek 10s instead of 5s)" },
                 ...KEYS_MODS_ACTIONS.map((mod) => ({
                   id: `keyboardMod-${mod}`,
                   label: `${capitalize(uncamelize(mod))}`,

@@ -22,7 +22,7 @@ export class BackwardButton extends BaseComponent<BackwardConfig, ComponentState
   }
 
   protected handleClick(): void {
-    this.ctlr.perform("timeSkipBwd");
+    this.ctlr.plug("settings.time")?.skipBwd();
   }
 
   public syncUI(): void {

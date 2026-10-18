@@ -62,7 +62,8 @@ let extraDefs = [];
 for (const file of tsFiles) {
   if (file.endsWith('types.ts') || file.endsWith('generics.d.ts')) {
      const content = fs.readFileSync(file, 'utf-8');
-     let cleanContent = content.replace(/import\s+.*?;\n/g, '');
+     let cleanContent = content.replace(/import\s+[\s\S]*?;(?:\r?\n)?/g, '');
+     cleanContent = cleanContent.replace(/export\s+(?:type\s+)?(?:\*|\{[\s\S]*?\})\s+from\s+.*?;(?:\r?\n)?/g, '');
      cleanContent = cleanContent.replace(/declare\s+module.*?\{[\s\S]*?\n\}/g, '');
      extraDefs.push(cleanContent.trim());
   }

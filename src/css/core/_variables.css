@@ -109,9 +109,9 @@
   --tmg-media-disabled-background: rgb(55, 55, 55);
   --tmg-media-curtain-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.5);
   --tmg-media-range-thumb-background: currentColor;
-  --tmg-media-range-track-base-color: hsl(from var(--tmg-media-theme-inverse-accent-color) h s l / 0.75);
+  --tmg-media-range-track-base-color: rgb(from var(--tmg-media-theme-inverse-accent-color) r g b / 0.75);
   --tmg-media-range-track-color: currentColor;
-  --tmg-media-range-track-preview-color: hsl(from var(--tmg-media-theme-inverse-accent-color) h s l / 0.85);
+  --tmg-media-range-track-preview-color: rgb(from var(--tmg-media-theme-inverse-accent-color) r g b / 0.85);
   --tmg-media-range-track-base-boost-color: rgb(from var(--tmg-media-range-track-boost-color) r g b / 0.5);
   --tmg-media-range-track-boost-color: #ff5722;
   --tmg-media-range-track-preview-boost-color: rgb(from var(--tmg-media-range-track-boost-color) r g b / 0.6);
@@ -120,14 +120,14 @@
   --tmg-media-range-buffered-mark-background: rgb(from var(--tmg-media-brand-color) calc(r + 24) calc(g - 110) calc(b - 2));
   --tmg-media-range-advert-mark-background: yellow;
   --tmg-media-timeline-thumb-background: var(--tmg-media-brand-color);
-  --tmg-media-timeline-base-bar-background: hsl(from var(--tmg-media-theme-color) h s l / 0.25);
+  --tmg-media-timeline-base-bar-background: rgb(from var(--tmg-media-theme-color) r g b / 0.25); /* --tmg-media-timeline-base-bar-background: rgb(from var(--tmg-media-theme-inverse-color) calc(r + 40) calc(g + 40) calc(b + 40) / 0.6); */
   --tmg-media-timeline-played-bar-background: linear-gradient(to right, var(--tmg-media-brand-color) 80%, var(--tmg-media-brand-accent-color));
-  --tmg-media-timeline-preview-bar-background: hsl(from var(--tmg-media-theme-color) h s l / 0.4);
+  --tmg-media-timeline-preview-bar-background: rgb(from var(--tmg-media-theme-color) r g b / 0.5);
   --tmg-media-timeline-buffered-bar-background: hsl(from var(--tmg-media-theme-color) h s calc(l + 20) / 0.25);
   --tmg-media-timeline-previews-border-color: var(--tmg-media-current-control-color);
   --tmg-media-timeline-no-previews-background: var(--tmg-media-notifier-color);
   --tmg-media-timeline-no-previews-pointer-color: var(--tmg-media-notifier-color);
-  --tmg-media-progress-bar-background: var(--tmg-media-theme-color);
+  --tmg-media-progress-bar-background: var(--tmg-media-timeline-preview-bar-background);
   --tmg-media-progress-bar-opacity: 0.5;
   --tmg-media-advert-bar-background: #ffcc00;
   --tmg-media-dbc-backdrop-color: var(--tmg-media-notifier-color);
@@ -186,7 +186,7 @@
   --tmg-media-settings-content-padding: var(--tmg-media-current-safe-inset-x);
   --tmg-media-settings-background-color: var(--tmg-media-curtain-color);
   --tmg-media-settings-text-color: var(--tmg-media-text-color);
-  --tmg-media-settings-border-color: hsl(from var(--tmg-media-theme-inverse-accent-color) h s l / 0.75);
+  --tmg-media-settings-border-color: rgb(from var(--tmg-media-theme-inverse-accent-color) r g b / 0.75);
   --tmg-media-settings-menu-width: calc(var(--tmg-media-current-unit) * 13);
   --tmg-media-settings-menu-background-color: var(--tmg-media-notifier-color);
 }

@@ -7,7 +7,7 @@ export const getSettingspanelMenu = (plug: PanelPlug): SettingsMenuItem => ({
   icon: "settings",
   widget: "group",
   getValue: () => "",
-  items: [{ id: "interface", label: "Interface", widget: "group", getValue: () => "On", items: [{ id: "panel", label: "Settings view", widget: "group", getValue: () => "On", items: [{ id: "panelAutoPause", label: "Auto-pause on open", widget: "toggle", getValue: () => (plug.config.autoPause ? "On" : "Off"), onChange: (val: boolean) => (plug.config.autoPause = val), configPaths: ["settings.panel.autoPause"], title: "Automatically pause the media when the settings view is opened" }], hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode } }] }],
+  items: [{ id: "interface", label: "Interface", widget: "group", getValue: () => "On", items: [{ id: "panel", label: "Settings view", widget: "group", getValue: () => "On", items: [{ id: "panelAutoPause", label: "Auto-pause on open", widget: "toggle", getValue: () => plug.config.autoPause, onChange: (val: boolean) => (plug.config.autoPause = val), configPaths: ["settings.panel.autoPause"], title: "Automatically pause the media when the settings view is opened" }], hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode } }] }],
 });
 
 declare module "@defs/registries" {

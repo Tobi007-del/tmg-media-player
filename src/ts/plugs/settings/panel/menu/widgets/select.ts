@@ -2,11 +2,12 @@ import { UITuple } from "@defs/UIOptions";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
 import { isArr, isFunc, parseUIOpt, isNum } from "@utils/obj";
+import { setTimeout } from "@utils/fn";
 import { IconRegistry } from "@core/registries";
 
 export class SelectWidget<T = unknown> extends BaseWidget<T> {
   private renderRows!: ReturnType<typeof createListRenderer<UITuple<T>>>;
-  private currentValue: string | string[] = "";
+  private currentValue: any = "";
 
   public override render(): HTMLElement {
     this.element = createEl("ul", { className: "tmg-media-smenu-select-list", role: "listbox" });
@@ -14,7 +15,7 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
       container: this.element,
       getKey: (opt) => opt.value as string,
       createNode: (opt) => {
-        const li = createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optVal: opt.value as string, optDisplay: opt.display, label: opt.display }),
+        const li = Object.assign(createEl("li", { className: "tmg-media-smenu-select-option", role: "option", tabIndex: 0, title: opt.title }, { optDisplay: opt.display, label: opt.display }), { optVal: opt.value as T }),
           check = createEl("span", { className: "tmg-media-smenu-select-check", ariaHidden: "true" });
         check.innerHTML = IconRegistry.get("check", true) || "✓";
         const label = createEl("span", { className: `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`, textContent: opt.display });
@@ -27,16 +28,16 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
           "click",
           () => {
             const isMulti = this.item.getMultiple?.();
-            if (!isMulti && (li.dataset.optDisplay === this.currentValue || li.dataset.optVal === this.currentValue)) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
-            this.item.onChange?.(opt.value);
-            this.currentValue = isMulti ? this.item.getValue() || [] : li.dataset.optDisplay!;
+            if (!isMulti && (li.dataset.optDisplay === this.currentValue || (li.optVal as any) == this.currentValue)) return void (this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal));
+            this.item.onChange?.(li.optVal);
+            this.currentValue = isMulti ? this.item.getValue() ?? [] : li.dataset.optDisplay!;
             this.syncActive(), !isMulti && this.item.closeOnSelect !== false && setTimeout(() => this.ctlr.plug("settings.panel")?.menu.goBack(true), 0, this.signal);
           },
           { signal: this.signal }
         );
         return li;
       },
-      updateNode: (node, opt) => {
+      updateNode: (node: HTMLElement & { optVal?: T }, opt) => {
         const label = node.querySelector<HTMLElement>(".tmg-media-smenu-select-label")!;
         label.className = `tmg-media-smenu-select-label${opt.className ? ` ${opt.className}` : ""}`;
         label.textContent = opt.display;
@@ -48,11 +49,11 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
         const progressEl = node.querySelector<HTMLElement>(".tmg-media-smenu-select-progress");
         if (isNum(opt.progress)) progressEl ? (progressEl.style.width = `${opt.progress}%`) : node.append(createEl("div", { className: "tmg-media-smenu-select-progress tmg-media-cover" }, {}, { width: `${opt.progress}%` }));
         else progressEl?.remove();
-        node.dataset.optVal = opt.value as string;
+        node.optVal = opt.value as T;
         node.dataset.optDisplay = opt.display;
         const isMulti = this.item.getMultiple?.(),
           vals = isMulti ? (isArr(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
-        node.ariaSelected = String(vals.includes(opt.display) || vals.includes(node.dataset.optVal));
+        node.ariaSelected = String(vals.includes(opt.display) || vals.some((v) => v == node.optVal));
       },
     });
     return this.syncUI(), this.element;
@@ -61,17 +62,17 @@ export class SelectWidget<T = unknown> extends BaseWidget<T> {
   public override syncUI(): void {
     if (!this.renderRows) return;
     const isMulti = this.item.getMultiple?.();
-    this.currentValue = this.item.getValue() || (isMulti ? [] : "");
+    this.currentValue = this.item.getValue() ?? (isMulti ? [] : "");
     isMulti ? this.element.setAttribute("aria-multiselectable", "true") : this.element.removeAttribute("aria-multiselectable");
-    this.renderRows((this.item.getOptions?.() ?? []).map((o) => parseUIOpt(o)));
+    this.renderRows((this.item.getOptions?.() ?? []).map(parseUIOpt));
     this.syncActive();
   }
 
   private syncActive(): void {
     const isMulti = this.item.getMultiple?.(),
       vals = isMulti ? (isArr(this.currentValue) ? this.currentValue : [this.currentValue]) : [this.currentValue];
-    for (const li of this.element.querySelectorAll<HTMLElement>("[data-opt-val]")!) {
-      const active = vals.includes(li.dataset.optDisplay!) || vals.includes(li.dataset.optVal!);
+    for (const li of this.element.querySelectorAll<HTMLElement & { optVal?: T }>(".tmg-media-smenu-select-option")!) {
+      const active = vals.includes(li.dataset.optDisplay!) || vals.some((v) => v == li.optVal);
       li.classList.toggle("tmg-media-smenu-option-active", active), (li.ariaSelected = String(active));
     }
   }

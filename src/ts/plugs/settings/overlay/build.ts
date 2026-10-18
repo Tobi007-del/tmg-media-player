@@ -10,7 +10,7 @@ export const OVERLAY_BUILD: DeepPartial<OverlayConfig> = {
       { value: "auto", display: "Auto" },
       { value: "persistent", display: "Persistent" },
       { value: "hidden", display: "Hidden" },
-    ]
+    ],
   },
   curtain: {
     value: "edged",
@@ -18,6 +18,9 @@ export const OVERLAY_BUILD: DeepPartial<OverlayConfig> = {
       { value: "edged", display: "Edged" },
       { value: "cover", display: "Cover" },
       { value: "none", display: "None" },
-    ]
-  }
+    ],
+  },
 };
+
+export const OVERLAY_WHITELIST: string[] = [];
+

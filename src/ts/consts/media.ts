@@ -42,6 +42,7 @@ export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   currentItem: 0, // Playlist Item
   currentChapter: -1,
   currentTextTrack: -1,
+  secondaryTextTracks: [],
   currentAudioTrack: -1,
   currentVideoTrack: -1,
   currentLevel: -1,
@@ -138,7 +139,7 @@ export const MEDIA_SETTINGS_BUILD: Partial<MediaSettings> = {
   defaultPlaybackRate: 1,
   // Lifecycles
   idleWaiting: false,
-  timePlayedMin: 3,
+  minTimePlayed: 3,
   timeShiftPoll: 250, // 4 times a second
   flushKeys: {
     state: ["currentTime"], // "paused" not flushed; callback? at src set
@@ -151,7 +152,8 @@ export const MEDIA_ITEM_BUILD: DeepPartial<MediaReport> = {
   intent: {
     src: MEDIA_STATE_BUILD.src,
     poster: MEDIA_STATE_BUILD.poster,
-    tracks: MEDIA_INTENT_BUILD.tracks,
+    tracks: MEDIA_STATE_BUILD.tracks,
+    secondaryTextTracks: MEDIA_STATE_BUILD.secondaryTextTracks,
   },
   status: {
     duration: MEDIA_STATUS_BUILD.duration, // no need to flush

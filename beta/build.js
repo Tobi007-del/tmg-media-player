@@ -9,7 +9,8 @@
     if (sig?.aborted) return -1;
     const win = args[0] && typeof args[0] === "object" && args[0].window === args[0] ? args.shift() : window;
     if (!sig) return win.setTimeout(handler, timeout, ...args);
-    const id = win.setTimeout(() => (sig.removeEventListener("abort", kill), "string" === typeof handler ? new Function(handler) : handler(...args)), timeout), kill = () => win.clearTimeout(id);
+    const id = win.setTimeout(() => (sig.removeEventListener("abort", kill), "string" === typeof handler ? new Function(handler) : handler(...args)), timeout),
+      kill = () => win.clearTimeout(id);
     return sig.addEventListener("abort", kill, { once: true }), id;
   }
 
@@ -22,7 +23,7 @@
         if (nested && skipOwn && Object.prototype.hasOwnProperty.call(owner, method)) continue;
         if ("function" === typeof Object.getOwnPropertyDescriptor(proto, method)?.value) callback(method, owner);
       }
-      proto = Object.getPrototypeOf(proto), nested = true;
+      (proto = Object.getPrototypeOf(proto)), (nested = true);
     }
   }
   function bindAllMethods(owner) {
@@ -36,17 +37,17 @@
     });
   }
   function guardMethod(fn, onError = (e) => console.error(e)) {
-    return ((...args) => {
+    return (...args) => {
       try {
         const result = fn(...args);
         return result instanceof Promise ? result.catch((e) => onError(e)) : result;
       } catch (e) {
         onError(e);
       }
-    });
+    };
   }
   function mirror(path, read = true) {
-    return read ? !path.includes("intent") ? path : path.replace("intent", "state") : !path.includes("state") ? path : path.replace("state", "intent");
+    return read ? (!path.includes("intent") ? path : path.replace("intent", "state")) : !path.includes("state") ? path : path.replace("state", "intent");
   }
   function createEl(tag, props, dataset, styles, el = tag ? document?.createElement(tag) : null) {
     return assignEl(el, props, dataset, styles);
@@ -54,25 +55,28 @@
   function assignEl(el, props, dataset, styles, nodiff = true) {
     if (!el) return null;
     if (props) {
-      for (const k of Object.keys(props)) if (props[k] !== void 0) {
-        if (nodiff || el[k] !== props[k]) el[k] = props[k];
-      }
+      for (const k of Object.keys(props))
+        if (props[k] !== void 0) {
+          if (nodiff || el[k] !== props[k]) el[k] = props[k];
+        }
     }
     if (dataset) {
-      for (const k of Object.keys(dataset)) if (dataset[k] !== void 0) {
-        if (nodiff || el.dataset[k] !== dataset[k]) el.dataset[k] = String(dataset[k]);
-      }
+      for (const k of Object.keys(dataset))
+        if (dataset[k] !== void 0) {
+          if (nodiff || el.dataset[k] !== dataset[k]) el.dataset[k] = String(dataset[k]);
+        }
     }
     if (styles) {
-      for (const k of Object.keys(styles)) if (styles[k] !== void 0) {
-        if (nodiff || el.style[k] !== styles[k]) el.style[k] = styles[k];
-      }
+      for (const k of Object.keys(styles))
+        if (styles[k] !== void 0) {
+          if (nodiff || el.style[k] !== styles[k]) el.style[k] = styles[k];
+        }
     }
     return el;
   }
   function getActiveEl(root, noBody = true) {
     const activeEl = (root ?? document).activeElement;
-    return !activeEl || noBody && activeEl === document.body ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
+    return !activeEl || (noBody && activeEl === document.body) ? null : activeEl.shadowRoot ? getActiveEl(activeEl.shadowRoot) : activeEl;
   }
   var KEYS_BLOCKS = ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"];
   var KEYS_MODS = ["ctrl", "shift", "alt", "meta"];
@@ -91,8 +95,12 @@
     const clean = (combo2) => {
       if (combo2 === " " || combo2 === "+") return combo2;
       combo2 = combo2.replace(/\+\s*\+$/, "+plus");
-      const p = combo2.toLowerCase().split("+").filter((k) => k !== "").map((k, _, __, tk = k.trim()) => KEYS_ALIAS[tk] || (tk === "plus" ? "+" : tk || " "));
-      return [...p.filter((k) => mods.includes(k)).sort((a, b) => mods.indexOf(a) - mods.indexOf(b)), ...p.filter((k) => !mods.includes(k)) || ""].join("+");
+      const p = combo2
+        .toLowerCase()
+        .split("+")
+        .filter((k) => k !== "")
+        .map((k, _, __, tk = k.trim()) => KEYS_ALIAS[tk] || (tk === "plus" ? "+" : tk || " "));
+      return [...p.filter((k) => mods.includes(k)).sort((a, b) => mods.indexOf(a) - mods.indexOf(b)), ...(p.filter((k) => !mods.includes(k)) || "")].join("+");
     };
     return Array.isArray(combo) ? combo.map(clean) : clean(combo);
   }
@@ -101,7 +109,8 @@
     const match = (req, actual2) => {
       req = cleanKeyCombo(req);
       if (strict) return req === actual2;
-      const reqs = req.split("+"), reals = actual2.split("+");
+      const reqs = req.split("+"),
+        reals = actual2.split("+");
       if (!modded) {
         for (const mod of KEYS_CMODS) if (reals.includes(mod) && !reqs.includes(mod)) return false;
       }
@@ -110,19 +119,24 @@
     return Array.isArray(required) ? required.some((req) => match(req, actual)) : match(required, actual);
   }
   function getTermsForKey(combo, settings) {
-    const terms = { override: false, block: false, whitelisted: false, action: null }, { overrides = [], shortcuts = {}, blocks = [], strictMatch: stm = false, rankedMatch: ram = true, whitelist = [], moddedlist = [] } = settings || {};
+    const terms = { override: false, block: false, whitelisted: false, action: null },
+      { overrides = [], shortcuts = {}, blocks = [], strictMatch: stm = false, rankedMatch: ram = true, whitelist = [], moddedlist = [] } = settings || {};
     combo = cleanKeyCombo(combo);
     if (matchKeys(overrides, combo, stm, false)) terms.override = true;
     if (matchKeys(blocks, combo, stm, false)) terms.block = true;
     if (whitelist.some((w, _, __, cw = cleanKeyCombo(w)) => matchKeys(cw, combo, stm, false, moddedlist.includes(cw)))) terms.whitelisted = true;
-    if (!ram) return terms.action = Object.keys(shortcuts).find((id) => shortcuts[id] && matchKeys(shortcuts[id], combo, stm, false, moddedlist.includes(id))) || null, terms;
-    let bestA = null, bestE = false, bestL = 0;
+    if (!ram) return (terms.action = Object.keys(shortcuts).find((id) => shortcuts[id] && matchKeys(shortcuts[id], combo, stm, false, moddedlist.includes(id))) || null), terms;
+    let bestA = null,
+      bestE = false,
+      bestL = 0;
     for (const id of Object.keys(shortcuts))
       for (const c of Array.isArray(shortcuts[id]) ? shortcuts[id] : [shortcuts[id]]) {
-        const req = c && cleanKeyCombo(c), isE = req === combo, len = req ? req.split("+").length : 0;
-        if (c && matchKeys(req, combo, stm, false, moddedlist.includes(id)) && (!bestA || isE && !bestE || isE === bestE && len > bestL)) bestA = id, bestE = isE, bestL = len;
+        const req = c && cleanKeyCombo(c),
+          isE = req === combo,
+          len = req ? req.split("+").length : 0;
+        if (c && matchKeys(req, combo, stm, false, moddedlist.includes(id)) && (!bestA || (isE && !bestE) || (isE === bestE && len > bestL))) (bestA = id), (bestE = isE), (bestL = len);
       }
-    return terms.action = bestA, terms;
+    return (terms.action = bestA), terms;
   }
   function keyEventAllowed(e, settings) {
     if (settings.disabled) return false;
@@ -137,7 +151,8 @@
     const activeEl = getActiveEl(e.target?.ownerDocument);
     if ((e.key === " " || e.key === "Enter") && activeEl?.matches("button,input[type='button'],input[type='submit']")) return false;
     if (e.currentTarget !== activeEl && activeEl?.matches("input,textarea,[contenteditable]") && !(e.key === "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey)) return false;
-    const combo = stringifyKeyEvent(e), { override, block, action, whitelisted } = getTermsForKey(combo, settings);
+    const combo = stringifyKeyEvent(e),
+      { override, block, action, whitelisted } = getTermsForKey(combo, settings);
     if (block) return false;
     if (override) e.preventDefault();
     if (action) return action;
@@ -146,33 +161,37 @@
   }
   var downKeys = /* @__PURE__ */ new Map();
   var formatKeyTooltip = (combo = "", keyFn = (c = "") => cleanKeyCombo(c).replace(" ", "space")) => {
-    const combined = combo?.length ? Array.isArray(combo) ? combo.map(keyFn).join(" or ") : keyFn(combo) : "";
+    const combined = combo?.length ? (Array.isArray(combo) ? combo.map(keyFn).join(" or ") : keyFn(combo)) : "";
     return combined ? ` (${combined})` : "";
   };
   function parseForARIAKS(s = "", format = true) {
     const m = { ctrl: "Control", cmd: "Meta", space: "Space", plus: "+" };
-    return (!format && !Array.isArray(s) ? s : formatKeyTooltip(s)).toLowerCase().replace(/[()]/g, "").replace(/\bor\b/g, " ").replace(/\w+/g, (k) => m[k] || k).replace(/\s+/g, " ").trim();
+    return (!format && !Array.isArray(s) ? s : formatKeyTooltip(s))
+      .toLowerCase()
+      .replace(/[()]/g, "")
+      .replace(/\bor\b/g, " ")
+      .replace(/\w+/g, (k) => m[k] || k)
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   // ../sia-reactor/dist/chunk-YHGYHYEE.js
-  var RAW = /* @__PURE__ */ Symbol.for("S.I.A_RAW");
-  var INERTIA = /* @__PURE__ */ Symbol.for("S.I.A_INERTIA");
-  var REJECTABLE = /* @__PURE__ */ Symbol.for("S.I.A_REJECTABLE");
-  var INDIFFABLE = /* @__PURE__ */ Symbol.for("S.I.A_INDIFFABLE");
-  var TERMINATOR = /* @__PURE__ */ Symbol.for("S.I.A_TERMINATOR");
-  var VERSION = /* @__PURE__ */ Symbol.for("S.I.A_VERSION");
-  var SSVERSION = /* @__PURE__ */ Symbol.for("S.I.A_SNAPSHOT_VERSION");
+  var RAW = /* @__PURE__ */ Symbol.for("SIA_RAW");
+  var INERTIA = /* @__PURE__ */ Symbol.for("SIA_INERTIA");
+  var REJECTABLE = /* @__PURE__ */ Symbol.for("SIA_REJECTABLE");
+  var INDIFFABLE = /* @__PURE__ */ Symbol.for("SIA_INDIFFABLE");
+  var TERMINATOR = /* @__PURE__ */ Symbol.for("SIA_TERMINATOR");
+  var VERSION = /* @__PURE__ */ Symbol.for("SIA_VERSION");
+  var SSVERSION = /* @__PURE__ */ Symbol.for("SIA_SNAPSHOT_VERSION");
   var RTR_BATCH = "undefined" !== typeof window ? ("undefined" !== typeof queueMicrotask ? queueMicrotask : setTimeout).bind(window) : "undefined" !== typeof process && process.nextTick ? process.nextTick : setTimeout;
   var RTR_LOG = console.log.bind(console, "[S.I.A Reactor]");
   var EVT_OPTS = { LISTENER: ["capture", "depth", "once", "signal", "init"], MEDIATOR: ["lazy", "signal", "init"] };
   var NIL = Object.freeze({});
-  var NOOP = () => {
-  };
+  var NOOP = () => {};
   var isDevEnv = false;
   try {
     isDevEnv = false;
-  } catch (e) {
-  }
+  } catch (e) {}
   var CTX_BUILD = {
     /** Flag indicating whether the application is running in development mode. */
     isDevEnv,
@@ -191,22 +210,22 @@
       lineageTracing: false,
       preserveContext: false,
       equalityFunction: Object.is,
-      batchingFunction: RTR_BATCH
-    }
+      batchingFunction: RTR_BATCH,
+    },
   };
-  var CTX = globalThis[/* @__PURE__ */ Symbol.for("S.I.A_CTX")] ??= CTX_BUILD;
+  var CTX = (globalThis[/* @__PURE__ */ Symbol.for("SIA_CTX")] ??= CTX_BUILD);
   var txId = 0;
   function startTx(label = `Tx ${txId + 1}`) {
-    const parent = CTX.meta?.tx ?? null, tx = { id: ++txId, label, parent };
+    const parent = CTX.meta?.tx ?? null,
+      tx = { id: ++txId, label, parent };
     CTX.meta ??= {};
-    return CTX.meta.tx = tx;
+    return (CTX.meta.tx = tx);
   }
   function endTx(tx) {
     if (CTX.meta?.tx === tx) {
       if (tx.parent) CTX.meta.tx = tx.parent;
       else resetMeta("tx");
     }
-    ;
   }
   function transaction(fn, label) {
     const tx = startTx(label);
@@ -224,8 +243,8 @@
     return (typecheck ? isObj(obj, false) : true) && (config.crossRealms ? Object.prototype.toString.call(obj) === "[object Object]" : obj.constructor === Object);
   }
   function canHandle(obj, config = CTX.defaults, typecheck = true) {
-    if (typecheck && !isObj(obj, false) || obj[INERTIA]) return false;
-    if (Array.isArray(obj) || !config.preserveContext && isPOJO(obj, config, false)) return true;
+    if ((typecheck && !isObj(obj, false)) || obj[INERTIA]) return false;
+    if (Array.isArray(obj) || (!config.preserveContext && isPOJO(obj, config, false))) return true;
     if (config.preserveContext) return !(obj instanceof String) && !(obj instanceof Number) && !(obj instanceof Function) && !(obj instanceof Date) && !(obj instanceof Error) && !(obj instanceof RegExp) && !(obj instanceof Promise) && !(obj instanceof Map) && !(obj instanceof WeakMap) && !(obj instanceof Set) && !(obj instanceof WeakSet) && !(obj instanceof EventTarget);
     return false;
   }
@@ -234,7 +253,8 @@
     const keys2 = key.split(separator);
     let currObj = source;
     for (let i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i],
+        match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return currObj[key3];
@@ -250,15 +270,16 @@
     if (key === "*") return Object.assign(target, value);
     const keys2 = key.split(separator);
     for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i],
+        match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3])) currObj[key3] = [];
         if (i === len - 1) currObj[key3][Number(iStr)] = value;
-        else currObj[key3][Number(iStr)] ||= {}, currObj = currObj[key3][Number(iStr)];
+        else (currObj[key3][Number(iStr)] ||= {}), (currObj = currObj[key3][Number(iStr)]);
       } else {
         if (i === len - 1) currObj[key2] = value;
-        else currObj[key2] ||= {}, currObj = currObj[key2];
+        else (currObj[key2] ||= {}), (currObj = currObj[key2]);
       }
     }
   }
@@ -270,7 +291,8 @@
     }
     const keys2 = key.split(separator);
     for (let currObj = target, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i],
+        match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return;
@@ -287,7 +309,8 @@
     if (key === "*") return true;
     const keys2 = key.split(separator);
     for (let currObj = source, i = 0, len = keys2.length; i < len; i++) {
-      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i], match = key2.includes("[") && key2.match(arrRegex);
+      const key2 = keyFn ? keyFn(keys2[i]) : keys2[i],
+        match = key2.includes("[") && key2.match(arrRegex);
       if (match) {
         const [, key3, iStr] = match;
         if (!Array.isArray(currObj[key3]) || !(key3 in currObj)) return false;
@@ -304,10 +327,12 @@
   function parsePathObj(obj, separator = ".", keyFn = (p) => p, seen = /* @__PURE__ */ new WeakSet()) {
     if (!isPOJO(obj) || seen.has(obj)) return obj;
     seen.add(obj);
-    const result = {}, keys2 = Object.keys(obj);
+    const result = {},
+      keys2 = Object.keys(obj);
     for (let i = 0, len = keys2.length; i < len; i++) {
-      const key = keys2[i], val = obj[key];
-      key === "*" || key.includes(separator) ? setPath(result, key, parsePathObj(val, separator, keyFn, seen), separator, keyFn) : result[key] = isPOJO(val) ? parsePathObj(val, separator, keyFn, seen) : val;
+      const key = keys2[i],
+        val = obj[key];
+      key === "*" || key.includes(separator) ? setPath(result, key, parsePathObj(val, separator, keyFn, seen), separator, keyFn) : (result[key] = isPOJO(val) ? parsePathObj(val, separator, keyFn, seen) : val);
     }
     return result;
   }
@@ -326,22 +351,26 @@
     return Object.assign(result, "boolean" === typeof options ? { [boolOpt]: options } : options), result;
   }
   function fanout(a, b, c, d) {
-    const isEvPd = !!a?.target, isPath = !isEvPd && "string" === typeof b, [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b || a, c || NIL, void 0], target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
-    if (isEvPd && type !== "set" && type !== "delete" || !target || !canHandle(news, opts)) return;
+    const isEvPd = !!a?.target,
+      isPath = !isEvPd && "string" === typeof b,
+      [state2, path, olds, news, opts, type] = isEvPd ? [a.root, a.currentTarget.path, a.currentTarget.oldValue, a.currentTarget.value, b || NIL, a.type] : isPath ? [a, b, getPath(a, b), c, d || NIL, void 0] : [void 0, void 0, a, b || a, c || NIL, void 0],
+      target = isEvPd ? getPath(a.root, a.currentTarget.path) : isPath ? getPath(state2, path) : olds;
+    if ((isEvPd && type !== "set" && type !== "delete") || !target || !canHandle(news, opts)) return;
     const { merge = false, depth, atomic = true, skipUndef = false, cloneSets = false, txLabel } = opts;
     const func = () => {
       const walk = (target2, obj, depth2 = isEvPd ? 1 : Infinity, keys2 = Object.keys(obj)) => {
         for (let i = 0, len = keys2.length; i < len; i++) {
-          const key = keys2[i], val = obj[key];
+          const key = keys2[i],
+            val = obj[key];
           try {
-            if (atomic && Array.isArray(val)) target2[key] = cloneSets ? deepClone(val) : val, target2[key].length = target2[key].length;
-            else depth2 > 1 && canHandle(val, opts) ? walk(target2[key] ||= Array.isArray(val) ? [] : {}, val, depth2 - 1) : (!skipUndef || val !== void 0) && (target2[key] = cloneSets ? deepClone(val) : val);
+            if (atomic && Array.isArray(val)) (target2[key] = cloneSets ? deepClone(val) : val), (target2[key].length = target2[key].length);
+            else depth2 > 1 && canHandle(val, opts) ? walk((target2[key] ||= Array.isArray(val) ? [] : {}), val, depth2 - 1) : (!skipUndef || val !== void 0) && (target2[key] = cloneSets ? deepClone(val) : val);
           } catch (e) {
             if (e instanceof RangeError) throw e;
           }
         }
       };
-      if (atomic && Array.isArray(news) && isPath) setPath(state2, path, cloneSets ? deepClone(news) : news), getPath(state2, path).length = news.length;
+      if (atomic && Array.isArray(news) && isPath) setPath(state2, path, cloneSets ? deepClone(news) : news), (getPath(state2, path).length = news.length);
       else walk(target, merge ? mergeObjs(olds, news, opts) : news, depth === true ? Infinity : depth);
     };
     force(() => transaction(func, txLabel ?? `${path ? `Fanout -> '${path}'` : `Fanout`} (Tx ${txId + 1})`), CTX.usingForce || isEvPd);
@@ -358,27 +387,31 @@
   }
   function mergeObjs(o1, o2, config = NIL, pojocheck = true) {
     if (pojocheck && (!isPOJO(o1 || NIL, config) || !isPOJO(o2 || NIL, config))) return o2;
-    o1 ||= {}, o2 ||= {};
+    (o1 ||= {}), (o2 ||= {});
     const merged = config.skipUndef ? { ...o1 } : { ...o1, ...o2 };
     if (config.skipUndef) {
       const keys22 = Object.keys(o1);
       for (let i = 0, len = keys22.length; i < len; i++) {
-        const key = keys22[i], val = o2[key];
+        const key = keys22[i],
+          val = o2[key];
         if (val !== void 0) merged[key] = val;
       }
     }
     const keys2 = Object.keys(merged);
     for (let i = 0, len = keys2.length; i < len; i++) {
-      const key = keys2[i], o1V = o1[key], o2V = o2[key];
+      const key = keys2[i],
+        o1V = o1[key],
+        o2V = o2[key];
       if (isPOJO(o1V, config) && isPOJO(o2V, config)) merged[key] = mergeObjs(o1V, o2V, config, false);
     }
     return merged;
   }
   function getTrailRecords(obj, path, reverse = false) {
-    const parts = path.split("."), chain = [["*", obj, obj]];
+    const parts = path.split("."),
+      chain = [["*", obj, obj]];
     for (let acc = "", currObj = obj, i = 0, len = parts.length; i < len; i++) {
       const part = parts[i];
-      chain.push([acc += (i ? "." : "") + part, currObj, currObj = currObj?.[part]]);
+      chain.push([(acc += (i ? "." : "") + part), currObj, (currObj = currObj?.[part])]);
     }
     return reverse ? chain.reverse() : chain;
   }
@@ -514,7 +547,7 @@
     resolve(message) {
       if (!this.rejectable) return this.reactor.log(`[ReactorEvent] Ignored \`resolve()\` call on a non-rejectable ${this.staticType} at "${this.path}"`);
       if (this.eventPhase !== _ReactorEvent.CAPTURING_PHASE) this.reactor.log(`[ReactorEvent] Resolving an intent on ${this.staticType} at "${this.path}" outside of the capture phase is unadvised.`);
-      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${this._resolved = message || `${this.staticType} intent resolved at "${this.path}"`}`);
+      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${(this._resolved = message || `${this.staticType} intent resolved at "${this.path}"`)}`);
     }
     /** Rejection reason for rejectable events. */
     get rejected() {
@@ -529,7 +562,7 @@
     reject(reason) {
       if (!this.rejectable) return this.reactor.log(`[ReactorEvent] Ignored \`reject()\` call on a non-rejectable ${this.staticType} at "${this.path}"`);
       if (this.eventPhase !== _ReactorEvent.CAPTURING_PHASE) this.reactor.log(`[ReactorEvent] Rejecting an intent on ${this.staticType} at "${this.path}" outside of the capture phase is unadvised.`);
-      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${this._rejected = reason || `${this.staticType} intent rejected at "${this.path}"`}`);
+      if (this.rejectable) this.reactor.log(`[ReactorEvent] ${(this._rejected = reason || `${this.staticType} intent rejected at "${this.path}"`)}`);
     }
     /** Returns event path values from target to root in bubbling order. */
     composedPath() {
@@ -589,15 +622,19 @@
         get: (object, key2, receiver) => {
           if (key2 === RAW) return this.log(`\u{1F440} [\`get\` Trap] Peeked at ${object}`), object;
           let value = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver);
-          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath;
+          const keyStr = String(key2),
+            fullPath = path ? path + "." + keyStr : keyStr,
+            paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath;
           this.log(`\u{1F50D} [\`get\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this);
           if (this.config.get) value = this.config.get(object, key2, value, receiver, paths);
           if (this.getters) {
             const wildcords = this.getters.get("*");
             for (let i = 0, len = this.config.lineageTracing ? paths.length : 1; i < len; i++) {
-              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.getters.get(currPath);
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath,
+                cords = this.getters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, key: keyStr, hadKey: true, object: receiver }, payload = { type: "get", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
+              const target2 = { path: currPath, value, key: keyStr, hadKey: true, object: receiver },
+                payload = { type: "get", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
               if (cords) value = this.mediate(currPath, payload, "get", cords);
               if (!wildcords) continue;
               target2.value = value;
@@ -607,8 +644,16 @@
           return this.proxied(value, rejectable, indiffable, object, keyStr, fullPath);
         },
         set: (object, key2, value, receiver) => {
-          let unchanged, safeValue, safeOldValue, terminated = false;
-          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
+          let unchanged,
+            safeValue,
+            safeOldValue,
+            terminated = false;
+          const keyStr = String(key2),
+            fullPath = path ? path + "." + keyStr : keyStr,
+            paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath,
+            loopLen = this.config.lineageTracing ? paths.length : 1,
+            oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver),
+            hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
           this.log(`\u270F\uFE0F [\`set\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this, true);
           if (this.config.referenceTracking || !indiffable) {
             safeOldValue = oldValue?.[RAW] || oldValue;
@@ -620,9 +665,11 @@
           if (this.setters) {
             const wildcords = this.setters.get("*");
             for (let i = 0; i < loopLen; i++) {
-              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.setters.get(currPath);
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath,
+                cords = this.setters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, ...CTX.meta };
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver },
+                payload = { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, ...CTX.meta };
               if (cords) {
                 const result2 = this.mediate(currPath, payload, "set", cords);
                 if (!(terminated ||= payload.terminated)) value = result2;
@@ -634,27 +681,37 @@
             }
           }
           if (terminated) return this.log(`\u{1F6E1}\uFE0F [\`set\` Trap] Terminated for "${keyStr}" on [${paths}]`), true;
-          const success = !this.config.preserveContext ? (object[key2] = value, true) : Reflect.set(object, key2, value, receiver);
+          const success = !this.config.preserveContext ? ((object[key2] = value), true) : Reflect.set(object, key2, value, receiver);
           if (!success) return this.log(`\u274C [\`set\` Trap] Failed for "${keyStr}" on [${paths}]`), false;
           if (this.config.referenceTracking && !unchanged) this.config.smartCloning && this.stamp(object), this.unlink(safeOldValue, object, keyStr), this.link(safeValue, object, keyStr);
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
-              const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath,
+                target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
               this.notify(currPath, { type: "set", target: target2, currentTarget: target2, root: this.core, reactor: this, terminated, rejectable, ...CTX.meta });
             }
           return true;
         },
         deleteProperty: (object, key2) => {
-          let value, receiver = this.proxyCache.get(object), terminated = false;
-          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr, paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath, loopLen = this.config.lineageTracing ? paths.length : 1, oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver), hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
+          let value,
+            receiver = this.proxyCache.get(object),
+            terminated = false;
+          const keyStr = String(key2),
+            fullPath = path ? path + "." + keyStr : keyStr,
+            paths = this.config.lineageTracing ? this.trace(object, keyStr) : fullPath,
+            loopLen = this.config.lineageTracing ? paths.length : 1,
+            oldValue = !this.config.preserveContext ? object[key2] : Reflect.get(object, key2, receiver),
+            hadKey = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
           this.log(`\u{1F5D1}\uFE0F [\`deleteProperty\` Trap] Initiated for "${keyStr}" on [${paths}]`), CTX.autotracker?.track(fullPath, this, true);
           if (this.config.deleteProperty) terminated = (value = this.config.deleteProperty(object, key2, oldValue, receiver, paths)) === TERMINATOR;
           if (this.deleters) {
             const wildcords = this.deleters.get("*");
             for (let i = 0; i < loopLen; i++) {
-              const currPath = this.config.lineageTracing ? paths[i] : fullPath, cords = this.deleters.get(currPath);
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath,
+                cords = this.deleters.get(currPath);
               if (!cords && !wildcords) continue;
-              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver }, payload = { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
+              const target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver },
+                payload = { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta };
               if (cords) {
                 const result2 = this.mediate(currPath, payload, "delete", cords);
                 if (!(terminated ||= payload.terminated)) value = result2;
@@ -670,21 +727,24 @@
           if (this.config.referenceTracking) this.config.smartCloning && this.stamp(object), this.unlink(oldValue?.[RAW] || oldValue, object, keyStr);
           if (this.watchers || this.listeners)
             for (let i = 0; i < loopLen; i++) {
-              const currPath = this.config.lineageTracing ? paths[i] : fullPath, target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
+              const currPath = this.config.lineageTracing ? paths[i] : fullPath,
+                target2 = { path: currPath, value, oldValue, key: keyStr, hadKey, object: receiver };
               this.notify(currPath, { type: "delete", target: target2, currentTarget: target2, root: this.core, reactor: this, rejectable, ...CTX.meta });
             }
           return true;
         },
         has: (object, key2) => {
           let has = !this.config.preserveContext ? key2 in object : Reflect.has(object, key2);
-          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
+          const keyStr = String(key2),
+            fullPath = path ? path + "." + keyStr : keyStr;
           this.log(`\u2753 [\`has\` Trap] Initiated for "${keyStr}" on '${fullPath}'`), CTX.autotracker?.track(fullPath, this);
           if (this.config.has) has = this.config.has(object, key2, has, this.proxyCache.get(object), fullPath);
           return has;
         },
         getOwnPropertyDescriptor: (object, key2) => {
           let descriptor = !this.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key2) : Reflect.getOwnPropertyDescriptor(object, key2);
-          const keyStr = String(key2), fullPath = path ? path + "." + keyStr : keyStr;
+          const keyStr = String(key2),
+            fullPath = path ? path + "." + keyStr : keyStr;
           this.log(`\u{1F4CB} [\`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on '${fullPath}'`), CTX.autotracker?.track(fullPath, this);
           if (this.config.getOwnPropertyDescriptor) descriptor = this.config.getOwnPropertyDescriptor(object, key2, descriptor, this.proxyCache.get(object), this.config.lineageTracing ? this.trace(object, keyStr) : fullPath);
           return descriptor;
@@ -695,7 +755,7 @@
           this.log(`\u{1F511} [\`ownKeys\` Trap] Initiated on "${safePath}"`), CTX.autotracker?.track(safePath, this);
           if (this.config.ownKeys) ownKeys = this.config.ownKeys(object, ownKeys, this.proxyCache.get(object), safePath);
           return ownKeys;
-        }
+        },
       });
       return this.proxyCache.set(target, proxy), proxy;
     }
@@ -714,7 +774,7 @@
     // won't be called without `.config.referenceTracking` so internal guard avoided
     link(target, parent, key, typecheck = true, es) {
       if (!canHandle(target, this.config, typecheck)) return false;
-      es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target) ?? (this.lineage.set(target, es = []), es);
+      es = (this.lineage ??= /* @__PURE__ */ new WeakMap()).get(target) ?? (this.lineage.set(target, (es = [])), es);
       for (let i = 0, len = es.length; i < len; i += 2) if (Object.is(es[i], parent) && es[i + 1] === key) return true;
       return es.push(parent, key), true;
     }
@@ -735,8 +795,13 @@
       if (es) for (let i = 0, len = es.length; i < len; i += 2) this.stamp(es[i], false, seen);
     }
     mediate(path, payload, type, cords) {
-      let terminated = false, value = payload.target.value, killed = false;
-      const isGet = type === "get", isSet = type === "set", mediators = isGet ? this.getters : isSet ? this.setters : this.deleters, scords = cords.slice();
+      let terminated = false,
+        value = payload.target.value,
+        killed = false;
+      const isGet = type === "get",
+        isSet = type === "set",
+        mediators = isGet ? this.getters : isSet ? this.setters : this.deleters,
+        scords = cords.slice();
       for (let slen = scords.length, i = !isGet ? 0 : slen - 1, len = !isGet ? slen : -1; i !== len; i += !isGet ? 1 : -1) {
         const cord = scords[i];
         if (cord._dead) continue;
@@ -751,7 +816,10 @@
     }
     notify(path, payload) {
       if (this.watchers) {
-        const wildcords = this.watchers.get("*"), wildscords = wildcords?.slice(), cords = this.watchers.get(path), scords = cords?.slice();
+        const wildcords = this.watchers.get("*"),
+          wildscords = wildcords?.slice(),
+          cords = this.watchers.get(path),
+          scords = cords?.slice();
         if (cords) {
           let killed = false;
           for (let i = 0, len = scords.length; i < len; i++) {
@@ -784,14 +852,15 @@
       this.batch.set(path, payload), !this.isBatching && this.initBatching();
     }
     initBatching() {
-      this.isBatching = true, this.config.batchingFunction(() => this.flush());
+      (this.isBatching = true), this.config.batchingFunction(() => this.flush());
     }
     flush() {
-      this.isBatching = false, this.batch && this.tick(this.batch.keys());
+      (this.isBatching = false), this.batch && this.tick(this.batch.keys());
       if (this.queue?.size) for (const task of this.queue) task(), this.queue.delete(task);
     }
     wave(path, payload) {
-      const e = new ReactorEvent(payload), chain = getTrailRecords(this.core, path);
+      const e = new ReactorEvent(payload),
+        chain = getTrailRecords(this.core, path);
       if (e.captures) {
         e.eventPhase = ReactorEvent.CAPTURING_PHASE;
         for (let i = 0; i <= chain.length - 2; i++) {
@@ -870,21 +939,25 @@
       return this.queue?.delete(task);
     }
     context(path) {
-      const last = path.lastIndexOf("."), key = path.slice(last + 1) || "", object = last === -1 ? this.core : getPath(this.core, path.slice(0, last));
+      const last = path.lastIndexOf("."),
+        key = path.slice(last + 1) || "",
+        object = last === -1 ? this.core : getPath(this.core, path.slice(0, last));
       return { path, value: getPath(this.core, path), key, hadKey: !object || key in object, object };
     }
     binded(cord, sig) {
       if (sig) sig.aborted ? cord.clup() : sig.addEventListener("abort", cord.clup, { once: true });
-      return cord.sclup = !sig || sig.aborted ? NOOP : () => sig.removeEventListener("abort", cord.clup), cord.clup;
+      return (cord.sclup = !sig || sig.aborted ? NOOP : () => sig.removeEventListener("abort", cord.clup)), cord.clup;
     }
     cloned(target, raw, seen = /* @__PURE__ */ new WeakMap()) {
       if (!target || "object" !== typeof target) return target;
-      const obj = target[RAW] || target, cloned = seen.get(obj);
+      const obj = target[RAW] || target,
+        cloned = seen.get(obj);
       if (cloned) return cloned;
       if (!canHandle(obj, this.config, false)) return obj;
-      const version = obj[VERSION] || 0, cached = !raw && this.config.smartCloning && (this.snapCache ??= /* @__PURE__ */ new WeakMap()).get(obj);
+      const version = obj[VERSION] || 0,
+        cached = !raw && this.config.smartCloning && (this.snapCache ??= /* @__PURE__ */ new WeakMap()).get(obj);
       if (cached && obj[SSVERSION] === version) return cached;
-      const clone = !raw ? this.config.preserveContext ? Object.create(Object.getPrototypeOf(obj)) : Array.isArray(obj) ? [] : {} : obj;
+      const clone = !raw ? (this.config.preserveContext ? Object.create(Object.getPrototypeOf(obj)) : Array.isArray(obj) ? [] : {}) : obj;
       seen.set(obj, clone);
       const keys2 = this.config.preserveContext ? Reflect.ownKeys(obj) : Object.keys(obj);
       for (let i = 0, len = keys2.length; i < len; i++) {
@@ -895,12 +968,14 @@
           if (e instanceof RangeError) throw e;
         }
       }
-      if (!raw && this.config.smartCloning) this.snapCache.set(obj, clone), obj[SSVERSION] = version;
+      if (!raw && this.config.smartCloning) this.snapCache.set(obj, clone), (obj[SSVERSION] = version);
       return clone;
     }
     onSync(key, path, cb, opts, onInit = NOOP) {
-      const { once = false, signal, lazy = false, init = false, initType } = parseEvtOpts(opts, EVT_OPTS.MEDIATOR), store = this[`${key}${key.endsWith("t") ? "t" : ""}ers`] ??= /* @__PURE__ */ new Map();
-      let cords = store.get(path), cord;
+      const { once = false, signal, lazy = false, init = false, initType } = parseEvtOpts(opts, EVT_OPTS.MEDIATOR),
+        store = (this[`${key}${key.endsWith("t") ? "t" : ""}ers`] ??= /* @__PURE__ */ new Map());
+      let cords = store.get(path),
+        cord;
       if (cords)
         for (let i = 0, len = cords.length; i < len; i++) {
           const excord = cords[i];
@@ -912,7 +987,7 @@
       if (cord) return cord.clup;
       let task;
       cord = { cb, once, clup: () => (lazy && this.nostall(task), this[`no${key}`](path, cb)) };
-      task = () => (cords ?? (store.set(path, cords = []), cords)).push(cord);
+      task = () => (cords ?? (store.set(path, (cords = [])), cords)).push(cord);
       lazy ? this.stall(task) : task(), init && (init !== "auto" || hasPath(this.core, path)) && onInit(initType);
       return this.binded(cord, signal);
     }
@@ -922,7 +997,7 @@
       if (!cords) return void 0;
       for (let i = 0, len = cords.length; i < len; i++) {
         const cord = cords[i];
-        if (Object.is(cord.cb, cb)) return cord.sclup(), cords.splice(i, 1), !cords.length && store.delete(path), cord._dead = true;
+        if (Object.is(cord.cb, cb)) return cord.sclup(), cords.splice(i, 1), !cords.length && store.delete(path), (cord._dead = true);
       }
       return false;
     }
@@ -1013,7 +1088,7 @@
      * const cleanup = rtr.watch("user.name", (value) => console.log(value));
      */
     watch(path, callback, options) {
-      return this.onSync("watch", path, callback, options, (type) => !type ? ((target) => callback(target.value, { type: "init", target, currentTarget: target, root: this.core, rejectable: false }))(this.context(path)) : (force(() => type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path)), this.tick(path)));
+      return this.onSync("watch", path, callback, options, (type) => (!type ? ((target) => callback(target.value, { type: "init", target, currentTarget: target, root: this.core, rejectable: false }))(this.context(path)) : (force(() => (type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path))), this.tick(path))));
     }
     /** Registers a watcher for a path that only triggers once. */
     wonce(path, callback, options) {
@@ -1041,7 +1116,8 @@
     on(path, callback, options) {
       this.listeners ??= /* @__PURE__ */ new Map();
       const { capture = false, once = false, signal, init = false, initType: type, depth } = parseEvtOpts(options, EVT_OPTS.LISTENER);
-      let cords = this.listeners.get(path), cord;
+      let cords = this.listeners.get(path),
+        cord;
       if (cords)
         for (let i = 0, len = cords.length; i < len; i++) {
           const excord = cords[i];
@@ -1052,8 +1128,8 @@
         }
       if (cord) return cord.clup;
       cord = { cb: callback, capture, depth, once, clup: () => this.off(path, callback, options), lDepth: depth !== void 0 ? getDepth(path) : depth };
-      (cords ?? (this.listeners.set(path, cords = []), cords)).push(cord);
-      init && (init !== "auto" || hasPath(this.core, path)) && (!type ? ((target) => callback(new ReactorEvent({ type: "init", target, currentTarget: target, root: this.core, reactor: this, rejectable: false })))(this.context(path)) : (force(() => type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path)), this.tick(path)));
+      (cords ?? (this.listeners.set(path, (cords = [])), cords)).push(cord);
+      init && (init !== "auto" || hasPath(this.core, path)) && (!type ? ((target) => callback(new ReactorEvent({ type: "init", target, currentTarget: target, root: this.core, reactor: this, rejectable: false })))(this.context(path)) : (force(() => (type === "set" ? setPath(this.core, path, getPath(this.core, path)) : deletePath(this.core, path))), this.tick(path)));
       return this.binded(cord, signal);
     }
     /** Registers an event listener for a path that only triggers once. */
@@ -1077,7 +1153,7 @@
       const { capture = false } = parseEvtOpts(options, EVT_OPTS.LISTENER);
       for (let i = 0, len = cords.length; i < len; i++) {
         const cord = cords[i];
-        if (Object.is(cord.cb, callback) && cord.capture === capture) return cord.sclup(), cords.splice(i, 1), !cords.length && this.listeners.delete(path), cord._dead = true;
+        if (Object.is(cord.cb, callback) && cord.capture === capture) return cord.sclup(), cords.splice(i, 1), !cords.length && this.listeners.delete(path), (cord._dead = true);
       }
       return false;
     }
@@ -1096,7 +1172,7 @@
     /** Resets this reactor instance to its initial state. */
     reset() {
       this.getters?.clear(), this.setters?.clear(), this.deleters?.clear(), this.watchers?.clear(), this.listeners?.clear();
-      this.batch?.clear(), this.queue?.clear(), this.isBatching = false;
+      this.batch?.clear(), this.queue?.clear(), (this.isBatching = false);
     }
     destroy() {
       if (this.modules) for (const mdle of this.modules) mdle.destroy();
@@ -1118,7 +1194,10 @@
   var methods = ["tick", "stall", "nostall", "get", "gonce", "noget", "set", "sonce", "noset", "delete", "donce", "nodelete", "watch", "wonce", "nowatch", "on", "once", "off", "snapshot", "use", "reset", "destroy"];
   function reactive(target, build, preferences = NIL) {
     if ("__Reactor__" in target) return target;
-    const descriptors = {}, rtr = getReactor(target, true, build), locks = { enumerable: false, configurable: true, writable: false }, hasAffix = !!(preferences.prefix || preferences.suffix);
+    const descriptors = {},
+      rtr = getReactor(target, true, build),
+      locks = { enumerable: false, configurable: true, writable: false },
+      hasAffix = !!(preferences.prefix || preferences.suffix);
     for (let i = 0, len = methods.length; i < len; i++) {
       let key = methods[i];
       if (hasAffix) (preferences.whitelist?.includes(key) ?? true) && (key = `${preferences.prefix || ""}${key}${preferences.suffix || ""}`);
@@ -1129,7 +1208,7 @@
     return Object.defineProperties(rtr.core, descriptors), rtr.core;
   }
   function volatile(target) {
-    return getRaw(target)[INDIFFABLE] = true, target;
+    return (getRaw(target)[INDIFFABLE] = true), target;
   }
   function getReactor(target, create = false, build) {
     return (target instanceof Reactor ? target : target.__Reactor__) || (create ? new Reactor(target, build) : void 0);
@@ -1143,12 +1222,12 @@
   var isInteractive = (target) => target instanceof HTMLElement && target.matches(INTERACTIVE_SELECTOR);
   var VIRTUAL_RESOURCE = /* @__PURE__ */ Symbol.for("T007_VIRTUAL_RESOURCE");
   function loadResource(req, type = "style", { module, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, attempts = 3, retryKey = false } = {}, win = window) {
-    win.t007 ??= {}, win.t007._resourceCache ??= {};
+    (win.t007 ??= {}), (win.t007._resourceCache ??= {});
     if (req === VIRTUAL_RESOURCE || isSym(req)) return Promise.resolve();
     const src = req;
     if (win.t007._resourceCache[src]) return win.t007._resourceCache[src];
     const existing = type === "script" ? Array.prototype.find.call(win.document.scripts, (s) => isSameURL(s.src, src)) : type === "style" ? Array.prototype.find.call(win.document.styleSheets, (s) => isSameURL(s.href, src)) : null;
-    if (existing) return win.t007._resourceCache[src] = Promise.resolve(existing);
+    if (existing) return (win.t007._resourceCache[src] = Promise.resolve(existing));
     win.t007._resourceCache[src] = new Promise((resolve, reject) => {
       (function tryLoad(remaining, el) {
         const onerror = () => {
@@ -1162,8 +1241,8 @@
           }
         };
         const url = retryKey && remaining < attempts ? `${src}${src.includes("?") ? "&" : "?"}_${retryKey}=${Date.now()}` : src;
-        if (type === "script") win.document.body.append(el = createEl("script", { src: url, type: module ? "module" : "text/javascript", crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || "");
-        else if (type === "style") win.document.head.append(el = createEl("link", { rel: "stylesheet", href: url, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || "");
+        if (type === "script") win.document.body.append((el = createEl("script", { src: url, type: module ? "module" : "text/javascript", crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || ""));
+        else if (type === "style") win.document.head.append((el = createEl("link", { rel: "stylesheet", href: url, media, crossOrigin, integrity, referrerPolicy, nonce, fetchPriority, onload: () => resolve(el), onerror }) || ""));
         else reject(new Error(`Unsupported resource type: ${type}`));
       })(attempts);
     });
@@ -1215,7 +1294,8 @@
   var mockAsync = (timeout = 250) => new Promise((resolve) => setTimeout2(resolve, timeout));
   function formatSize(bytes, decimals = 3, base = 1e3) {
     if (bytes < base) return `${bytes} byte${bytes == 1 ? "" : "s"}`;
-    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"], exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(base)), units.length - 1);
+    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"],
+      exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(base)), units.length - 1);
     return `${(bytes / Math.pow(base, exponent)).toFixed(decimals).replace(/\.0+$/, "")} ${units[exponent]}`;
   }
   if ("undefined" !== typeof window) {
@@ -1231,11 +1311,17 @@
   // ../t007-tools/packages/utils/dist/chunk-XIPGER3I.js
   function rippleHandler(e, { target, forceCenter = false, wrapperClassName = "t007-ripple-wrapper", className = "t007-ripple", holdClassName = "t007-ripple-hold", fadeClassName = "t007-ripple-fade", maxDuration = 1e3 } = NIL) {
     const el = target || e.currentTarget;
-    if (!el || e.target !== e.currentTarget && isInteractive(e.target) || el.hasAttribute("disabled") || e.pointerType === "mouse" && e.button !== 0) return;
+    if (!el || (e.target !== e.currentTarget && isInteractive(e.target)) || el.hasAttribute("disabled") || (e.pointerType === "mouse" && e.button !== 0)) return;
     e.stopPropagation?.();
-    const { offsetWidth: rW, offsetHeight: rH } = el, { width: w, height: h, left: l, top: t } = el.getBoundingClientRect(), size = Math.max(rW, rH), x = forceCenter ? rW / 2 - size / 2 : (e.clientX - l) * rW / w - size / 2, y = forceCenter ? rH / 2 - size / 2 : (e.clientY - t) * rH / h - size / 2, wrapper = createEl("span", { className: wrapperClassName }), ripple = createEl("span", { className: className + " " + holdClassName }, {}, { cssText: `width:${size}px;height:${size}px;left:${x}px;top:${y}px;` });
+    const { offsetWidth: rW, offsetHeight: rH } = el,
+      { width: w, height: h, left: l, top: t } = el.getBoundingClientRect(),
+      size = Math.max(rW, rH),
+      x = forceCenter ? rW / 2 - size / 2 : ((e.clientX - l) * rW) / w - size / 2,
+      y = forceCenter ? rH / 2 - size / 2 : ((e.clientY - t) * rH) / h - size / 2,
+      wrapper = createEl("span", { className: wrapperClassName }),
+      ripple = createEl("span", { className: className + " " + holdClassName }, {}, { cssText: `width:${size}px;height:${size}px;left:${x}px;top:${y}px;` });
     let canRelease = false;
-    ripple.addEventListener("animationend", () => canRelease = true, { once: true });
+    ripple.addEventListener("animationend", () => (canRelease = true), { once: true });
     el.append(wrapper.appendChild(ripple).parentElement);
     let released = false;
     const release = (force2) => {
@@ -1256,7 +1342,8 @@
 
   // ../t007-tools/packages/utils/dist/hooks/vanilla.js
   function initScrollAssist(el, { pxPerSecond = 80, assistClassName = "t007-scroll-assist", vertical = true, horizontal = true } = NIL) {
-    const parent = el?.parentElement, existing = (t007._scrollers ??= /* @__PURE__ */ new WeakMap()).get(el);
+    const parent = el?.parentElement,
+      existing = (t007._scrollers ??= /* @__PURE__ */ new WeakMap()).get(el);
     if (!parent || existing) return existing ? existing : void 0;
     t007._scrollers_r_observer ??= new ResizeObserver((entries) => {
       for (const { target } of entries) t007._scrollers.get(target)?.update();
@@ -1271,17 +1358,22 @@
       for (const el2 of els) t007._scrollers.get(el2)?.update();
     });
     const assist = {};
-    let scrollId = null, last = performance.now(), assistWidth = 20, assistHeight = 20;
+    let scrollId = null,
+      last = performance.now(),
+      assistWidth = 20,
+      assistHeight = 20;
     const update = () => {
       const hasInteractive = !!parent.querySelector(INTERACTIVE_SELECTOR);
       if (horizontal) {
-        const w = assist.left?.offsetWidth || assistWidth, check = hasInteractive ? el.clientWidth < w * 2 : false;
+        const w = assist.left?.offsetWidth || assistWidth,
+          check = hasInteractive ? el.clientWidth < w * 2 : false;
         assist.left.style.display = check ? "none" : el.scrollLeft > 0 ? "block" : "none";
         assist.right.style.display = check ? "none" : el.scrollLeft + el.clientWidth < el.scrollWidth - 1 ? "block" : "none";
         assistWidth = w;
       }
       if (vertical) {
-        const h = assist.up?.offsetHeight || assistHeight, check = hasInteractive ? el.clientHeight < h * 2 : false;
+        const h = assist.up?.offsetHeight || assistHeight,
+          check = hasInteractive ? el.clientHeight < h * 2 : false;
         assist.up.style.display = check ? "none" : el.scrollTop > 0 ? "block" : "none";
         assist.down.style.display = check ? "none" : el.scrollTop + el.clientHeight < el.scrollHeight - 1 ? "block" : "none";
         assistHeight = h;
@@ -1289,9 +1381,10 @@
     };
     const scroll = (dir) => {
       const frame = () => {
-        const now = performance.now(), dt = now - last;
+        const now = performance.now(),
+          dt = now - last;
         last = now;
-        const d = pxPerSecond * dt / 1e3;
+        const d = (pxPerSecond * dt) / 1e3;
         if (dir === "left") el.scrollLeft = Math.max(0, el.scrollLeft - d);
         if (dir === "right") el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + d);
         if (dir === "up") el.scrollTop = Math.max(0, el.scrollTop - d);
@@ -1301,7 +1394,7 @@
       last = performance.now();
       frame();
     };
-    const stop = () => (cancelAnimationFrame(scrollId ?? 0), scrollId = null);
+    const stop = () => (cancelAnimationFrame(scrollId ?? 0), (scrollId = null));
     const addAssist = (dir) => {
       const div = createEl("div", { className: assistClassName }, { scrollDirection: dir }, { display: "none" });
       if (!div) return;
@@ -1318,7 +1411,7 @@
         stop(), el.removeEventListener("scroll", update);
         t007._scrollers_r_observer.unobserve(el), t007._scrollers.delete(el);
         for (const a of Object.values(assist)) a.remove();
-      }
+      },
     };
     update(), el.addEventListener("scroll", update);
     t007._scrollers_r_observer.observe(el), t007._scrollers_m_observer.observe(el, { childList: true, subtree: true, characterData: true });
@@ -1365,11 +1458,10 @@
       if (!rtr || this.deps.has(id)) return this;
       return this.rids.set((this.deps.set(id, rtr), rtr), id), this.onAttach(rtr, id), this;
     }
-    onAttach(_rtr, _rid) {
-    }
+    onAttach(_rtr, _rid) {}
     attachPaths(rtr, rid, paths = this.getPaths(rid)) {
       let clups = this.clups.get(rid);
-      if (!clups) this.clups.set(rid, clups = []);
+      if (!clups) this.clups.set(rid, (clups = []));
       for (let i = 0, len = paths.length; i < len; i++) {
         const path = paths[i];
         !this.config.disabled ? clups.push(this.config.synchronous ? rtr.watch(path, this.handlePathSync, { signal: this.signal }) : rtr.on(path, this.handlePath, this.evtOpts)) : this.config.synchronous ? rtr.nowatch(path, this.handlePathSync) : rtr.off(path, this.handlePath, this.evtOpts);
@@ -1385,7 +1477,7 @@
      * const mod = new MyModule().attach(state1).setup(state2); // if using multiple, this should run last; with same params as `.attach()` for a shorter chain
      */
     setup(target, id) {
-      return this.attach(target, id), !this.wired && (this.wire(), this.wired = true), this;
+      return this.attach(target, id), !this.wired && (this.wire(), (this.wired = true)), this;
     }
     destroy() {
       if (this.ac) this.ac.abort(), this.onDestroy?.(), nuke(this);
@@ -1408,8 +1500,7 @@
       (!this.config.blacklist || !matchPaths(this.getPaths(rid, this.config.blacklist, true), e.path)) && this.onPath(e, rid);
     }
     handlePathSync = (_, p) => this.handlePath(p);
-    onPath(_e, _rid) {
-    }
+    onPath(_e, _rid) {}
     handleSynchronous() {
       for (const [rid, rtr] of this.deps) this.cleanup(rid), this.attachPaths(rtr, rid);
     }
@@ -1439,15 +1530,17 @@
       const _rtr = target?.core ? target : this.deps.get(target);
       let res = _nest ? {} : void 0;
       for (const [rid, rtr] of !target ? this.deps : [[_rid || target, _rtr]]) {
-        const snap = this.config.snapshot ? (this.config.snapshot === true && (rtr.config.referenceTracking = rtr.config.smartCloning = true), rtr.snapshot()) : rtr.core, val = this.config.whitelist ? {} : snap;
+        const snap = this.config.snapshot ? (this.config.snapshot === true && (rtr.config.referenceTracking = rtr.config.smartCloning = true), rtr.snapshot()) : rtr.core,
+          val = this.config.whitelist ? {} : snap;
         if (this.config.whitelist) {
           const paths = this.getPaths(rid);
           for (let i = 0, len = paths.length; i < len; i++) {
-            const _path = paths[i], path = !this.config.mirrorReads ? _path : mirror(_path);
+            const _path = paths[i],
+              path = !this.config.mirrorReads ? _path : mirror(_path);
             setPath(val, _path, getPath(snap, path));
           }
         }
-        _nest ? setPath(res, rid, val) : res = val;
+        _nest ? setPath(res, rid, val) : (res = val);
       }
       return res;
     }
@@ -1534,7 +1627,7 @@
     onversionchange: NOOP,
     onsuccess: NOOP,
     onerror: NOOP,
-    onblocked: NOOP
+    onblocked: NOOP,
   };
   var IndexedDBAdapter = class extends AsyncStorageAdapter {
     name = "IndexedDB";
@@ -1552,7 +1645,7 @@
       return new Promise((res, rej) => {
         const req = indexedDB.open(this.config.dbName, this.config.version);
         req.onupgradeneeded = (e) => (this.config.onupgradeneeded(req.result, e), this.config.stores.forEach((s) => !req.result.objectStoreNames.contains(s) && req.result.createObjectStore(s)));
-        req.onsuccess = (e) => (this.config.onsuccess(req.result, e), req.result.onversionchange = (e2) => (this.config.onversionchange(req.result, e2), this.warn("update", "Updated in another tab"), req.result.close()), res(this.db = req.result));
+        req.onsuccess = (e) => (this.config.onsuccess(req.result, e), (req.result.onversionchange = (e2) => (this.config.onversionchange(req.result, e2), this.warn("update", "Updated in another tab"), req.result.close())), res((this.db = req.result)));
         req.onerror = (e) => (this.config.onerror(req.error, e), this.warn("open", "Something went wrong"), rej(req.error));
         req.onblocked = (e) => (this.config.onblocked(e), this.warn("open", "Close other tabs for updates"));
       });
@@ -1566,7 +1659,7 @@
     async get(key = this.config.key, store = this.config.stores[0], options = this.config) {
       try {
         const req = (await this.idb()).transaction(store, "readonly", options).objectStore(store).get(key);
-        return new Promise((res) => req.onsuccess = () => res(req.result));
+        return new Promise((res) => (req.onsuccess = () => res(req.result)));
       } catch (e) {
         if (this.config.throwErrors) throw e;
         return this.warn("get", void 0, store), void 0;
@@ -1582,7 +1675,7 @@
     async set(key = this.config.key, value, store = this.config.stores[0], options = this.config) {
       try {
         const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).put(value, key);
-        return new Promise((res) => req.onsuccess = () => res(true));
+        return new Promise((res) => (req.onsuccess = () => res(true)));
       } catch (e) {
         if (this.config.throwErrors) throw e;
         return this.warn("put", void 0, store), false;
@@ -1597,7 +1690,7 @@
     async remove(key = this.config.key, store = this.config.stores[0], options = this.config) {
       try {
         const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).delete(key);
-        return new Promise((res) => req.onsuccess = () => res(true));
+        return new Promise((res) => (req.onsuccess = () => res(true)));
       } catch (e) {
         if (this.config.throwErrors) throw e;
         return this.warn("delete", void 0, store), false;
@@ -1613,10 +1706,10 @@
       for (const store of Array.isArray(stores) ? stores : [stores])
         try {
           const req = (await this.idb()).transaction(store, "readwrite", options).objectStore(store).clear();
-          await new Promise((res) => req.onsuccess = () => res(true));
+          await new Promise((res) => (req.onsuccess = () => res(true)));
         } catch (e) {
           if (this.config.throwErrors) throw e;
-          this.warn("clear", void 0, store), success = false;
+          this.warn("clear", void 0, store), (success = false);
         }
       return success;
     }
@@ -1629,7 +1722,7 @@
     mirrorReads: true,
     mirrorWrites: true,
     onSave: NOOP,
-    strict: true
+    strict: true,
   };
   var PersistModule = class extends BaseReactorModule {
     static moduleName = "persist";
@@ -1667,7 +1760,7 @@
         if (res && res !== true) payload = res;
       }
       this.saveTimeoutId = 0;
-      if (this.config.onSave === NOOP) return void await this.adapter.set(this.config.key, payload);
+      if (this.config.onSave === NOOP) return void (await this.adapter.set(this.config.key, payload));
       try {
         const bool = await this.adapter.set(this.config.key, payload);
         if (seq !== this.persistSeq) return;
@@ -1681,10 +1774,11 @@
       if (this.adapter && value === this.adapter.constructor) return;
       this.state.hydrated = false;
       this.adapter?.remove(this.config.key);
-      this.adapter = "function" === typeof value ? new value({ debug: !!this.deps.values().next().value?.canLog }) : (value.config.debug = !!this.deps.values().next().value?.canLog, value);
+      this.adapter = "function" === typeof value ? new value({ debug: !!this.deps.values().next().value?.canLog }) : ((value.config.debug = !!this.deps.values().next().value?.canLog), value);
       try {
         let saved = this.adapter.get(this.config.key);
-        const isAsync = saved instanceof Promise, opts = parseEvtOpts(this.config.fanout ?? isAsync, fanoutOptsArr, "depth");
+        const isAsync = saved instanceof Promise,
+          opts = parseEvtOpts(this.config.fanout ?? isAsync, fanoutOptsArr, "depth");
         saved = !isAsync ? saved : await saved;
         if (this.config.beforeHydrate && saved) {
           const res = this.config.beforeHydrate(saved);
@@ -1706,13 +1800,17 @@
     }
     hydrate(entry, rtr, rid = this.rids.get(rtr), { depth, merge = true, atomic, skipUndef } = parseEvtOpts(this.config.fanout, fanoutOptsArr, "depth"), tick = true) {
       if (!entry) return;
-      const whites = this.getPaths(rid), blacks = this.getPaths(rid, this.config.blacklist, true), set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev, rtr.config) : prev, depth ? { depth, atomic, skipUndef, crossRealms: rtr.config.crossRealms } : void 0);
+      const whites = this.getPaths(rid),
+        blacks = this.getPaths(rid, this.config.blacklist, true),
+        set = (p, curr, prev) => (depth ? fanout : setPath)(rtr.core, p, merge ? mergeObjs(curr, prev, rtr.config) : prev, depth ? { depth, atomic, skipUndef, crossRealms: rtr.config.crossRealms } : void 0);
       let ticks = this.tickMap.get(rid);
       for (let i = 0, len = blacks.length; i < len; i++) deletePath(entry, blacks[i]);
       for (let i = 0, len = whites.length; i < len; i++) {
         let _mirror;
-        const _path = whites[i], path = !this.config.mirrorWrites || (_mirror = mirror(_path, false)) === _path || !hasPath(rtr.core, _mirror) ? _path : _mirror, value = getPath(entry, _path);
-        value !== void 0 && (set(path, getPath(rtr.core, path), value), (ticks || (this.tickMap.set(rid, ticks = []), ticks)).push(path));
+        const _path = whites[i],
+          path = !this.config.mirrorWrites || (_mirror = mirror(_path, false)) === _path || !hasPath(rtr.core, _mirror) ? _path : _mirror,
+          value = getPath(entry, _path);
+        value !== void 0 && (set(path, getPath(rtr.core, path), value), (ticks || (this.tickMap.set(rid, (ticks = [])), ticks)).push(path));
       }
       tick && (rtr.tick(depth || !this.config.whitelist ? "*" : ticks || []), this.tickMap.delete(rid));
     }
@@ -1720,7 +1818,7 @@
     clear() {
       clearTimeout(this.saveTimeoutId);
       this.saveTimeoutId = -1;
-      queueMicrotask(() => this.saveTimeoutId = 0);
+      queueMicrotask(() => (this.saveTimeoutId = 0));
       return this.adapter?.remove(this.config.key);
     }
     /** Clears stored `cache` for this module instance, call after all attachments that use the cached hydration payload. */
@@ -1737,7 +1835,7 @@
     maxPlaybackDelay: 2e3,
     mirrorReads: true,
     mirrorWrites: true,
-    onApply: NOOP
+    onApply: NOOP,
   };
   var TimeTravelModule = class extends BaseReactorModule {
     static moduleName = "timeTravel";
@@ -1773,25 +1871,25 @@
       const timestamp = e.timestamp ?? performance.now();
       let en = { path: e.target.path, to: e.reactor.snapshot(false, e.target.value), from: !this.config.mirrorReads ? e.reactor.snapshot(false, e.target.oldValue) : getPath(e.reactor.core, mirror(e.target.path)), type: e.staticType ?? e.type, rid, deltat: timestamp - this.lastTimestamp };
       !e.target.hadKey && (en.hadKey = false);
-      const px = e.tx && this.txMap.get(e.tx) || null;
+      const px = (e.tx && this.txMap.get(e.tx)) || null;
       if (this.config.beforeEntry) {
         const res = this.config.beforeEntry(en, this.state.history, e);
-        if (res === false) return px && (this.resolveTx(e.tx, timestamp, en.deltat, px), force(() => this.state.currentFrame = this.state.currentFrame)), void (this.lastTimestamp = timestamp);
+        if (res === false) return px && (this.resolveTx(e.tx, timestamp, en.deltat, px), force(() => (this.state.currentFrame = this.state.currentFrame))), void (this.lastTimestamp = timestamp);
         if (res && res !== true) en = res;
       }
       e.tx ? this.resolveTx(e.tx, timestamp, en.deltat, px).nodes.push(en) : this.state.history.push(en);
-      force(() => this.state.currentFrame = this.state.history.length, !!e.tx), this.lastTimestamp = timestamp;
+      force(() => (this.state.currentFrame = this.state.history.length), !!e.tx), (this.lastTimestamp = timestamp);
       while (this.state.history.length > this.config.limit) this.state.history.shift(), this.state.currentFrame--;
     }
     /** Resolves and constructs the hierarchical ancestry for nested transactions as they bubble up from the depths. */
     resolveTx(tx, timestamp, deltat, px = this.txMap.get(tx)) {
-      if (px) return px.end = timestamp, tx.parent && this.resolveTx(tx.parent, timestamp, deltat), px;
-      this.txMap.set(tx, px = { id: tx.id, label: tx.label, nodes: [], deltat: 0, start: timestamp, end: timestamp });
-      return tx.parent ? this.resolveTx(tx.parent, timestamp, deltat).nodes.push(px) : (px.deltat = deltat, this.state.history.push(px)), px;
+      if (px) return (px.end = timestamp), tx.parent && this.resolveTx(tx.parent, timestamp, deltat), px;
+      this.txMap.set(tx, (px = { id: tx.id, label: tx.label, nodes: [], deltat: 0, start: timestamp, end: timestamp }));
+      return tx.parent ? this.resolveTx(tx.parent, timestamp, deltat).nodes.push(px) : ((px.deltat = deltat), this.state.history.push(px)), px;
     }
     /** Resumes the passive recording of state changes. */
     track() {
-      this.state.tracking = this._tracking = true, !this.state.paused && this.automove(this.state.forward);
+      (this.state.tracking = this._tracking = true), !this.state.paused && this.automove(this.state.forward);
     }
     /**
      * Pauses the passive recording of state changes and returns `this`. Useful to call at creation time to avoid recording hydration waves.
@@ -1799,7 +1897,7 @@
      */
     untrack() {
       this.lastTimestamp = performance.now();
-      return this.state.tracking = this._tracking = false, this;
+      return (this.state.tracking = this._tracking = false), this;
     }
     /** Clears timeline history and resets the playhead and initial snapshots to current reactor state. */
     clear() {
@@ -1819,7 +1917,8 @@
      */
     jumpTo(index = 0, keepShield = false) {
       this.state.paused = false;
-      const target = clamp(0, index, this.state.history.length), forward = target > this.state.currentFrame;
+      const target = clamp(0, index, this.state.history.length),
+        forward = target > this.state.currentFrame;
       while (this.state.currentFrame !== target) {
         const frame = this.state.history[forward ? this.state.currentFrame : this.state.currentFrame - 1];
         this.applyNode(frame, forward);
@@ -1834,7 +1933,8 @@
       if ("nodes" in node) for (let len = node.nodes.length, i = forward ? 0 : len - 1; forward ? i < len : i >= 0; forward ? i++ : i--) this.applyNode(node.nodes[i], forward);
       else {
         let _mirror;
-        const rtr = this.deps.get(node.rid) || this.deps.values().next().value, path = !this.config.mirrorWrites || (_mirror = mirror(node.path, false)) === node.path || !hasPath(rtr.core, _mirror) ? node.path : _mirror;
+        const rtr = this.deps.get(node.rid) || this.deps.values().next().value,
+          path = !this.config.mirrorWrites || (_mirror = mirror(node.path, false)) === node.path || !hasPath(rtr.core, _mirror) ? node.path : _mirror;
         if (forward) node.type === "delete" ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.to, rtr.config));
         else node.hadKey === false ? deletePath(rtr.core, path) : setPath(rtr.core, path, deepClone(node.from, rtr.config));
       }
@@ -1883,7 +1983,8 @@
       this.state.paused = false;
       this.state.forward = forward;
       while (seq === this.playbackSeq && !this.state.paused && (forward ? this.state.currentFrame < this.state.history.length : this.state.currentFrame > 0)) {
-        const dFrame = this.state.history[this.state.currentFrame + (forward ? 0 : -1)], delay = Math.min(("nodes" in dFrame ? dFrame.end - dFrame.start + dFrame.deltat : dFrame.deltat) / this.config.playbackRate, this.config.maxPlaybackDelay);
+        const dFrame = this.state.history[this.state.currentFrame + (forward ? 0 : -1)],
+          delay = Math.min(("nodes" in dFrame ? dFrame.end - dFrame.start + dFrame.deltat : dFrame.deltat) / this.config.playbackRate, this.config.maxPlaybackDelay);
         if (delay > 0) await new Promise((res) => setTimeout2(res, delay, this.signal));
         if (!this.state.paused) this.jumpTo(this.state.currentFrame + (forward ? 1 : -1), true);
       }
@@ -1905,7 +2006,7 @@
     }
     /** Pause any ongoing playback or rewinding. */
     pause() {
-      this.playbackSeq++, this.state.paused = true;
+      this.playbackSeq++, (this.state.paused = true);
     }
     // ===========================================================================
     // TELEMETRY & I/O (Session Import/Export)
@@ -1936,7 +2037,7 @@
         }
       }
       for (const [rid, rtr] of this.deps) rtr.tick(this.config.whitelist ? this.getPaths(rid) : "*");
-      this.state.currentFrame = 0, this.jumpTo(start), resume && this.automove(forward);
+      (this.state.currentFrame = 0), this.jumpTo(start), resume && this.automove(forward);
     }
   };
   function silence(fn, bool = true) {
@@ -1968,7 +2069,7 @@
      * const name = state.user.profile.name;
      */
     tracked(target) {
-      return this.unblock(), this.proxy = this.proxied(target, "");
+      return this.unblock(), (this.proxy = this.proxied(target, ""));
     }
     proxied(obj, path) {
       if (!this.rtr || !obj || "object" !== typeof obj) return obj;
@@ -1979,15 +2080,18 @@
         // Minimal Proxy Handler
         get: (object, key, receiver) => {
           if (key === RAW) return this.rtr.log(`\u{1F440} [AutoTracker \`get\` Trap] Peeked at ${object}`), object;
-          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          const keyStr = String(key),
+            fullPath = path ? `${path}.${keyStr}` : keyStr;
           return this.rtr.log(`\u{1F50D} [AutoTracker \`get\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), this.proxied(!this.rtr.config.preserveContext ? object[key] : Reflect.get(object, key, receiver), fullPath);
         },
         has: (object, key) => {
-          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          const keyStr = String(key),
+            fullPath = path ? `${path}.${keyStr}` : keyStr;
           return this.rtr.log(`\u2753 [AutoTracker \`has\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), !this.rtr.config.preserveContext ? key in object : Reflect.has(object, key);
         },
         getOwnPropertyDescriptor: (object, key) => {
-          const keyStr = String(key), fullPath = path ? `${path}.${keyStr}` : keyStr;
+          const keyStr = String(key),
+            fullPath = path ? `${path}.${keyStr}` : keyStr;
           return this.rtr.log(`\u{1F4CB} [AutoTracker \`getOwnPropertyDescriptor\` Trap] Initiated for "${keyStr}" on '${path}'`), this.track(fullPath), !this.rtr.config.preserveContext ? Object.getOwnPropertyDescriptor(object, key) : Reflect.getOwnPropertyDescriptor(object, key);
         },
         ownKeys: (object) => {
@@ -2005,20 +2109,20 @@
         },
         setPrototypeOf: (_, key) => {
           throw new Error(`\u{1F6E1}\uFE0F [AutoTracker \`setPrototypeOf\` Trap] Blocked for "${String(key)}" on '${path}'`);
-        }
+        },
       });
       return this.proxyCache.set(obj, proxy), proxy;
     }
     /** Adds a path to the tracking set. */
     track(path, rtr = this.rtr, prune = false, strict = false) {
-      if (!this.isTracking || !path || this.autortr && this.autortr !== rtr) return path;
+      if (!this.isTracking || !path || (this.autortr && this.autortr !== rtr)) return path;
       let paths = this.deps.get(rtr);
-      if (!prune && !paths) paths = (this.deps.set(rtr, paths = /* @__PURE__ */ new Set()), paths);
+      if (!prune && !paths) paths = (this.deps.set(rtr, (paths = /* @__PURE__ */ new Set())), paths);
       if (path.startsWith(this.lastPath + ".")) {
         const child = path.slice(this.lastPath.length + 1);
-        (strict || !child.includes("Symbol(") && child !== "length" && !/^\d+$/.test(child)) && paths.delete(this.lastPath);
+        (strict || (!child.includes("Symbol(") && child !== "length" && !/^\d+$/.test(child))) && paths.delete(this.lastPath);
       }
-      return !prune && paths.add(this.lastPath = path), path;
+      return !prune && paths.add((this.lastPath = path)), path;
     }
     /** Removes a path from the tracking set. */
     untrack(path, rtr = this.rtr) {
@@ -2090,7 +2194,7 @@
   function effect(callback, options = NIL) {
     const atrkr = new Autotracker();
     let destroyed = false;
-    const cleanup = () => (destroyed = true, atrkr.destroy());
+    const cleanup = () => ((destroyed = true), atrkr.destroy());
     (function execute() {
       if (destroyed) return;
       withTracker(atrkr, callback);
@@ -2101,7 +2205,7 @@
   var keys = {
     blocks: KEYS_BLOCKS,
     // overrides: ["Space", "Home", "End", "Escape", "Delete"], // Playing "God"
-    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", playPause: "Space", rewind: "Shift+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" }
+    shortcuts: { undo: ["Ctrl+z", "Cmd+z"], redo: ["Ctrl+y", "Ctrl+Shift+z", "Cmd+Shift+z"], genesis: "Home", trackUntrack: "t", ending: "End", playPause: "Space", rewind: "Shift+Space", closeOverlay: "Escape", clrHistory: "Delete", export: "e", import: "i", clear: "c" },
   };
   var TimeTravelConsole = class _TimeTravelConsole {
     static count = 0;
@@ -2118,27 +2222,72 @@
      */
     constructor(time, build = { devOnly: true }) {
       this.time = time;
-      this.config = reactive({ title: `Time Travel Console ${this.index = ++_TimeTravelConsole.count}`, ...build });
+      this.config = reactive({ title: `Time Travel Console ${(this.index = ++_TimeTravelConsole.count)}`, ...build });
       this.state.open = !!this.config.startOpen;
-      let wlLive = false, blLive = false;
-      const s = this.time.state, host = this.host = createEl("div", { className: "sia-tt-console-host" }), toggle = createEl("button", { className: "sia-tt-console-toggle", type: "button", onclick: () => this.state.open = !this.state.open }), panel = createEl("aside", { className: "sia-tt-console", ariaLabel: "time travel overlay" }), title = createEl("div", { className: "title" }), frame = createEl("span", { className: "muted" }), clrHistory = createEl("button", { textContent: `Clear History${formatKeyTooltip(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory), onclick: () => (this.time.clear(), this.state.import = "") }), undo = createEl("button", { textContent: `Undo${formatKeyTooltip(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo), onclick: () => this.time.undo(this.state.stride) }), redo = createEl("button", { textContent: `Redo${formatKeyTooltip(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo), onclick: () => this.time.redo(this.state.stride) }), genesis = createEl("button", { textContent: `Genesis${formatKeyTooltip(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis), onclick: () => this.time.jumpTo(0) }), playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause) }), rewind = createEl("button", { textContent: `Rewind${formatKeyTooltip(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind), onclick: this.time.rewind }), trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack) }), range = createEl("input", { type: "range", min: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }), exp = createEl("button", { textContent: `Export${formatKeyTooltip(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export), onclick: () => this.state.import = this.time.export(null, 2) }), imp = createEl("button", { textContent: `Import${formatKeyTooltip(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }), clr = createEl("button", { textContent: `Clear${formatKeyTooltip(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear), onclick: () => this.state.import = "" }), payload = createEl("textarea", { className: "sia-tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }), io = createEl("textarea", { className: "sia-tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => this.state.import = io.value }), foot = createEl("p", { className: "sia-tt-footnote", innerHTML: "<span>Try this in your app? </span>" }), link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }), box = createEl("div", { className: "sia-tt-status-box" }), status = createEl("div", { className: "sia-tt-status-row" }), filters = createEl("div", { className: "sia-tt-status-row" }), filterBox = createEl("div", { className: "sia-tt-status-box" }), whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }), blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }), whitelist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => wlLive = true, onblur: () => (wlLive = false, whitelist.value = formatPaths(this.time.config.whitelist, "*")), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }), blacklist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => blLive = true, onblur: () => (blLive = false, blacklist.value = formatPaths(this.time.config.blacklist, "")), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }), speed = createEl("select", { className: "sia-tt-speed", title: "Playback Speed", onchange: () => this.time.config.playbackRate = Number(speed.value) }), stride = createEl("input", { className: "sia-tt-stride sia-tt-button sia-tt-mini-input", type: "number", min: "1", title: "Skip Stride i.e. how many steps count as one unit", oninput: () => this.state.stride = Math.max(1, Number(stride.value) || 1) }), stats = createEl("span", { className: "sia-tt-stats" }), limit = createEl("input", { className: "sia-tt-limit sia-tt-mini-input sia-tt-button", type: "number", min: "1", title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => this.time.config.limit = Math.max(1, Number(limit.value) || 1) }), delay = createEl("input", { className: "sia-tt-delay sia-tt-mini-input sia-tt-button", type: "number", min: "0", step: "50", title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0) }), read = createEl("label", { className: "sia-tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }), readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReads, onchange: () => this.time.config.mirrorReads = readBox.checked }), write = createEl("label", { className: "sia-tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }), writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWrites, onchange: () => this.time.config.mirrorWrites = writeBox.checked }), filterRow1 = createEl("div", { className: "sia-tt-filter-row" }), filterRow2 = createEl("div", { className: "sia-tt-filter-row" }), row1 = createEl("div", { className: "sia-tt-row" }), row2 = createEl("div", { className: "sia-tt-row" }), row3 = createEl("div", { className: "sia-tt-row" }), row4 = createEl("div", { className: "sia-tt-row" }), row5 = createEl("div", { className: "sia-tt-row sia-tt-config-row" });
+      let wlLive = false,
+        blLive = false;
+      const s = this.time.state,
+        host = (this.host = createEl("div", { className: "sia-tt-console-host" })),
+        toggle = createEl("button", { className: "sia-tt-console-toggle", type: "button", onclick: () => (this.state.open = !this.state.open) }),
+        panel = createEl("aside", { className: "sia-tt-console", ariaLabel: "time travel overlay" }),
+        title = createEl("div", { className: "title" }),
+        frame = createEl("span", { className: "muted" }),
+        clrHistory = createEl("button", { textContent: `Clear History${formatKeyTooltip(keys.shortcuts.clrHistory)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clrHistory), onclick: () => (this.time.clear(), (this.state.import = "")) }),
+        undo = createEl("button", { textContent: `Undo${formatKeyTooltip(keys.shortcuts.undo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.undo), onclick: () => this.time.undo(this.state.stride) }),
+        redo = createEl("button", { textContent: `Redo${formatKeyTooltip(keys.shortcuts.redo[0])}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.redo), onclick: () => this.time.redo(this.state.stride) }),
+        genesis = createEl("button", { textContent: `Genesis${formatKeyTooltip(keys.shortcuts.genesis)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.genesis), onclick: () => this.time.jumpTo(0) }),
+        playPause = createEl("button", { onclick: () => this.time[s.paused ? "play" : "pause"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.playPause) }),
+        rewind = createEl("button", { textContent: `Rewind${formatKeyTooltip(keys.shortcuts.rewind)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.rewind), onclick: this.time.rewind }),
+        trackUntrack = createEl("button", { onclick: () => this.time[s.tracking ? "untrack" : "track"](), ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.trackUntrack) }),
+        range = createEl("input", { type: "range", min: "0", title: "time travel frame", ariaLabel: "time travel frame", oninput: () => this.time.jumpTo(Number(range.value)) }),
+        exp = createEl("button", { textContent: `Export${formatKeyTooltip(keys.shortcuts.export)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.export), onclick: () => (this.state.import = this.time.export(null, 2)) }),
+        imp = createEl("button", { textContent: `Import${formatKeyTooltip(keys.shortcuts.import)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.import), onclick: () => this.state.import.trim().length && this.time.import(this.state.import) }),
+        clr = createEl("button", { textContent: `Clear${formatKeyTooltip(keys.shortcuts.clear)}`, ariaKeyShortcuts: parseForARIAKS(keys.shortcuts.clear), onclick: () => (this.state.import = "") }),
+        payload = createEl("textarea", { className: "sia-tt-io", readOnly: true, placeholder: "current payload json", title: "Current History Entry" }),
+        io = createEl("textarea", { className: "sia-tt-io", placeholder: "timeline payload json", title: "Time History", oninput: () => (this.state.import = io.value) }),
+        foot = createEl("p", { className: "sia-tt-footnote", innerHTML: "<span>Try this in your app? </span>" }),
+        link = createEl("a", { target: "_blank", rel: "noreferrer noopener", textContent: "sia-reactor", href: "https://www.npmjs.com/package/sia-reactor" }),
+        box = createEl("div", { className: "sia-tt-status-box" }),
+        status = createEl("div", { className: "sia-tt-status-row" }),
+        filters = createEl("div", { className: "sia-tt-status-row" }),
+        filterBox = createEl("div", { className: "sia-tt-status-box" }),
+        whitelistLabel = createEl("span", { className: "muted", textContent: "Whitelist:" }),
+        blacklistLabel = createEl("span", { className: "muted", textContent: "Blacklist:" }),
+        whitelist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Whitelist paths", onfocus: () => (wlLive = true), onblur: () => ((wlLive = false), (whitelist.value = formatPaths(this.time.config.whitelist, "*"))), oninput: (_, parsed = parsePaths(whitelist.value)) => parsed !== null && (this.time.config.whitelist = parsed) }),
+        blacklist = createEl("input", { className: "sia-tt-filter-input sia-tt-io", placeholder: 'a.b, c.d or {"0":["a.b"]}', title: "Blacklist paths", onfocus: () => (blLive = true), onblur: () => ((blLive = false), (blacklist.value = formatPaths(this.time.config.blacklist, ""))), oninput: (_, parsed = parsePaths(blacklist.value, true)) => parsed !== null && (this.time.config.blacklist = parsed) }),
+        speed = createEl("select", { className: "sia-tt-speed", title: "Playback Speed", onchange: () => (this.time.config.playbackRate = Number(speed.value)) }),
+        stride = createEl("input", { className: "sia-tt-stride sia-tt-button sia-tt-mini-input", type: "number", min: "1", title: "Skip Stride i.e. how many steps count as one unit", oninput: () => (this.state.stride = Math.max(1, Number(stride.value) || 1)) }),
+        stats = createEl("span", { className: "sia-tt-stats" }),
+        limit = createEl("input", { className: "sia-tt-limit sia-tt-mini-input sia-tt-button", type: "number", min: "1", title: "Maximum number of history entries kept in memory before older entries are discarded.", oninput: () => (this.time.config.limit = Math.max(1, Number(limit.value) || 1)) }),
+        delay = createEl("input", { className: "sia-tt-delay sia-tt-mini-input sia-tt-button", type: "number", min: "0", step: "50", title: "Maximum playback delay between timeline frames in milliseconds.", oninput: () => (this.time.config.maxPlaybackDelay = Math.max(0, Number(delay.value) || 0)) }),
+        read = createEl("label", { className: "sia-tt-check", title: "When recording intent mutations, read previous values from the matching state path instead of the intent path. Useful for accurate undo reconstruction of intent-driven flows." }),
+        readBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorReads, onchange: () => (this.time.config.mirrorReads = readBox.checked) }),
+        write = createEl("label", { className: "sia-tt-check", title: "During playback and teleportation, mirror state writes into matching intent paths to re-enact the recorded history. Useful for accurate reconstruction of the whole session." }),
+        writeBox = createEl("input", { type: "checkbox", checked: !!this.time.config.mirrorWrites, onchange: () => (this.time.config.mirrorWrites = writeBox.checked) }),
+        filterRow1 = createEl("div", { className: "sia-tt-filter-row" }),
+        filterRow2 = createEl("div", { className: "sia-tt-filter-row" }),
+        row1 = createEl("div", { className: "sia-tt-row" }),
+        row2 = createEl("div", { className: "sia-tt-row" }),
+        row3 = createEl("div", { className: "sia-tt-row" }),
+        row4 = createEl("div", { className: "sia-tt-row" }),
+        row5 = createEl("div", { className: "sia-tt-row sia-tt-config-row" });
       speed.append(...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4, 8, 16, 32].map((v) => createEl("option", { value: String(v), textContent: `${v}x` })));
       status.append((box.append(frame), box), clrHistory);
       filters.append((filterBox.append((filterRow1.append(whitelistLabel, whitelist), filterRow1), (filterRow2.append(blacklistLabel, blacklist), filterRow2)), filterBox));
       panel.append(title, status, (row1.append(playPause, rewind, genesis), row1), (row2.append(undo, redo, trackUntrack, stride), row2), payload, (row3.append(speed, range), row3), filters, (row4.append(exp, imp, clr), row4), io, (row5.append(delay, limit, (read.append(readBox, " Read Mirror"), read), (write.append(writeBox, " Write Mirror"), write)), row5), (foot.prepend(stats), foot.append(link), foot));
       this.host.append(toggle, panel);
-      this.keydown = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => (a && (e.preventDefault(), e.stopImmediatePropagation()), a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? this.state.open = false : a === "export" ? this.state.import = this.time.export(null, 2) : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = ""));
+      this.keydown = (e, can = this.state.open && (this.config.devOnly ? CTX.isDevEnv : true), a = can && keyEventAllowed(e, keys)) => (a && (e.preventDefault(), e.stopImmediatePropagation()), a === "undo" ? this.time.undo(this.state.stride) : a === "redo" ? this.time.redo(this.state.stride) : a === "genesis" ? this.time.jumpTo(0) : a === "trackUntrack" ? this.time[s.tracking ? "untrack" : "track"]() : a === "ending" ? this.time.jumpTo(s.history.length) : a === "rewind" ? this.time.rewind() : a === "playPause" ? this.time[s.paused ? "play" : "pause"]() : a === "clrHistory" ? this.time.clear() : a === "closeOverlay" ? (this.state.open = false) : a === "export" ? (this.state.import = this.time.export(null, 2)) : a === "import" ? this.state.import.trim().length && this.time.import(this.state.import) : a === "clear" && (this.state.import = ""));
       window.addEventListener("keydown", this.keydown, { capture: true });
       const sync = [
-        effect(() => this.config.color ? host.style.setProperty("--sia-tt-color", this.config.color) : host.style.removeProperty("--sia-tt-color")),
+        effect(() => (this.config.color ? host.style.setProperty("--sia-tt-color", this.config.color) : host.style.removeProperty("--sia-tt-color"))),
         effect(() => {
           if (this.config.devOnly && !CTX.isDevEnv) return void host.remove();
           const dock = getDock(this.config.container);
           if (host.parentNode !== dock) dock.appendChild(host);
         }),
-        effect(() => toggle.textContent = `${(panel.hidden = !this.state.open) ? "Show" : "Hide"} ${title.textContent = this.config.title ?? ""}`),
-        effect(() => playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyTooltip(keys.shortcuts.playPause)}`),
-        effect(() => trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyTooltip(keys.shortcuts.trackUntrack)}`),
+        effect(() => (toggle.textContent = `${(panel.hidden = !this.state.open) ? "Show" : "Hide"} ${(title.textContent = this.config.title ?? "")}`)),
+        effect(() => (playPause.textContent = `${s.paused ? "Play" : "Pause"}${formatKeyTooltip(keys.shortcuts.playPause)}`)),
+        effect(() => (trackUntrack.textContent = `${s.tracking ? "Untrack" : "Track"}${formatKeyTooltip(keys.shortcuts.trackUntrack)}`)),
         effect((sets = 0, txs = 0) => {
           range.max = String(s.history.length);
           range.disabled = clrHistory.disabled = !s.history.length;
@@ -2166,7 +2315,7 @@
         effect((v = String(this.time.config.maxPlaybackDelay)) => v !== delay.value && (delay.value = v)),
         effect((v = !!this.time.config.mirrorReads) => v !== readBox.checked && (readBox.checked = v)),
         effect((v = !!this.time.config.mirrorWrites) => v !== writeBox.checked && (writeBox.checked = v)),
-        effect(() => (!wlLive && (whitelist.value = formatPaths(this.time.config.whitelist, "*")), !blLive && (blacklist.value = formatPaths(this.time.config.blacklist, ""))))
+        effect(() => (!wlLive && (whitelist.value = formatPaths(this.time.config.whitelist, "*")), !blLive && (blacklist.value = formatPaths(this.time.config.blacklist, "")))),
       ];
       this.clups.push(...sync);
     }
@@ -2185,7 +2334,7 @@
     return dock.parentElement !== layer && layer.appendChild(dock), dock;
   }
   function formatPaths(paths, emptyText) {
-    return !paths ? emptyText : Array.isArray(paths) ? paths.length ? paths.join(", ") : emptyText : "object" === typeof paths ? JSON.stringify(paths) : String(paths);
+    return !paths ? emptyText : Array.isArray(paths) ? (paths.length ? paths.join(", ") : emptyText) : "object" === typeof paths ? JSON.stringify(paths) : String(paths);
   }
   function parsePaths(raw, allowEmpty = false) {
     const text = raw.trim();
@@ -2197,7 +2346,10 @@
       } catch {
         return null;
       }
-    const list = text.split(",").map((p) => p.trim()).filter(Boolean);
+    const list = text
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
     return list.length ? list : allowEmpty ? void 0 : wpArr;
   }
 
@@ -2206,32 +2358,32 @@
     constructor(medium, build) {
       this.setReadyState(0, medium);
       this.bindAllMethods();
-      this.buildCache = { ...build }, this.id = build.id, this.video = medium;
+      (this.buildCache = { ...build }), (this.id = build.id), (this.video = medium);
       this.config = reactive(tmg.volatile(build));
       this.settings = this.config.settings;
       this.guardTimeValues(), this.plugSources(), this.plugTracks(), this.plugPlaylist();
       const { src, sources, tracks } = this.config;
-      this.log(this.buildCache = { ...this.buildCache, ...src ? { src } : null, ...sources?.length ? { sources } : null, tracks });
+      this.log((this.buildCache = { ...this.buildCache, ...(src ? { src } : null), ...(sources?.length ? { sources } : null), tracks }));
       this.audioSetup = this.loaded = this.isScrubbing = this.buffering = this.inFullscreen = this.inFloatingPlayer = this.overTimeline = this.overVolume = this.overBrightness = this.gestureTouchXCheck = this.gestureTouchYCheck = this.gestureWheelXCheck = this.gestureWheelYCheck = this.shouldSetLastVolume = this.shouldSetLastBrightness = this.speedPointerCheck = this.speedCheck = this.skipPersist = this.shouldCancelTimeScrub = false;
       this.parentIntersecting = this.isIntersecting = this.gestureTouchCanCancel = this.canAutoMovePlaylist = this.stallCancelTimeScrub = true;
       this.currentPlaylistIndex = this.skipDuration = this.textTrackIndex = this.rewindPlaybackRate = this.playTriggerCounter = 0;
       this.wasPaused = !this.video.autoplay;
       this.sliderAptVolume = this.sliderAptBrightness = 5;
-      this.throttleMap = /* @__PURE__ */ new Map(), this.rafLoopMap = /* @__PURE__ */ new Map(), this.rafLoopFnMap = /* @__PURE__ */ new Map();
-      this.pfps = 30, this.pframeDelay = Math.round(1e3 / this.pfps);
-      this.exportCanvas = tmg.createEl("canvas"), this.exportContext = this.exportCanvas.getContext("2d", { willReadFrequently: true });
+      (this.throttleMap = /* @__PURE__ */ new Map()), (this.rafLoopMap = /* @__PURE__ */ new Map()), (this.rafLoopFnMap = /* @__PURE__ */ new Map());
+      (this.pfps = 30), (this.pframeDelay = Math.round(1e3 / this.pfps));
+      (this.exportCanvas = tmg.createEl("canvas")), (this.exportContext = this.exportCanvas.getContext("2d", { willReadFrequently: true }));
       this.mutatingDOMM = true;
       this.buildContainers(), this.buildPlayerInterface();
       this.plugControlPanelSettings();
       this.initPlayer();
       this.initSettingsUIManager();
-      setTimeout(() => this.mutatingDOMM = false);
+      setTimeout(() => (this.mutatingDOMM = false));
     }
     plugSources() {
       const { src, sources } = this.config;
       this.config.get("src", () => this.video.src);
       this.config.get("sources", () => tmg.getSources(this.video));
-      this.config.watch("src", (value) => !tmg.isSameURL(this.config.src, value) && (tmg.removeSources(this.video), this.video.src = value));
+      this.config.watch("src", (value) => !tmg.isSameURL(this.config.src, value) && (tmg.removeSources(this.video), (this.video.src = value)));
       this.config.watch("sources", (value = []) => !tmg.isSameSources(this.config.sources, value) && (tmg.removeSources(this.video), tmg.addSources(value, this.video)));
       if ("src" in this.config) this.config.src = src;
       if ("sources" in this.config) this.config.sources = sources;
@@ -2243,13 +2395,13 @@
       if ("tracks" in this.config) this.config.tracks = tracks;
     }
     plugPlaylist() {
-      this.config.get("playlist", (value) => value?.length ? value : null);
+      this.config.get("playlist", (value) => (value?.length ? value : null));
       this.config.set("playlist", (value) => value?.map((v) => tmg.mergeObjs(tmg.DEFAULT_VIDEO_ITEM_BUILD, tmg.parsePathObj(v))));
       this.config.on(
         "playlist",
         ({ root }) => {
           if (this.readyState < 1) return;
-          const v = root.playlist?.find((v2) => v2.media.id && v2.media.id === root.media.id || tmg.isSameURL(v2.src, root.src));
+          const v = root.playlist?.find((v2) => (v2.media.id && v2.media.id === root.media.id) || tmg.isSameURL(v2.src, root.src));
           this.currentPlaylistIndex = v ? root.playlist.indexOf(v) : 0;
           v ? this.applyPlaylistItem(v, false) : this.movePlaylistTo(this.currentPlaylistIndex);
         },
@@ -2263,13 +2415,13 @@
     }
     plugMedia() {
       this.setImgLoadState({ target: this.DOM.videoProfile });
-      ["media.title", "media.artist", "media.profile"].forEach((e) => this.config.watch(e, (value) => this.settings.controlPanel[e.replace("media.", "")] = value, { init: "auto" }));
-      ["media.links.title", "media.links.artist", "media.links.profile"].forEach(
-        (p) => this.config.on(
+      ["media.title", "media.artist", "media.profile"].forEach((e) => this.config.watch(e, (value) => (this.settings.controlPanel[e.replace("media.", "")] = value), { init: "auto" }));
+      ["media.links.title", "media.links.artist", "media.links.profile"].forEach((p) =>
+        this.config.on(
           p,
           ({ target: { key, value } }) => {
             const el = key !== "profile" ? this.DOM[`video${tmg.capitalize(key)}`] : this.DOM.videoProfile?.parentElement;
-            el && Object.entries({ href: value, "tab-index": value ? "0" : null, target: value ? "_blank" : null, rel: value ? "noopener noreferrer" : null }).forEach(([attr, val]) => val ? el.setAttribute(attr, val) : el.removeAttribute(attr));
+            el && Object.entries({ href: value, "tab-index": value ? "0" : null, target: value ? "_blank" : null, rel: value ? "noopener noreferrer" : null }).forEach(([attr, val]) => (val ? el.setAttribute(attr, val) : el.removeAttribute(attr)));
           },
           { init: true }
         )
@@ -2279,7 +2431,7 @@
     }
     async autoGenerateMedia() {
       const url = this.config.media.artwork?.[0]?.src;
-      if (!this.config.media.autoGenerate || url && !url.startsWith("blob:")) return;
+      if (!this.config.media.autoGenerate || (url && !url.startsWith("blob:"))) return;
       this.config.media.artwork = [{ src: "" }];
       this.config.media.artwork = [{ src: (await this.getVideoFrame(void 0, this.config.lightState.preview.time)).url || "" }];
       url && URL.revokeObjectURL(url);
@@ -2307,7 +2459,7 @@
     plugToastsSettings = () => {
       this.config.on("settings.toasts.disabled", ({ value }) => value && t007.toast.dismissAll(this.id));
       this.config.on("settings.toasts.nextVideoPreview.usePoster", ({ target: { value, object } }) => {
-        if (!this.nextVideoPreview || value && this.nextVideoPreview.poster) return;
+        if (!this.nextVideoPreview || (value && this.nextVideoPreview.poster)) return;
         if (object.tease) object.tease = true;
         else this.nextVideoPreview.currentTime = object.time;
       });
@@ -2364,10 +2516,10 @@
     cleanUpDOM() {
       this.mutatingDOMM = true;
       this.video.classList.remove("tmg-video", "tmg-media");
-      this.floatingWindow?.removeEventListener("pagehide", this._handleFloatingPlayerClose), this.floatingWindow?.close(), this.floatingWindow = null;
+      this.floatingWindow?.removeEventListener("pagehide", this._handleFloatingPlayerClose), this.floatingWindow?.close(), (this.floatingWindow = null);
       if (this.pseudoVideo.isConnected) this.video.isConnected && this.deactivatePseudoMode(true), this.videoContainer.remove();
       else if (this.video.isConnected) this.videoContainer.parentElement?.replaceChild(this.video, this.videoContainer);
-      setTimeout(() => this.mutatingDOMM = false);
+      setTimeout(() => (this.mutatingDOMM = false));
     }
     _destroy() {
       this.setReadyState(-1);
@@ -2379,11 +2531,12 @@
       this.video.cancelVideoFrameCallback?.(this.frameCallbackId);
       this.setKeyEventListeners("remove"), this.setVideoEventListeners("remove");
       this.cleanUpDOM();
-      return this.video = this.cloneOnDetach ? tmg.cloneVideo(this.video) : this.video;
+      return (this.video = this.cloneOnDetach ? tmg.cloneVideo(this.video) : this.video);
     }
     plugCSSSettings() {
       const apply = (key, value) => {
-        const pre = `tmg-video-${tmg.uncamelize(key, "-")}`, spec = () => (this.videoContainer.classList.forEach((cls) => cls.startsWith(pre) && this.videoContainer.classList.remove(cls)), this.videoContainer.classList.add(`${pre}-${value}`), true);
+        const pre = `tmg-video-${tmg.uncamelize(key, "-")}`,
+          spec = () => (this.videoContainer.classList.forEach((cls) => cls.startsWith(pre) && this.videoContainer.classList.remove(cls)), this.videoContainer.classList.add(`${pre}-${value}`), true);
         ({ captionsCharacterEdgeStyle: spec, captionsTextAlignment: spec })[key]?.() ?? [this.videoContainer, this.pseudoVideoContainer].forEach((el) => el?.style.setProperty(`--${pre}`, value));
       };
       const entries = Object.entries(this.settings.css);
@@ -2392,10 +2545,10 @@
       this.config.get("*", (val, { target: { key, path } }) => {
         if (!path.startsWith("settings.css.") || path.includes("sync")) return val;
         const newVal = this[this.classKeys.includes(key) ? "getClassValue" : "getCSSValue"](key);
-        return this.CSSCache[key] ||= newVal, newVal;
+        return (this.CSSCache[key] ||= newVal), newVal;
       });
       this.config.watch("*", (val, { target: { key, path } }) => path.startsWith("settings.css.") && !path.includes("sync") && apply(key, val));
-      entries.forEach(([k, v]) => k !== "syncWithMedia" && (this.CSSCache[k] ||= this.settings.css[k], apply(k, v)));
+      entries.forEach(([k, v]) => k !== "syncWithMedia" && ((this.CSSCache[k] ||= this.settings.css[k]), apply(k, v)));
     }
     getCSSValue(key) {
       const cssVar = `--tmg-video-${tmg.uncamelize(key, "-")}`;
@@ -2407,46 +2560,62 @@
     }
     initSettingsUIManager() {
       const options = [
-        { option: "Light Blue", value: "#3198f5" },
-        { option: "Hot Pink", value: "#ff69b4" },
-        { option: "Fiery Red", value: "#ff0033" },
-        // more like, Youtube red :)
-        { option: "Dark Turquoise", value: "#00ced1" },
-        { option: "Custom Hue", value: "custom" },
-        { option: "Video Derived", value: "auto" }
-      ], gcolors = options.slice(0, -2).map((opt) => opt.value), defs = { brand: this.settings.css.brandColor ?? "#e26e02", theme: this.settings.css.themeColor ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] }, bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : defs.brand }), cBField = t007.field({ type: "color" }), tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : defs.theme }), cTField = t007.field({ type: "color" }), bWrapper = tmg.createEl("div"), tWrapper = tmg.createEl("div");
-      this.config.watch("settings.css.brandColor", (v = defs.brand) => (v = v.toLowerCase(), cBField.inputEl.value = v, cBField.style.setProperty("--input-color", v), bField.inputEl.value = !defs.bcolors.includes(v) ? !this.settings.css.syncWithMedia.brandColor ? "custom" : "auto" : v), { init: true });
-      this.config.watch("settings.css.themeColor", (v = defs.theme) => (v = v.toLowerCase(), cTField.inputEl.value = v, cTField.style.setProperty("--input-color", v), tField.inputEl.value = !defs.tcolors.includes(v) ? !this.settings.css.syncWithMedia.themeColor ? "custom" : "auto" : v), { init: true });
+          { option: "Light Blue", value: "#3198f5" },
+          { option: "Hot Pink", value: "#ff69b4" },
+          { option: "Fiery Red", value: "#ff0033" },
+          // more like, Youtube red :)
+          { option: "Dark Turquoise", value: "#00ced1" },
+          { option: "Custom Hue", value: "custom" },
+          { option: "Video Derived", value: "auto" },
+        ],
+        gcolors = options.slice(0, -2).map((opt) => opt.value),
+        defs = { brand: this.settings.css.brandColor ?? "#e26e02", theme: this.settings.css.themeColor ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
+        bField = t007.field({ type: "select", label: "Brand Color", helperText: { info: "You should just try changing your brand color for now" }, options: [{ option: "Tastey Orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
+        cBField = t007.field({ type: "color" }),
+        tField = t007.field({ type: "select", label: "Theme Color", helperText: { info: "You should also try changing your theme color for now" }, options: [{ option: "Pure White", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
+        cTField = t007.field({ type: "color" }),
+        bWrapper = tmg.createEl("div"),
+        tWrapper = tmg.createEl("div");
+      this.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = v.toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true });
+      this.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = v.toLowerCase()), (cTField.inputEl.value = v), cTField.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true });
       this.queryDOM(".tmg-video-settings-bottom-panel").append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
-      const id = { theme: "", brand: "" }, sync = (cb, req = true, type = "brand") => (this.settings.css.syncWithMedia[`${type}Color`] = req, cb(req)), assert = (opts, type = "brand") => this.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }), onBColorChange = ({ target: { value: val } }) => {
-        this.throttle(
-          "brandColorPicking",
-          async () => {
-            id.brand && this.toast?.dismiss(id.brand);
-            let col;
-            if (val === "custom") return cBField.inputEl.click();
-            if (val !== "auto") col = this.settings.css.brandColor = val;
-            else col = this.settings.css.brandColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.brandColor;
-            const cb = (sync2) => bField.inputEl.value = defs.bcolors.includes(col) ? col : sync2 ? "auto" : "custom", No = () => (sync(cb, false), assert({ actions: { Yes } })), Yes = () => (sync(cb, true), assert({ actions: { No } }));
-            sync(cb, val === "auto"), val === "auto" && (id.brand = this.toast?.("Should the brand color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => id.brand = "" }));
-          },
-          150
-        );
-      }, onTColorChange = ({ target: { value: val } }) => {
-        this.throttle(
-          "themeColorPicking",
-          async () => {
-            id.theme && this.toast?.dismiss(id.theme);
-            let col;
-            if (val === "custom") return cTField.inputEl.click();
-            if (val !== "auto") col = this.settings.css.themeColor = val;
-            else col = this.settings.css.themeColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.themeColor;
-            const cb = (sync2) => tField.inputEl.value = defs.tcolors.includes(col) ? col : sync2 ? "auto" : "custom", No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")), Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
-            sync(cb, val === "auto", "theme"), val === "auto" && (id.theme = this.toast?.("Should the theme color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => id.theme = "" }));
-          },
-          150
-        );
-      };
+      const id = { theme: "", brand: "" },
+        sync = (cb, req = true, type = "brand") => ((this.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),
+        assert = (opts, type = "brand") => this.toast?.update(id[type], { render: `Still here in case you change your choice about the ${type}`, ...opts }),
+        onBColorChange = ({ target: { value: val } }) => {
+          this.throttle(
+            "brandColorPicking",
+            async () => {
+              id.brand && this.toast?.dismiss(id.brand);
+              let col;
+              if (val === "custom") return cBField.inputEl.click();
+              if (val !== "auto") col = this.settings.css.brandColor = val;
+              else col = this.settings.css.brandColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.brandColor;
+              const cb = (sync2) => (bField.inputEl.value = defs.bcolors.includes(col) ? col : sync2 ? "auto" : "custom"),
+                No = () => (sync(cb, false), assert({ actions: { Yes } })),
+                Yes = () => (sync(cb, true), assert({ actions: { No } }));
+              sync(cb, val === "auto"), val === "auto" && (id.brand = this.toast?.("Should the brand color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.brand = "") }));
+            },
+            150
+          );
+        },
+        onTColorChange = ({ target: { value: val } }) => {
+          this.throttle(
+            "themeColorPicking",
+            async () => {
+              id.theme && this.toast?.dismiss(id.theme);
+              let col;
+              if (val === "custom") return cTField.inputEl.click();
+              if (val !== "auto") col = this.settings.css.themeColor = val;
+              else col = this.settings.css.themeColor = (this.loaded ? await this.getMediaMainColor(this.settings.time.value, null) : null) ?? this.CSSCache.themeColor;
+              const cb = (sync2) => (tField.inputEl.value = defs.tcolors.includes(col) ? col : sync2 ? "auto" : "custom"),
+                No = () => (sync(cb, false, "theme"), assert({ actions: { Yes } }, "theme")),
+                Yes = () => (sync(cb, true, "theme"), assert({ actions: { No } }, "theme"));
+              sync(cb, val === "auto", "theme"), val === "auto" && (id.theme = this.toast?.("Should the theme color change anytime a video loads?", { icon: "\u{1F3A8}", autoClose: 15e3, hideProgressBar: false, actions: { Yes, No }, onClose: () => (id.theme = "") }));
+            },
+            150
+          );
+        };
       bField.inputEl.addEventListener("input", onBColorChange);
       cBField.inputEl.addEventListener("input", onBColorChange);
       tField.inputEl.addEventListener("input", onTColorChange);
@@ -2454,8 +2623,8 @@
     }
     buildContainers() {
       this.setPosterState();
-      this.video.parentElement?.insertBefore(this.videoContainer = tmg.createEl("div", { role: "region", ariaLabel: "Video Player", className: `tmg-video-container tmg-media-container${tmg.ON_MOBILE ? " tmg-video-mobile" : ""}${this.video.paused ? " tmg-video-paused" : ""}` }, { trackKind: "captions", volumeLevel: "muted", brightnessLevel: "dark" }), this.video);
-      (this.pseudoVideoContainer = tmg.createEl("div", { role: "status", ariaLabel: "Video Player Placeholder", ariaLive: "polite", className: "tmg-pseudo-video-container tmg-media-container" })).append(this.pseudoVideo = tmg.createEl("video", { tmgPlayer: this.video.tmgPlayer, ariaHidden: true, className: "tmg-pseudo-video tmg-media", muted: true, autoplay: false }));
+      this.video.parentElement?.insertBefore((this.videoContainer = tmg.createEl("div", { role: "region", ariaLabel: "Video Player", className: `tmg-video-container tmg-media-container${tmg.ON_MOBILE ? " tmg-video-mobile" : ""}${this.video.paused ? " tmg-video-paused" : ""}` }, { trackKind: "captions", volumeLevel: "muted", brightnessLevel: "dark" })), this.video);
+      (this.pseudoVideoContainer = tmg.createEl("div", { role: "status", ariaLabel: "Video Player Placeholder", ariaLive: "polite", className: "tmg-pseudo-video-container tmg-media-container" })).append((this.pseudoVideo = tmg.createEl("video", { tmgPlayer: this.video.tmgPlayer, ariaHidden: true, className: "tmg-pseudo-video tmg-media", muted: true, autoplay: false })));
       this.plugCSSSettings();
       this.videoContainer.dataset.objectFit = this.settings.css.objectFit || "contain";
       this.syncMediaAspectRatio(), this.syncWithMediaColor();
@@ -2559,7 +2728,7 @@
       return {
         pictureinpicturewrapper: tmg.createEl("div", {
           className: "tmg-video-picture-in-picture-wrapper",
-          innerHTML: `<button type="button" class="tmg-video-picture-in-picture-icon-wrapper"><svg class="tmg-video-picture-in-picture-icon" viewBox="0 0 73 73"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-video-pip-icon-background"><rect x="-1" y="-1" width="71" height="71" rx="14"></rect></g><g transform="translate(15, 15)" fill-rule="nonzero"><g><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 36 36 36 36 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="4.2890625" y="4.2890625" width="27.421875" height="13.2679687"></rect><g transform="translate(4.289063, 27.492187)"><rect x="0" y="0" width="3.1640625" height="2.109375" class="tmg-video-pip-icon-timeline-progress"></rect><rect x="7.3828125" y="0" width="20.0390625" height="2.109375" class="tmg-video-pip-icon-timeline-base"></rect></g><circle class="tmg-video-pip-icon-thumb-indicator" cx="9.5625" cy="28.546875" r="3.1640625"></circle><polygon class="tmg-video-pip-icon-content" points="31.7109375 17.5569609 31.7109375 23.2734375 4.2890625 23.2734375 4.2890625 17.5569609 13.78125 8.06477344 20.109375 14.3928984 24.328125 10.1741484"></polygon></g><g transform="translate(21, 26)"><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 17.7727273 23 17.7727273 23 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="2.74023438" y="2.74023438" width="17.5195312" height="8.47675781"></rect><polygon class="tmg-video-pip-icon-content"points="20.2597656 11.2169473 20.2597656 14.8691406 2.74023438 14.8691406 2.74023438 11.2169473 8.8046875 5.15249414 12.8476562 9.19546289 15.5429687 6.50015039"></polygon></g></g></g></svg></button><p>Playing in picture-in-picture</p>`
+          innerHTML: `<button type="button" class="tmg-video-picture-in-picture-icon-wrapper"><svg class="tmg-video-picture-in-picture-icon" viewBox="0 0 73 73"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(2, 2)" fill-rule="nonzero" stroke-width="2" class="tmg-video-pip-icon-background"><rect x="-1" y="-1" width="71" height="71" rx="14"></rect></g><g transform="translate(15, 15)" fill-rule="nonzero"><g><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 36 36 36 36 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="4.2890625" y="4.2890625" width="27.421875" height="13.2679687"></rect><g transform="translate(4.289063, 27.492187)"><rect x="0" y="0" width="3.1640625" height="2.109375" class="tmg-video-pip-icon-timeline-progress"></rect><rect x="7.3828125" y="0" width="20.0390625" height="2.109375" class="tmg-video-pip-icon-timeline-base"></rect></g><circle class="tmg-video-pip-icon-thumb-indicator" cx="9.5625" cy="28.546875" r="3.1640625"></circle><polygon class="tmg-video-pip-icon-content" points="31.7109375 17.5569609 31.7109375 23.2734375 4.2890625 23.2734375 4.2890625 17.5569609 13.78125 8.06477344 20.109375 14.3928984 24.328125 10.1741484"></polygon></g><g transform="translate(21, 26)"><polygon class="tmg-video-pip-icon-content-background" points="0 0 0 17.7727273 23 17.7727273 23 0"></polygon><rect class="tmg-video-pip-icon-content-backdrop" x="2.74023438" y="2.74023438" width="17.5195312" height="8.47675781"></rect><polygon class="tmg-video-pip-icon-content"points="20.2597656 11.2169473 20.2597656 14.8691406 2.74023438 14.8691406 2.74023438 11.2169473 8.8046875 5.15249414 12.8476562 9.19546289 15.5429687 6.50015039"></polygon></g></g></g></svg></button><p>Playing in picture-in-picture</p>`,
         }),
         meta: tmg.createEl("div", { className: "tmg-video-meta-wrapper", innerHTML: `<a class="tmg-video-profile-link"><img alt="Profile" class="tmg-video-profile"></a><div class="tmg-video-meta-text-wrapper-cover"><div class="tmg-video-title-wrapper"><a class="tmg-video-title"></a></div><div class="tmg-video-artist-wrapper"><a class="tmg-video-artist"></a></div></div>` }, { draggableControl: "", dragId: "wrapper", controlId: "meta" }),
         videobuffer: tmg.createEl("div", { className: "tmg-video-buffer", innerHTML: `<div class="tmg-video-buffer-accent"></div><div class="tmg-video-buffer-eclipse"><div class="tmg-video-buffer-left"><div class="tmg-video-buffer-circle"></div></div><div class="tmg-video-buffer-right"><div class="tmg-video-buffer-circle"></div></div></div>` }),
@@ -2587,15 +2756,15 @@
           tmg.createEl("div", { className: "tmg-video-notifier tmg-video-object-fit-notifier-content" }),
           tmg.createEl("div", {
             className: "tmg-video-notifier tmg-video-object-fit-contain-notifier",
-            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`,
           }),
           tmg.createEl("div", {
             className: "tmg-video-notifier tmg-video-object-fit-cover-notifier",
-            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg>`
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg>`,
           }),
           tmg.createEl("div", {
             className: "tmg-video-notifier tmg-video-object-fit-fill-notifier",
-            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)">  <path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+            innerHTML: `<svg viewBox="0 0 16 16" style="scale: 0.78;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)">  <path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`,
           })
         ),
         fwdnotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-fwd-notifier", innerHTML: `<svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg><svg viewBox="0 0 25 25"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>` }),
@@ -2605,11 +2774,11 @@
         touchtimelinenotifier: tmg.createEl("div", { className: "tmg-video-notifier tmg-video-touch-timeline-notifier tmg-video-touch-notifier" }),
         touchvolumenotifier: tmg.createEl("div", {
           className: "tmg-video-notifier tmg-video-touch-volume-notifier tmg-video-touch-vb-notifier",
-          innerHTML: `<span class="tmg-video-touch-volume-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-volume-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"></path></svg></span>`
+          innerHTML: `<span class="tmg-video-touch-volume-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-volume-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"></path></svg></span>`,
         }),
         touchbrightnessnotifier: tmg.createEl("div", {
           className: "tmg-video-notifier tmg-video-touch-brightness-notifier tmg-video-touch-vb-notifier",
-          innerHTML: `<span class="tmg-video-touch-brightness-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-brightness-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></span>`
+          innerHTML: `<span class="tmg-video-touch-brightness-content tmg-video-touch-vb-content">0</span><div class="tmg-video-touch-brightness-slider tmg-video-touch-vb-slider"></div><span><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></span>`,
         }),
         expandminiplayer: tmg.createEl("button", { className: "tmg-video-miniplayer-expand-btn", innerHTML: `<svg class="tmg-video-miniplayer-expand-icon" viewBox="0 -960 960 960" data-control-title="Expand miniplayer" style="scale: 0.9; rotate: 90deg;"><path d="M120-120v-320h80v184l504-504H520v-80h320v320h-80v-184L256-200h184v80H120Z"/></svg>` }, { draggableControl: "", controlId: "expandminiplayer" }),
         removeminiplayer: tmg.createEl("button", { className: "tmg-video-miniplayer-remove-btn", innerHTML: `<svg class="tmg-video-miniplayer-remove-icon" viewBox="0 -960 960 960" data-control-title="Remove miniplayer (Escape)"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>` }, { draggableControl: "", controlId: "removeminiplayer" }),
@@ -2618,7 +2787,7 @@
           "button",
           {
             className: "tmg-video-fullscreen-orientation-btn",
-            innerHTML: `<svg viewBox="0 0 512 512" class="tmg-video-fullscreen-orientation-icon" data-control-title="Change orientation" style="scale: 0.925;"><path d="M446.81,275.82H236.18V65.19c0-20.78-16.91-37.69-37.69-37.69H65.19c-20.78,0-37.69,16.91-37.69,37.69v255.32c0,20.78,16.91,37.68,37.69,37.68h88.62v88.62c0,20.78,16.9,37.69,37.68,37.69h255.32c20.78,0,37.69-16.91,37.69-37.69v-133.3C484.5,292.73,467.59,275.82,446.81,275.82zM65.19,326.19c-3.14,0-5.69-2.55-5.69-5.68V65.19c0-3.14,2.55-5.69,5.69-5.69h133.3c3.14,0,5.69,2.55,5.69,5.69v210.63h-12.69c-20.78,0-37.68,16.91-37.68,37.69v12.68H65.19zM452.5,446.81c0,3.14-2.55,5.69-5.69,5.69H191.49c-3.13,0-5.68-2.55-5.68-5.69V342.19v-28.68c0-2.94,2.24-5.37,5.1-5.66c0.19-0.02,0.38-0.03,0.58-0.03h28.69h226.63c3.14,0,5.69,2.55,5.69,5.69V446.81z"/><path d="M369.92,181.53c-6.25-6.25-16.38-6.25-22.63,0c-6.25,6.25-6.25,16.38,0,22.63l44.39,44.39c3.12,3.13,7.22,4.69,11.31,4.69c0.21,0,0.42-0.02,0.63-0.03c0.2,0.01,0.4,0.03,0.6,0.03c6.31,0,11.74-3.66,14.35-8.96l37.86-37.86c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-13.59,13.59v-86.58c0-8.84-7.16-16-16-16h-86.29l15.95-15.95c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-40.33,40.33c-5.19,2.65-8.75,8.03-8.75,14.25c0,0.19,0.02,0.37,0.03,0.56c-0.01,0.19-0.03,0.38-0.03,0.57c0,4.24,1.69,8.31,4.69,11.31l42.14,42.14c3.12,3.12,7.22,4.69,11.31,4.69s8.19-1.56,11.31-4.69c6.25-6.25,6.25-16.38,0-22.63l-15.95-15.95h72.54v73.05L369.92,181.53z"/></svg>`
+            innerHTML: `<svg viewBox="0 0 512 512" class="tmg-video-fullscreen-orientation-icon" data-control-title="Change orientation" style="scale: 0.925;"><path d="M446.81,275.82H236.18V65.19c0-20.78-16.91-37.69-37.69-37.69H65.19c-20.78,0-37.69,16.91-37.69,37.69v255.32c0,20.78,16.91,37.68,37.69,37.68h88.62v88.62c0,20.78,16.9,37.69,37.68,37.69h255.32c20.78,0,37.69-16.91,37.69-37.69v-133.3C484.5,292.73,467.59,275.82,446.81,275.82zM65.19,326.19c-3.14,0-5.69-2.55-5.69-5.68V65.19c0-3.14,2.55-5.69,5.69-5.69h133.3c3.14,0,5.69,2.55,5.69,5.69v210.63h-12.69c-20.78,0-37.68,16.91-37.68,37.69v12.68H65.19zM452.5,446.81c0,3.14-2.55,5.69-5.69,5.69H191.49c-3.13,0-5.68-2.55-5.68-5.69V342.19v-28.68c0-2.94,2.24-5.37,5.1-5.66c0.19-0.02,0.38-0.03,0.58-0.03h28.69h226.63c3.14,0,5.69,2.55,5.69,5.69V446.81z"/><path d="M369.92,181.53c-6.25-6.25-16.38-6.25-22.63,0c-6.25,6.25-6.25,16.38,0,22.63l44.39,44.39c3.12,3.13,7.22,4.69,11.31,4.69c0.21,0,0.42-0.02,0.63-0.03c0.2,0.01,0.4,0.03,0.6,0.03c6.31,0,11.74-3.66,14.35-8.96l37.86-37.86c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-13.59,13.59v-86.58c0-8.84-7.16-16-16-16h-86.29l15.95-15.95c6.25-6.25,6.25-16.38,0-22.63c-6.25-6.25-16.38-6.25-22.63,0l-40.33,40.33c-5.19,2.65-8.75,8.03-8.75,14.25c0,0.19,0.02,0.37,0.03,0.56c-0.01,0.19-0.03,0.38-0.03,0.57c0,4.24,1.69,8.31,4.69,11.31l42.14,42.14c3.12,3.12,7.22,4.69,11.31,4.69s8.19-1.56,11.31-4.69c6.25-6.25,6.25-16.38,0-22.63l-15.95-15.95h72.54v73.05L369.92,181.53z"/></svg>`,
           },
           { draggableControl: "", controlId: "fullscreenorientation" }
         ),
@@ -2634,7 +2803,7 @@
           "div",
           {
             className: "tmg-video-volume-container tmg-video-vb-container",
-            innerHTML: `<button type="button" class="tmg-video-mute-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon" data-control-title="Mute${k["mute"]}"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon" data-control-title="Mute${k["mute"]}"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon" data-control-title="Unmute${k["mute"]}"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" /></svg></button><span class="tmg-video-volume-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-volume-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`
+            innerHTML: `<button type="button" class="tmg-video-mute-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-volume-high-icon" data-control-title="Mute${k["mute"]}"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-low-icon" data-control-title="Mute${k["mute"]}"><path d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-volume-muted-icon" data-control-title="Unmute${k["mute"]}"><path d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" /></svg></button><span class="tmg-video-volume-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-volume-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`,
           },
           { draggableControl: "", controlId: "volume" }
         ),
@@ -2642,7 +2811,7 @@
           "div",
           {
             className: "tmg-video-brightness-container tmg-video-vb-container",
-            innerHTML: `<button type="button" class="tmg-video-dark-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon" data-control-title="Darken${k["dark"]}"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></button><span class="tmg-video-brightness-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-brightness-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`
+            innerHTML: `<button type="button" class="tmg-video-dark-btn tmg-video-vb-btn"><svg viewBox="0 0 25 25" class="tmg-video-brightness-high-icon" data-control-title="Darken${k["dark"]}"><path transform="translate(1.5, 1.5)" style="scale: 1.05;" d="M10 14.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h3a1 1 0 0 1 0 2h-3a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm0-15a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-3a1 1 0 0 1 1-1zm-9 9h3a1 1 0 1 1 0 2H1a1 1 0 0 1 0-2zm13.95 4.535l2.121 2.122a1 1 0 0 1-1.414 1.414l-2.121-2.121a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-2.12 2.12a1 1 0 1 1-1.415-1.413l2.121-2.122a1 1 0 0 1 1.414 0zM17.071 3.787a1 1 0 0 1 0 1.414L14.95 7.322a1 1 0 0 1-1.414-1.414l2.12-2.121a1 1 0 0 1 1.415 0zm-12.728 0l2.121 2.121A1 1 0 1 1 5.05 7.322L2.93 5.201a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-low-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(3.25, 3.25)" style="scale: 1.05;" d="M8 12.858a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6-5h1a1 1 0 0 1 0 2h-1a1 1 0 0 1 0-2zm-6 6a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1zm0-13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1zm-7 7h1a1 1 0 1 1 0 2H1a1 1 0 1 1 0-2zm11.95 4.535l.707.708a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.415zm-8.486 0a1 1 0 0 1 0 1.415l-.707.707A1 1 0 0 1 2.343 13.1l.707-.708a1 1 0 0 1 1.414 0zm9.193-9.192a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0zm-9.9 0l.707.707A1 1 0 1 1 3.05 5.322l-.707-.707a1 1 0 0 1 1.414-1.414z"></path></svg><svg viewBox="0 0 25 25" class="tmg-video-brightness-dark-icon" data-control-title="Brighten${k["dark"]}"><path transform="translate(2, 2.5)" style="scale: 1.2;" d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM8.5 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 11a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm5-5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm-11 0a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9.743-4.036a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm-7.779 7.779a.5.5 0 1 1-.707-.707.5.5 0 0 1 .707.707zm7.072 0a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707zM3.757 4.464a.5.5 0 1 1 .707-.707.5.5 0 0 1-.707.707z"></path></svg></button><span class="tmg-video-brightness-slider-wrapper tmg-video-vb-slider-wrapper"><input class="tmg-video-brightness-slider tmg-video-vb-slider" type="range" min="0" max="100" step="1"></span>`,
           },
           { draggableControl: "", controlId: "brightness" }
         ),
@@ -2654,7 +2823,7 @@
           "button",
           {
             className: "tmg-video-object-fit-btn",
-            innerHTML: `<svg class="tmg-video-object-fit-contain-icon" data-control-title="Crop to fit${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-cover-icon" data-control-title="Fit to screen${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`
+            innerHTML: `<svg class="tmg-video-object-fit-contain-icon" data-control-title="Crop to fit${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.330152,212.999001 L532.488194,212.999001 C532.212773,212.999001 531.997715,213.222859 531.997715,213.499001 C531.997715,213.767068 532.21731,213.999001 532.488194,213.999001 L535.507237,213.999001 C535.643364,213.999001 535.764746,213.944316 535.852704,213.855661 C535.94109,213.763694 535.997715,213.642369 535.997715,213.508523 L535.997715,210.48948 C535.997715,210.214059 535.773858,209.999001 535.497715,209.999001 C535.229649,209.999001 534.997715,210.218596 534.997715,210.48948 L534.997715,212.252351 L530.217991,207.472627 C530.022487,207.277123 529.712749,207.283968 529.517487,207.47923 C529.327935,207.668781 529.319269,207.988118 529.510884,208.179734 L534.330152,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M521.667563,199 L523.509521,199 C523.784943,199 524,198.776142 524,198.5 C524,198.231934 523.780405,198 523.509521,198 L520.490479,198 C520.354351,198 520.232969,198.054685 520.145011,198.14334 C520.056625,198.235308 520,198.356632 520,198.490479 L520,201.509521 C520,201.784943 520.223858,202 520.5,202 C520.768066,202 521,201.780405 521,201.509521 L521,199.74665 L525.779724,204.526374 C525.975228,204.721878 526.284966,204.715034 526.480228,204.519772 C526.66978,204.33022 526.678447,204.010883 526.486831,203.819268 L521.667563,199 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-cover-icon" data-control-title="Fit to screen${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect width="16" height="16" rx="4" ry="4" fill="none" stroke-width="2.25" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3,3)"><path style="scale: 0.6;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520 -198)"/><path style="scale: 0.6;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520 -198)"/></g></svg><svg class="tmg-video-object-fit-fill-icon" data-control-title="Stretch${k["objectFit"]}" viewBox="0 0 16 16" style="scale: 0.75;"><rect x="4" y="4" width="8" height="8" rx="1" ry="1" fill="none" stroke-width="1.5" stroke="currentColor"/><g stroke-width="1" stroke="currentColor" transform="translate(3, 3)"><path style="scale: 0.65;" d="M521.667563,212.999001 L523.509521,212.999001 C523.784943,212.999001 524,213.222859 524,213.499001 C524,213.767068 523.780405,213.999001 523.509521,213.999001 L520.490479,213.999001 C520.354351,213.999001 520.232969,213.944316 520.145011,213.855661 C520.056625,213.763694 520,213.642369 520,213.508523 L520,210.48948 C520,210.214059 520.223858,209.999001 520.5,209.999001 C520.768066,209.999001 521,210.218596 521,210.48948 L521,212.252351 L525.779724,207.472627 C525.975228,207.277123 526.284966,207.283968 526.480228,207.47923 C526.66978,207.668781 526.678447,207.988118 526.486831,208.179734 L521.667563,212.999001 Z" transform="translate(-520, -198) translate(-3.25, 2.75)" /><path style="scale: 0.65;" d="M534.251065,199 L532.488194,199 C532.212773,199 531.997715,198.776142 531.997715,198.5 C531.997715,198.231934 532.21731,198 532.488194,198 L535.507237,198 C535.643364,198 535.764746,198.054685 535.852704,198.14334 C535.94109,198.235308 535.997715,198.356632 535.997715,198.490479 L535.997715,201.509521 C535.997715,201.784943 535.773858,202 535.497715,202 C535.229649,202 534.997715,201.780405 534.997715,201.509521 L534.997715,199.667563 L530.178448,204.486831 C529.982944,204.682335 529.673206,204.67549 529.477943,204.480228 C529.288392,204.290677 529.279725,203.97134 529.471341,203.779724 L534.251065,199 Z" transform="translate(-520, -198) translate(2.5, -3.25)" /></g></svg>`,
           },
           { draggableControl: "", controlId: "objectfit" }
         ),
@@ -2664,33 +2833,42 @@
           "button",
           {
             className: "tmg-video-fullscreen-btn",
-            innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-enter-fullscreen-icon" data-control-title="Full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M4 1.5C2.61929 1.5 1.5 2.61929 1.5 4V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H3.5C4.05228 9.5 4.5 9.05228 4.5 8.5V4.5H8.5C9.05228 4.5 9.5 4.05228 9.5 3.5V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H4Z" /><path d="M20 1.5C21.3807 1.5 22.5 2.61929 22.5 4V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H20.5C19.9477 9.5 19.5 9.05228 19.5 8.5V4.5H15.5C14.9477 4.5 14.5 4.05228 14.5 3.5V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H20Z" /><path d="M20 22.5C21.3807 22.5 22.5 21.3807 22.5 20V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H20.5C19.9477 14.5 19.5 14.9477 19.5 15.5V19.5H15.5C14.9477 19.5 14.5 19.9477 14.5 20.5V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H20Z" /><path d="M1.5 20C1.5 21.3807 2.61929 22.5 4 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V20.5C9.5 19.9477 9.05228 19.5 8.5 19.5H4.5V15.5C4.5 14.9477 4.05228 14.5 3.5 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V20Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-leave-fullscreen-icon" data-control-title="Exit full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M7 9.5C8.38071 9.5 9.5 8.38071 9.5 7V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H7.5C6.94772 1.5 6.5 1.94772 6.5 2.5V6.5H2.5C1.94772 6.5 1.5 6.94772 1.5 7.5V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H7Z" /><path d="M17 9.5C15.6193 9.5 14.5 8.38071 14.5 7V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H16.5C17.0523 1.5 17.5 1.94772 17.5 2.5V6.5H21.5C22.0523 6.5 22.5 6.94772 22.5 7.5V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H17Z" /><path d="M17 14.5C15.6193 14.5 14.5 15.6193 14.5 17V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H16.5C17.0523 22.5 17.5 22.0523 17.5 21.5V17.5H21.5C22.0523 17.5 22.5 17.0523 22.5 16.5V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H17Z" /><path d="M9.5 17C9.5 15.6193 8.38071 14.5 7 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V16.5C1.5 17.0523 1.94772 17.5 2.5 17.5H6.5V21.5C6.5 22.0523 6.94772 22.5 7.5 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V17Z" /></svg>`
+            innerHTML: `<svg viewBox="0 0 25 25" class="tmg-video-enter-fullscreen-icon" data-control-title="Full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M4 1.5C2.61929 1.5 1.5 2.61929 1.5 4V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H3.5C4.05228 9.5 4.5 9.05228 4.5 8.5V4.5H8.5C9.05228 4.5 9.5 4.05228 9.5 3.5V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H4Z" /><path d="M20 1.5C21.3807 1.5 22.5 2.61929 22.5 4V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H20.5C19.9477 9.5 19.5 9.05228 19.5 8.5V4.5H15.5C14.9477 4.5 14.5 4.05228 14.5 3.5V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H20Z" /><path d="M20 22.5C21.3807 22.5 22.5 21.3807 22.5 20V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H20.5C19.9477 14.5 19.5 14.9477 19.5 15.5V19.5H15.5C14.9477 19.5 14.5 19.9477 14.5 20.5V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H20Z" /><path d="M1.5 20C1.5 21.3807 2.61929 22.5 4 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V20.5C9.5 19.9477 9.05228 19.5 8.5 19.5H4.5V15.5C4.5 14.9477 4.05228 14.5 3.5 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V20Z" /></svg><svg viewBox="0 0 25 25" class="tmg-video-leave-fullscreen-icon" data-control-title="Exit full screen${k["fullscreen"]}" style="scale: 0.8;"><path d="M7 9.5C8.38071 9.5 9.5 8.38071 9.5 7V2.5C9.5 1.94772 9.05228 1.5 8.5 1.5H7.5C6.94772 1.5 6.5 1.94772 6.5 2.5V6.5H2.5C1.94772 6.5 1.5 6.94772 1.5 7.5V8.5C1.5 9.05228 1.94772 9.5 2.5 9.5H7Z" /><path d="M17 9.5C15.6193 9.5 14.5 8.38071 14.5 7V2.5C14.5 1.94772 14.9477 1.5 15.5 1.5H16.5C17.0523 1.5 17.5 1.94772 17.5 2.5V6.5H21.5C22.0523 6.5 22.5 6.94772 22.5 7.5V8.5C22.5 9.05228 22.0523 9.5 21.5 9.5H17Z" /><path d="M17 14.5C15.6193 14.5 14.5 15.6193 14.5 17V21.5C14.5 22.0523 14.9477 22.5 15.5 22.5H16.5C17.0523 22.5 17.5 22.0523 17.5 21.5V17.5H21.5C22.0523 17.5 22.5 17.0523 22.5 16.5V15.5C22.5 14.9477 22.0523 14.5 21.5 14.5H17Z" /><path d="M9.5 17C9.5 15.6193 8.38071 14.5 7 14.5H2.5C1.94772 14.5 1.5 14.9477 1.5 15.5V16.5C1.5 17.0523 1.94772 17.5 2.5 17.5H6.5V21.5C6.5 22.0523 6.94772 22.5 7.5 22.5H8.5C9.05228 22.5 9.5 22.0523 9.5 21.5V17Z" /></svg>`,
           },
           { draggableControl: "", controlId: "fullscreen" }
-        )
+        ),
       };
     }
     plugControlPanelSettings() {
       this.config.set("settings.controlPanel.bottom", tmg.parsePanelBottomObj);
-      const HTML = this.getPlayerElements(), getSplitControls = (row, spacer = "spacer") => {
-        if (!row?.length) return { left: [], center: [], right: [] };
-        const s1 = row.indexOf(spacer), s2 = row.indexOf(spacer, s1 + 1);
-        return s1 === -1 ? { left: row, center: [], right: [] } : s2 === -1 ? { left: row.slice(0, s1), center: [], right: row.slice(s1 + 1) } : { left: row.slice(0, s1), center: row.slice(s1 + 1, s2), right: row.slice(s2 + 1) };
-      }, getZoneW = (value, fb) => value.length === 1 ? value.includes("meta") ? HTML.meta : value.includes("timeline") ? HTML.timeline : fb : fb, fillSWrapper = (wrapper, zoneWs) => (wrapper.innerHTML = "", wrapper.append(...zoneWs.map((zoneW) => zoneW.cover ?? zoneW))), fillZone = (zoneW, controls) => zoneW.zone && (zoneW.zone.innerHTML = "", (controls || []).forEach((id) => HTML[id] && (tmg.isArr(HTML[id]) ? zoneW.zone.append(...HTML[id]) : zoneW.zone.append(HTML[id])))), buildWSkel = (side, isReverse) => {
-        const zone = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper tmg-video-${side}-side-controls-wrapper` }, { dropZone: "", scroller: isReverse ? "reverse" : "" }), cover = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper-cover tmg-video-${side}-side-controls-wrapper-cover` });
-        return cover.append(zone), { cover, zone };
-      };
-      const controlsContainer = this.queryDOM(".tmg-video-controls-container"), notifiersContainer = tmg.createEl("div", { className: "tmg-video-notifiers-container" }, { notify: "" });
+      const HTML = this.getPlayerElements(),
+        getSplitControls = (row, spacer = "spacer") => {
+          if (!row?.length) return { left: [], center: [], right: [] };
+          const s1 = row.indexOf(spacer),
+            s2 = row.indexOf(spacer, s1 + 1);
+          return s1 === -1 ? { left: row, center: [], right: [] } : s2 === -1 ? { left: row.slice(0, s1), center: [], right: row.slice(s1 + 1) } : { left: row.slice(0, s1), center: row.slice(s1 + 1, s2), right: row.slice(s2 + 1) };
+        },
+        getZoneW = (value, fb) => (value.length === 1 ? (value.includes("meta") ? HTML.meta : value.includes("timeline") ? HTML.timeline : fb) : fb),
+        fillSWrapper = (wrapper, zoneWs) => ((wrapper.innerHTML = ""), wrapper.append(...zoneWs.map((zoneW) => zoneW.cover ?? zoneW))),
+        fillZone = (zoneW, controls) => zoneW.zone && ((zoneW.zone.innerHTML = ""), (controls || []).forEach((id) => HTML[id] && (tmg.isArr(HTML[id]) ? zoneW.zone.append(...HTML[id]) : zoneW.zone.append(HTML[id])))),
+        buildWSkel = (side, isReverse) => {
+          const zone = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper tmg-video-${side}-side-controls-wrapper` }, { dropZone: "", scroller: isReverse ? "reverse" : "" }),
+            cover = tmg.createEl("div", { className: `tmg-video-side-controls-wrapper-cover tmg-video-${side}-side-controls-wrapper-cover` });
+          return cover.append(zone), { cover, zone };
+        };
+      const controlsContainer = this.queryDOM(".tmg-video-controls-container"),
+        notifiersContainer = tmg.createEl("div", { className: "tmg-video-notifiers-container" }, { notify: "" });
       notifiersContainer?.append(...[HTML.playpausenotifier, HTML.prevnextnotifier, HTML.captionsnotifier, HTML.capturenotifier, HTML.objectfitnotifier, HTML.fastplaynotifier, HTML.playbackratenotifier, HTML.volumenotifier, HTML.brightnessnotifier, HTML.fwdnotifier, HTML.bwdnotifier, HTML.scrubnotifier, HTML.cancelscrubnotifier, HTML.touchtimelinenotifier, HTML.touchvolumenotifier, HTML.touchbrightnessnotifier].flat().filter(Boolean));
-      this.zoneWs = { top: {}, center: {}, bottom: { 1: {}, 2: {}, 3: {} } }, this.cZoneWs = { top: {}, center: [], bottom: { 1: {}, 2: {}, 3: {} } };
+      (this.zoneWs = { top: {}, center: {}, bottom: { 1: {}, 2: {}, 3: {} } }), (this.cZoneWs = { top: {}, center: [], bottom: { 1: {}, 2: {}, 3: {} } });
       const topWrapper = tmg.createEl("div", { className: "tmg-video-top-controls-wrapper tmg-video-apt-controls-wrapper" }, { dropZone: "", dragId: "wrapper" });
-      this.zoneWs.top.left = buildWSkel("left", false), this.zoneWs.top.center = buildWSkel("center", false), this.zoneWs.top.right = buildWSkel("right", true);
-      const centerWrapper = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper" }, { dropZone: "", dragId: "big" }), centerWrapperCover = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper-cover" });
+      (this.zoneWs.top.left = buildWSkel("left", false)), (this.zoneWs.top.center = buildWSkel("center", false)), (this.zoneWs.top.right = buildWSkel("right", true));
+      const centerWrapper = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper" }, { dropZone: "", dragId: "big" }),
+        centerWrapperCover = tmg.createEl("div", { className: "tmg-video-big-controls-wrapper-cover" });
       this.zoneWs.center = this.cZoneWs.center = { zone: centerWrapper, cover: (centerWrapperCover.append(centerWrapper), centerWrapperCover) };
       const bottomWrapper = tmg.createEl("div", { className: "tmg-video-bottom-controls-wrapper" });
       [1, 2, 3].forEach((i) => {
         bottomWrapper.append(tmg.createEl("div", { className: `tmg-video-bottom-sub-controls-wrapper tmg-video-bottom-${i}-sub-controls-wrapper tmg-video-apt-controls-wrapper` }, { dropZone: "", dragId: "wrapper" }));
-        this.zoneWs.bottom[i].left = buildWSkel("left", false), this.zoneWs.bottom[i].center = buildWSkel("center", false), this.zoneWs.bottom[i].right = buildWSkel("right", true);
+        (this.zoneWs.bottom[i].left = buildWSkel("left", false)), (this.zoneWs.bottom[i].center = buildWSkel("center", false)), (this.zoneWs.bottom[i].right = buildWSkel("right", true));
       });
       this.zonesArr = [...Object.values(this.zoneWs.top), ...Object.values(this.zoneWs.bottom).map((v) => Object.values(v))].flat().map((w) => w.zone);
       controlsContainer.prepend(...[HTML.pictureinpicturewrapper, HTML.thumbnail, HTML.videobuffer, HTML.captionsContainer].flat().filter(Boolean), notifiersContainer, topWrapper, centerWrapperCover, bottomWrapper);
@@ -2699,7 +2877,7 @@
         "settings.controlPanel.top",
         ({ currentTarget: { value } }) => {
           const t1 = getSplitControls(value);
-          fillSWrapper(topWrapper, [this.cZoneWs.top.left = getZoneW(t1.left, this.zoneWs.top.left), this.cZoneWs.top.center = getZoneW(t1.center, this.zoneWs.top.center), this.cZoneWs.top.right = getZoneW(t1.right, this.zoneWs.top.right)]);
+          fillSWrapper(topWrapper, [(this.cZoneWs.top.left = getZoneW(t1.left, this.zoneWs.top.left)), (this.cZoneWs.top.center = getZoneW(t1.center, this.zoneWs.top.center)), (this.cZoneWs.top.right = getZoneW(t1.right, this.zoneWs.top.right))]);
           fillZone(this.cZoneWs.top.left, t1.left), fillZone(this.cZoneWs.top.center, t1.center), fillZone(this.cZoneWs.top.right, t1.right);
         },
         { init: true }
@@ -2710,7 +2888,7 @@
         ({ currentTarget: { value } }) => {
           [1, 2, 3].forEach((i) => {
             const bn = getSplitControls(value[i]);
-            fillSWrapper(bottomWrapper.children[i - 1], [this.cZoneWs.bottom[i].left = getZoneW(bn.left, this.zoneWs.bottom[i].left), this.cZoneWs.bottom[i].center = getZoneW(bn.center, this.zoneWs.bottom[i].center), this.cZoneWs.bottom[i].right = getZoneW(bn.right, this.zoneWs.bottom[i].right)]);
+            fillSWrapper(bottomWrapper.children[i - 1], [(this.cZoneWs.bottom[i].left = getZoneW(bn.left, this.zoneWs.bottom[i].left)), (this.cZoneWs.bottom[i].center = getZoneW(bn.center, this.zoneWs.bottom[i].center)), (this.cZoneWs.bottom[i].right = getZoneW(bn.right, this.zoneWs.bottom[i].right))]);
             fillZone(this.cZoneWs.bottom[i].left, bn.left), fillZone(this.cZoneWs.bottom[i].center, bn.center), fillZone(this.cZoneWs.bottom[i].right, bn.right);
           });
         },
@@ -2718,25 +2896,27 @@
       );
       this.retrieveDOM();
       ["settings.controlPanel.title", "settings.controlPanel.artist", "settings.controlPanel.profile"].forEach((e) => this.config.on(e, ({ target: { key, value } }) => value !== true && (this.DOM[`video${tmg.capitalize(key)}`][key === "profile" ? "src" : "textContent"] = this.DOM[`video${tmg.capitalize(key)}`].dataset["video" + tmg.capitalize(key)] = value || ""), { init: true }));
-      this.config.on("settings.controlPanel.buffer", ({ value }) => this.videoContainer.dataset.buffer = value, { init: true });
-      this.config.on("settings.controlPanel.timeline.thumbIndicator", ({ value }) => this.videoContainer.dataset.thumbIndicator = value, { init: true });
+      this.config.on("settings.controlPanel.buffer", ({ value }) => (this.videoContainer.dataset.buffer = value), { init: true });
+      this.config.on("settings.controlPanel.timeline.thumbIndicator", ({ value }) => (this.videoContainer.dataset.thumbIndicator = value), { init: true });
       this.config.on("settings.controlPanel.progressBar", ({ value }) => this.videoContainer.classList.toggle("tmg-video-progress-bar", value), { init: true });
       this.config.on("settings.controlPanel.draggable", ({ value }) => this.setDragEventListeners(value ? "add" : "remove"), { init: true });
     }
     getUIZoneWCoord(target, zoneW = false) {
       let key;
-      const pos = { 0: "left", 1: "center", 2: "right" }[[...target.parentElement.children].indexOf(target)], cws = this.queryDOM(".tmg-video-top-controls-wrapper, .tmg-video-bottom-sub-controls-wrapper", false, true);
+      const pos = { 0: "left", 1: "center", 2: "right" }[[...target.parentElement.children].indexOf(target)],
+        cws = this.queryDOM(".tmg-video-top-controls-wrapper, .tmg-video-bottom-sub-controls-wrapper", false, true);
       cws.forEach((w, i) => w.contains(target) && (key = { 0: "top.", 1: "bottom.1.", 2: "bottom.2.", 3: "bottom.3." }[i]));
       return zoneW ? { coord: key + pos, zoneW: tmg.getPath(this.zoneWs, key + pos) } : key + pos;
     }
     syncControlPanelToUI() {
-      const id = (el) => el.dataset.controlId, derive = (zoneW, center = false) => [center ? "spacer" : "", ...!zoneW.zone ? [id(zoneW)] : Array.from(zoneW.zone.children || [], id), center && (zoneW.zone ? zoneW.zone.children.length : true) ? "spacer" : ""].filter(Boolean);
+      const id = (el) => el.dataset.controlId,
+        derive = (zoneW, center = false) => [center ? "spacer" : "", ...(!zoneW.zone ? [id(zoneW)] : Array.from(zoneW.zone.children || [], id)), center && (zoneW.zone ? zoneW.zone.children.length : true) ? "spacer" : ""].filter(Boolean);
       this.settings.controlPanel.top = [...derive(this.cZoneWs.top.left), ...derive(this.cZoneWs.top.center, true), ...derive(this.cZoneWs.top.right)];
       this.settings.controlPanel.center = [...derive(this.zoneWs.center)];
       this.settings.controlPanel.bottom = {
         1: [...derive(this.cZoneWs.bottom[1].left), ...derive(this.cZoneWs.bottom[1].center, true), ...derive(this.cZoneWs.bottom[1].right)],
         2: [...derive(this.cZoneWs.bottom[2].left), ...derive(this.cZoneWs.bottom[2].center, true), ...derive(this.cZoneWs.bottom[2].right)],
-        3: [...derive(this.cZoneWs.bottom[3].left), ...derive(this.cZoneWs.bottom[3].center, true), ...derive(this.cZoneWs.bottom[3].right)]
+        3: [...derive(this.cZoneWs.bottom[3].left), ...derive(this.cZoneWs.bottom[3].center, true), ...derive(this.cZoneWs.bottom[3].right)],
       };
     }
     queryDOM = (query, isPseudo = false, all = false) => (isPseudo ? this.pseudoVideoContainer : this.videoContainer)[all ? "querySelectorAll" : "querySelector"](query);
@@ -2815,7 +2995,7 @@
         draggableControls: this.queryDOM("[data-draggable-control]", false, true),
         dropZones: [...this.queryDOM("[data-drop-zone][data-drag-id]", false, true), ...this.zonesArr],
         settingsCloseBtn: this.queryDOM(".tmg-video-settings-close-btn"),
-        settingsTipsBtn: this.queryDOM(".tmg-video-settings-tips-btn")
+        settingsTipsBtn: this.queryDOM(".tmg-video-settings-tips-btn"),
       };
     }
     initPlayer() {
@@ -2832,7 +3012,7 @@
       this.plugDisabled();
     }
     plugLightState() {
-      this.config.set("lightState.disabled", (value) => this.readyState !== 1 ? TERMINATOR : value);
+      this.config.set("lightState.disabled", (value) => (this.readyState !== 1 ? TERMINATOR : value));
       this.config.on("lightState.disabled", ({ target: { value, object }, root }) => {
         if (value) {
           if (this.settings.time.start != null) this.actualTimeStart = this.settings.time.value = this.settings.time.start;
@@ -2847,11 +3027,11 @@
           this.DOM.controlsContainer.addEventListener("click", this._handleLightStateClick);
         }
       });
-      this.config.on("lightState.controls", () => this.queryDOM("[data-control-id]", false, true).forEach((c) => c.dataset.lightControl = this.isLight(c.dataset.controlId) ? "true" : "false"), { init: true });
+      this.config.on("lightState.controls", () => this.queryDOM("[data-control-id]", false, true).forEach((c) => (c.dataset.lightControl = this.isLight(c.dataset.controlId) ? "true" : "false")), { init: true });
       this.config.on("lightState.preview.usePoster", ({ target: { value, object }, root }) => !root.lightState.disabled && (!value || !this.video.poster) && (this.settings.time.value = object.time));
       this.config.on("lightState.preview.time", ({ target: { object }, root }) => !root.lightState.disabled && (!object.usePoster || !this.video.poster) && (this.settings.time.value = object.time));
     }
-    addLightState = () => this.config.lightState.disabled = false;
+    addLightState = () => (this.config.lightState.disabled = false);
     removeLightState = () => {
       this.config.lightState.disabled = true;
       this.isLight("bigplaypause") && this.stall(), this.togglePlay(true);
@@ -2865,7 +3045,8 @@
     }
     setControlState = (btn, { hidden = false, disabled = false }) => (btn?.classList?.toggle("tmg-video-control-hidden", hidden), btn?.classList?.toggle("tmg-video-control-disabled", disabled));
     setControlsState(controlId) {
-      const atFirst = this.currentPlaylistIndex <= 0, atLast = !this.config.playlist || this.currentPlaylistIndex >= this.config.playlist.length - 1;
+      const atFirst = this.currentPlaylistIndex <= 0,
+        atLast = !this.config.playlist || this.currentPlaylistIndex >= this.config.playlist.length - 1;
       const groups = {
         fullscreenlock: () => this.setControlState(this.DOM.fullscreenLockBtn, { hidden: !(tmg.ON_MOBILE && this.isUIActive("fullscreen")) }),
         fullscreenorientation: () => !this.isUIActive("fullscreen") && this.setControlState(this.DOM.fullscreenOrientationBtn, { hidden: true }),
@@ -2877,15 +3058,15 @@
         playlist: () => {
           this.DOM && this.setControlState(this.DOM.bigPrevBtn, { hidden: !(this.config.playlist?.length > 1), disabled: atFirst }), this.setControlState(this.DOM.bigNextBtn, { hidden: !(this.config.playlist?.length > 1), disabled: atLast });
           this.DOM && this.setControlState(this.DOM.prevBtn, { hidden: atFirst }), this.setControlState(this.DOM.nextBtn, { hidden: atLast });
-        }
+        },
       };
       if (tmg.isArr(controlId)) controlId.forEach((g) => groups[g]?.());
       else if (controlId) groups[controlId]?.();
       else Object.values(groups).forEach((fn) => fn());
     }
     setImgLoadState = ({ target: img }) => img?.setAttribute("data-loaded", img.complete && img.naturalWidth > 0);
-    setImgFallback = ({ target: img }) => img.src = TMG_VIDEO_ALT_IMG_SRC;
-    setCanvasFallback = (canvas, context, img) => img = canvas && tmg.createEl("img", { src: TMG_VIDEO_ALT_IMG_SRC, onload: () => context?.drawImage(img, 0, 0, canvas.width, canvas.height) });
+    setImgFallback = ({ target: img }) => (img.src = TMG_VIDEO_ALT_IMG_SRC);
+    setCanvasFallback = (canvas, context, img) => (img = canvas && tmg.createEl("img", { src: TMG_VIDEO_ALT_IMG_SRC, onload: () => context?.drawImage(img, 0, 0, canvas.width, canvas.height) }));
     initHeavyControls() {
       if (this.readyState !== 1) return;
       this.video.currentSrc && this._handleLoadedMetadata();
@@ -2895,7 +3076,7 @@
       !this.video.paused ? this.setReadyState(3) : this.video.addEventListener("play", () => this.setReadyState(3), { once: true });
     }
     setKeyEventListeners(act = "add", main = !this.isUIActive("settings"), area) {
-      if (act === "add" && this.readyState < 2 || this.disabled || this.settings.locked) return;
+      if ((act === "add" && this.readyState < 2) || this.disabled || this.settings.locked) return;
       main && [this.floatingWindow, area !== "floating" ? window : null].forEach((w) => w?.[`${act}EventListener`]("keydown", this._handleKeyDown));
       [this.floatingWindow, area !== "floating" ? window : null].forEach((w) => w?.[`${act}EventListener`]("keyup", main ? this._handleKeyUp : this._handleSettingsKeyUp));
     }
@@ -2995,7 +3176,7 @@
     toggleSettingsView = async () => await (!this.isUIActive("settings") ? this.enterSettingsView : this.leaveSettingsView)();
     async enterSettingsView() {
       if (this.isUIActive("settings")) return;
-      this.wasPaused = this.video.paused, this.togglePlay(false);
+      (this.wasPaused = this.video.paused), this.togglePlay(false);
       this.videoContainer.classList.add("tmg-video-settings-view");
       await tmg.mockAsync(tmg.parseCSSTime(this.settings.css.settingsViewTransitionTime));
       this.showOverlay();
@@ -3052,7 +3233,7 @@
       p && tmg.intersectionObserver.unobserve(p);
       tmg.intersectionObserver.unobserve(this.video);
     }
-    _handleResize = (target) => target.classList.contains("tmg-media-container") ? this._handleMediaParentResize(target.className.includes("pseudo")) : target.classList.contains("tmg-video-side-controls-wrapper") && this._handleControlsView(target);
+    _handleResize = (target) => (target.classList.contains("tmg-media-container") ? this._handleMediaParentResize(target.className.includes("pseudo")) : target.classList.contains("tmg-video-side-controls-wrapper") && this._handleControlsView(target));
     _handleMediaParentResize(isPseudo = false) {
       const getTier = (container) => {
         const { offsetWidth: w, offsetHeight: h } = container;
@@ -3060,7 +3241,7 @@
       };
       if (!isPseudo) {
         const { w, h, tier } = getTier(this.videoContainer);
-        this.settings.css.currentContainerWidth = `${w}px`, this.settings.css.currentContainerHeight = `${h}px`;
+        (this.settings.css.currentContainerWidth = `${w}px`), (this.settings.css.currentContainerHeight = `${h}px`);
         this.videoContainer.dataset.sizeTier = tier;
         this.syncThumbnailSize();
         this.syncCaptionsSize(), this.previewCaptions("");
@@ -3086,7 +3267,7 @@
       this._handleMediaAptAutoPlay(this.settings.auto.pause, false), this._handleMediaAptAutoPlay();
       this.readyState > 2 && this.toggleMiniplayerMode();
     }
-    _handleMediaAptAutoPlay = (auto = this.settings.auto.play, bool = true, p = this.parentIntersecting ? "in" : "out") => auto == `${p}-view-always` ? this.togglePlay(bool) : auto == `${p}-view` && this.readyState < 3 && this.togglePlay(bool);
+    _handleMediaAptAutoPlay = (auto = this.settings.auto.play, bool = true, p = this.parentIntersecting ? "in" : "out") => (auto == `${p}-view-always` ? this.togglePlay(bool) : auto == `${p}-view` && this.readyState < 3 && this.togglePlay(bool));
     _handleVisibilityChange() {
       document.visibilityState !== "visible" && this.stopTimeScrubbing();
     }
@@ -3096,26 +3277,27 @@
     }
     _handleControlsView(w) {
       if (!w.isConnected) return;
-      let spacer, c = w?.children?.[0];
+      let spacer,
+        c = w?.children?.[0];
       do {
         c?.setAttribute("data-displayed", getComputedStyle(c).display !== "none" ? "true" : "false");
         c?.setAttribute("data-spacer", false);
         if (c?.dataset.displayed === "true" && !spacer) spacer = c;
-      } while (c = c?.nextElementSibling);
+      } while ((c = c?.nextElementSibling));
       this.settings.css.currentTopWrapperHeight = this.DOM.topControlsWrapper.offsetHeight + "px";
       this.settings.css.currentBottomWrapperHeight = this.DOM.bottomControlsWrapper.offsetHeight + "px";
       if (w?.dataset.scroller !== "reverse") return;
       spacer?.setAttribute("data-spacer", true);
       if (w.dataset.resetScrolled === "true") w.dataset.hasScrolled = false;
       if (w.dataset.hasScrolled === "true" || w.scrollWidth <= w.clientWidth || w.scrollLeft === w.scrollWidth - w.clientWidth) return w.scrollWidth <= w.clientWidth && (w.dataset.hasScrolled = false);
-      w.addEventListener("scroll", () => w.dataset.hasScrolled = false, { once: true });
+      w.addEventListener("scroll", () => (w.dataset.hasScrolled = false), { once: true });
       w.scrollLeft = w.scrollWidth - w.clientWidth;
     }
     setUpSvgs() {
       Array.prototype.forEach.call(this.DOM.svgs, (svg) => {
         svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
         const title = svg.getAttribute("data-control-title");
-        if (title) svg.addEventListener("mouseover", () => svg.parentElement.title = title);
+        if (title) svg.addEventListener("mouseover", () => (svg.parentElement.title = title));
       });
     }
     deactivate(message) {
@@ -3166,8 +3348,8 @@
       });
       this.settings.locked = this.settings.locked;
     }
-    lock = () => this.settings.locked = true;
-    unlock = () => this.settings.locked = false;
+    lock = () => (this.settings.locked = true);
+    unlock = () => (this.settings.locked = false);
     _handleLockBtnClick(e) {
       e.stopPropagation();
       this.delayLockedOverlay();
@@ -3175,20 +3357,20 @@
     }
     activatePseudoMode() {
       this.mutatingDOMM = true;
-      this.pseudoVideo.id = this.video.id, this.video.id = "";
+      (this.pseudoVideo.id = this.video.id), (this.video.id = "");
       this.pseudoVideo.className += " " + this.video.className.replace(/tmg-media|tmg-video/g, "");
       this.pseudoVideoContainer.className += " " + this.videoContainer.className.replace(/tmg-media-container|tmg-video-container/g, "");
       this.videoContainer.parentElement?.insertBefore(this.pseudoVideoContainer, this.videoContainer);
       document.body.append(this.videoContainer);
-      setTimeout(() => this.mutatingDOMM = false);
+      setTimeout(() => (this.mutatingDOMM = false));
     }
     deactivatePseudoMode(destroy) {
       this.mutatingDOMM = true;
-      this.video.id = this.pseudoVideo.id, this.pseudoVideo.id = "";
+      (this.video.id = this.pseudoVideo.id), (this.pseudoVideo.id = "");
       this.pseudoVideo.className = "tmg-pseudo-video tmg-media";
       this.pseudoVideoContainer.className = "tmg-pseudo-video-container tmg-media-container";
       this.pseudoVideoContainer.parentElement?.replaceChild(destroy ? this.video : this.videoContainer, this.pseudoVideoContainer);
-      !destroy && setTimeout(() => this.mutatingDOMM = false);
+      !destroy && setTimeout(() => (this.mutatingDOMM = false));
     }
     async getVideoFrame(display, time = this.settings.time.value, raw = false, min = 0, video = this.pseudoVideo) {
       if (video !== this.video) {
@@ -3199,18 +3381,22 @@
         }
         this.frameReadyPromise = await this.frameReadyPromise;
       }
-      this.exportCanvas.width = video.videoWidth || min, this.exportCanvas.height = video.videoHeight || min;
+      (this.exportCanvas.width = video.videoWidth || min), (this.exportCanvas.height = video.videoHeight || min);
       this.exportContext.filter = this.settings.css.filter;
       display === "monochrome" && (this.exportContext.filter = `${this.exportContext.filter} grayscale(100%)`);
       this.exportContext.drawImage(video, 0, 0, this.exportCanvas.width, this.exportCanvas.height);
       this.exportContext.filter = "none";
       if (raw === true) return { canvas: this.exportCanvas, context: this.exportContext };
-      const blob = (this.exportCanvas.width || this.exportCanvas.height) && await new Promise((res) => this.exportCanvas.toBlob(res));
+      const blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise((res) => this.exportCanvas.toBlob(res)));
       return { blob, url: blob && URL.createObjectURL(blob) };
     }
     async captureVideoFrame(display = "", time = this.settings.time.value) {
       this.notify("capture");
-      const tTxt = tmg.formatMediaTime({ time, format: "human", showMs: true }), fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`, frameToastId = this.toast?.loading(`Capturing ${fTxt}...`, { delay: tmg.parseCSSTime(this.settings.css.notifiersAnimationTime), image: TMG_VIDEO_ALT_IMG_SRC, tag: `tmg-${this.config.media.title ?? "Video"}fcpa${tTxt}${display}` }), frame = await this.getVideoFrame(display, time, false, 0, this.video), filename = `${this.config.media.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_");
+      const tTxt = tmg.formatMediaTime({ time, format: "human", showMs: true }),
+        fTxt = `video frame ${display === "monochrome" ? "in b&w " : ""}at ${tTxt}`,
+        frameToastId = this.toast?.loading(`Capturing ${fTxt}...`, { delay: tmg.parseCSSTime(this.settings.css.notifiersAnimationTime), image: TMG_VIDEO_ALT_IMG_SRC, tag: `tmg-${this.config.media.title ?? "Video"}fcpa${tTxt}${display}` }),
+        frame = await this.getVideoFrame(display, time, false, 0, this.video),
+        filename = `${this.config.media.title ?? "Video"}_${display === "monochrome" ? `black&white_` : ""}at_${tTxt}.png`.replace(/[\/:*?"<>|\s]+/g, "_");
       const Save = () => {
         this.toast?.loading(frameToastId, { render: `Saving ${fTxt}`, actions: {} });
         tmg.createEl("a", { href: frame.url, download: filename })?.click?.();
@@ -3235,11 +3421,12 @@
     }
     getMediaMainColor = async (time, poster = this.video.poster, config = {}) => await tmg.getDominantColor(poster ? poster : (await this.getVideoFrame("", time ? time : await this.findGoodFrameTime(config), true, 1)).canvas);
     async syncWithMediaColor(...args) {
-      const color = this.loaded && await this.getMediaMainColor(...args), keys2 = Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k]);
-      keys2?.forEach((k) => this.settings.css[k] = (this.loaded ? color : null) ?? this.CSSCache[k]);
+      const color = this.loaded && (await this.getMediaMainColor(...args)),
+        keys2 = Object.keys(this.settings.css.syncWithMedia).filter((k) => this.settings.css.syncWithMedia[k]);
+      keys2?.forEach((k) => (this.settings.css[k] = (this.loaded ? color : null) ?? this.CSSCache[k]));
     }
     syncMediaSession() {
-      if (!navigator.mediaSession || document.pictureInPictureElement && !this.isUIActive("pictureInPicture")) return;
+      if (!navigator.mediaSession || (document.pictureInPictureElement && !this.isUIActive("pictureInPicture"))) return;
       if (this.config.media) navigator.mediaSession.metadata = new MediaMetadata(this.config.media);
       const set = (...args) => navigator.mediaSession.setActionHandler(...args);
       set("play", () => this.togglePlay(true)), set("pause", () => this.togglePlay(false));
@@ -3278,14 +3465,14 @@
     showUIMessage = (message) => message && this.DOM.videoContainerContent.setAttribute("data-message", message);
     removeUIMessage = () => this.DOM.videoContainerContent.removeAttribute("data-message");
     async _handleLoadedError(error) {
-      this.loaded = false, this.settings.css.currentBufferedPosition = 0;
-      const mssg = this.settings.errorMessages?.[this.video.error?.code ?? (error && 5)] || typeof error === "string" && error || error?.message || this.video.error?.message || error && "An unknown error occurred with the video :(";
+      (this.loaded = false), (this.settings.css.currentBufferedPosition = 0);
+      const mssg = this.settings.errorMessages?.[this.video.error?.code ?? (error && 5)] || (typeof error === "string" && error) || error?.message || this.video.error?.message || (error && "An unknown error occurred with the video :(");
       if (this.readyState < 3) return this.deactivate(mssg);
       if (t007.dialog?.isActive?.(`${this.id}-error-dialog`)) return;
       const res = await t007.confirm(mssg, { id: `${this.id}-error-dialog`, rootElement: this.DOM.videoContainerContent, confirmText: "Try Again", cancelText: "Dismiss" });
       if (res === true) {
         const time = this.video.currentTime;
-        this.video.load(), this.settings.time.value = time, this.togglePlay(true);
+        this.video.load(), (this.settings.time.value = time), this.togglePlay(true);
       } else if (res !== "recovered") this.deactivate(mssg);
     }
     _handleLoadStart() {
@@ -3301,7 +3488,7 @@
       if (this.settings.time.start != null && this.config.lightState.disabled) this.settings.time.value = this.actualTimeStart;
       this.pseudoVideo.src = this.video.currentSrc;
       this.pseudoVideo.crossOrigin = this.video.crossOrigin;
-      this.pseudoVideo.addEventListener("timeupdate", ({ target: v }) => v.ontimeupdate = this.syncCanvasPreviews, { once: true });
+      this.pseudoVideo.addEventListener("timeupdate", ({ target: v }) => (v.ontimeupdate = this.syncCanvasPreviews), { once: true });
       this.syncMediaAspectRatio(), this.syncWithMediaColor();
       this.setCaptionsState();
       this.reactivate();
@@ -3314,12 +3501,12 @@
       this.DOM.timelineContainer?.setAttribute("aria-valuemax", Math.floor(this.duration));
     };
     _handleLoadedProgress() {
-      for (let i = 0; i < this.video.buffered.length; i++) if (this.video.buffered.start(this.video.buffered.length - 1 - i) < this.settings.time.value) return this.settings.css.currentBufferedPosition = this.video.buffered.end(this.video.buffered.length - 1 - i) / this.duration;
+      for (let i = 0; i < this.video.buffered.length; i++) if (this.video.buffered.start(this.video.buffered.length - 1 - i) < this.settings.time.value) return (this.settings.css.currentBufferedPosition = this.video.buffered.end(this.video.buffered.length - 1 - i) / this.duration);
     }
     togglePlay = async (bool) => await this.video[("boolean" === typeof bool ? bool : this.video.paused) ? "play" : "pause"]();
-    replay = () => (this.settings.time.value = 0, this.video.play());
+    replay = () => ((this.settings.time.value = 0), this.video.play());
     // ! - start is 0 and falsy
-    previousVideo = () => this.settings.time.value >= 3 ? this.replay() : this.config.playlist && this.currentPlaylistIndex > 0 && this.movePlaylistTo(this.currentPlaylistIndex - 1, true);
+    previousVideo = () => (this.settings.time.value >= 3 ? this.replay() : this.config.playlist && this.currentPlaylistIndex > 0 && this.movePlaylistTo(this.currentPlaylistIndex - 1, true));
     nextVideo = () => this.config.playlist && this.currentPlaylistIndex < this.config.playlist.length - 1 && this.movePlaylistTo(this.currentPlaylistIndex + 1, true);
     movePlaylistTo(index, shouldPlay) {
       if (!this.config.playlist) return this.setControlsState("playlist");
@@ -3330,7 +3517,7 @@
     }
     applyPlaylistItem(v, reset = true) {
       fanout(this.config.media, tmg.deepClone(v.media), { merge: true, depth: 2 });
-      ["min", "max", "start", "end", "previews"].forEach((prop) => this.settings.time[prop] = v.settings.time[prop]);
+      ["min", "max", "start", "end", "previews"].forEach((prop) => (this.settings.time[prop] = v.settings.time[prop]));
       this.config.tracks = tmg.deepClone(v.tracks ?? []);
       if (reset) this.config.src = v.src || "";
       if (reset && "sources" in v) this.config.sources = tmg.deepClone(v.sources);
@@ -3339,7 +3526,8 @@
     autonextVideo() {
       if (!this.loaded || !this.config.playlist || this.settings.auto.next < 0 || !this.canAutoMovePlaylist || this.currentPlaylistIndex >= this.config.playlist.length - 1 || this.video.paused || this.buffering) return;
       this.canAutoMovePlaylist = false;
-      const count = tmg.clamp(1, Math.round((this.settings.time.end ?? this.duration) - this.settings.time.value), this.settings.auto.next), v = this.config.playlist[this.currentPlaylistIndex + 1];
+      const count = tmg.clamp(1, Math.round((this.settings.time.end ?? this.duration) - this.settings.time.value), this.settings.auto.next),
+        v = this.config.playlist[this.currentPlaylistIndex + 1];
       const nVTId = this.toast?.("", {
         autoClose: count * 1e3,
         hideProgressBar: false,
@@ -3353,16 +3541,19 @@
         <h2>Next Video in <span class="tmg-video-next-countdown">${count}</span></h2>
         ${v.media.title ? `<p class="tmg-video-next-title">${v.media.title}</p>` : ""}
       </span>`,
-        onTimeUpdate: (time) => this.throttle("nextVideoCountdown", () => (this.queryDOM(".tmg-video-next-countdown").textContent = Math.max(Math.round(count - time / 1e3), 1), 250)),
+        onTimeUpdate: (time) => this.throttle("nextVideoCountdown", () => ((this.queryDOM(".tmg-video-next-countdown").textContent = Math.max(Math.round(count - time / 1e3), 1)), 250)),
         onClose: (timeElapsed) => (removeListeners(), timeElapsed && this.nextVideo()),
-        tag: "tmg-anvi"
+        tag: "tmg-anvi",
       });
-      const cleanUpWhenNeeded = () => !this.video.ended && cleanUp(), autoCleanUpToast = () => Math.floor((this.settings.time.end ?? this.duration) - this.settings.time.value) > this.settings.auto.next && cleanUp(), cleanUp = (permanent = false) => (t007.toast.dismiss(nVTId, "instant"), this.nextVideoPreview = null, this.canAutoMovePlaylist = !permanent), removeListeners = () => ["timeupdate", "pause", "waiting"].forEach((e, i) => this.video.removeEventListener(e, !i ? autoCleanUpToast : cleanUpWhenNeeded));
+      const cleanUpWhenNeeded = () => !this.video.ended && cleanUp(),
+        autoCleanUpToast = () => Math.floor((this.settings.time.end ?? this.duration) - this.settings.time.value) > this.settings.auto.next && cleanUp(),
+        cleanUp = (permanent = false) => (t007.toast.dismiss(nVTId, "instant"), (this.nextVideoPreview = null), (this.canAutoMovePlaylist = !permanent)),
+        removeListeners = () => ["timeupdate", "pause", "waiting"].forEach((e, i) => this.video.removeEventListener(e, !i ? autoCleanUpToast : cleanUpWhenNeeded));
       ["timeupdate", "pause", "waiting"].forEach((e, i) => this.video.addEventListener(e, !i ? autoCleanUpToast : cleanUpWhenNeeded));
-      const nVP = this.nextVideoPreview = this.queryDOM(".tmg-video-next-preview");
+      const nVP = (this.nextVideoPreview = this.queryDOM(".tmg-video-next-preview"));
       nVP?.toggleAttribute("poster", v.media?.artwork?.[0]?.src);
       v.sources?.length && tmg.addSources(v.sources, nVP);
-      ["loadedmetadata", "loaded", "durationchange"].forEach((e) => nVP?.addEventListener(e, ({ target: p }) => p.nextElementSibling.textContent = this.toTimeText(p.duration)));
+      ["loadedmetadata", "loaded", "durationchange"].forEach((e) => nVP?.addEventListener(e, ({ target: p }) => (p.nextElementSibling.textContent = this.toTimeText(p.duration))));
       fanout(this.settings.toasts.nextVideoPreview, this.settings.toasts.nextVideoPreview);
       nVP?.previousElementSibling?.addEventListener("click", () => (cleanUp(true), this.nextVideo()), true);
     }
@@ -3374,7 +3565,7 @@
       this.syncMediaSession();
       this.leaveSettingsView();
       this.toggleMiniplayerMode();
-      if (this.loaded || this.video.currentSrc) this.loaded = true, !this.video.error && this.reactivate();
+      if (this.loaded || this.video.currentSrc) (this.loaded = true), !this.video.error && this.reactivate();
     }
     _handlePause() {
       this.cancelRAFLoop("timeUpdating");
@@ -3402,36 +3593,36 @@
     }
     plugTimeSettings() {
       this.config.get("settings.time.value", () => tmg.safeNum(this.video.currentTime));
-      this.config.watch("settings.time.value", (value) => this.video.currentTime = tmg.safeNum(tmg.clamp(this.settings.time.min, value, this.settings.time.max)), { init: "auto" });
-      this.config.set("settings.time.previews", (value, _, { target: { oldValue } }) => tmg.isObj(value) && tmg.isObj(oldValue) ? tmg.mergeObjs(oldValue, value) : value);
+      this.config.watch("settings.time.value", (value) => (this.video.currentTime = tmg.safeNum(tmg.clamp(this.settings.time.min, value, this.settings.time.max))), { init: "auto" });
+      this.config.set("settings.time.previews", (value, _, { target: { oldValue } }) => (tmg.isObj(value) && tmg.isObj(oldValue) ? tmg.mergeObjs(oldValue, value) : value));
       this.config.on(
         "settings.time.previews",
         ({ type, currentTarget: { value } }) => {
           if (type === "update") return;
-          const manual = value && value?.address && (value?.spf || value?.cols && value?.rows);
+          const manual = value && value?.address && (value?.spf || (value?.cols && value?.rows));
           this.settings.css.altImgUrl = `url(${TMG_VIDEO_ALT_IMG_SRC})`;
           this.videoContainer.classList.toggle("tmg-video-no-previews", !value);
-          this.videoContainer.dataset.previewType = value ? manual ? value?.cols && value?.rows ? "sprite" : "image" : "canvas" : "none";
+          this.videoContainer.dataset.previewType = value ? (manual ? (value?.cols && value?.rows ? "sprite" : "image") : "canvas") : "none";
           if (value?.cols && value?.rows && value?.address) this.settings.css.currentPreviewUrl = this.settings.css.currentThumbnailUrl = `url(${value.address})`;
           else this.settings.css.currentPreviewPosition = this.settings.css.currentThumbnailPosition = "center";
           if (!value || manual) return;
-          this.previewContext ??= this.DOM.previewCanvas?.getContext("2d"), this.thumbnailContext ??= this.DOM.thumbnailCanvas?.getContext("2d");
-          !this.loaded && (this.setCanvasFallback(this.DOM.previewCanvas, this.previewContext), this.setCanvasFallback(this.DOM.thumbnailCanvas, this.thumbnailContext), this.pseudoVideo.ontimeupdate = null);
+          (this.previewContext ??= this.DOM.previewCanvas?.getContext("2d")), (this.thumbnailContext ??= this.DOM.thumbnailCanvas?.getContext("2d"));
+          !this.loaded && (this.setCanvasFallback(this.DOM.previewCanvas, this.previewContext), this.setCanvasFallback(this.DOM.thumbnailCanvas, this.thumbnailContext), (this.pseudoVideo.ontimeupdate = null));
         },
         { init: true }
       );
-      this.config.on("settings.css.currentThumbnailWidth", ({ value }) => this.DOM.thumbnailCanvas.width = parseFloat(value));
-      this.config.on("settings.css.currentThumbnailHeight", ({ value }) => this.DOM.thumbnailCanvas.height = parseFloat(value));
+      this.config.on("settings.css.currentThumbnailWidth", ({ value }) => (this.DOM.thumbnailCanvas.width = parseFloat(value)));
+      this.config.on("settings.css.currentThumbnailHeight", ({ value }) => (this.DOM.thumbnailCanvas.height = parseFloat(value)));
     }
     guardTimeValues = () => ["lightState.preview.time", "settings.time.min", "settings.time.max", "settings.time.start", "settings.time.end", "settings.toasts.nextVideoPreview.time"].forEach((p) => this.config.get(p, this.toTimeVal));
-    toTimeText = (time = this.video.currentTime, useMode = false, showMs = false) => !useMode || this.settings.time.mode !== "remaining" ? tmg.formatMediaTime({ time, format: this.settings.time.format, elapsed: true, showMs }) : `${tmg.formatMediaTime({ time: this.video.duration - time, format: this.settings.time.format, elapsed: false, showMs })}`;
+    toTimeText = (time = this.video.currentTime, useMode = false, showMs = false) => (!useMode || this.settings.time.mode !== "remaining" ? tmg.formatMediaTime({ time, format: this.settings.time.format, elapsed: true, showMs }) : `${tmg.formatMediaTime({ time: this.video.duration - time, format: this.settings.time.format, elapsed: false, showMs })}`);
     // DRY quick util
     toTimeVal = (value) => tmg.parseIfPercent(value, this.duration);
     _handleTimelinePointerDown(e) {
       if (this.isScrubbing) return;
       this.isScrubbing = true;
       this.DOM.timelineContainer?.setPointerCapture(e.pointerId);
-      this.lastTimelinePointerX = e.clientX, this.lastTimelineThumbPosition = Number(this.settings.css.currentThumbPosition);
+      (this.lastTimelinePointerX = e.clientX), (this.lastTimelineThumbPosition = Number(this.settings.css.currentThumbPosition));
       this.wasPaused = this.video.paused;
       this.scrubbingId = requestAnimationFrame(() => {
         this.togglePlay(false);
@@ -3446,7 +3637,7 @@
     stopTimeScrubbing() {
       if (!this.isScrubbing) return;
       this.isScrubbing = false;
-      const newPos = this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = this.shouldCancelTimeScrub ? this.lastTimelineThumbPosition : this.settings.css.currentThumbPosition;
+      const newPos = (this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = this.shouldCancelTimeScrub ? this.lastTimelineThumbPosition : this.settings.css.currentThumbPosition);
       this.DOM.currentTimeElement.textContent = this.toTimeText(newPos * this.duration, true);
       if (!this.shouldCancelTimeScrub) this.settings.time.value = newPos * this.duration;
       cancelAnimationFrame(this.scrubbingId);
@@ -3454,11 +3645,11 @@
       this.videoContainer.classList.remove("tmg-video-scrubbing");
       this.DOM.scrubNotifier?.classList.remove("tmg-video-control-active");
       this.stopTimePreviewing();
-      this.allowTimeScrubbing(), this.stallCancelTimeScrub = true;
+      this.allowTimeScrubbing(), (this.stallCancelTimeScrub = true);
       this.DOM.timelineContainer?.removeEventListener("pointermove", this._handleTimelineInput);
       this.DOM.timelineContainer?.removeEventListener("pointerup", this.stopTimeScrubbing);
     }
-    stopTimePreviewing = () => (this.overTimeline = false, setTimeout(() => this.videoContainer.classList.remove("tmg-video-previewing")));
+    stopTimePreviewing = () => ((this.overTimeline = false), setTimeout(() => this.videoContainer.classList.remove("tmg-video-previewing")));
     cancelTimeScrubbing() {
       if (this.stallCancelTimeScrub || this.shouldCancelTimeScrub || this.cancelScrubTimeoutId) return;
       this.shouldCancelTimeScrub = true;
@@ -3476,21 +3667,27 @@
       this.throttle(
         "timelineInput",
         () => {
-          const rect = this.DOM.timelineContainer?.getBoundingClientRect(), currX = tmg.clamp(0, !this.isScrubbing || this.settings.controlPanel.timeline.seek.relative ? clientX - rect.left : this.lastTimelineThumbPosition * rect.width + (clientX - this.lastTimelinePointerX), rect.width), p = tmg.safeNum(currX / rect.width), previewImgMin = this.DOM.previewContainer.offsetWidth / 2 / rect.width;
+          const rect = this.DOM.timelineContainer?.getBoundingClientRect(),
+            currX = tmg.clamp(0, !this.isScrubbing || this.settings.controlPanel.timeline.seek.relative ? clientX - rect.left : this.lastTimelineThumbPosition * rect.width + (clientX - this.lastTimelinePointerX), rect.width),
+            p = tmg.safeNum(currX / rect.width),
+            previewImgMin = this.DOM.previewContainer.offsetWidth / 2 / rect.width;
           this.DOM.previewContainer?.setAttribute("data-preview-time", this.toTimeText(p * this.video.duration, true));
           if (this.isScrubbing) {
             this.settings.css.currentThumbPosition = p;
             if (this.settings.time.seekSync) this.settings.css.currentPlayedPosition = p;
-            if (this.settings.time.seekSync && this.DOM.currentTimeElement) this.DOM.currentTimeElement.textContent = this.toTimeText(this.settings.time.value = p * this.duration, true);
+            if (this.settings.time.seekSync && this.DOM.currentTimeElement) this.DOM.currentTimeElement.textContent = this.toTimeText((this.settings.time.value = p * this.duration), true);
             Math.abs(currX - this.lastTimelineThumbPosition * rect.width) < this.settings.controlPanel.timeline.seek.cancel.delta ? this.cancelTimeScrubbing() : this.allowTimeScrubbing();
             this.showOverlay();
           }
           this.settings.css.currentPreviewPosition = p;
           this.settings.css.currentPreviewImgPosition = tmg.clamp(previewImgMin, p, 1 - previewImgMin);
           if (["sprite", "image"].includes(this.videoContainer.dataset.previewType)) {
-            const frameI = Math.floor(p * this.duration / this.settings.time.previews.spf) || 1;
+            const frameI = Math.floor((p * this.duration) / this.settings.time.previews.spf) || 1;
             if (this.videoContainer.dataset.previewType === "sprite") {
-              const { cols, rows } = this.settings.time.previews, clampedI = Math.min(frameI, cols * rows - 1), xPercent = clampedI % cols * 100 / (cols - 1 || 1), yPercent = Math.floor(clampedI / cols) * 100 / (rows - 1 || 1);
+              const { cols, rows } = this.settings.time.previews,
+                clampedI = Math.min(frameI, cols * rows - 1),
+                xPercent = ((clampedI % cols) * 100) / (cols - 1 || 1),
+                yPercent = (Math.floor(clampedI / cols) * 100) / (rows - 1 || 1);
               if (!tmg.ON_MOBILE) this.settings.css.currentPreviewPosition = `${xPercent}% ${yPercent}%`;
               if (this.isScrubbing) this.settings.css.currentThumbnailPosition = `${xPercent}% ${yPercent}%`;
             } else {
@@ -3517,18 +3714,18 @@
         case "arrowdown":
           e.preventDefault();
           e.stopImmediatePropagation();
-          return this.settings.time.value -= e.shiftKey ? 5 : 1;
+          return (this.settings.time.value -= e.shiftKey ? 5 : 1);
         case "arrowright":
         case "arrowup":
           e.preventDefault();
           e.stopImmediatePropagation();
-          return this.settings.time.value += e.shiftKey ? 5 : 1;
+          return (this.settings.time.value += e.shiftKey ? 5 : 1);
       }
     }
     _handleTimeUpdate() {
       const t = { c: this.settings.time.value, vc: this.video.currentTime, d: this.duration, s: this.settings };
       this.video.paused && this._handleTimeUpdateLoop(false, t.vc, t.s);
-      if (t.c < t.s.time.min || t.c > t.s.time.max) this.settings.time.value = t.s.time.loop ? t.s.time.min : t.c, !t.s.time.loop && this.togglePlay(false);
+      if (t.c < t.s.time.min || t.c > t.s.time.max) (this.settings.time.value = t.s.time.loop ? t.s.time.min : t.c), !t.s.time.loop && this.togglePlay(false);
       this.DOM.currentTimeElement.textContent = this.toTimeText(t.vc, true);
       if (this.speedCheck && !this.video.paused) this.DOM.fastPlayNotifier?.setAttribute("data-current-time", this.toTimeText(t.vc, true));
       if (this.video.readyState && t.c && this.readyState > 1) {
@@ -3551,7 +3748,13 @@
       this.DOM.previewContainer?.setAttribute("data-preview-time", this.toTimeText(Number(this.settings.css.currentPreviewPosition) * this.video.duration, true));
     }
     rotateTimeFormat() {
-      const formats = [["digital", "/"], ["human", "of"], ["human-long", "out of"]], i = formats.findIndex((f) => f[0] === this.settings.time.format), nextFormat = formats[(i + 1) % formats.length];
+      const formats = [
+          ["digital", "/"],
+          ["human", "of"],
+          ["human-long", "out of"],
+        ],
+        i = formats.findIndex((f) => f[0] === this.settings.time.format),
+        nextFormat = formats[(i + 1) % formats.length];
       this.settings.time.format = nextFormat[0];
       this.DOM.currentTimeElement.textContent = this.toTimeText(this.video.currentTime, true);
       this.DOM.timeBridgeElement.textContent = nextFormat[1];
@@ -3561,10 +3764,10 @@
     }
     skip(duration) {
       const notifier = duration > 0 ? this.DOM.fwdNotifier : this.DOM.bwdNotifier;
-      duration = duration > 0 ? this.duration - this.settings.time.value > duration ? duration : this.duration - this.settings.time.value : duration < 0 ? this.settings.time.value > Math.abs(duration) ? duration : -this.settings.time.value : 0;
+      duration = duration > 0 ? (this.duration - this.settings.time.value > duration ? duration : this.duration - this.settings.time.value) : duration < 0 ? (this.settings.time.value > Math.abs(duration) ? duration : -this.settings.time.value) : 0;
       this.settings.css.currentPlayedPosition = this.settings.css.currentThumbPosition = tmg.safeNum((this.settings.time.value += duration) / this.video.duration);
       if (this.skipPersist) {
-        if (this.currentSkipNotifier && notifier !== this.currentSkipNotifier) this.skipDuration = 0, this.currentSkipNotifier.classList.remove("tmg-video-control-persist");
+        if (this.currentSkipNotifier && notifier !== this.currentSkipNotifier) (this.skipDuration = 0), this.currentSkipNotifier.classList.remove("tmg-video-control-persist");
         this.showOverlay();
         this.currentSkipNotifier = notifier;
         notifier?.classList.add("tmg-video-control-persist");
@@ -3573,7 +3776,7 @@
         this.skipDurationId = setTimeout(() => {
           this.deactivateSkipPersist();
           notifier?.classList.remove("tmg-video-control-persist");
-          this.skipDuration = 0, this.currentSkipNotifier = null;
+          (this.skipDuration = 0), (this.currentSkipNotifier = null);
           !this.video.paused ? this.removeOverlay() : this.showOverlay();
         }, tmg.parseCSSTime(this.settings.css.notifiersAnimationTime));
         return notifier?.setAttribute("data-skip", Math.trunc(this.skipDuration));
@@ -3585,7 +3788,7 @@
       this.throttle(
         "canvasPreviewSync",
         () => {
-          this.DOM.previewCanvas.width = this.DOM.previewCanvas.offsetWidth || this.DOM.previewCanvas.width, this.DOM.previewCanvas.height = this.DOM.previewCanvas.offsetHeight || this.DOM.previewCanvas.height;
+          (this.DOM.previewCanvas.width = this.DOM.previewCanvas.offsetWidth || this.DOM.previewCanvas.width), (this.DOM.previewCanvas.height = this.DOM.previewCanvas.offsetHeight || this.DOM.previewCanvas.height);
           if (!tmg.ON_MOBILE) this.previewContext?.drawImage(this.pseudoVideo, 0, 0, this.DOM.previewCanvas.width, this.DOM.previewCanvas.height);
           if (this.isScrubbing) this.thumbnailContext?.drawImage(this.pseudoVideo, 0, 0, this.DOM.thumbnailCanvas.width, this.DOM.thumbnailCanvas.height);
         },
@@ -3595,23 +3798,28 @@
     syncThumbnailSize() {
       if (!this.DOM.thumbnailCanvas || !this.DOM.thumbnailImg) return;
       const { width = this.videoContainer.offsetWidth, height = this.videoContainer.offsetHeight } = tmg.getRenderedBox(this.video);
-      this.settings.css.currentThumbnailHeight = height + 1 + "px", this.settings.css.currentThumbnailWidth = width + 1 + "px";
+      (this.settings.css.currentThumbnailHeight = height + 1 + "px"), (this.settings.css.currentThumbnailWidth = width + 1 + "px");
     }
     _handleFrameUpdate(now, m) {
-      const diff = m.presentedFrames - (this.stats?.presentedFrames ?? 0), fps = diff > 0 ? diff / (now - (this.stats?.now ?? now)) * 1e3 : 30, droppedFrames = (this.stats?.droppedFrames ?? 0) + (diff > 1 ? diff - 1 : 0);
+      const diff = m.presentedFrames - (this.stats?.presentedFrames ?? 0),
+        fps = diff > 0 ? (diff / (now - (this.stats?.now ?? now))) * 1e3 : 30,
+        droppedFrames = (this.stats?.droppedFrames ?? 0) + (diff > 1 ? diff - 1 : 0);
       this.stats = { ...m, now, fps, droppedFrames };
       this.frameCallbackId = this.video.requestVideoFrameCallback?.(this._handleFrameUpdate);
     }
-    moveVideoFrame = (dir = "forwards") => this.video.paused && this.throttle("frameStepping", () => this.settings.time.value = tmg.clamp(0, Math.round(this.settings.time.value * this.pfps) + (dir === "backwards" ? -1 : 1), Math.floor(this.duration * this.pfps)) / this.pfps, this.pframeDelay);
+    moveVideoFrame = (dir = "forwards") => this.video.paused && this.throttle("frameStepping", () => (this.settings.time.value = tmg.clamp(0, Math.round(this.settings.time.value * this.pfps) + (dir === "backwards" ? -1 : 1), Math.floor(this.duration * this.pfps)) / this.pfps), this.pframeDelay);
     plugPlaybackRateSettings() {
-      this.config.watch("settings.playbackRate.value", (value, { target: { object } }) => this.video.playbackRate = this.video.defaultPlaybackRate = tmg.clamp(object.min, value, object.max));
+      this.config.watch("settings.playbackRate.value", (value, { target: { object } }) => (this.video.playbackRate = this.video.defaultPlaybackRate = tmg.clamp(object.min, value, object.max)));
       this.config.watch("settings.playbackRate.min", (min, { target: { object } }) => object.value < min && (object.value = min));
       this.config.watch("settings.playbackRate.max", (max, { target: { object } }) => object.value > max && (object.value = max));
       fanout(this.settings.playbackRate, { value: this.video.playbackRate, ...this.settings.playbackRate });
       this.config.get("settings.playbackRate.value", () => this.video.playbackRate, true);
     }
     rotatePlaybackRate(dir = "forwards") {
-      const rate = this.settings.playbackRate.value, { min, max, skip } = this.settings.playbackRate, steps = Array.from({ length: Math.floor((max - min) / skip) + 1 }, (_, i2) => min + i2 * skip), i = steps.reduce((cIdx, s, idx) => Math.abs(s - rate) < Math.abs(steps[cIdx] - rate) ? idx : cIdx, 0);
+      const rate = this.settings.playbackRate.value,
+        { min, max, skip } = this.settings.playbackRate,
+        steps = Array.from({ length: Math.floor((max - min) / skip) + 1 }, (_, i2) => min + i2 * skip),
+        i = steps.reduce((cIdx, s, idx) => (Math.abs(s - rate) < Math.abs(steps[cIdx] - rate) ? idx : cIdx), 0);
       this.settings.playbackRate.value = steps[dir === "backwards" ? (i - 1 + steps.length) % steps.length : (i + 1) % steps.length];
     }
     setPlaybackRate(value) {
@@ -3635,7 +3843,7 @@
     fastPlay(pos) {
       if (this.speedCheck) return;
       this.speedCheck = true;
-      this.wasPaused = this.video.paused, this.lastPlaybackRate = this.settings.playbackRate.value;
+      (this.wasPaused = this.video.paused), (this.lastPlaybackRate = this.settings.playbackRate.value);
       this.DOM.fastPlayNotifier?.classList.add("tmg-video-control-active");
       setTimeout(pos === "backwards" && this.settings.fastPlay.rewind ? this.rewind : this.fastForward, 0);
     }
@@ -3646,7 +3854,7 @@
       this.togglePlay(true);
     }
     rewind(rate = this.settings.fastPlay.playbackRate) {
-      this.settings.playbackRate.value = 1, this.rewindPlaybackRate = rate;
+      (this.settings.playbackRate.value = 1), (this.rewindPlaybackRate = rate);
       this.DOM.fastPlayNotifierText.textContent = `${rate}x`;
       this.DOM.fastPlayNotifier?.classList.add("tmg-video-rewind");
       this.video.addEventListener("play", this.rewindReset);
@@ -3668,9 +3876,9 @@
     }
     slowDown() {
       if (!this.speedCheck) return;
-      this.speedCheck = false, clearInterval(this.speedIntervalId);
+      (this.speedCheck = false), clearInterval(this.speedIntervalId);
       this.video.removeEventListener("play", this.rewindReset);
-      this.settings.playbackRate.value = this.lastPlaybackRate, this.rewindPlaybackRate = 0;
+      (this.settings.playbackRate.value = this.lastPlaybackRate), (this.rewindPlaybackRate = 0);
       this.togglePlay(this.settings.fastPlay.reset ? !this.wasPaused : true);
       this.removeOverlay();
       this.DOM.fastPlayNotifier?.classList.remove("tmg-video-control-active", "tmg-video-rewind");
@@ -3688,20 +3896,21 @@
       this._handleCueChange(this.video.textTracks[this.textTrackIndex]?.activeCues?.[0]);
     }
     plugCaptionsSettings() {
-      Object.entries(this.settings.captions.font).forEach(([k, { value }]) => this.settings.css[`captionsFont${tmg.capitalize(k)}`] = value);
-      Object.entries(this.settings.captions.background).forEach(([k, { value }]) => this.settings.css[`captionsBackground${tmg.capitalize(k)}`] = value);
-      Object.entries(this.settings.captions.window).forEach(([k, { value }]) => this.settings.css[`captionsWindow${tmg.capitalize(k)}`] = value);
+      Object.entries(this.settings.captions.font).forEach(([k, { value }]) => (this.settings.css[`captionsFont${tmg.capitalize(k)}`] = value));
+      Object.entries(this.settings.captions.background).forEach(([k, { value }]) => (this.settings.css[`captionsBackground${tmg.capitalize(k)}`] = value));
+      Object.entries(this.settings.captions.window).forEach(([k, { value }]) => (this.settings.css[`captionsWindow${tmg.capitalize(k)}`] = value));
       this.settings.css.captionsCharacterEdgeStyle = this.settings.captions.characterEdgeStyle.value;
       this.settings.css.captionsTextAlignment = this.settings.captions.textAlignment.value;
       this.settings.css.currentCaptionsX, this.settings.css.currentCaptionsY;
       this.config.on("settings.captions.visible", ({ value }) => {
-        this.settings.css.currentCaptionsX = this.CSSCache.currentCaptionsX, this.settings.css.currentCaptionsY = this.CSSCache.currentCaptionsY;
+        (this.settings.css.currentCaptionsX = this.CSSCache.currentCaptionsX), (this.settings.css.currentCaptionsY = this.CSSCache.currentCaptionsY);
         if (!this.video.textTracks[this.textTrackIndex]) return;
         !value ? this.videoContainer.classList.add("tmg-video-captions") : this.videoContainer.classList.remove("tmg-video-captions", "tmg-video-captions-preview");
-        !value && this.previewCaptions(`${this.video.textTracks[this.textTrackIndex].label} ${this.videoContainer.dataset.trackKind} 
+        !value &&
+          this.previewCaptions(`${this.video.textTracks[this.textTrackIndex].label} ${this.videoContainer.dataset.trackKind} 
  Click \u2699 for settings`);
       });
-      ["font.family", "font.size", "font.weight", "font.variant", "background.color", "background.opacity", "window.color", "window.opacity", "characterEdgeStyle", "textAlignment"].forEach((prop) => this.config.watch(`settings.captions.${prop}.value`, (value) => (this.settings.css[tmg.camelize(`captions.${prop}`, /\./)] = value, this.syncCaptionsSize())));
+      ["font.family", "font.size", "font.weight", "font.variant", "background.color", "background.opacity", "window.color", "window.opacity", "characterEdgeStyle", "textAlignment"].forEach((prop) => this.config.watch(`settings.captions.${prop}.value`, (value) => ((this.settings.css[tmg.camelize(`captions.${prop}`, /\./)] = value), this.syncCaptionsSize())));
       this.config.watch("settings.captions.font.size.min", (min, { target: { object } }) => object.value < min && (object.value = min));
       this.config.watch("settings.captions.font.size.max", (max, { target: { object } }) => object.value > max && (object.value = max));
     }
@@ -3733,14 +3942,16 @@
     _handleCueChange(cue) {
       const existing = this.DOM.captionsContainer.querySelector(".tmg-video-captions-wrapper");
       if (!cue) return existing?.remove();
-      const container = this.DOM.captionsContainer, wrapper = existing ?? tmg.createEl("div", { className: "tmg-video-captions-wrapper", ariaLive: "off", ariaAtomic: "true" }, { part: "cue-display" }), { offsetWidth: vCWidth, offsetHeight: vCHeight } = this.videoContainer;
+      const container = this.DOM.captionsContainer,
+        wrapper = existing ?? tmg.createEl("div", { className: "tmg-video-captions-wrapper", ariaLive: "off", ariaAtomic: "true" }, { part: "cue-display" }),
+        { offsetWidth: vCWidth, offsetHeight: vCHeight } = this.videoContainer;
       ["style", "data-active", "data-scroll"].forEach((attr) => container.removeAttribute(attr));
-      wrapper.innerHTML = "", cue.text ||= "", this.lastCue = cue;
+      (wrapper.innerHTML = ""), (cue.text ||= ""), (this.lastCue = cue);
       const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
       lines.forEach((p) => tmg.formatVttLine(p, Math.floor(vCWidth / this.captionsCharW)).forEach((l) => wrapper.append(tmg.createEl("div", { className: "tmg-video-captions-line" }, { part: "cue", id: cue.id }, this.settings.captions.allowVideoOverride && cue.align && { style: { textAlign: cue.align } }).appendChild(tmg.createEl("span", { className: "tmg-video-captions-text", innerHTML: tmg.parseVttText(l) })).parentElement)));
       !existing && this.DOM.captionsContainer.append(wrapper);
       const { offsetWidth: cWidth, offsetHeight: cHeight } = container;
-      this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`, this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`;
+      (this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`), (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`);
       if (this.settings.captions.allowVideoOverride) {
         if (cue.region) {
           container.setAttribute("data-active", "");
@@ -3748,19 +3959,25 @@
           if (tmg.isDef(vpAnX)) container.style.setProperty("--tmg-video-current-captions-x", `${vpAnX}%`);
           if (tmg.isDef(vpAnY)) container.style.setProperty("--tmg-video-current-captions-y", `${100 - vpAnY}%`);
           if (tmg.isDef(width)) container.style.maxWidth = `${width}%`;
-          if (tmg.isDef(lines2)) container.style.maxHeight = `${lines2 * (this.captionsLineHPx / vCHeight * 100)}%`;
+          if (tmg.isDef(lines2)) container.style.maxHeight = `${lines2 * ((this.captionsLineHPx / vCHeight) * 100)}%`;
           if (scroll === "up") {
-            container.style.maxHeight = `${lines2 * (this.captionsLineHPx / vCHeight * 100)}%`;
+            container.style.maxHeight = `${lines2 * ((this.captionsLineHPx / vCHeight) * 100)}%`;
             container.dataset.scroll = scroll;
-            this.config.stall(() => container.scrollTop = wrapper.scrollHeight);
+            this.config.stall(() => (container.scrollTop = wrapper.scrollHeight));
           }
         } else {
           if (tmg.isDef(cue.position) && cue.position !== "auto") {
-            const elemHalfWPct = cWidth / vCWidth * 100 / 2, posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elemHalfWPct : -elemHalfWPct;
+            const elemHalfWPct = ((cWidth / vCWidth) * 100) / 2,
+              posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elemHalfWPct : -elemHalfWPct;
             container.style.setProperty("--tmg-video-current-captions-x", `calc(${cue.position}% + ${posOffset}% + ${elemHalfWPct}%)`);
           }
           if (tmg.isDef(cue.line) && cue.line !== "auto") {
-            const line = tmg.parseIfPercent(cue.line, 100), lhPct = this.captionsLineHPx / vCHeight * 100, elemHalfHPct = cHeight / vCHeight * 100 / 2, lAlign = cue.lineAlign && cue.lineAlign !== "auto" ? cue.lineAlign : line < 0 ? "end" : "start", lineOffset = lAlign === "start" ? -2 * elemHalfHPct : lAlign === "end" ? 0 : -elemHalfHPct, bottomVal = cue.snapToLines ? line < 0 ? (Math.abs(line) - 1) * lhPct : 100 - line * lhPct : 100 - line;
+            const line = tmg.parseIfPercent(cue.line, 100),
+              lhPct = (this.captionsLineHPx / vCHeight) * 100,
+              elemHalfHPct = ((cHeight / vCHeight) * 100) / 2,
+              lAlign = cue.lineAlign && cue.lineAlign !== "auto" ? cue.lineAlign : line < 0 ? "end" : "start",
+              lineOffset = lAlign === "start" ? -2 * elemHalfHPct : lAlign === "end" ? 0 : -elemHalfHPct,
+              bottomVal = cue.snapToLines ? (line < 0 ? (Math.abs(line) - 1) * lhPct : 100 - line * lhPct) : 100 - line;
             container.style.setProperty("--tmg-video-current-captions-y", `calc(${bottomVal}% + ${lineOffset}% + ${elemHalfHPct}%)`);
           }
           if (tmg.isDef(cue.size) && cue.size !== 100) container.style.maxWidth = `${cue.size}%`;
@@ -3794,7 +4011,8 @@
       this.config.stall(this.previewCaptions);
     }
     rotateCaptionsProp(steps, prop, numeric = true) {
-      const curr = this.settings.css[tmg.camelize(prop.replace(".value", ""), /\./)], i = Math.max(0, numeric ? steps.reduce((cIdx, s, idx) => Math.abs(s - curr) < Math.abs(steps[cIdx] - curr) ? idx : cIdx, 0) : steps.indexOf(curr));
+      const curr = this.settings.css[tmg.camelize(prop.replace(".value", ""), /\./)],
+        i = Math.max(0, numeric ? steps.reduce((cIdx, s, idx) => (Math.abs(s - curr) < Math.abs(steps[cIdx] - curr) ? idx : cIdx), 0) : steps.indexOf(curr));
       tmg.setPath(this.settings, prop, steps[(i + 1) % steps.length]);
       this.config.stall(this.previewCaptions);
     }
@@ -3809,16 +4027,19 @@
     _handleCaptionsDragStart({ pointerId, clientX, clientY }) {
       this.DOM.captionsContainer.setPointerCapture(pointerId);
       const { left, bottom } = getComputedStyle(this.DOM.captionsContainer);
-      this.lastCaptionsPosX = parseFloat(left), this.lastCaptionsPosY = parseFloat(bottom);
-      this.lastCaptionsPtrX = clientX, this.lastCaptionsPtrY = clientY;
+      (this.lastCaptionsPosX = parseFloat(left)), (this.lastCaptionsPosY = parseFloat(bottom));
+      (this.lastCaptionsPtrX = clientX), (this.lastCaptionsPtrY = clientY);
       this.DOM.captionsContainer.addEventListener("pointermove", this._handleCaptionsDragging);
       this.DOM.captionsContainer.addEventListener("pointerup", this._handleCaptionsDragEnd);
     }
     _handleCaptionsDragging({ clientX, clientY }) {
       this.videoContainer.classList.add("tmg-video-captions-dragging");
       this.RAFLoop("captionsDragging", () => {
-        const { offsetWidth: ww, offsetHeight: hh } = this.videoContainer, { offsetWidth: w, offsetHeight: h } = this.DOM.captionsContainer, posX = tmg.clamp(w / 2, this.lastCaptionsPosX + (clientX - this.lastCaptionsPtrX), ww - w / 2), posY = tmg.clamp(h / 2, this.lastCaptionsPosY - (clientY - this.lastCaptionsPtrY), hh - h / 2);
-        this.settings.css.currentCaptionsX = `${posX / ww * 100}%`, this.settings.css.currentCaptionsY = `${posY / hh * 100}%`;
+        const { offsetWidth: ww, offsetHeight: hh } = this.videoContainer,
+          { offsetWidth: w, offsetHeight: h } = this.DOM.captionsContainer,
+          posX = tmg.clamp(w / 2, this.lastCaptionsPosX + (clientX - this.lastCaptionsPtrX), ww - w / 2),
+          posY = tmg.clamp(h / 2, this.lastCaptionsPosY - (clientY - this.lastCaptionsPtrY), hh - h / 2);
+        (this.settings.css.currentCaptionsX = `${(posX / ww) * 100}%`), (this.settings.css.currentCaptionsY = `${(posY / hh) * 100}%`);
       });
     }
     _handleCaptionsDragEnd() {
@@ -3832,8 +4053,8 @@
       if (tmg.connectMediaToAudioManager(this.video) === "unavailable") return;
       this._mediaElementSourceNode = this.video.mediaElementSourceNode;
       this._tmgGainNode = this.video._tmgGainNode;
-      const DCN = this._tmgDynamicsCompressorNode = this.video._tmgDynamicsCompressorNode;
-      DCN.threshold.value = -30, DCN.knee.value = 20, DCN.ratio.value = 12, DCN.attack.value = 3e-3, DCN.release.value = 0.25;
+      const DCN = (this._tmgDynamicsCompressorNode = this.video._tmgDynamicsCompressorNode);
+      (DCN.threshold.value = -30), (DCN.knee.value = 20), (DCN.ratio.value = 12), (DCN.attack.value = 3e-3), (DCN.release.value = 0.25);
       this.audioSetup = true;
     }
     cancelAudio() {
@@ -3848,14 +4069,14 @@
       this.shouldMute = this.shouldSetLastVolume = this.video.muted;
       this.config.on("settings.volume.value", ({ value }) => {
         const v = tmg.clamp(this.shouldMute ? 0 : this.settings.volume.min, value, this.settings.volume.max);
-        if (this._tmgGainNode) this._tmgGainNode.gain.setTargetAtTime(v / 100 * 2, tmg.AUDIO_CONTEXT.currentTime, 0.02);
+        if (this._tmgGainNode) this._tmgGainNode.gain.setTargetAtTime((v / 100) * 2, tmg.AUDIO_CONTEXT.currentTime, 0.02);
         if (v > 0) this.video.muted = this.video.defaultMuted = this.settings.volume.muted = false;
         this._handleVolumeChange(v);
       });
       this.config.on("settings.volume.muted", ({ oldValue, value: muted }) => {
         if (oldValue === muted && !!this.settings.volume.value) return;
         if (muted) {
-          if (this.settings.volume.value) this.lastVolume = this.settings.volume.value, this.shouldSetLastVolume = true;
+          if (this.settings.volume.value) (this.lastVolume = this.settings.volume.value), (this.shouldSetLastVolume = true);
           this.shouldMute = true;
           if (this.settings.volume.value) this.settings.volume.value = 0;
         } else {
@@ -3869,11 +4090,11 @@
         object.value > max && (object.value = max), this.lastVolume > max && (this.lastVolume = max);
         this.videoContainer.classList.toggle("tmg-video-volume-boost", max > 100);
         this.DOM.volumeSlider.max = max;
-        this.settings.css.volumeSliderPercent = Math.round(100 / max * 100);
+        this.settings.css.volumeSliderPercent = Math.round((100 / max) * 100);
         this.settings.css.maxVolumeRatio = max / 100;
       });
       fanout(this.settings.volume, { ...this.settings.volume, value: this.shouldMute ? 0 : this.lastVolume });
-      this.config.get("settings.volume.value", (value) => this._tmgGainNode ? Math.round((this._tmgGainNode.gain?.value ?? 2) / 2 * 100) : value, true);
+      this.config.get("settings.volume.value", (value) => (this._tmgGainNode ? Math.round(((this._tmgGainNode.gain?.value ?? 2) / 2) * 100) : value), true);
     }
     toggleMute = (option) => {
       if (option === "auto" && this.shouldSetLastVolume && !this.lastVolume) this.lastVolume = this.settings.volume.skip;
@@ -3893,7 +4114,7 @@
           this.notify("volumedown");
           break;
         default:
-          if (volume < this.settings.volume.max) volume += volume % value ? value - volume % value : value;
+          if (volume < this.settings.volume.max) volume += volume % value ? value - (volume % value) : value;
           this.notify("volumeup");
       }
       if (this.shouldSetLastVolume) {
@@ -3902,7 +4123,7 @@
       } else this.settings.volume.value = volume;
     }
     _handleVolumeSliderInput({ target: { value: volume } }, delay = true) {
-      this.shouldMute = this.shouldSetLastVolume = false, this.settings.volume.value = volume;
+      (this.shouldMute = this.shouldSetLastVolume = false), (this.settings.volume.value = volume);
       if (volume > 5) this.sliderAptVolume = volume;
       delay && this.delayVolumeActive();
     }
@@ -3913,7 +4134,8 @@
     _handleVolumeChange(value) {
       const v = value ?? this.settings.volume.value;
       this.DOM.volumeNotifierContent.textContent = v + "%";
-      const vLevel = v == 0 ? "muted" : v < 50 ? "low" : v <= 100 ? "high" : v > 100 ? "boost" : "", vPercent = (v - 0) / (this.settings.volume.max - 0);
+      const vLevel = v == 0 ? "muted" : v < 50 ? "low" : v <= 100 ? "high" : v > 100 ? "boost" : "",
+        vPercent = (v - 0) / (this.settings.volume.max - 0);
       this.videoContainer.dataset.volumeLevel = vLevel;
       this.DOM.volumeSlider.value = v;
       this.DOM.volumeSlider?.parentElement.setAttribute("data-volume", v);
@@ -3931,10 +4153,10 @@
         }
       } else this.settings.css.currentVolumeSliderPosition = vPercent;
     }
-    _handleNativeVolumeChange = () => (this.video.volume = 1, this.settings.volume.muted !== this.video.muted && this.toggleMute());
+    _handleNativeVolumeChange = () => ((this.video.volume = 1), this.settings.volume.muted !== this.video.muted && this.toggleMute());
     // tough choice, took over; browser :)
-    _handleVolumeContainerMouseMove = () => (this.overVolume = this.DOM.volumeSlider?.matches(":hover"), this.startVolumeActive());
-    _handleVolumeContainerMouseLeave = () => (this.overVolume = false, this.stopVolumeActive());
+    _handleVolumeContainerMouseMove = () => ((this.overVolume = this.DOM.volumeSlider?.matches(":hover")), this.startVolumeActive());
+    _handleVolumeContainerMouseLeave = () => ((this.overVolume = false), this.stopVolumeActive());
     startVolumeActive = () => (this.DOM.volumeSlider?.classList.add("tmg-video-control-active"), this.delayVolumeActive());
     delayVolumeActive() {
       this.delayOverlay();
@@ -3957,7 +4179,7 @@
       this.config.on("settings.brightness.dark", ({ oldValue, value: dark }) => {
         if (oldValue === dark && !!this.settings.brightness.value) return;
         if (dark) {
-          if (this.settings.brightness.value) this.lastBrightness = this.settings.brightness.value, this.shouldSetLastBrightness = true;
+          if (this.settings.brightness.value) (this.lastBrightness = this.settings.brightness.value), (this.shouldSetLastBrightness = true);
           this.shouldDark = true;
           if (this.settings.brightness.value) this.settings.brightness.value = 0;
         } else {
@@ -3971,7 +4193,7 @@
         object.value > max && (object.value = max), this.lastBrightness > max && (this.lastBrightness = max);
         this.videoContainer.classList.toggle("tmg-video-brightness-boost", max > 100);
         this.DOM.brightnessSlider.max = max;
-        this.settings.css.brightnessSliderPercent = Math.round(100 / max * 100);
+        this.settings.css.brightnessSliderPercent = Math.round((100 / max) * 100);
         this.settings.css.maxBrightnessRatio = max / 100;
       });
       fanout(this.settings.brightness, { ...this.settings.brightness, value: this.lastBrightness });
@@ -3982,7 +4204,7 @@
       this.settings.brightness.dark = !(this.settings.brightness.dark || !this.settings.brightness.value);
     };
     _handleBrightnessSliderInput({ target: { value: brightness } }, delay = true) {
-      this.shouldDark = this.shouldSetLastBrightness = false, this.settings.brightness.value = brightness;
+      (this.shouldDark = this.shouldSetLastBrightness = false), (this.settings.brightness.value = brightness);
       if (brightness > 5) this.sliderAptBrightness = brightness;
       delay && this.delayBrightnessActive();
     }
@@ -3993,7 +4215,8 @@
     _handleBrightnessChange(value) {
       const b = value ?? this.settings.brightness.value;
       this.DOM.brightnessNotifierContent.textContent = b + "%";
-      const bLevel = b == 0 ? "dark" : b < 50 ? "low" : b <= 100 ? "high" : b > 100 ? "boost" : "", bPercent = (b - 0) / (this.settings.brightness.max - 0);
+      const bLevel = b == 0 ? "dark" : b < 50 ? "low" : b <= 100 ? "high" : b > 100 ? "boost" : "",
+        bPercent = (b - 0) / (this.settings.brightness.max - 0);
       this.videoContainer.dataset.brightnessLevel = bLevel;
       this.DOM.brightnessSlider.value = b;
       this.DOM.brightnessSlider?.parentElement.setAttribute("data-brightness", b);
@@ -4026,7 +4249,7 @@
           this.notify("brightnessdown");
           break;
         default:
-          if (brightness < this.settings.brightness.max) brightness += brightness % value ? value - brightness % value : value;
+          if (brightness < this.settings.brightness.max) brightness += brightness % value ? value - (brightness % value) : value;
           this.notify("brightnessup");
       }
       if (this.shouldSetLastBrightness) {
@@ -4034,8 +4257,8 @@
         this.lastBrightness = brightness;
       } else this.settings.brightness.value = brightness;
     }
-    _handleBrightnessContainerMouseMove = () => (this.overBrightness = this.DOM.brightnessSlider?.matches(":hover"), this.startBrightnessActive());
-    _handleBrightnessContainerMouseLeave = () => (this.overBrightness = false, this.stopBrightnessActive());
+    _handleBrightnessContainerMouseMove = () => ((this.overBrightness = this.DOM.brightnessSlider?.matches(":hover")), this.startBrightnessActive());
+    _handleBrightnessContainerMouseLeave = () => ((this.overBrightness = false), this.stopBrightnessActive());
     startBrightnessActive = () => (this.DOM.brightnessSlider?.classList.add("tmg-video-control-active"), this.delayBrightnessActive());
     delayBrightnessActive() {
       this.delayOverlay();
@@ -4048,7 +4271,13 @@
       this.DOM.brightnessSlider?.classList.remove("tmg-video-control-active");
     }
     rotateObjectFit() {
-      const fits = [["contain", "Crop to Fit"], ["cover", "Fit To Screen"], ["fill", "Stretch"]], i = fits.findIndex((f) => f[0] === this.settings.css.objectFit), nextFit = fits[(i + 1) % fits.length];
+      const fits = [
+          ["contain", "Crop to Fit"],
+          ["cover", "Fit To Screen"],
+          ["fill", "Stretch"],
+        ],
+        i = fits.findIndex((f) => f[0] === this.settings.css.objectFit),
+        nextFit = fits[(i + 1) % fits.length];
       this.notify(`objectfit${nextFit[0]}`);
       this.videoContainer.dataset.objectFit = this.settings.css.objectFit = nextFit[0];
       this.settings.css.bgSafeObjectFit = nextFit[0] === "fill" ? "contain" : nextFit[0];
@@ -4074,7 +4303,7 @@
         this.toggleMiniplayerMode(false);
         tmg._currentFullscreenController = this;
         const vC = this.videoContainer;
-        vC.requestFullscreen ? await vC.requestFullscreen() : vC.mozRequestFullscreen ? await vC.mozRequestFullscreen() : vC.msRequestFullscreen ? await vC.msRequestFullscreen() : vC.webkitRequestFullscreen ? await vC.webkitRequestFullscreen() : this.video.webkitEnterFullscreen && await this.video.webkitEnterFullscreen();
+        vC.requestFullscreen ? await vC.requestFullscreen() : vC.mozRequestFullscreen ? await vC.mozRequestFullscreen() : vC.msRequestFullscreen ? await vC.msRequestFullscreen() : vC.webkitRequestFullscreen ? await vC.webkitRequestFullscreen() : this.video.webkitEnterFullscreen && (await this.video.webkitEnterFullscreen());
         this.inFullscreen = true;
       } else {
         document.exitFullscreen ? document.exitFullscreen() : document.mozCancelFullscreen ? document.mozCancelFullscreen() : document.msExitFullscreen ? document.msExitFullscreen() : document.webkitCancelFullscreen && document.webkitCancelFullscreen();
@@ -4086,15 +4315,15 @@
       if (!this.inFullscreen || !tmg.queryFullscreen()) {
         this.videoContainer.classList.remove("tmg-video-fullscreen");
         this.unlock();
-        tmg._currentFullscreenController = null, this.inFullscreen = false;
+        (tmg._currentFullscreenController = null), (this.inFullscreen = false);
         this.toggleMiniplayerMode();
       }
       this.setControlsState("fullscreenlock");
-      tmg.ON_MOBILE && await this.changeScreenOrientation(this.isUIActive("fullscreen") ? this.settings.modes.fullscreen.orientationLock : false);
+      tmg.ON_MOBILE && (await this.changeScreenOrientation(this.isUIActive("fullscreen") ? this.settings.modes.fullscreen.orientationLock : false));
       tmg.ON_MOBILE && this.setControlState(this.DOM.fullscreenOrientationBtn, { hidden: !this.isUIActive("fullscreen") });
     }
-    _handleIOSFullscreenEnd = () => (this.inFullscreen = false, this._handleFullscreenChange());
-    changeScreenOrientation = async (option = true) => option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option === "auto" ? this.video.videoHeight > this.video.videoWidth ? "portrait" : "landscape" : option !== true ? option : screen.orientation.angle === 0 ? "landscape" : "portrait");
+    _handleIOSFullscreenEnd = () => ((this.inFullscreen = false), this._handleFullscreenChange());
+    changeScreenOrientation = async (option = true) => (option === false ? screen.orientation?.unlock?.() : await screen.orientation?.lock?.(option === "auto" ? (this.video.videoHeight > this.video.videoWidth ? "portrait" : "landscape") : option !== true ? option : screen.orientation.angle === 0 ? "landscape" : "portrait"));
     async togglePictureInPictureMode() {
       if (this.settings.modes.pictureInPicture.disabled && !this.isUIActive("pictureInPicture") && !this.inFloatingPlayer) return;
       if (this.inFullscreen) await this.toggleFullscreenMode();
@@ -4121,7 +4350,9 @@
       this.inFloatingPlayer = true;
       this.floatingWindow.document.documentElement.style.cssText = `height:100%; background:url(${this.config.media.profile}) center / 32px no-repeat, url(${this.video.poster}) center / ${this.settings.css.bgSafeObjectFit} no-repeat, black;`;
       await tmg.breath(this.floatingWindow);
-      const cssTexts = [], parse = (src) => "string" === typeof src ? src : null, whitelist = [parse(window.T007_TOAST_CSS_SRC), parse(window.T007_INPUT_CSS_SRC), parse(window.T007_DIALOG_CSS_SRC), parse(window.TMG_VIDEO_CSS_SRC)].filter(Boolean);
+      const cssTexts = [],
+        parse = (src) => ("string" === typeof src ? src : null),
+        whitelist = [parse(window.T007_TOAST_CSS_SRC), parse(window.T007_INPUT_CSS_SRC), parse(window.T007_DIALOG_CSS_SRC), parse(window.TMG_VIDEO_CSS_SRC)].filter(Boolean);
       for (const sheet of document.styleSheets) {
         try {
           if (!whitelist.some((src) => tmg.isSameURL(src, sheet.href))) {
@@ -4149,7 +4380,7 @@
       this.settings.modes.pictureInPicture.floatingPlayer.height = this.floatingWindow?.innerHeight ?? this.settings.modes.pictureInPicture.floatingPlayer.height;
     }
     _handleFloatingPlayerClose() {
-      this.inFloatingPlayer = false, this.floatingWindow = null;
+      (this.inFloatingPlayer = false), (this.floatingWindow = null);
       this.videoContainer.classList.toggle("tmg-video-progress-bar", this.settings.controlPanel.progressBar);
       this.videoContainer.classList.remove("tmg-video-floating-player");
       this.deactivatePseudoMode();
@@ -4160,11 +4391,11 @@
     toggleMiniplayerMode(bool, behavior) {
       if (this.settings.modes.miniplayer.disabled && !this.isUIActive("miniplayer")) return;
       const active = this.isUIActive("miniplayer");
-      if (!active && !this.isUIActive("pictureInPicture") && !this.inFloatingPlayer && !this.inFullscreen && !this.parentIntersecting && window.innerWidth >= this.settings.modes.miniplayer.minWindowWidth && !this.video.paused || bool === true && !active) {
+      if ((!active && !this.isUIActive("pictureInPicture") && !this.inFloatingPlayer && !this.inFullscreen && !this.parentIntersecting && window.innerWidth >= this.settings.modes.miniplayer.minWindowWidth && !this.video.paused) || (bool === true && !active)) {
         this.activatePseudoMode();
         this.videoContainer.classList.add("tmg-video-miniplayer", "tmg-video-progress-bar");
         ["mousedown", "touchstart"].forEach((e) => this.videoContainer.addEventListener(e, this._handleMiniplayerDragStart));
-      } else if (active && this.parentIntersecting || active && window.innerWidth < this.settings.modes.miniplayer.minWindowWidth || bool === false && active) {
+      } else if ((active && this.parentIntersecting) || (active && window.innerWidth < this.settings.modes.miniplayer.minWindowWidth) || (bool === false && active)) {
         if (behavior && tmg.inDocView(this.pseudoVideoContainer)) this.pseudoVideoContainer.scrollIntoView({ behavior, block: "center", inline: "center" });
         this.deactivatePseudoMode();
         this.videoContainer.classList.remove("tmg-video-miniplayer");
@@ -4175,10 +4406,10 @@
     _handleMiniplayerDragStart({ target, clientX, clientY, targetTouches }) {
       if (!this.isUIActive("miniplayer") || target.scrollWidth > target.clientWidth || isInteractive(target) || [this.DOM.topControlsWrapper, this.DOM.bottomControlsWrapper, this.DOM.captionsContainer].some((w) => w?.contains?.(target)) || target.closest("[class$='toast-container']")) return;
       const { left, bottom } = getComputedStyle(this.videoContainer);
-      this.lastMiniplayerPosX = parseFloat(left), this.lastMiniplayerPosY = parseFloat(bottom);
-      this.lastMiniplayerPtrX = clientX ?? targetTouches[0].clientX, this.lastMiniplayerPtrY = clientY ?? targetTouches[0].clientY;
-      this.nextMiniplayerX = this.settings.css.currentMiniplayerX, this.nextMiniplayerY = this.settings.css.currentMiniplayerY;
-      this.wildMiniplayerX = this.nextMiniplayerX, this.wildMiniplayerY = this.nextMiniplayerY;
+      (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(bottom));
+      (this.lastMiniplayerPtrX = clientX ?? targetTouches[0].clientX), (this.lastMiniplayerPtrY = clientY ?? targetTouches[0].clientY);
+      (this.nextMiniplayerX = this.settings.css.currentMiniplayerX), (this.nextMiniplayerY = this.settings.css.currentMiniplayerY);
+      (this.wildMiniplayerX = this.nextMiniplayerX), (this.wildMiniplayerY = this.nextMiniplayerY);
       document.addEventListener("mousemove", this._handleMiniplayerDragging);
       document.addEventListener("touchmove", this._handleMiniplayerDragging, { passive: false });
       ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach((e) => document.addEventListener(e, this._handleMiniplayerDragEnd));
@@ -4190,11 +4421,17 @@
       this.removeOverlay("force");
       this.videoContainer.classList.add("tmg-video-player-dragging");
       this.RAFLoop("miniplayerDragging", () => {
-        let { innerWidth: ww, innerHeight: wh } = window, { offsetWidth: w, offsetHeight: h } = this.videoContainer;
-        const x = e.clientX ?? e.changedTouches[0].clientX, y = e.clientY ?? e.changedTouches[0].clientY, newX = this.lastMiniplayerPosX + (x - this.lastMiniplayerPtrX), newY = this.lastMiniplayerPosY - (y - this.lastMiniplayerPtrY), posX = tmg.clamp(w / 2, newX, ww - w / 2), posY = tmg.clamp(h / 2, newY, wh - h / 2);
+        let { innerWidth: ww, innerHeight: wh } = window,
+          { offsetWidth: w, offsetHeight: h } = this.videoContainer;
+        const x = e.clientX ?? e.changedTouches[0].clientX,
+          y = e.clientY ?? e.changedTouches[0].clientY,
+          newX = this.lastMiniplayerPosX + (x - this.lastMiniplayerPtrX),
+          newY = this.lastMiniplayerPosY - (y - this.lastMiniplayerPtrY),
+          posX = tmg.clamp(w / 2, newX, ww - w / 2),
+          posY = tmg.clamp(h / 2, newY, wh - h / 2);
         this.videoContainer.style.setProperty("transform", `translate(${x - this.lastMiniplayerPtrX}px, ${y - this.lastMiniplayerPtrY}px)`, "important");
-        this.nextMiniplayerX = `${posX / ww * 100}%`, this.nextMiniplayerY = `${posY / wh * 100}%`;
-        this.wildMiniplayerX = `${newX / ww * 100}%`, this.wildMiniplayerY = `${newY / wh * 100}%`;
+        (this.nextMiniplayerX = `${(posX / ww) * 100}%`), (this.nextMiniplayerY = `${(posY / wh) * 100}%`);
+        (this.wildMiniplayerX = `${(newX / ww) * 100}%`), (this.wildMiniplayerY = `${(newY / wh) * 100}%`);
       });
     }
     _handleMiniplayerDragEnd() {
@@ -4204,7 +4441,7 @@
       this.videoContainer.style.setProperty("bottom", this.wildMiniplayerY, "important");
       this.videoContainer.style.removeProperty("transform");
       setTimeout(() => {
-        this.settings.css.currentMiniplayerX = this.nextMiniplayerX, this.settings.css.currentMiniplayerY = this.nextMiniplayerY;
+        (this.settings.css.currentMiniplayerX = this.nextMiniplayerX), (this.settings.css.currentMiniplayerY = this.nextMiniplayerY);
         ["transition", "left", "bottom"].forEach((prop) => this.videoContainer.style.removeProperty(prop));
       });
       document.removeEventListener("mousemove", this._handleMiniplayerDragging);
@@ -4245,12 +4482,12 @@
     activateSkipPersist(pos) {
       if (this.skipPersist) return;
       this.videoContainer.addEventListener("click", this._handleDblClick);
-      this.skipPersist = true, this.skipPersistPosition = pos;
+      (this.skipPersist = true), (this.skipPersistPosition = pos);
     }
     deactivateSkipPersist() {
       if (!this.skipPersist) return;
       this.videoContainer.removeEventListener("click", this._handleDblClick);
-      this.skipPersist = false, this.skipPersistPosition = null;
+      (this.skipPersist = false), (this.skipPersistPosition = null);
     }
     _handleHoverPointerActive({ target, pointerType }) {
       (!tmg.ON_MOBILE ? true : !pointerType) && this.showOverlay();
@@ -4268,7 +4505,7 @@
       if (this.shouldRemoveOverlay()) this.overlayDelayId = setTimeout(this.removeOverlay, this.settings.overlay.delay);
     }
     removeOverlay = (manner) => this.shouldRemoveOverlay(manner) && this.videoContainer.classList.remove("tmg-video-overlay");
-    shouldRemoveOverlay = (manner) => this.settings.overlay.behavior !== "persistent" && (manner === "force" || !this.isUIActive("pictureInPicture") && !this.isUIActive("settings") && (tmg.ON_MOBILE ? !this.buffering && !this.video.paused : this.settings.overlay.behavior === "strict" ? true : !this.video.paused));
+    shouldRemoveOverlay = (manner) => this.settings.overlay.behavior !== "persistent" && (manner === "force" || (!this.isUIActive("pictureInPicture") && !this.isUIActive("settings") && (tmg.ON_MOBILE ? !this.buffering && !this.video.paused : this.settings.overlay.behavior === "strict" ? true : !this.video.paused)));
     showLockedOverlay = () => (this.videoContainer.classList.add("tmg-video-locked-overlay"), this.delayLockedOverlay());
     removeLockedOverlay() {
       this.videoContainer.classList.remove("tmg-video-locked-overlay");
@@ -4278,10 +4515,10 @@
       clearTimeout(this.lockOverlayDelayId);
       this.lockOverlayDelayId = setTimeout(this.removeLockedOverlay, this.settings.overlay.delay);
     }
-    _handleFocusIn = ({ target: t }) => this.focusSubjectId = !t.matches(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId);
+    _handleFocusIn = ({ target: t }) => (this.focusSubjectId = !t.matches(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId));
     _handleKeyFocusIn = ({ target: t }) => (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId) === this.focusSubjectId && t.blur();
     _handleGestureWheel(e) {
-      if (!this.settings.locked && !this.disabled && (this.overVolume || this.overBrightness || this.overTimeline || e.target === this.DOM.controlsContainer && !this.gestureTouchXCheck && !this.gestureTouchYCheck && !this.speedCheck && (this.isUIActive("fullscreen") || this.isUIActive("floatingPlayer")))) {
+      if (!this.settings.locked && !this.disabled && (this.overVolume || this.overBrightness || this.overTimeline || (e.target === this.DOM.controlsContainer && !this.gestureTouchXCheck && !this.gestureTouchYCheck && !this.speedCheck && (this.isUIActive("fullscreen") || this.isUIActive("floatingPlayer"))))) {
         e.preventDefault();
         this.gestureWheelTimeoutId ? clearTimeout(this.gestureWheelTimeoutId) : this._handleGestureWheelInit(e);
         this.gestureWheelTimeoutId = setTimeout(this._handleGestureWheelStop, this.settings.gesture.wheel.timeout);
@@ -4291,17 +4528,20 @@
     _handleGestureWheelInit({ clientX: x, clientY: y }) {
       const rect = this.videoContainer.getBoundingClientRect();
       this.gestureWheelZone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
-      this.gestureWheelDeltaY = this.gestureWheelTimePercent = 0, this.gestureWheelTimeMultiplier = 1;
+      (this.gestureWheelDeltaY = this.gestureWheelTimePercent = 0), (this.gestureWheelTimeMultiplier = 1);
     }
     _handleGestureWheelMove({ clientX: x, deltaX, deltaY, shiftKey }) {
       deltaX = shiftKey || this.overTimeline ? deltaY : deltaX;
-      const wc = this.settings.gesture.wheel, rect = this.videoContainer.getBoundingClientRect(), width = shiftKey || this.overTimeline ? rect.height : rect.width, height = shiftKey || this.overTimeline ? rect.width : rect.height;
+      const wc = this.settings.gesture.wheel,
+        rect = this.videoContainer.getBoundingClientRect(),
+        width = shiftKey || this.overTimeline ? rect.height : rect.width,
+        height = shiftKey || this.overTimeline ? rect.width : rect.height;
       let xPercent = -deltaX / (width * wc.xRatio);
-      xPercent = this.overTimeline ? xPercent : this.gestureWheelTimePercent += xPercent;
+      xPercent = this.overTimeline ? xPercent : (this.gestureWheelTimePercent += xPercent);
       const xSign = xPercent >= 0 ? "+" : "-";
       xPercent = Math.abs(xPercent);
       if (deltaX || shiftKey || this.overTimeline) {
-        if (!wc.timeline.slider && this.overTimeline || !wc.timeline.normal && !this.overTimeline || this.gestureWheelYCheck) return this._handleGestureWheelStop();
+        if ((!wc.timeline.slider && this.overTimeline) || (!wc.timeline.normal && !this.overTimeline) || this.gestureWheelYCheck) return this._handleGestureWheelStop();
         this.gestureWheelXCheck = true;
         !this.overTimeline && this.DOM.touchTimelineNotifier?.classList.add("tmg-video-control-active");
         if (this.overTimeline) this.delayOverlay();
@@ -4309,18 +4549,20 @@
         if (shiftKey || this.overTimeline) return;
       }
       if (deltaY) {
-        if (wc.timeline.slider && this.overTimeline || this.gestureWheelXCheck) {
-          const mY = tmg.clamp(0, Math.abs(this.gestureWheelDeltaY += deltaY), height * wc.yRatio * 0.5);
+        if ((wc.timeline.slider && this.overTimeline) || this.gestureWheelXCheck) {
+          const mY = tmg.clamp(0, Math.abs((this.gestureWheelDeltaY += deltaY)), height * wc.yRatio * 0.5);
           this.gestureWheelTimeMultiplier = 1 - mY / (height * wc.yRatio * 0.5);
           return this._handleGestureTimelineInput({ percent: xPercent, sign: xSign, multiplier: this.gestureWheelTimeMultiplier });
         }
-        const cancel = !wc.volume.slider && this.overVolume || this.gestureWheelZone?.x === "right" && !wc.volume.normal && !this.overVolume || !wc.brightness.slider && this.overBrightness || this.gestureWheelZone?.x === "left" && !wc.brightness.normal && !this.overBrightness, currentXZone = x - rect.left > width * 0.5 ? "right" : "left";
+        const cancel = (!wc.volume.slider && this.overVolume) || (this.gestureWheelZone?.x === "right" && !wc.volume.normal && !this.overVolume) || (!wc.brightness.slider && this.overBrightness) || (this.gestureWheelZone?.x === "left" && !wc.brightness.normal && !this.overBrightness),
+          currentXZone = x - rect.left > width * 0.5 ? "right" : "left";
         if (cancel || currentXZone !== this.gestureWheelZone.x) return this._handleGestureWheelStop();
         this.gestureWheelYCheck = true;
         !this.overVolume && !this.overBrightness && (this.gestureWheelZone?.x === "right" ? this.DOM.touchVolumeNotifier : this.DOM.touchBrightnessNotifier)?.classList.add("tmg-video-control-active");
         if (this.overVolume) this.delayVolumeActive();
         if (this.overBrightness) this.delayBrightnessActive();
-        const ySign = -deltaY >= 0 ? "+" : "-", yPercent = tmg.clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
+        const ySign = -deltaY >= 0 ? "+" : "-",
+          yPercent = tmg.clamp(0, Math.abs(deltaY), height * wc.yRatio) / (height * wc.yRatio);
         this.gestureWheelZone?.x === "right" || this.overVolume ? this._handleGestureVolumeSliderInput({ percent: yPercent, sign: ySign }) : this._handleGestureBrightnessSliderInput({ percent: yPercent, sign: ySign });
       }
     }
@@ -4341,19 +4583,25 @@
     _handleGestureTouchStart(e) {
       if (e.touches?.length > 1 || e.target !== this.DOM.controlsContainer || this.isUIActive("miniplayer") || this.speedCheck) return;
       this._handleGestureTouchEnd();
-      this.lastGestureTouchX = e.clientX ?? e.targetTouches[0].clientX, this.lastGestureTouchY = e.clientY ?? e.targetTouches[0].clientY;
+      (this.lastGestureTouchX = e.clientX ?? e.targetTouches[0].clientX), (this.lastGestureTouchY = e.clientY ?? e.targetTouches[0].clientY);
       this.videoContainer.addEventListener("touchmove", this._handleGestureTouchInit, { once: true });
-      this.gestureTouchCancelTimeoutId = setTimeout(() => this.gestureTouchCanCancel = false, this.settings.gesture.touch.threshold);
+      this.gestureTouchCancelTimeoutId = setTimeout(() => (this.gestureTouchCanCancel = false), this.settings.gesture.touch.threshold);
       ["touchend", "touchcancel"].forEach((e2) => this.videoContainer.addEventListener(e2, this._handleGestureTouchEnd));
     }
     _handleGestureTouchInit(e) {
       if (e.touches?.length > 1 || this.isUIActive("miniplayer") || this.speedCheck) return;
       e.preventDefault();
-      const tc = this.settings.gesture.touch, rect = this.videoContainer.getBoundingClientRect(), x = e.clientX ?? e.targetTouches[0].clientX, y = e.clientY ?? e.targetTouches[0].clientY, deltaX = Math.abs(this.lastGestureTouchX - x), deltaY = Math.abs(this.lastGestureTouchY - y);
+      const tc = this.settings.gesture.touch,
+        rect = this.videoContainer.getBoundingClientRect(),
+        x = e.clientX ?? e.targetTouches[0].clientX,
+        y = e.clientY ?? e.targetTouches[0].clientY,
+        deltaX = Math.abs(this.lastGestureTouchX - x),
+        deltaY = Math.abs(this.lastGestureTouchY - y);
       this.gestureTouchZone = { x: x - rect.left > rect.width * 0.5 ? "right" : "left", y: y - rect.top > rect.height * 0.5 ? "bottom" : "top" };
-      const rLeft = this.lastGestureTouchX - rect.left, rTop = this.lastGestureTouchY - rect.top;
-      if (deltaX > deltaY * tc.axesRatio && rLeft > tc.inset && rLeft < rect.width - tc.inset) tc.timeline && (this.gestureTouchXCheck = true, this.videoContainer.addEventListener("touchmove", this._handleGestureTouchXMove, { passive: false }));
-      else if (deltaY > deltaX * tc.axesRatio && rTop > tc.inset && rTop < rect.height - tc.inset) (tc.volume && this.gestureTouchZone?.x === "right" || tc.brightness && this.gestureTouchZone?.x === "left") && (this.gestureTouchYCheck = true, this.videoContainer.addEventListener("touchmove", this._handleGestureTouchYMove, { passive: false }));
+      const rLeft = this.lastGestureTouchX - rect.left,
+        rTop = this.lastGestureTouchY - rect.top;
+      if (deltaX > deltaY * tc.axesRatio && rLeft > tc.inset && rLeft < rect.width - tc.inset) tc.timeline && ((this.gestureTouchXCheck = true), this.videoContainer.addEventListener("touchmove", this._handleGestureTouchXMove, { passive: false }));
+      else if (deltaY > deltaX * tc.axesRatio && rTop > tc.inset && rTop < rect.height - tc.inset) ((tc.volume && this.gestureTouchZone?.x === "right") || (tc.brightness && this.gestureTouchZone?.x === "left")) && ((this.gestureTouchYCheck = true), this.videoContainer.addEventListener("touchmove", this._handleGestureTouchYMove, { passive: false }));
     }
     _handleGestureTouchXMove(e) {
       if (this.gestureTouchCanCancel) return this._handleGestureTouchEnd();
@@ -4362,7 +4610,16 @@
       this.throttle(
         "gestureTouchMove",
         () => {
-          const tc = this.settings.gesture.touch, { offsetWidth: width, offsetHeight: height } = this.videoContainer, x = e.clientX ?? e.targetTouches[0].clientX, y = e.clientY ?? e.targetTouches[0].clientY, deltaX = x - this.lastGestureTouchX, deltaY = y - this.lastGestureTouchY, sign = deltaX >= 0 ? "+" : "-", percent = tmg.clamp(0, Math.abs(deltaX), width * tc.xRatio) / (width * tc.xRatio), mY = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio * 0.5), multiplier = 1 - mY / (height * tc.yRatio * 0.5);
+          const tc = this.settings.gesture.touch,
+            { offsetWidth: width, offsetHeight: height } = this.videoContainer,
+            x = e.clientX ?? e.targetTouches[0].clientX,
+            y = e.clientY ?? e.targetTouches[0].clientY,
+            deltaX = x - this.lastGestureTouchX,
+            deltaY = y - this.lastGestureTouchY,
+            sign = deltaX >= 0 ? "+" : "-",
+            percent = tmg.clamp(0, Math.abs(deltaX), width * tc.xRatio) / (width * tc.xRatio),
+            mY = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio * 0.5),
+            multiplier = 1 - mY / (height * tc.yRatio * 0.5);
           this._handleGestureTimelineInput({ percent, sign, multiplier });
         },
         30,
@@ -4376,7 +4633,12 @@
       this.throttle(
         "gestureTouchMove",
         () => {
-          const tc = this.settings.gesture.touch, height = this.videoContainer.offsetHeight, y = e.clientY ?? e.targetTouches[0].clientY, deltaY = y - this.lastGestureTouchY, sign = deltaY >= 0 ? "-" : "+", percent = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio) / (height * tc.yRatio);
+          const tc = this.settings.gesture.touch,
+            height = this.videoContainer.offsetHeight,
+            y = e.clientY ?? e.targetTouches[0].clientY,
+            deltaY = y - this.lastGestureTouchY,
+            sign = deltaY >= 0 ? "-" : "+",
+            percent = tmg.clamp(0, Math.abs(deltaY), height * tc.yRatio) / (height * tc.yRatio);
           this.lastGestureTouchY = y;
           this.gestureTouchZone?.x === "right" ? this._handleGestureVolumeSliderInput({ percent, sign }) : this._handleGestureBrightnessSliderInput({ percent, sign });
         },
@@ -4398,7 +4660,7 @@
         this.gestureTouchSliderTimeoutId = setTimeout(() => [this.DOM.touchVolumeNotifier, this.DOM.touchBrightnessNotifier].forEach((el) => el?.classList.remove("tmg-video-control-active")), this.settings.gesture.touch.sliderTimeout);
         if (!this.gestureTouchCanCancel) this.removeOverlay();
       }
-      clearTimeout(this.gestureTouchCancelTimeoutId), this.gestureTouchCanCancel = true;
+      clearTimeout(this.gestureTouchCancelTimeoutId), (this.gestureTouchCanCancel = true);
       this.videoContainer.removeEventListener("touchmove", this._handleGestureTouchInit, { once: true });
       ["touchend", "touchcancel"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleGestureTouchEnd));
     }
@@ -4410,7 +4672,9 @@
       this.speedTimeoutId = setTimeout(() => {
         this.videoContainer.removeEventListener("touchmove", this._handleSpeedPointerUp);
         this.speedPointerCheck = true;
-        const x = e.clientX ?? e.targetTouches[0].clientX, rect = this.videoContainer.getBoundingClientRect(), rLeft = x - rect.left;
+        const x = e.clientX ?? e.targetTouches[0].clientX,
+          rect = this.videoContainer.getBoundingClientRect(),
+          rLeft = x - rect.left;
         this.speedDirection = rLeft >= rect.width * 0.5 ? "forwards" : "backwards";
         if (rLeft < this.settings.fastPlay.pointer.inset || rLeft > rect.width - this.settings.fastPlay.pointer.inset) return;
         if (this.settings.fastPlay.rewind) ["mousemove", "touchmove"].forEach((e2) => this.videoContainer.addEventListener(e2, this._handleSpeedPointerMove));
@@ -4422,26 +4686,29 @@
       this.throttle(
         "speedPointerMove",
         () => {
-          const rect = this.videoContainer.getBoundingClientRect(), x = e.clientX ?? e.targetTouches[0].clientX, currPos = x - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
-          if (currPos !== this.speedDirection) this.speedDirection = currPos, this.slowDown(), this.fastPlay(this.speedDirection);
+          const rect = this.videoContainer.getBoundingClientRect(),
+            x = e.clientX ?? e.targetTouches[0].clientX,
+            currPos = x - rect.left >= rect.width * 0.5 ? "forwards" : "backwards";
+          if (currPos !== this.speedDirection) (this.speedDirection = currPos), this.slowDown(), this.fastPlay(this.speedDirection);
         },
         200,
         false
       );
     }
     _handleSpeedPointerUp() {
-      clearTimeout(this.speedTimeoutId), this.speedPointerCheck = false;
+      clearTimeout(this.speedTimeoutId), (this.speedPointerCheck = false);
       if (this.speedCheck && this.playTriggerCounter < 1) setTimeout(this.slowDown);
       ["touchmove", "mouseup", "touchend", "touchcancel"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleSpeedPointerUp));
       ["mousemove", "touchmove"].forEach((e) => this.videoContainer.removeEventListener(e, this._handleSpeedPointerMove));
       this.videoContainer.removeEventListener("mouseleave", this._handleSpeedPointerOut);
     }
     _handleSpeedPointerOut = (e) => !this.videoContainer.matches(":hover") && this._handleSpeedPointerUp(e);
-    plugKeysSettings = () => this.config.on("settings.keys.disabled", ({ value }) => value ? (this.setKeyEventListeners("remove", true), this.setKeyEventListeners("remove", false)) : this.isIntersecting && this.setKeyEventListeners("add"));
+    plugKeysSettings = () => this.config.on("settings.keys.disabled", ({ value }) => (value ? (this.setKeyEventListeners("remove", true), this.setKeyEventListeners("remove", false)) : this.isIntersecting && this.setKeyEventListeners("add")));
     // devx shortcut
     fetchKeyShortcutsTooltip = () => Object.fromEntries(Object.keys(this.settings.keys.shortcuts).map((action) => [action, tmg.formatKeyTooltip(this.settings.keys.shortcuts[action])]));
     getTermsForKey(combo) {
-      const terms = { override: false, block: false, allowed: false, action: null }, { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
+      const terms = { override: false, block: false, allowed: false, action: null },
+        { overrides, shortcuts, blocks, strictMatches: s } = this.settings.keys;
       if (tmg.matchKeys(overrides, combo, s)) terms.override = true;
       if (tmg.matchKeys(blocks, combo, s)) terms.block = true;
       if (tmg.matchKeys(tmg.WHITE_LISTED_KEYS, combo)) terms.allowed = true;
@@ -4449,8 +4716,9 @@
       return terms;
     }
     keyEventAllowed(e) {
-      if (this.settings.keys.disabled || (e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable]")) return false;
-      const combo = tmg.stringifyKeyEvent(e), { override, block, action, allowed } = this.getTermsForKey(combo);
+      if (this.settings.keys.disabled || ((e.key === " " || e.key === "Enter") && getActiveEl(e.target?.ownerDocument)?.matches("button,input,textarea,[contenteditable]"))) return false;
+      const combo = tmg.stringifyKeyEvent(e),
+        { override, block, action, allowed } = this.getTermsForKey(combo);
       if (block) return false;
       if (override) e.preventDefault();
       if (action) return action;
@@ -4458,7 +4726,8 @@
       return false;
     }
     _handleKeyDown(e) {
-      const action = this.keyEventAllowed(e), mod = this.settings.keys.mods.disabled ? "" : e.ctrlKey ? "ctrl" : e.altKey ? "alt" : e.shiftKey ? "shift" : "";
+      const action = this.keyEventAllowed(e),
+        mod = this.settings.keys.mods.disabled ? "" : e.ctrlKey ? "ctrl" : e.altKey ? "alt" : e.shiftKey ? "shift" : "";
       if (action === false) return;
       else if (action) this.showOverlay();
       this.throttle(
@@ -4544,9 +4813,9 @@
         case "timeFormat":
           return this.rotateTimeFormat();
         case "mute":
-          return this.toggleMute("auto"), this.config.wonce("settings.volume.value", (v) => !v ? this.notify("volumemuted") : this.notify("volumeup"));
+          return this.toggleMute("auto"), this.config.wonce("settings.volume.value", (v) => (!v ? this.notify("volumemuted") : this.notify("volumeup")));
         case "dark":
-          return this.toggleDark("auto"), this.config.wonce("settings.brightness.value", (v) => !v ? this.notify("brightnessdark") : this.notify("brightnessup"));
+          return this.toggleDark("auto"), this.config.wonce("settings.brightness.value", (v) => (!v ? this.notify("brightnessdark") : this.notify("brightnessup")));
         case "captions":
           this.toggleCaptions();
           return this.video.textTracks[this.textTrackIndex] && this.notify("captions");
@@ -4561,7 +4830,7 @@
         case "home":
         // -w
         case "0":
-          return this.settings.time.value = 0;
+          return (this.settings.time.value = 0);
         case "1":
         // -w
         case "2":
@@ -4579,9 +4848,9 @@
         case "8":
         // -w
         case "9":
-          return this.settings.time.value = action / 10 * this.duration;
+          return (this.settings.time.value = (action / 10) * this.duration);
         case "end":
-          return this.settings.time.value = this.duration;
+          return (this.settings.time.value = this.duration);
       }
     }
     _handlePlayTriggerUp(e) {
@@ -4620,7 +4889,7 @@
       if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") tmg.setPath(this.cZoneWs, this.getUIZoneWCoord(t), t);
       this.syncControlPanelToUI();
     }
-    noDropOff = (t, drop = this.dragging) => !drop?.tagName || t.dataset.dropZone !== "true" || t.dataset.dragId !== drop.dataset.dragId && (t.dataset.dragId === "wrapper" || drop.dataset.dragId === "wrapper");
+    noDropOff = (t, drop = this.dragging) => !drop?.tagName || t.dataset.dropZone !== "true" || (t.dataset.dragId !== drop.dataset.dragId && (t.dataset.dragId === "wrapper" || drop.dataset.dragId === "wrapper"));
     _handleDragEnter = ({ target: t }) => !this.noDropOff(t) && this.dragging && t.classList.add("tmg-video-dragover");
     _handleDragOver(e) {
       const { target: t, clientX: x, dataTransfer } = e;
@@ -4662,39 +4931,42 @@
     set build(customBuild) {
       this.configure(customBuild);
     }
-    queryBuild = () => !this.#active ? true : (console.error("TMG has already deployed the custom controls of your build configuration"), console.warn("Consider setting your build configuration before attaching your media element"), false);
+    queryBuild = () => (!this.#active ? true : (console.error("TMG has already deployed the custom controls of your build configuration"), console.warn("Consider setting your build configuration before attaching your media element"), false));
     configure(customBuild) {
       if (!this.queryBuild() || !tmg.isObj(customBuild)) return;
       this.#build = tmg.mergeObjs(this.#build, tmg.parsePathObj(customBuild));
-      Object.entries(this.#build.settings.keys.shortcuts).forEach(([k, v]) => this.#build.settings.keys.shortcuts[k] = tmg.cleanKeyCombo(v));
-      ["blocks", "overrides"].forEach((k) => this.#build.settings.keys[k] = tmg.cleanKeyCombo(this.#build.settings.keys[k]));
+      Object.entries(this.#build.settings.keys.shortcuts).forEach(([k, v]) => (this.#build.settings.keys.shortcuts[k] = tmg.cleanKeyCombo(v)));
+      ["blocks", "overrides"].forEach((k) => (this.#build.settings.keys[k] = tmg.cleanKeyCombo(this.#build.settings.keys[k])));
     }
     async attach(medium) {
       if (tmg.isIter(medium)) console.error("An iterable argument cannot be attached to the TMG media player"), console.warn("Consider looping the iterable argument to get a single argument and instantiate a new 'tmg.Player' for each");
       if (this.#active) return;
       medium.tmgPlayer?.detach();
       tmg.Controllers.push(this.build.id);
-      medium.tmgPlayer = this, this.#medium = medium;
+      (medium.tmgPlayer = this), (this.#medium = medium);
       await this.fetchCustomOptions(), await this.#deployController();
       return this.Controller.fire("tmgattached", this.Controller.payload), medium;
     }
     detach() {
       if (!this.#active) return;
-      const medium = this.#medium = this.Controller?._destroy();
+      const medium = (this.#medium = this.Controller?._destroy());
       tmg.Controllers.splice(tmg.Controllers.indexOf(this.Controller), 1);
       this.#medium.tmgcontrols = this.#active = false;
       this.Controller.fire("tmgdetached", this.Controller.payload);
-      return this.#medium.tmgPlayer = this.Controller = this.#medium = null, medium;
+      return (this.#medium.tmgPlayer = this.Controller = this.#medium = null), medium;
     }
     async fetchCustomOptions() {
       let fetchedControls;
       if (this.#medium.getAttribute("tmg")?.includes(".json")) {
-        fetchedControls = fetch(this.#medium.getAttribute("tmg")).then((res) => {
-          if (!res.ok) throw new Error(`TMG could not find provided JSON file!. Status: ${res.status}`);
-          return res.json();
-        }).catch(({ message }) => (console.error(`${message}`), console.warn("TMG requires a valid JSON file for parsing your build configuration")));
+        fetchedControls = fetch(this.#medium.getAttribute("tmg"))
+          .then((res) => {
+            if (!res.ok) throw new Error(`TMG could not find provided JSON file!. Status: ${res.status}`);
+            return res.json();
+          })
+          .catch(({ message }) => (console.error(`${message}`), console.warn("TMG requires a valid JSON file for parsing your build configuration")));
       }
-      const customBuild = await fetchedControls ?? {}, attributes = this.#medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
+      const customBuild = (await fetchedControls) ?? {},
+        attributes = this.#medium.getAttributeNames().filter((attr) => attr.startsWith("tmg--"));
       attributes?.forEach((attr) => tmg.setHTMLConfig(customBuild, attr, this.#medium.getAttribute(attr)));
       if (this.#medium.poster) this.configure({ "media.artwork[0].src": customBuild.media?.artwork?.[0]?.src ?? this.#medium.poster });
       this.configure(customBuild);
@@ -4738,9 +5010,9 @@
       for (let i = 0, n = 0, len = tmg.Controllers.length; i < len; i++) {
         const con = tmg.Controllers[i];
         if (con.config.__Reactor__.modules?.has(window[`TTM${n + 1}`])) continue;
-        con.config.use(window[`TTM${++n}`] = new TimeTravelModule({ blacklist: ["settings.css.syncWithMedia"] }));
+        con.config.use((window[`TTM${++n}`] = new TimeTravelModule({ blacklist: ["settings.css.syncWithMedia"] })));
         window[`TTO${n}`] = new TimeTravelConsole(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
-        con.config.watch("settings.css.brandColor", (v) => window[`TTO${n}`].config.color = v, { init: true });
+        con.config.watch("settings.css.brandColor", (v) => (window[`TTO${n}`].config.color = v), { init: true });
       }
     },
     breath: (w = window) => new Promise((res) => w.requestAnimationFrame(res)),
@@ -4754,10 +5026,10 @@
     },
     mountMedia() {
       Object.defineProperty(HTMLVideoElement.prototype, "tmgcontrols", {
-        get: function() {
+        get: function () {
           return this.hasAttribute("tmgcontrols");
         },
-        set: async function(value) {
+        set: async function (value) {
           if (value) {
             tmg.flagMutation(this);
             await (this.tmgPlayer || new tmg.Player()).attach(this);
@@ -4771,13 +5043,13 @@
           }
         },
         enumerable: true,
-        configurable: true
+        configurable: true,
       });
     },
     unmountMedia: () => delete HTMLVideoElement.prototype.tmgcontrols,
     init() {
       tmg.mountMedia();
-      ["click", "pointerdown", "keydown"].forEach((e) => document.addEventListener(e, () => (tmg.IS_DOC_TRANSIENT = true, tmg.startAudioManager()), true));
+      ["click", "pointerdown", "keydown"].forEach((e) => document.addEventListener(e, () => ((tmg.IS_DOC_TRANSIENT = true), tmg.startAudioManager()), true));
       for (const medium of document.querySelectorAll("video")) {
         tmg.VIDMutationObserver.observe(medium, { attributes: true });
         medium.tmgcontrols = medium.hasAttribute("tmgcontrols");
@@ -4788,38 +5060,46 @@
       ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "msfullscreenchange"].forEach((e) => document.addEventListener(e, tmg._handleFullscreenChange));
       document.addEventListener("visibilitychange", tmg._handleVisibilityChange);
     },
-    intersectionObserver: "undefined" !== typeof window && new IntersectionObserver(
-      (entries) => {
-        for (const { target, isIntersecting } of entries) target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller?._handleMediaIntersectionChange(isIntersecting) : target.querySelector(".tmg-media")?.tmgPlayer?.Controller?._handleMediaParentIntersectionChange(isIntersecting);
-      },
-      { root: null, rootMargin: "0px", threshold: 0.3 }
-    ),
-    resizeObserver: "undefined" !== typeof window && new ResizeObserver((entries) => {
-      for (const { target } of entries) (target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller : (target.querySelector(".tmg-media") || target.closest(".tmg-media-container")?.querySelector(".tmg-media"))?.tmgPlayer?.Controller)?._handleResize(target);
-    }),
-    VIDMutationObserver: "undefined" !== typeof window && new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== "attributes") continue;
-        if (mutation.attributeName === "tmgcontrols") !tmg._mutationSet.has(mutation.target) && (mutation.target.tmgcontrols = mutation.target.hasAttribute("tmgcontrols"));
-        else if (mutation.attributeName?.startsWith("tmg")) mutation.target.hasAttribute(mutation.attributeName) && mutation.target.tmgPlayer?.fetchCustomOptions();
-        else if (mutation.attributeName === "controls") mutation.target.hasAttribute("tmgcontrols") && mutation.target.removeAttribute("controls");
-      }
-    }),
-    DOMMutationObserver: "undefined" !== typeof window && new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (!node.tagName || !(node.matches("video:not(.tmg-media") || node.querySelector("video:not(.tmg-media)"))) continue;
-          for (const el of [...node.querySelector("video:not(.tmg-media)") ? node.querySelectorAll("video:not(.tmg-media)") : [node]]) {
-            tmg.VIDMutationObserver.observe(el, { attributes: true });
-            el.tmgcontrols = el.hasAttribute("tmgcontrols");
+    intersectionObserver:
+      "undefined" !== typeof window &&
+      new IntersectionObserver(
+        (entries) => {
+          for (const { target, isIntersecting } of entries) target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller?._handleMediaIntersectionChange(isIntersecting) : target.querySelector(".tmg-media")?.tmgPlayer?.Controller?._handleMediaParentIntersectionChange(isIntersecting);
+        },
+        { root: null, rootMargin: "0px", threshold: 0.3 }
+      ),
+    resizeObserver:
+      "undefined" !== typeof window &&
+      new ResizeObserver((entries) => {
+        for (const { target } of entries) (target.classList.contains("tmg-media") ? target.tmgPlayer?.Controller : (target.querySelector(".tmg-media") || target.closest(".tmg-media-container")?.querySelector(".tmg-media"))?.tmgPlayer?.Controller)?._handleResize(target);
+      }),
+    VIDMutationObserver:
+      "undefined" !== typeof window &&
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type !== "attributes") continue;
+          if (mutation.attributeName === "tmgcontrols") !tmg._mutationSet.has(mutation.target) && (mutation.target.tmgcontrols = mutation.target.hasAttribute("tmgcontrols"));
+          else if (mutation.attributeName?.startsWith("tmg")) mutation.target.hasAttribute(mutation.attributeName) && mutation.target.tmgPlayer?.fetchCustomOptions();
+          else if (mutation.attributeName === "controls") mutation.target.hasAttribute("tmgcontrols") && mutation.target.removeAttribute("controls");
+        }
+      }),
+    DOMMutationObserver:
+      "undefined" !== typeof window &&
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (!node.tagName || !(node.matches("video:not(.tmg-media") || node.querySelector("video:not(.tmg-media)"))) continue;
+            for (const el of [...(node.querySelector("video:not(.tmg-media)") ? node.querySelectorAll("video:not(.tmg-media)") : [node])]) {
+              tmg.VIDMutationObserver.observe(el, { attributes: true });
+              el.tmgcontrols = el.hasAttribute("tmgcontrols");
+            }
+          }
+          for (const node of mutation.removedNodes) {
+            if (!node.tagName || !(node.matches("video.tmg-media") || node.querySelector("video.tmg-media")) || node.isConnected) continue;
+            for (const el of [...(node.querySelector("video.tmg-media") ? node.querySelectorAll("video.tmg-media") : [node])]) if (!el.tmgPlayer?.Controller?.mutatingDOMM) el.tmgcontrols = false;
           }
         }
-        for (const node of mutation.removedNodes) {
-          if (!node.tagName || !(node.matches("video.tmg-media") || node.querySelector("video.tmg-media")) || node.isConnected) continue;
-          for (const el of [...node.querySelector("video.tmg-media") ? node.querySelectorAll("video.tmg-media") : [node]]) if (!el.tmgPlayer?.Controller?.mutatingDOMM) el.tmgcontrols = false;
-        }
-      }
-    }),
+      }),
     _handleWindowResize: () => tmg.Controllers?.forEach((c) => c._handleWindowResize?.()),
     _handleOrientationChange: () => tmg.Controllers?.forEach((c) => c._handleOrientationChange?.()),
     _handleVisibilityChange: () => tmg.Controllers?.forEach((c) => c._handleVisibilityChange?.()),
@@ -4827,8 +5107,8 @@
     startAudioManager() {
       if (!tmg.AUDIO_CONTEXT && tmg.IS_DOC_TRANSIENT) {
         tmg.AUDIO_CONTEXT = new (AudioContext || webkitAudioContext)();
-        const L = tmg._limiter = tmg.AUDIO_CONTEXT.createDynamicsCompressor();
-        L.threshold.value = -1, L.knee.value = 0, L.ratio.value = 20, L.attack.value = 1e-3, L.release.value = 0.05;
+        const L = (tmg._limiter = tmg.AUDIO_CONTEXT.createDynamicsCompressor());
+        (L.threshold.value = -1), (L.knee.value = 0), (L.ratio.value = 20), (L.attack.value = 1e-3), (L.release.value = 0.05);
         tmg.Controllers?.forEach((c) => c.setUpAudio?.());
       } else if (tmg.AUDIO_CONTEXT?.state === "suspended") tmg.AUDIO_CONTEXT.resume();
     },
@@ -4842,7 +5122,7 @@
       medium._tmgGainNode.connect(tmg._limiter);
       tmg._limiter.connect(tmg.AUDIO_CONTEXT.destination);
     },
-    queryMediaMobile: (strict = true) => strict ? /Mobi|Android|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) : matchMedia("(max-width: 480px), (max-width: 940px) and (max-height: 480px) and (orientation: landscape)").matches,
+    queryMediaMobile: (strict = true) => (strict ? /Mobi|Android|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) : matchMedia("(max-width: 480px), (max-width: 940px) and (max-height: 480px) and (orientation: landscape)").matches),
     queryFullscreen: () => !!(document.fullscreenElement || document.fullscreen || document.webkitIsFullscreen || document.mozFullscreen || document.msFullscreenElement),
     supportsFullscreen: () => !!(document.fullscreenEnabled || document.mozFullscreenEnabled || document.msFullscreenEnabled || document.webkitFullscreenEnabled || document.webkitSupportsFullscreen || HTMLVideoElement.prototype.webkitEnterFullscreen),
     supportsPictureInPicture: () => !!(document.pictureInPictureEnabled || HTMLVideoElement.prototype.requestPictureInPicture || window.documentPictureInPicture),
@@ -4862,7 +5142,8 @@
       return tmg.isIter(sources) ? Array.from(sources, (source) => addSource(source, medium)) : addSource(sources, medium);
     },
     getSources(medium) {
-      const sources = medium.querySelectorAll("source"), _sources = [];
+      const sources = medium.querySelectorAll("source"),
+        _sources = [];
       sources.forEach((source) => {
         const obj = {};
         tmg.putSourceDetails(source, obj);
@@ -4892,7 +5173,9 @@
       return tmg.isIter(tracks) ? Array.from(tracks, (track) => addTrack(track, medium)) : addTrack(tracks, medium);
     },
     getTracks(medium, captionsOnly = false) {
-      const selector = !captionsOnly ? "track" : "track:is([kind='captions'], [kind='subtitles'])", tracks = medium.querySelectorAll(selector), _tracks = [];
+      const selector = !captionsOnly ? "track" : "track:is([kind='captions'], [kind='subtitles'])",
+        tracks = medium.querySelectorAll(selector),
+        _tracks = [];
       tracks.forEach((track) => {
         const obj = {};
         tmg.putTrackDetails(track, obj);
@@ -4911,9 +5194,11 @@
       for (const block of input.split(/\n{2,}/)) {
         const lines = block.split("\n");
         let idx = /^\d+$/.test(lines[0].trim()) ? 1 : 0;
-        const timing = lines[idx]?.trim().replace(/\s+/g, " "), m = timing?.match(/(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?\s*-->\s*(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?/);
+        const timing = lines[idx]?.trim().replace(/\s+/g, " "),
+          m = timing?.match(/(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?\s*-->\s*(\d{1,2}:\d{2}:\d{2})(?:[.,](\d{1,3}))?/);
         if (!m) continue;
-        const [, startHms, startMsRaw = "0", endHms, endMsRaw = "0"] = m, to3 = (ms) => ms.padEnd(3, "0").slice(0, 3);
+        const [, startHms, startMsRaw = "0", endHms, endMsRaw = "0"] = m,
+          to3 = (ms) => ms.padEnd(3, "0").slice(0, 3);
         vttLines.push(startHms + "." + to3(startMsRaw) + " --> " + endHms + "." + to3(endMsRaw));
         for (let i = idx + 1; i < lines.length; i++) vttLines.push(lines[i]);
         vttLines.push("");
@@ -4921,12 +5206,14 @@
       return vttLines.join("\n");
     },
     parseVttText(text) {
-      const state2 = { tag: /<(\/)?([a-z0-9.:]+)([^>]*)>/gi, o: "", l: 0, p: null, c: "" }, esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const state2 = { tag: /<(\/)?([a-z0-9.:]+)([^>]*)>/gi, o: "", l: 0, p: null, c: "" },
+        esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
       let m;
-      while (m = state2.tag.exec(text)) {
+      while ((m = state2.tag.exec(text))) {
         const chunk = text.slice(state2.l, m.index);
         if (chunk) state2.c += esc(chunk);
-        const [_, cls, tag_n, rest] = m, low = tag_n.toLowerCase();
+        const [_, cls, tag_n, rest] = m,
+          low = tag_n.toLowerCase();
         if (/^[0-9]/.test(tag_n)) {
           state2.o += state2.p ? `<span data-part="timed" data-time="${state2.p}">${state2.c}</span>` : state2.c;
           state2.p = tag_n;
@@ -4945,21 +5232,27 @@
       return state2.o + (state2.p ? `<span data-part="timed" data-time="${state2.p}">${state2.c}</span>` : state2.c);
     },
     formatVttLine(p, maxChars) {
-      const state2 = { tokens: p.match(/<[^>]+>|\S+/g) || [], stack: [], parts: [], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false }, updateTags = () => (state2.openStr = state2.stack.map((n) => `<${n}>`).join(""), state2.closeStr = state2.stack.reduceRight((a, n) => a + `</${n}>`, "")), flush = () => state2.line && (state2.parts.push(state2.line + state2.closeStr), state2.line = (state2.timeTag || "") + state2.openStr, state2.len = 0, state2.lastWasTag = true);
+      const state2 = { tokens: p.match(/<[^>]+>|\S+/g) || [], stack: [], parts: [], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false },
+        updateTags = () => ((state2.openStr = state2.stack.map((n) => `<${n}>`).join("")), (state2.closeStr = state2.stack.reduceRight((a, n) => a + `</${n}>`, ""))),
+        flush = () => state2.line && (state2.parts.push(state2.line + state2.closeStr), (state2.line = (state2.timeTag || "") + state2.openStr), (state2.len = 0), (state2.lastWasTag = true));
       state2.tokens.forEach((tok) => {
-        const tag = tok[0] === "<", closeTag = tag && tok[1] === "/";
+        const tag = tok[0] === "<",
+          closeTag = tag && tok[1] === "/";
         if (tag) {
           if (state2.line && !state2.lastWasTag && !closeTag) state2.line += " ";
-          const m = tok.match(/^<\/?\s*([a-z0-9._:-]+)/i), n = m?.[1] || "", timing = /^\d/.test(n);
-          if (timing) return state2.timeTag = tok, state2.line += tok, state2.lastWasTag = true;
+          const m = tok.match(/^<\/?\s*([a-z0-9._:-]+)/i),
+            n = m?.[1] || "",
+            timing = /^\d/.test(n);
+          if (timing) return (state2.timeTag = tok), (state2.line += tok), (state2.lastWasTag = true);
           if (!closeTag && !tok.endsWith("/>") && n) state2.stack.push(n), updateTags();
           if (closeTag && state2.stack.length) state2.stack.pop(), updateTags();
-          return state2.lastWasTag = true, state2.line += tok;
+          return (state2.lastWasTag = true), (state2.line += tok);
         }
-        const len = tmg.stripTags(tok).length, needSpace = state2.line && !state2.lastWasTag;
+        const len = tmg.stripTags(tok).length,
+          needSpace = state2.line && !state2.lastWasTag;
         if (state2.len + (needSpace ? 1 : 0) + len > maxChars) flush();
-        if (needSpace) state2.line += " ", state2.len += 1;
-        state2.line += tok, state2.len += len, state2.lastWasTag = false;
+        if (needSpace) (state2.line += " "), (state2.len += 1);
+        (state2.line += tok), (state2.len += len), (state2.lastWasTag = false);
       });
       return flush(), state2.parts;
     },
@@ -4973,7 +5266,9 @@
     isValidNum: (number) => !isNaN(number ?? NaN) && number !== Infinity,
     inBoolArrOpt: (opt, str) => opt?.includes?.(str) ?? opt,
     inDocView(el, axis = "y") {
-      const rect = el.getBoundingClientRect(), inX = rect.right >= 0 && rect.left <= (window.innerWidth || document.documentElement.clientWidth), inY = rect.bottom >= 0 && rect.top <= (window.innerHeight || document.documentElement.clientHeight);
+      const rect = el.getBoundingClientRect(),
+        inX = rect.right >= 0 && rect.left <= (window.innerWidth || document.documentElement.clientWidth),
+        inY = rect.bottom >= 0 && rect.top <= (window.innerHeight || document.documentElement.clientHeight);
       return axis === "x" ? inY : axis === "y" ? inX : inY && inX;
     },
     setHTMLConfig(target, attr, value) {
@@ -4998,9 +5293,9 @@
     TERMINATOR,
     volatile,
     silence,
-    safeNum: (number, fallback = 0) => tmg.isValidNum(number) ? number : fallback,
+    safeNum: (number, fallback = 0) => (tmg.isValidNum(number) ? number : fallback),
     parseIfPercent: (percent, amount, autocap = 0.25) => {
-      const val = percent?.endsWith?.("%") ? tmg.safeNum(parseFloat(percent) / 100 * amount) : percent;
+      const val = percent?.endsWith?.("%") ? tmg.safeNum((parseFloat(percent) / 100) * amount) : percent;
       return val && amount && autocap && amount <= val ? amount * autocap : val;
     },
     parseCSSTime,
@@ -5010,10 +5305,12 @@
       for (const key of Object.keys(obj)) {
         const entry = obj[key];
         if (!tmg.isObj(entry)) continue;
-        result[key] = entry.options ? {
-          values: entry.options.map((opt) => opt.value ?? opt),
-          displays: entry.options.map((opt) => opt.display ?? `${opt}`)
-        } : tmg.parseUIObj(entry);
+        result[key] = entry.options
+          ? {
+              values: entry.options.map((opt) => opt.value ?? opt),
+              displays: entry.options.map((opt) => opt.display ?? `${opt}`),
+            }
+          : tmg.parseUIObj(entry);
       }
       return result;
     },
@@ -5026,14 +5323,22 @@
     mergeObjs,
     deepClone,
     formatMediaTime({ time, format = "digital", elapsed = true, showMs = false, casing = "normal" } = {}) {
-      const long = format.endsWith("long"), sx = (n = 0) => n == 1 ? "" : "s", cs = (str) => casing === "upper" ? str.toUpperCase() : casing === "title" ? tmg.capitalize(str) : str.toLowerCase(), wrd = (n = 0) => ({ h: cs(long ? ` hour${sx(n)} ` : "h"), m: cs(long ? ` minute${sx(n)} ` : "m"), s: cs(long ? ` second${sx(n)} ` : "s"), ms: cs(long ? ` millisecond${sx(n)} ` : "ms") }), pad = (v, n = 2, f) => long && !f ? v : String(v).padStart(n, "number" === typeof +n ? "0" : "-");
+      const long = format.endsWith("long"),
+        sx = (n = 0) => (n == 1 ? "" : "s"),
+        cs = (str) => (casing === "upper" ? str.toUpperCase() : casing === "title" ? tmg.capitalize(str) : str.toLowerCase()),
+        wrd = (n = 0) => ({ h: cs(long ? ` hour${sx(n)} ` : "h"), m: cs(long ? ` minute${sx(n)} ` : "m"), s: cs(long ? ` second${sx(n)} ` : "s"), ms: cs(long ? ` millisecond${sx(n)} ` : "ms") }),
+        pad = (v, n = 2, f) => (long && !f ? v : String(v).padStart(n, "number" === typeof +n ? "0" : "-"));
       if (!this.isValidNum(time)) return format !== "digital" ? `-${wrd().h}${pad("-")}${wrd().m}${!elapsed ? "left" : ""}`.trim() : !elapsed ? "--:--" : "-:--";
-      const s = Math.floor(Math.abs(time) % 60), m = Math.floor(Math.abs(time) / 60) % 60, h = Math.floor(Math.abs(time) / 3600), ms = Math.floor(Math.abs(time) % 1 * 1e3);
+      const s = Math.floor(Math.abs(time) % 60),
+        m = Math.floor(Math.abs(time) / 60) % 60,
+        h = Math.floor(Math.abs(time) / 3600),
+        ms = Math.floor((Math.abs(time) % 1) * 1e3);
       if (format === "digital") {
         const base2 = h ? `${h}:${pad(m, 2, true)}:${pad(s, 2, true)}` : `${m}:${pad(s, 2, true)}`;
         return !elapsed ? `-${base2}` : base2;
       }
-      const base = h ? `${h}${wrd(h).h}${pad(m)}${wrd(m).m}${pad(s)}${wrd(s).s}` : `${m}${wrd(m).m}${pad(s)}${wrd(s).s}`, msPart = showMs && ms ? `${pad(ms, 3)}${wrd(ms).ms}` : "";
+      const base = h ? `${h}${wrd(h).h}${pad(m)}${wrd(m).m}${pad(s)}${wrd(s).s}` : `${m}${wrd(m).m}${pad(s)}${wrd(s).s}`,
+        msPart = showMs && ms ? `${pad(ms, 3)}${wrd(ms).ms}` : "";
       return `${base}${msPart}${!long ? " " : ""}${!elapsed ? "left" : ""}`.trim();
     },
     formatSize,
@@ -5045,19 +5350,20 @@
     mockAsync,
     addSafeClicks(el, onClick, onDblClick, options) {
       el && tmg.removeSafeClicks(el);
-      el?.addEventListener("click", el._clickHandler = (e) => (clearTimeout(el._clickTimeoutId), el._clickTimeoutId = setTimeout(() => onClick?.(e), 300)), options);
-      el?.addEventListener("dblclick", el._dblClickHandler = (e) => (clearTimeout(el._clickTimeoutId), onDblClick?.(e)), options);
+      el?.addEventListener("click", (el._clickHandler = (e) => (clearTimeout(el._clickTimeoutId), (el._clickTimeoutId = setTimeout(() => onClick?.(e), 300)))), options);
+      el?.addEventListener("dblclick", (el._dblClickHandler = (e) => (clearTimeout(el._clickTimeoutId), onDblClick?.(e))), options);
     },
     // all just to smoothe out browser perks with tiny logic, nothing deep :)
     removeSafeClicks: (el) => (el?.removeEventListener("click", el._clickHandler), el?.removeEventListener("dblclick", el._dblClickHandler)),
     getExtension: (fn) => fn.split(".").pop().toLowerCase(),
     noExtension: (fn) => fn.replace(/(?:\.(?:mp4|mkv|avi|mov|webm|flv|wmv|m4v|mpg|mpeg|3gp|ogv|ts))+$/i, ""),
-    getMimeTypeFromExtension: (fn) => ({ avi: "video/x-msvideo", mp4: "video/mp4", mkv: "video/x-matroska", mov: "video/quicktime", flv: "video/x-flv", webm: "video/webm", ogg: "video/ogg", wmv: "video/x-ms-wmv", "3gp": "video/3gpp", "3g2": "video/3gpp2", mpeg: "video/mpeg", ts: "video/mp2t", m4v: "video/x-m4v" })[tmg.getExtension(fn)] || "application/octet-stream",
+    getMimeTypeFromExtension: (fn) => ({ avi: "video/x-msvideo", mp4: "video/mp4", mkv: "video/x-matroska", mov: "video/quicktime", flv: "video/x-flv", webm: "video/webm", ogg: "video/ogg", wmv: "video/x-ms-wmv", "3gp": "video/3gpp", "3g2": "video/3gpp2", mpeg: "video/mpeg", ts: "video/mp2t", m4v: "video/x-m4v" }[tmg.getExtension(fn)] || "application/octet-stream"),
     // mov- Apple MOV format, flv- Flash Video, wmv- Windows Media Video, ts- MPEG transport stream, Default to binary stream
     getRGBBri: ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b,
     getRGBSat: ([r, g, b]) => Math.max(r, g, b) - Math.min(r, g, b),
     clampRGBBri([r, g, b], m = 40) {
-      const br = tmg.getRGBBri([r, g, b]), d = br < m ? m - br : br > 255 - m ? -(br - (255 - m)) : 0;
+      const br = tmg.getRGBBri([r, g, b]),
+        d = br < m ? m - br : br > 255 - m ? -(br - (255 - m)) : 0;
       return [r + d, g + d, b + d].map((v) => tmg.clamp(0, Math.round(v), 255));
     },
     async getDominantColor(src, format = "hex", raw = false) {
@@ -5066,22 +5372,31 @@
           const i = tmg.createEl("img", { src, crossOrigin: "anonymous", onload: () => res(i), onerror: () => rej(new Error(`Image load error: ${src}`)) });
         });
       if (src?.canvas) src = src.canvas;
-      const s = Math.min(64, src.width, src.height), c = tmg.createEl("canvas", { width: s, height: s }), x = c.getContext("2d");
-      const d = src?.width && src?.height ? (x.drawImage(src, 0, 0, s, s), x.getImageData(0, 0, s, s).data) : null, ct = {}, pt = {};
+      const s = Math.min(64, src.width, src.height),
+        c = tmg.createEl("canvas", { width: s, height: s }),
+        x = c.getContext("2d");
+      const d = src?.width && src?.height ? (x.drawImage(src, 0, 0, s, s), x.getImageData(0, 0, s, s).data) : null,
+        ct = {},
+        pt = {};
       for (let i = 0; i < +d?.length; i += 4) {
         if (d[i + 3] < 128) continue;
-        const r2 = d[i] & 240, g2 = d[i + 1] & 240, b2 = d[i + 2] & 240;
-        const k = r2 << 16 | g2 << 8 | b2;
+        const r2 = d[i] & 240,
+          g2 = d[i + 1] & 240,
+          b2 = d[i + 2] & 240;
+        const k = (r2 << 16) | (g2 << 8) | b2;
         ct[k] = (ct[k] || 0) + 1;
         pt[k] = pt[k] ? [pt[k][0] + d[i], pt[k][1] + d[i + 1], pt[k][2] + d[i + 2]] : [d[i], d[i + 1], d[i + 2]];
       }
-      const clrs = Object.keys(ct).sort((a, b2) => ct[b2] - ct[a]).slice(0, 7).map((k) => ({ key: k, rgb: pt[k].map((v) => Math.round(v / ct[k])) }));
+      const clrs = Object.keys(ct)
+        .sort((a, b2) => ct[b2] - ct[a])
+        .slice(0, 7)
+        .map((k) => ({ key: k, rgb: pt[k].map((v) => Math.round(v / ct[k])) }));
       if (!clrs.length) return null;
-      const [r, g, b] = tmg.clampRGBBri(clrs.reduce((sat, curr) => tmg.getRGBSat(sat.rgb) > tmg.getRGBSat(curr.rgb) ? sat : curr, clrs[0]).rgb, 70);
+      const [r, g, b] = tmg.clampRGBBri(clrs.reduce((sat, curr) => (tmg.getRGBSat(sat.rgb) > tmg.getRGBSat(curr.rgb) ? sat : curr), clrs[0]).rgb, 70);
       return format === "hex" ? `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}` : raw == false ? `rgb(${r},${g},${b})` : [r, g, b];
     },
     createEl,
-    getWindow: (el) => el instanceof Window ? el : el instanceof Document ? el?.defaultView : el?.ownerDocument?.defaultView,
+    getWindow: (el) => (el instanceof Window ? el : el instanceof Document ? el?.defaultView : el?.ownerDocument?.defaultView),
     cloneVideo(v) {
       const newV = v.cloneNode(true);
       newV.tmgPlayer = v.tmgPlayer;
@@ -5103,16 +5418,20 @@
       if (!v.paused && newV.isConnected) newV.play();
       return newV;
     },
-    getElSiblingAt: (p, dir, els, pos = "after") => els.length && Array.prototype.reduce.call(
-      els,
-      (closest, child) => {
-        const { top: cT, left: cL, width: cW, height: cH } = child.getBoundingClientRect(), offset = p - (dir === "y" ? cT : cL) - (dir === "y" ? cH : cW) / 2, condition = pos === "after" ? offset < 0 && offset > closest.offset : pos === "before" ? offset > 0 && offset < closest.offset : pos === "at" ? Math.abs(offset) <= (dir === "y" ? cH : cW) / 2 && Math.abs(offset) < Math.abs(closest.offset) : false;
-        return condition ? { offset, element: child } : closest;
-      },
-      { offset: pos === "after" ? -Infinity : Infinity }
-    ).element,
+    getElSiblingAt: (p, dir, els, pos = "after") =>
+      els.length &&
+      Array.prototype.reduce.call(
+        els,
+        (closest, child) => {
+          const { top: cT, left: cL, width: cW, height: cH } = child.getBoundingClientRect(),
+            offset = p - (dir === "y" ? cT : cL) - (dir === "y" ? cH : cW) / 2,
+            condition = pos === "after" ? offset < 0 && offset > closest.offset : pos === "before" ? offset > 0 && offset < closest.offset : pos === "at" ? Math.abs(offset) <= (dir === "y" ? cH : cW) / 2 && Math.abs(offset) < Math.abs(closest.offset) : false;
+          return condition ? { offset, element: child } : closest;
+        },
+        { offset: pos === "after" ? -Infinity : Infinity }
+      ).element,
     getRenderedBox(elem) {
-      const getResourceDimensions = (source) => source.videoWidth ? { width: source.videoWidth, height: source.videoHeight } : null;
+      const getResourceDimensions = (source) => (source.videoWidth ? { width: source.videoWidth, height: source.videoHeight } : null);
       function parsePositionAsPx(str, bboxSize, objectSize) {
         const num = parseFloat(str);
         return !str.endsWith("%") ? num : bboxSize * (num / 100) - objectSize * (num / 100);
@@ -5122,19 +5441,26 @@
         return { left: parsePositionAsPx(left, bbox2.width, object2.width), top: parsePositionAsPx(top, bbox2.height, object2.height) };
       }
       let { objectFit, objectPosition } = getComputedStyle(elem);
-      const bbox = elem.getBoundingClientRect(), object = getResourceDimensions(elem);
+      const bbox = elem.getBoundingClientRect(),
+        object = getResourceDimensions(elem);
       if (!object || !objectFit || !objectPosition) return {};
       if (objectFit === "scale-down") objectFit = bbox.width < object.width || bbox.height < object.height ? "contain" : "none";
       if (objectFit === "none") return { ...parseObjectPosition(objectPosition, bbox, object), ...object };
       else if (objectFit === "contain") {
-        const objectRatio = object.height / object.width, bboxRatio = bbox.height / bbox.width, width = bboxRatio > objectRatio ? bbox.width : bbox.height / objectRatio, height = bboxRatio > objectRatio ? bbox.width * objectRatio : bbox.height;
+        const objectRatio = object.height / object.width,
+          bboxRatio = bbox.height / bbox.width,
+          width = bboxRatio > objectRatio ? bbox.width : bbox.height / objectRatio,
+          height = bboxRatio > objectRatio ? bbox.width * objectRatio : bbox.height;
         return { ...parseObjectPosition(objectPosition, bbox, { width, height }), width, height };
       } else if (objectFit === "fill") {
-        const { left, top } = parseObjectPosition(objectPosition, bbox, object), objPosArr = objectPosition.split(" ");
+        const { left, top } = parseObjectPosition(objectPosition, bbox, object),
+          objPosArr = objectPosition.split(" ");
         return { left: objPosArr[0].endsWith("%") ? 0 : left, top: objPosArr[1].endsWith("%") ? 0 : top, width: bbox.width, height: bbox.height };
       } else if (objectFit === "cover") {
         const minRatio = Math.min(bbox.width / object.width, bbox.height / object.height);
-        let width = object.width * minRatio, height = object.height * minRatio, outRatio = 1;
+        let width = object.width * minRatio,
+          height = object.height * minRatio,
+          outRatio = 1;
         if (width < bbox.width) outRatio = bbox.width / width;
         if (Math.abs(outRatio - 1) < 1e-14 && height < bbox.height) outRatio = bbox.height / height;
         width *= outRatio;
@@ -5149,7 +5475,7 @@
     formatKeyTooltip,
     AsyncQueue: class AsyncQueue {
       constructor() {
-        this.jobs = [], this.running = false;
+        (this.jobs = []), (this.running = false);
       }
       async _handle() {
         if (this.running) return;
@@ -5175,7 +5501,7 @@
     // THE TMG MEDIA PLAYER CONTROLLER CLASS
     Player: tmg_Media_Player,
     // THE TMG MEDIA PLAYER BUILDER CLASS
-    Controllers: []
+    Controllers: [],
     // REFERENCES TO ALL THE DEPLOYED TMG MEDIA CONTROLLERS
   };
   if (typeof window !== "undefined") {
@@ -5211,8 +5537,8 @@
                 { value: "times new roman", display: "Times New Roman" },
                 { value: "georgia", display: "Georgia" },
                 { value: "impact", display: "Impact" },
-                { value: "comic sans ms", display: "Comic Sans MS" }
-              ]
+                { value: "comic sans ms", display: "Comic Sans MS" },
+              ],
             },
             size: {
               min: 100,
@@ -5226,8 +5552,8 @@
                 { value: 150, display: "150%" },
                 { value: 200, display: "200%" },
                 { value: 300, display: "300%" },
-                { value: 400, display: "400%" }
-              ]
+                { value: 400, display: "400%" },
+              ],
             },
             color: {
               value: "white",
@@ -5239,8 +5565,8 @@
                 { value: "blue", display: "Blue" },
                 { value: "magenta", display: "Magenta" },
                 { value: "red", display: "Red" },
-                { value: "black", display: "Black" }
-              ]
+                { value: "black", display: "Black" },
+              ],
             },
             opacity: {
               value: 1,
@@ -5248,8 +5574,8 @@
                 { value: 0.25, display: "25%" },
                 { value: 0.5, display: "50%" },
                 { value: 0.75, display: "75%" },
-                { value: 1, display: "100%" }
-              ]
+                { value: 1, display: "100%" },
+              ],
             },
             weight: {
               value: "400",
@@ -5262,17 +5588,17 @@
                 { value: "600", display: "Semi Bold" },
                 { value: "700", display: "Bold" },
                 { value: "800", display: "Extra Bold" },
-                { value: "900", display: "Black" }
-              ]
+                { value: "900", display: "Black" },
+              ],
             },
             variant: {
               value: "normal",
               options: [
                 { value: "normal", display: "Normal" },
                 { value: "small-caps", display: "Small Caps" },
-                { value: "all-small-caps", display: "All Small Caps" }
-              ]
-            }
+                { value: "all-small-caps", display: "All Small Caps" },
+              ],
+            },
           },
           background: {
             color: {
@@ -5285,8 +5611,8 @@
                 { value: "blue", display: "Blue" },
                 { value: "magenta", display: "Magenta" },
                 { value: "red", display: "Red" },
-                { value: "black", display: "Black" }
-              ]
+                { value: "black", display: "Black" },
+              ],
             },
             opacity: {
               value: 0.75,
@@ -5295,9 +5621,9 @@
                 { value: 0.25, display: "25%" },
                 { value: 0.5, display: "50%" },
                 { value: 0.75, display: "75%" },
-                { value: 1, display: "100%" }
-              ]
-            }
+                { value: 1, display: "100%" },
+              ],
+            },
           },
           window: {
             color: {
@@ -5310,8 +5636,8 @@
                 { value: "blue", display: "Blue" },
                 { value: "magenta", display: "Magenta" },
                 { value: "red", display: "Red" },
-                { value: "black", display: "Black" }
-              ]
+                { value: "black", display: "Black" },
+              ],
             },
             opacity: {
               value: 0,
@@ -5320,9 +5646,9 @@
                 { value: 0.25, display: "25%" },
                 { value: 0.5, display: "50%" },
                 { value: 0.75, display: "75%" },
-                { value: 1, display: "100%" }
-              ]
-            }
+                { value: 1, display: "100%" },
+              ],
+            },
           },
           characterEdgeStyle: {
             value: "none",
@@ -5331,17 +5657,17 @@
               { value: "drop-shadow", display: "Drop Shadow" },
               { value: "raised", display: "Raised" },
               { value: "depressed", display: "Depressed" },
-              { value: "outline", display: "Outline" }
-            ]
+              { value: "outline", display: "Outline" },
+            ],
           },
           textAlignment: {
             value: "left",
             options: [
               { value: "left", display: "Left" },
               { value: "center", display: "Center" },
-              { value: "right", display: "Right" }
-            ]
-          }
+              { value: "right", display: "Right" },
+            ],
+          },
         },
         controlPanel: {
           profile: true,
@@ -5349,11 +5675,11 @@
           artist: true,
           top: ["expandminiplayer", "spacer", "meta", "spacer", "capture", "fullscreenlock", "fullscreenorientation", "removeminiplayer"],
           center: ["bigprev", "bigplaypause", "bignext"],
-          bottom: { 1: [], 2: ["spacer", "timeline", "spacer"], 3: [...!tmg.ON_MOBILE ? ["prev", "playpause", "next"] : [], "brightness", "volume", "timeandduration", "spacer", "captions", "settings", "objectfit", "pictureinpicture", "theater", "fullscreen"] },
+          bottom: { 1: [], 2: ["spacer", "timeline", "spacer"], 3: [...(!tmg.ON_MOBILE ? ["prev", "playpause", "next"] : []), "brightness", "volume", "timeandduration", "spacer", "captions", "settings", "objectfit", "pictureinpicture", "theater", "fullscreen"] },
           buffer: "spinner",
           timeline: { thumbIndicator: true, seek: { relative: !tmg.ON_MOBILE, cancel: { delta: 15, timeout: 2e3 } } },
           progressBar: tmg.ON_MOBILE,
-          draggable: ["", "big", "wrapper"]
+          draggable: ["", "big", "wrapper"],
         },
         errorMessages: { 1: "The video playback was aborted :(", 2: "The video failed due to a network error :(", 3: "The video could not be decoded :(", 4: "The video source is not supported :(" },
         fastPlay: { playbackRate: 2, key: true, pointer: { type: "all", threshold: 800, inset: 20 }, reset: true, rewind: true },
@@ -5361,7 +5687,7 @@
           click: tmg.ON_MOBILE ? "" : "togglePlay",
           dblClick: tmg.ON_MOBILE ? "togglePlay" : "toggleFullscreenMode",
           wheel: { volume: { normal: true, slider: true }, brightness: { normal: true, slider: true }, timeline: { normal: true, slider: true }, timeout: 2e3, xRatio: 12, yRatio: 6 },
-          touch: { volume: true, brightness: true, timeline: true, threshold: 200, axesRatio: 3, inset: 20, sliderTimeout: 1e3, xRatio: 1, yRatio: 1 }
+          touch: { volume: true, brightness: true, timeline: true, threshold: 200, axesRatio: 3, inset: 20, sliderTimeout: 1e3, xRatio: 1, yRatio: 1 },
         },
         keys: {
           disabled: false,
@@ -5370,7 +5696,7 @@
           shortcuts: { prev: "Shift+p", next: "Shift+n", playPause: "k", mute: "m", dark: "d", skipBwd: "j", skipFwd: "l", stepFwd: ".", stepBwd: ",", volumeUp: "ArrowUp", volumeDown: "ArrowDown", brightnessUp: "y", brightnessDown: "h", playbackRateUp: ">", playbackRateDown: "<", timeFormat: "z", timeMode: "q", capture: "s", objectFit: "a", pictureInPicture: "i", theater: "t", fullscreen: "f", captions: "c", captionsFontSizeUp: ["+", "="], captionsFontSizeDown: ["-", "_"], captionsFontFamily: "u", captionsFontWeight: "g", captionsFontVariant: "v", captionsFontOpacity: "o", captionsBackgroundOpacity: "b", captionsWindowOpacity: "w", captionsCharacterEdgeStyle: "e", captionsTextAlignment: "x", settings: "?" },
           mods: { disabled: false, skip: { ctrl: 60, shift: 10 }, volume: { ctrl: 50, shift: 10 }, brightness: { ctrl: 50, shift: 10 }, playbackRate: { ctrl: 1 }, captionsFontSize: {} },
           // prettier-ignore
-          blocks: ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"]
+          blocks: ["Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Cmd+Option+ArrowRight", "Cmd+Option+ArrowLeft", "Ctrl+1", "Ctrl+2", "Ctrl+3", "Ctrl+4", "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+5", "Cmd+6", "Cmd+7", "Cmd+8", "Cmd+9", "Alt+ArrowLeft", "Alt+ArrowRight", "Cmd+ArrowLeft", "Cmd+ArrowRight", "Ctrl+r", "Ctrl+Shift+r", "F5", "Shift+F5", "Cmd+r", "Cmd+Shift+r", "Ctrl+h", "Ctrl+j", "Ctrl+d", "Ctrl+f", "Cmd+y", "Cmd+Option+b", "Cmd+d", "Cmd+f", "Ctrl+Shift+i", "Ctrl+Shift+j", "Ctrl+Shift+c", "Ctrl+u", "F12", "Cmd+Option+i", "Cmd+Option+j", "Cmd+Option+c", "Cmd+Option+u", "Ctrl+=", "Ctrl+-", "Ctrl+0", "Cmd+=", "Cmd+-", "Cmd+0", "Ctrl+p", "Ctrl+s", "Ctrl+o", "Cmd+p", "Cmd+s", "Cmd+o"],
         },
         locked: false,
         modes: {
@@ -5383,10 +5709,10 @@
               width: 270,
               height: 145,
               disallowReturnToOpener: false,
-              preferInitialWindowPlacement: false
-            }
+              preferInitialWindowPlacement: false,
+            },
           },
-          miniplayer: { disabled: false, minWindowWidth: 240 }
+          miniplayer: { disabled: false, minWindowWidth: 240 },
         },
         notifiers: true,
         noOverride: false,
@@ -5396,14 +5722,14 @@
         playsInline: true,
         time: { min: 0, skip: 10, previews: false, mode: "elapsed", format: "digital", seekSync: false },
         toasts: { disabled: false, nextVideoPreview: { usePoster: true, time: 4, tease: true }, captureAutoClose: 15e3, maxToasts: 7, position: "bottom-left", hideProgressBar: true, closeButton: !tmg.ON_MOBILE, animation: "slide-up", dragToCloseDir: "x||y" },
-        volume: { min: 0, max: 300, skip: 5 }
-      }
+        volume: { min: 0, max: 300, skip: 5 },
+      },
     };
     tmg.DEFAULT_VIDEO_ITEM_BUILD = {
       media: { title: "", chapterInfo: [], links: { title: "" } },
       src: "",
       tracks: [],
-      settings: { time: { start: 0, previews: false } }
+      settings: { time: { start: 0, previews: false } },
     };
     window.TMG_VIDEO_ALT_IMG_SRC ??= "/tmg-media-player/assets/icons/movie-tape.png";
     window.TMG_VIDEO_CSS_SRC ??= "/tmg-media-player/beta/index-video.css";

@@ -1,6 +1,6 @@
 import { BasePlug } from "../../base";
 import type { OverlayConfig } from "./types";
-import { OVERLAY_BUILD } from "./build";
+import { OVERLAY_BUILD, OVERLAY_WHITELIST } from "./build";
 import type { OverlayState } from "./types";
 import { Controller } from "@core/controller";
 import { IS_MOBILE } from "@utils/env";
@@ -10,7 +10,7 @@ export class OverlayPlug extends BasePlug<OverlayConfig, OverlayState> {
   public static readonly plugName = "overlay";
   public static readonly BUILD = OVERLAY_BUILD;
   public overlayDelayId = -1;
-  public whitelist: string[] = ["pictureInPicture", "cast", "airplay", "moreSettings", "menuSettings", "controlDragging"]; // #DEFAULT: build privilege
+  public whitelist = OVERLAY_WHITELIST;
 
   constructor(ctlr: Controller, config = ctlr.settings.overlay) {
     super(ctlr, config, { visible: false });

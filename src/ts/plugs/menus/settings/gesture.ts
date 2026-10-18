@@ -43,23 +43,23 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
               widget: "group",
               getValue: () => (plug.config.touch.volume || plug.config.touch.brightness || plug.config.touch.timeline ? "On" : "Off"),
               items: [
-                { id: "gestureTouchVolume", label: "Volume swipe", widget: "toggle", getValue: () => (plug.config.touch.volume ? "On" : "Off"), onChange: (val: boolean) => (plug.config.touch.volume = val), configPaths: ["settings.gesture.touch.volume"], title: "Swipe up or down on the right side of the screen to adjust volume" },
-                { id: "gestureTouchBrightness", label: "Brightness swipe", widget: "toggle", getValue: () => (plug.config.touch.brightness ? "On" : "Off"), onChange: (val: boolean) => (plug.config.touch.brightness = val), configPaths: ["settings.gesture.touch.brightness"], title: "Swipe up or down on the left side of the screen to adjust brightness" },
-                { id: "gestureTouchTimeline", label: "Seek swipe", widget: "toggle", getValue: () => (plug.config.touch.timeline ? "On" : "Off"), onChange: (val: boolean) => (plug.config.touch.timeline = val), configPaths: ["settings.gesture.touch.timeline"], title: "Swipe left or right anywhere on the screen to seek" },
+                { id: "gestureTouchVolume", label: "Volume swipe", widget: "toggle", getValue: () => plug.config.touch.volume, onChange: (val: boolean) => (plug.config.touch.volume = val), configPaths: ["settings.gesture.touch.volume"], title: "Swipe up or down on the right side of the screen to adjust volume" },
+                { id: "gestureTouchBrightness", label: "Brightness swipe", widget: "toggle", getValue: () => plug.config.touch.brightness, onChange: (val: boolean) => (plug.config.touch.brightness = val), configPaths: ["settings.gesture.touch.brightness"], title: "Swipe up or down on the left side of the screen to adjust brightness" },
+                { id: "gestureTouchTimeline", label: "Seek swipe", widget: "toggle", getValue: () => plug.config.touch.timeline, onChange: (val: boolean) => (plug.config.touch.timeline = val), configPaths: ["settings.gesture.touch.timeline"], title: "Swipe left or right anywhere on the screen to seek" },
                 {
                   id: "gestureTouchSensitivityGroup",
                   label: "Sensitivity",
                   widget: "group",
                   getValue: () => (plug.config.touch.xRatio && plug.config.touch.yRatio ? "On" : "Off"),
                   items: [
-                    { id: "gestureTouchFastSwipes", label: "Fast swipes", widget: "toggle", getValue: () => (plug.config.touch.fastSwipes ? "On" : "Off"), onChange: (val: boolean) => (plug.config.touch.fastSwipes = val), configPaths: ["settings.gesture.touch.fastSwipes"], title: "Trigger fast swipe actions if the swipe is completed before the hold duration is reached" },
+                    { id: "gestureTouchFastSwipes", label: "Fast swipes", widget: "toggle", getValue: () => plug.config.touch.fastSwipes, onChange: (val: boolean) => (plug.config.touch.fastSwipes = val), configPaths: ["settings.gesture.touch.fastSwipes"], title: "Trigger fast swipe actions if the swipe is completed before the hold duration is reached" },
                     {
                       id: "gestureTouchRatio",
                       label: "Swipe ratio (X, Y)",
                       widget: "input",
                       inputs: [
-                        { name: "x", label: "Horizontal", type: "number", min: "0", max: "10", step: "0.25", value: () => plug.config.touch.xRatio },
-                        { name: "y", label: "Vertical", type: "number", min: "0", max: "10", step: "0.25", value: () => plug.config.touch.yRatio },
+                        { name: "x", label: "Horizontal", type: "number", compact: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.xRatio },
+                        { name: "y", label: "Vertical", type: "number", compact: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.yRatio },
                       ],
                       getValue: () => `${plug.config.touch.xRatio}, ${plug.config.touch.yRatio}`,
                       onChange: (val: any) => (val.x && (plug.config.touch.xRatio = val.x), val.y && (plug.config.touch.yRatio = val.y)),
@@ -79,16 +79,16 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
               widget: "group",
               getValue: () => (plug.config.wheel.volume || plug.config.wheel.brightness || plug.config.wheel.timeline ? "On" : "Off"),
               items: [
-                { id: "gestureWheelVolume", label: "Volume scroll", widget: "toggle", getValue: () => (plug.config.wheel.volume ? "On" : "Off"), onChange: (val: boolean) => (plug.config.wheel.volume = val), configPaths: ["settings.gesture.wheel.volume"] },
-                { id: "gestureWheelBrightness", label: "Brightness scroll", widget: "toggle", getValue: () => (plug.config.wheel.brightness ? "On" : "Off"), onChange: (val: boolean) => (plug.config.wheel.brightness = val), configPaths: ["settings.gesture.wheel.brightness"] },
-                { id: "gestureWheelTimeline", label: "Seek scroll", widget: "toggle", getValue: () => (plug.config.wheel.timeline ? "On" : "Off"), onChange: (val: boolean) => (plug.config.wheel.timeline = val), configPaths: ["settings.gesture.wheel.timeline"] },
+                { id: "gestureWheelVolume", label: "Volume scroll", widget: "toggle", getValue: () => plug.config.wheel.volume, onChange: (val: boolean) => (plug.config.wheel.volume = val), configPaths: ["settings.gesture.wheel.volume"] },
+                { id: "gestureWheelBrightness", label: "Brightness scroll", widget: "toggle", getValue: () => plug.config.wheel.brightness, onChange: (val: boolean) => (plug.config.wheel.brightness = val), configPaths: ["settings.gesture.wheel.brightness"] },
+                { id: "gestureWheelTimeline", label: "Seek scroll", widget: "toggle", getValue: () => plug.config.wheel.timeline, onChange: (val: boolean) => (plug.config.wheel.timeline = val), configPaths: ["settings.gesture.wheel.timeline"] },
                 {
                   id: "gestureWheelRatio",
                   label: "Scroll ratio (X, Y)",
                   widget: "input",
                   inputs: [
-                    { name: "x", label: "Horizontal", type: "number", min: "1", max: "50", value: () => plug.config.wheel.xRatio },
-                    { name: "y", label: "Vertical", type: "number", min: "1", max: "50", value: () => plug.config.wheel.yRatio },
+                    { name: "x", label: "Horizontal", type: "number", compact: true, min: "1", max: "50", value: () => plug.config.wheel.xRatio },
+                    { name: "y", label: "Vertical", type: "number", compact: true, min: "1", max: "50", value: () => plug.config.wheel.yRatio },
                   ],
                   getValue: () => `${plug.config.wheel.xRatio}, ${plug.config.wheel.yRatio}`,
                   onChange: (val: any) => (val.x && (plug.config.wheel.xRatio = val.x), val.y && (plug.config.wheel.yRatio = val.y)),

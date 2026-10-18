@@ -1,8 +1,11 @@
-import { uid as _uid, isStr } from "@t007/utils";
+import { uid as _uid, capitalize, isArr, isObj, isStr, uncamelize } from "@t007/utils";
 import { LUID_KEY } from "@consts/generics";
 
 // Case Conversion
 export { capitalize, camelize, uncamelize } from "@t007/utils";
+export const uncam = (s: string) => capitalize(uncamelize(s));
+export const fpath = (p: string) => p.split(".").map(uncam).join(" > ");
+export const fvalue = (v: any) => (isArr(v) ? (!isObj(v[0], false) ? `[${v.join(", ")}]` : "[...]") : isObj(v, false) ? "{...}" : String(v));
 
 // Generation
 export const uid = (prefix = "tmg_") => _uid(prefix);

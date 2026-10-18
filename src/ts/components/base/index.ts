@@ -30,7 +30,7 @@ export abstract class BaseComponent<Config = any, State extends ComponentState =
   public abstract create(): El; // Must assign to this.element before returning
   public mount?(): void {}
   public unmount(): void {
-    this.el.remove();
+    this.el.remove(); // Don't forget I'm here
   }
   public wire?(): void {} // auto unwiring
 

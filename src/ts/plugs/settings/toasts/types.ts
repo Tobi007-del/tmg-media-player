@@ -5,6 +5,7 @@ export interface ToastReminder extends ToastOptions {
   message: string;
   after: number;
   target?: number;
+  repeat?: boolean;
   actionId?: string; // run via ctlr.execute when reminder fires
 }
 

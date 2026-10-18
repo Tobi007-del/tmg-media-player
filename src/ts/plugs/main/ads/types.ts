@@ -4,11 +4,11 @@ import type { Inert } from "sia-reactor";
 
 export interface AdRoll {
   url: string;
-  time: number | string; // preroll, postroll, midroll - positives, negatives, percents
+  time: number | string; // preroll, postroll, midroll - positives, negatives, percents; so yeah! everything
   badge: string; // show "Sponsored" in the skip toast
   played: boolean;
   media: MediaReport;
-  toasts: Record<"meta" | "skip", ToastOptions>;
+  toasts: Record<"prep" | "meta" | "skip", ToastOptions>; // since IMA wants to play "god" so "skip" is cosmetic
 }
 
 export interface AdsConfig {

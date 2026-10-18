@@ -1,12 +1,10 @@
 import { DeepPartial } from "sia-reactor";
 import { CaptionsConfig } from "./types";
-
-export const STYLE_PATHS = ["captions.font.family.value", "captions.font.size.value", "captions.font.color.value", "captions.font.opacity.value", "captions.font.weight.value", "captions.font.variant.value", "captions.background.color.value", "captions.background.opacity.value", "captions.window.color.value", "captions.window.opacity.value", "captions.textAlignment.value", "captions.characterEdgeStyle.value"] as const;
-export const ROTATE_PATHS = ["captions.font.family.value", "captions.font.weight.value", "captions.font.variant.value", "captions.font.opacity.value", "captions.background.opacity.value", "captions.window.opacity.value", "captions.characterEdgeStyle.value", "captions.textAlignment.value"] as const;
+import { TIME_TRAVEL_BUILD } from "@plugs/settings/timeTravel/build";
+import { CSS_CLASSLIST } from "@plugs/settings/css/build";
 
 export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
   multiple: false,
-  secondaryTracks: [],
   font: {
     family: {
       value: "",
@@ -164,3 +162,9 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
   allowMediaOverride: true,
   previewTimeout: 2500,
 };
+
+export const STYLE_PATHS = ["font.family", "font.size", "font.color", "font.opacity", "font.weight", "font.variant", "background.color", "background.opacity", "window.color", "window.opacity", "textAlignment", "characterEdgeStyle"] as const;
+export const ROTATE_PATHS = ["font.family", "font.weight", "font.variant", "font.opacity", "background.opacity", "window.opacity", "characterEdgeStyle", "textAlignment"] as const;
+
+TIME_TRAVEL_BUILD.module.whitelist.config.push(...STYLE_PATHS.map((p) => `settings.captions.${p}.value`), "settings.css.currentCaptionsX", "settings.css.currentCaptionsY");
+CSS_CLASSLIST.push("captionsCharacterEdgeStyle");

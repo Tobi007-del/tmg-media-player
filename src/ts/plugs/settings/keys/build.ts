@@ -53,7 +53,7 @@ export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
   voiceSleep: "Shift+z", // zz
   voiceMute: "Shift+m",
 };
-for (const k in ACTIONS_DICT) KEYS_SHORTCUTS[k] ??= ""; // UX boost
+for (const k of Object.keys(ACTIONS_DICT)) KEYS_SHORTCUTS[k] ??= ""; // UX boost
 
 export const KEYS_OVERIDES = ["Space", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"];
 

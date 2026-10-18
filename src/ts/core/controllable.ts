@@ -12,6 +12,7 @@ export abstract class Controllable<Config = any, State = any> {
   public readonly media: Controller["media"];
   public readonly state!: State extends object ? Reactive<State> : State; // for reactivity needs of those who pass it up
   public config: Config; // may be a reactive obj node or the obj itself
+  public hibernated = false; // for light checks where needed
   public get settings() {
     return this.ctlr.settings; // can change ref
   } // for easy reach, better devx
@@ -31,19 +32,19 @@ export abstract class Controllable<Config = any, State = any> {
   protected abstract onSetup(): void;
 
   public destroy(): void {
-    !this.signal.aborted && this.ac.abort(`[TMG Controllable] Instance annihilation`); // ctlr may have aborted
+    this.ac.abort(`[TMG Controllable] Instance annihilation`); // ctlr may have aborted
     this.onDestroy(), (this.state as any)?.destroy?.(), this.config !== this.media && isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
     nuke(this);
   }
   protected onDestroy(): void {}
 
   public hibernate(): void {
-    if (!this.signal.aborted) this.ac.abort(`[TMG Controllable] Instance hibernation`), this.onHibernate?.();
+    if (!this.hibernated) (this.hibernated = true), this.ac.abort(`[TMG Controllable] Instance hibernation`), this.onHibernate?.();
   }
   protected onHibernate?(): void {}
 
   public awaken(): void {
-    if (this.signal.aborted) (this.signal = AbortSignal.any([(this.ac = new AbortController()).signal, this.ctlr.signal])), this.onAwaken?.();
+    if (this.hibernated) (this.signal = AbortSignal.any([(this.ac = new AbortController()).signal, this.ctlr.signal])), this.onAwaken?.(), (this.hibernated = false);
   }
   protected onAwaken?(): void {} // e.g. this.wire()...
 } // Try to use methods for most things so they can be customized when extended and also auto guarded

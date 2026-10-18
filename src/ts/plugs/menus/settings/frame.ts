@@ -22,7 +22,7 @@ export const getSettingsFrameMenu = (plug: FramePlug): SettingsMenuItem => ({
           getValue: () => (plug.config.disabled ? "Off" : "On"),
           configPaths: ["settings.frame.disabled"],
           items: [
-            { id: "frameDisabled", label: "Disable", widget: "toggle", getValue: () => (plug.config.disabled ? "On" : "Off"), onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.frame.disabled"] },
+            { id: "frameDisabled", label: "Disable", widget: "toggle", getValue: () => plug.config.disabled, onChange: (val: boolean) => (plug.config.disabled = val), configPaths: ["settings.frame.disabled"] },
             {
               id: "frameCaptureToast",
               label: "Notification",

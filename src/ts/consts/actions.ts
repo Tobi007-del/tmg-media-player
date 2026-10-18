@@ -63,4 +63,4 @@ export const ACTIONS_DICT = {
 } as const satisfies Record<string, Omit<Action, "id">>;
 
 export const ACTIONS_ENTRIES: Record<string, Action> = {};
-for (const k in ACTIONS_DICT) ACTIONS_ENTRIES[k] = { id: k as Action["id"], ...ACTIONS_DICT[k as Action["id"]] };
+for (const k of Object.keys(ACTIONS_DICT)) ACTIONS_ENTRIES[k] = { id: k as Action["id"], ...ACTIONS_DICT[k as Action["id"]] };

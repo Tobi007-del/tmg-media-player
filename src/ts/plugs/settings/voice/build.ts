@@ -32,7 +32,7 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   voiceToggleOn: ["yes", "on", "true"],
   voiceToggleOff: ["no", "off", "false"],
 }; // speech bait
-for (const k in ACTIONS_DICT) VOICE_COMMANDS[k] ??= ""; // UX boost
+for (const k of Object.keys(ACTIONS_DICT)) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {

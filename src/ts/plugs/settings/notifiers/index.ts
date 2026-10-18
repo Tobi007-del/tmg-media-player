@@ -1,34 +1,31 @@
 import { BasePlug } from "../../base";
 import type { NotifiersConfig, NotifiersState } from "./types";
-import { NOTIFIERS_BUILD } from "./build";
+import { NOTIFIERS_BUILD, NOTIFIERS_WHITELIST } from "./build";
 import type { Controller } from "@core/controller";
 import type { REvent } from "sia-reactor";
 import { createEl } from "@utils/dom";
 import { BaseNotifier } from "@components/notifiers/base";
 import { ComponentRegistry } from "@core/registries";
-import type { CtlrConfig } from "@defs/config";
 import type { ComponentRegistryMap } from "@defs/registries";
 
 export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   public static readonly plugName = "notifiers";
   public static readonly BUILD = NOTIFIERS_BUILD;
+  public whitelist = NOTIFIERS_WHITELIST;
   public components = new Map<string, BaseNotifier>();
-  public container!: HTMLDivElement;
+  public container?: HTMLDivElement;
 
   constructor(ctlr: Controller, config = ctlr.settings.notifiers) {
     super(ctlr, config, { events: [] }); // ["mediaPlay", "mediaPause", "mediaPrevious", "mediaNext", "playbackRateUp", "playbackRateDown", "volumeUp", "volumeDown", "volumeMuted", "brightnessUp", "brightnessDown", "brightnessDark", "objectFitContain", "objectFitCover", "objectFitFill", "captions", "capture", "theater", "fullscreen", "fwd", "bwd", "chapter"]
   }
 
   public override mount(): void {
-    // Variables Assignment
-    this.ctlr.DOM.notifiersContainer = this.container = createEl("div", { className: "tmg-media-notifiers-container tmg-media-flex-center tmg-media-fill tmg-media-no-pointer" }, { notify: "" });
     // DOM Injection
-    this.ctlr.DOM.controlsContainer?.prepend(this.container);
-    // DOM -> Ctlr Config Listeners
-    this.ctlr.config.on("settings.notifiers.whitelist", this.handleList, { init: true, signal: this.signal });
+    this.ctlr.DOM.controlsContainer?.prepend((this.ctlr.DOM.notifiersContainer = this.container = createEl("div", { className: "tmg-media-notifiers-container tmg-media-flex-center tmg-media-fill tmg-media-no-pointer" }, { notify: "" })));
+    for (const id of this.whitelist) !this.components.has(id) && this.initComp(id);
   }
   public override unmount(): void {
-    this.container.remove();
+    this.container?.remove();
   }
 
   public override wire(): void {
@@ -39,11 +36,7 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   }
 
   protected handleEventsState({ currentTarget: { value = [] } }: REvent<NotifiersState, "events">): void {
-    for (const eN of value) this.container.addEventListener(eN, this.handleEvent, { signal: this.signal });
-  }
-
-  protected handleList({ value = [] }: REvent<CtlrConfig, "settings.notifiers.whitelist">): void {
-    for (const id of value) !this.components.has(id) && this.initComp(id);
+    for (const eN of value) this.container?.addEventListener(eN, this.handleEvent, { signal: this.signal });
   }
 
   public handleEvent({ type: eN }: Event): void {
@@ -51,7 +44,7 @@ export class NotifiersPlug extends BasePlug<NotifiersConfig, NotifiersState> {
   }
 
   public reset(token = "", flush = false): void {
-    flush && this.ctlr.cancelRAFLoop("notifying"), this.container.setAttribute("data-notify", token);
+    flush && this.ctlr.cancelRAFLoop("notifying"), this.container!.setAttribute("data-notify", token);
     this.media.container.classList.toggle("tmg-media-center-blocked", !!token && this.config.centerBlocks.some((k) => token.startsWith(k)));
   }
 

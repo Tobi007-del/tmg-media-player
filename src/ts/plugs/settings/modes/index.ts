@@ -19,6 +19,7 @@ export class ModesPlug extends BasePlug<ModesConfig> {
   public miniplayer?: ModesMiniplayerPin;
   public cast?: ModesCastPin;
   public airplay?: ModesAirPlayPin;
+  public shapeShifters: Array<keyof ModesConfig> = ["fullscreen", "pictureInPicture"] as const;
 
   constructor(ctlr: Controller, config = ctlr.settings.modes) {
     super(ctlr, config);
@@ -35,6 +36,8 @@ export class ModesPlug extends BasePlug<ModesConfig> {
   public override wire(): void {
     // Utility Injection
     for (const pin of [this.fullscreen, this.theater, this.pictureInPicture, this.miniplayer, this.cast, this.airplay]) pin?.wire();
+    // Ctlr Media Watchers
+    for (const k of this.shapeShifters) this.media.watch(`state.${k}`, () => this.media.status.shapeShifting === k && (this.media.status.shapeShifting = false), { signal: this.signal });
     // Post Wiring
     this.ctlr.learn("escape", { fn: this.closePopUps, keyboard: { phase: "keydown" } }, this.signal), super.wire();
   }
@@ -66,5 +69,11 @@ declare module "@defs/registries" {
 declare module "@defs/config" {
   interface Settings {
     modes: ModesConfig;
+  }
+}
+
+declare module "@defs/contract" {
+  interface MediaStatus {
+    shapeShifting?: boolean | keyof ModesConfig;
   }
 }

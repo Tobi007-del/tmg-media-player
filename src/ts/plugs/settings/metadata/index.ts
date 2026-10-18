@@ -34,17 +34,18 @@ export class MetadataPlug extends BasePlug<MetadataConfig> {
   public syncSession(): void {
     if (!navigator.mediaSession || (queryPictureInPicture() && !this.media.state.pictureInPicture)) return;
     navigator.mediaSession.metadata = new MediaMetadata(this.media.settings.metadata as MediaMetadataInit);
-    const set = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args);
-    set("play", () => this.ctlr.perform("playPause")), set("pause", () => this.ctlr.perform("playPause"));
-    set("seekto", (d) => (this.media.intent.currentTime = d.seekTime ?? 0));
-    set("seekbackward", (d) => this.ctlr.perform("timeSkipBwd", undefined, undefined, d.seekOffset));
-    set("seekforward", (d) => this.ctlr.perform("timeSkipFwd", undefined, undefined, d.seekOffset));
-    set("previoustrack", this.media.features.previousItem ? () => this.ctlr.perform("previous") : null);
-    set("nexttrack", this.media.features.nextItem ? () => this.ctlr.perform("next") : null);
-    set("skipad", this.media.features.adSkip ? () => this.ctlr.perform("adSkip") : null);
-    set("enterpictureinpicture" as any, this.media.features.pictureInPicture ? () => (this.media.intent.pictureInPicture = true) : null);
-    set("togglemicrophone" as any, this.media.features.voice ? () => (this.settings.voice.active.value = !this.settings.voice.active.value) : null);
+    this.onAction("play", () => this.ctlr.perform("playPause")), this.onAction("pause", () => this.ctlr.perform("playPause"));
+    this.onAction("seekto", (d) => (this.media.intent.currentTime = d.seekTime ?? 0));
+    this.onAction("seekbackward", (d) => this.ctlr.perform("timeSkipBwd", undefined, undefined, d.seekOffset));
+    this.onAction("seekforward", (d) => this.ctlr.perform("timeSkipFwd", undefined, undefined, d.seekOffset));
+    this.onAction("previoustrack", this.media.features.previousItem ? () => this.ctlr.perform("previous") : null);
+    this.onAction("nexttrack", this.media.features.nextItem ? () => this.ctlr.perform("next") : null);
+    this.onAction("skipad", this.media.features.adSkip ? () => this.ctlr.perform("adSkip") : null);
+    this.onAction("enterpictureinpicture" as any, this.media.features.pictureInPicture ? () => (this.media.intent.pictureInPicture = true) : null);
+    // this.onAction("togglemicrophone" as any, this.media.features.voice ? () => (this.settings.voice.active.value = !this.settings.voice.active.value) : null); // no controls, not worth it yet
   }
+
+  public onAction = (...args: Parameters<typeof navigator.mediaSession.setActionHandler>) => navigator.mediaSession.setActionHandler(...args);
 }
 
 declare module "@defs/registries" {

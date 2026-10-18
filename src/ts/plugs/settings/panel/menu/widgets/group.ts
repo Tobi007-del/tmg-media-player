@@ -1,4 +1,4 @@
-import type { SettingsMenuItem, SettingsRowEl } from "../../types";
+import type { SettingsMenuItem, SettingsRowEl } from "../types";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
 import { IconRegistry } from "@core/registries";

@@ -1,6 +1,6 @@
 import { BasePlug } from "../../base";
 import type { CssConfig } from "./types";
-import { CSS_BUILD } from "./build";
+import { CSS_BUILD, CSS_CLASSLIST } from "./build";
 import type { CtlrMedia } from "@defs/contract";
 import type { REvent } from "sia-reactor";
 import { camelize, capitalize, uncamelize } from "@utils/str";
@@ -8,7 +8,7 @@ import { camelize, capitalize, uncamelize } from "@utils/str";
 export class CSSPlug extends BasePlug<CssConfig> {
   public static readonly plugName = "css";
   public static readonly BUILD = CSS_BUILD;
-  public classList: string[] = ["captionsCharacterEdgeStyle"]; // #DEFAULT: build privilege
+  public classList = CSS_CLASSLIST;
   public build: Record<string, string | number | undefined> = {};
 
   public override wire(): void {

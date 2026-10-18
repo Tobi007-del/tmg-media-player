@@ -37,17 +37,17 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     // ----------- Watchers
     this.media.watch("tech", (t) => ((this.isNative = t.constructor === HTML5Tech), this.syncFeatures()), { init: true, signal: this.signal });
     // ---- Config --------
-    STYLE_PATHS.forEach((p, _, __, vP = p.replace(".value", "")) => this.ctlr.config.watch(`settings.${p}`, (v) => (setPath(this.settings.css, camelize(vP, /\./), p.includes("opacity") ? +v / 100 : (v as string)), this.views.forEach((v) => v.rerender()), this.iView?.rerender()), { init: true, signal: this.signal }));
-    // Ctlr Media Listeners
+    STYLE_PATHS.forEach((p) => this.ctlr.config.watch(`settings.captions.${p}.value`, (v) => (setPath(this.settings.css, camelize(`captions.${p}`, /\./), p.includes("opacity") ? +v / 100 : (v as string)), this.views.forEach((v) => v.rerender()), this.iView?.rerender()), { init: true, signal: this.signal }));
     this.media.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
+    this.media.on("intent.secondaryTextTracks", this.handleSecondaryTextTracksIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal });
     this.media.on("intent.textVisible", this.handleTextVisibleIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.currentTextTrack", this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.textVisible", this.handleTextVisibleState, { init: this.ctlr.flags.wired, signal: this.signal });
     this.media.on("state.currentTime", () => (this.views.forEach((v) => v.syncKaraoke()), this.sViewsMaps.forEach((map) => map.forEach((v) => v.syncKaraoke()))), { init: this.ctlr.flags.wired, signal: this.signal });
-    this.media.on("status.textTracks", () => (this.syncTracks(), this.syncUI()), { signal: this.signal });
+    this.media.on("status.textTracks", this.syncUI, { signal: this.signal });
     this.media.on("status.activeCues", this.handleActiveCuesStatus, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.captions.secondaryTracks", this.syncTracks, { signal: this.signal });
+    this.ctlr.config.on("settings.captions.multiple", this.syncTracks, { signal: this.signal });
     this.ctlr.config.on("settings.captions.font.size.min", ({ value }) => this.settings.captions.font.size.value < value && (this.settings.captions.font.size.value = value), { init: true, signal: this.signal });
     this.ctlr.config.on("settings.captions.font.size.max", ({ value }) => this.settings.captions.font.size.value > value && (this.settings.captions.font.size.value = value), { init: true, signal: this.signal });
     for (const k of ["lockToPanel", "lockToVideo"] as const) this.ctlr.config.on(`settings.captions.window.position.${k}`, ({ value }) => this.media.container.classList.toggle(`tmg-media-captions-${uncamelize(k, "-")}`, value), { init: true, signal: this.signal });
@@ -56,19 +56,24 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.ctlr.learn("captionsResetPos", { fn: this.resetCuesPos }, this.signal);
     for (const k of ["Up", "Down"] as const) this.ctlr.learn(`captionsFontSize${k}`, { fn: (_: KeyboardEvent, mod: KeyMod) => this.changeFontSize((this.ctlr.plug("settings.keys")?.getModded("captionsFontSize", mod, this.config.font.size.skip) ?? this.config.font.size.skip) * (k === "Up" ? 1 : -1)), keyboard: { phase: "keydown" } }, this.signal);
     // prettier-ignore
-    ROTATE_PATHS.forEach((p, _, __, vP = p.replace(".value", ""), cP = vP.replace("captions.", "")) => this.ctlr.learn(camelize(vP, /\./), { fn: () => this.rotateProp(getPath(this.config, cP as any).options.map((opt: any) => parseUIOpt(opt).value), p), keyboard: { phase: "keydown" } }, this.signal));
+    ROTATE_PATHS.forEach((p) => this.ctlr.learn(camelize(`captions.${p}`, /\./), { fn: () => this.rotateProp(getPath(this.config, p as any).options.map((opt: any) => parseUIOpt(opt).value), p), keyboard: { phase: "keydown" } }, this.signal));
     super.wire();
   }
 
   protected handleCurrentTextTrackIntent(e: REvent<CtlrMedia, "intent.currentTextTrack">): void {
     if ((this.state.snubbingCurrentTextTrack = !!e.resolved || !this.isNative)) return void (!e.resolved && e.reject(this.name));
     const handle = () => {
-      if ((e.value as number) >= this.media.status.textTracks.length) return;
+      if ((e.value as number) >= this.media.status.textTracks.length) return this.syncTracks(); // re-trigger forwarding for secondaries
       this.media.state.currentTextTrack = this.shadowCurrentIndex = e.value as number; // #VALIDATED: mediated for cast conformity; no-opy
       this.media.state.textVisible = e.value === -1 ? false : this.media.intent.textVisible; // #UX boost: not a drifter
       this.syncTracks();
     };
     this.ctlr.when("loadedMetadata", e, handle, this.signal);
+    e.resolve(this.name);
+  }
+  protected handleSecondaryTextTracksIntent(e: REvent<CtlrMedia, "intent.secondaryTextTracks">): void {
+    if (e.resolved || !this.isNative) return void (!e.resolved && e.reject(this.name));
+    this.ctlr.when("loadedMetadata", e, this.syncTracks, this.signal);
     e.resolve(this.name);
   }
 
@@ -93,27 +98,26 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
   }
 
   protected handleActiveCuesStatus(e?: REvent<CtlrMedia, "status.activeCues">, value = e?.value): void {
-    const lang = getTrackLang(this.media.status.textTracks[this.media.state.currentTextTrack]);
-    this.media.state.textVisible && (this.views.forEach((v) => (v.config.lang = lang)), this.syncCues(value as CueLike[] | null, this.views, (key) => this.initView(key, lang)));
+    const language = getTrackLang(this.media.status.textTracks[this.media.state.currentTextTrack]);
+    this.media.state.textVisible && (this.views.forEach((v) => (v.config.language = language)), this.syncCues(value as CueLike[] | null, this.views, (key) => this.initView(key, language)));
   }
 
   protected handleCueChange(e?: globalThis.Event, track = e?.target as TextTrack | null): void {
     const idx = this.media.state.textVisible ? Array.prototype.indexOf.call(this.media.status.textTracks, track) : -1;
     if (!track || idx === -1 || idx === this.media.state.currentTextTrack) return;
-    const lang = getTrackLang(track),
-      map = this.sViewsMaps.get(idx),
-      opts = { secOrder: this.sViewsMaps.size, ofMedia: true, lang };
-    if (map) map.forEach((v) => (v.config.lang = lang)), this.syncCues(track.activeCues ? [...track.activeCues] : null, map, (key, v = ComponentRegistry.init("captionsView", this.ctlr, opts)) => v && (map.set(key, v), v));
+    const map = this.sViewsMaps.get(idx),
+      opts = { secOrder: this.sViewsMaps.size, ofMedia: true, language: getTrackLang(track), trackIdx: idx };
+    map?.forEach((v) => ((v.config.language = opts.language), (v.config.trackIdx = idx))), this.syncCues(track.activeCues ? [...track.activeCues] : null, map, (key, v = ComponentRegistry.init("captionsView", this.ctlr, opts)) => v && (map.set(key, v), v));
   }
 
   public toggleVisible(): void {
     if (!this.canVisible) return this.mainView?.preview(this.media.features.textTracks ? `No captions available for this ${this.media.type}` : `Captions not supported for this ${this.media.type}`);
     this.media.intent.textVisible = !this.media.state.textVisible;
   }
-  protected rotateProp(steps: PathValue<CtlrConfig["settings"], (typeof ROTATE_PATHS)[number]>[], prop: (typeof ROTATE_PATHS)[number], numeric = prop.includes("opacity")): void {
+  protected rotateProp(steps: PathValue<CtlrConfig["settings"]["captions"], `${(typeof ROTATE_PATHS)[number]}.value`>[], prop: (typeof ROTATE_PATHS)[number], numeric = prop.includes("opacity")): void {
     if (!steps.length) return;
-    const cssVal = this.settings.css[camelize(prop.replace(".value", ""), /\./)];
-    setPath(this.settings, prop, rotateAny((numeric ? Number : String)(prop.includes("opacity") ? +cssVal * 100 : cssVal), steps));
+    const cssVal = this.settings.css[camelize(`captions.${prop}`, /\./)];
+    setPath(this.config, `${prop}.value`, rotateAny((numeric ? Number : String)(prop.includes("opacity") ? +cssVal * 100 : cssVal), steps));
     this.media.features.activeCues && this.ctlr.config.stall(() => (this.views.size ? this.views.forEach((v) => v.preview()) : this.mainView?.preview())); // rerender && }
   }
   public changeFontSize(value: number, sign = value >= 0 ? "+" : "-"): void {
@@ -129,8 +133,8 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.media.features.activeCues && this.ctlr.config.stall(() => (this.views.size ? this.views.forEach((v) => v.preview()) : this.mainView?.preview()));
   }
 
-  protected initView(key: string, lang = ""): CaptionsView | undefined {
-    const view = ComponentRegistry.init("captionsView", this.ctlr, { isMain: key === "main", ofMedia: true, lang }) || undefined;
+  protected initView(key: string, language = ""): CaptionsView | undefined {
+    const view = ComponentRegistry.init("captionsView", this.ctlr, { isMain: key === "main", ofMedia: true, language }) || undefined;
     return view && this.views.set(key, view), view;
   }
   public get mainView(): CaptionsView | undefined {
@@ -149,21 +153,18 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.media.container.dataset.textKind = this.media.status.textKind = getTrackKind(this.media.status.textTracks[this.media.state.currentTextTrack]);
   }
   protected syncTracks(): void {
-    const list = this.media.status.textTracks,
-      idx = this.media.state.currentTextTrack;
+    // prettier-ignore
+    const { intent: int, state: s, status: { textTracks: list } } = this.media, idx = s.currentTextTrack;
     if (!list || this.state.snubbingCurrentTextTrack) return;
-    if (this.config.multiple) {
-      const valid = this.config.secondaryTracks.filter((i) => i !== idx && list[i]);
-      if (valid.length !== this.config.secondaryTracks.length) return void (this.config.secondaryTracks = valid);
-    }
+    s.secondaryTextTracks = this.config.multiple ? int.secondaryTextTracks.filter((i) => i !== idx && list[i]) : [];
     for (const [i, map] of this.sViewsMaps) {
-      if (this.config.multiple && this.config.secondaryTracks.includes(i)) continue;
+      if (this.config.multiple && s.secondaryTextTracks.includes(i)) continue;
       map.forEach((v) => v.destroy()), this.sViewsMaps.delete(i);
       if (this.isNative && i !== idx && list[i]) (list[i].mode = "disabled"), list[i].removeEventListener("cuechange", this.handleCueChange);
     }
     if (!this.isNative) return;
     for (let i = 0, len = list.length; i < len; i++) {
-      const sec = this.config.multiple && this.config.secondaryTracks.includes(i);
+      const sec = this.config.multiple && s.secondaryTextTracks.includes(i);
       list[i].mode = i === idx || sec ? "hidden" : "disabled";
       if (sec) list[i].addEventListener("cuechange", this.handleCueChange, { signal: this.signal }), !this.sViewsMaps.has(i) && (this.sViewsMaps.set(i, new Map()), this.handleCueChange(undefined, list[i]));
     }
@@ -179,7 +180,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     for (const [key, view] of map) groups.has(key) || (view.destroy(), map.delete(key));
   }
   public syncFeatures(): void {
-    this.media.tech.polyfill("textTracks", this.isNative), this.media.tech.polyfill("currentTextTrack", this.isNative && this.media.features.textTracks);
+    this.media.tech.polyfill("textTracks", this.isNative), this.media.tech.polyfill(["currentTextTrack", "secondaryTextTracks"], this.isNative && this.media.features.textTracks);
     this.media.tech.polyfill("textVisible", this.media.features.activeCues), this.media.tech.polyfill("textsVisible", this.isNative && this.media.features.currentTextTrack); // this.media.features.activeCues -> true
   }
   public resetCuesPos(): void {
@@ -215,7 +216,7 @@ declare module "@defs/config" {
 
 declare module "@defs/contract" {
   interface MediaStatus {
-    textKind: string;
+    textKind: "captions" | "subtitles" | "";
   }
   interface MediaFeaturesExt {
     textsVisible: boolean;

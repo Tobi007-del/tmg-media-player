@@ -2,7 +2,7 @@ import { BaseComponent, ComponentState } from "../base";
 import { IconRegistry } from "@core/registries";
 import { addSafeClicks, createEl } from "@utils/dom";
 import { formatActionTooltip } from "@utils/keys";
-import { getTrackKind, getTrackLang } from "@utils/media";
+import { getTrackKind, getTrackLang, getTrackNum } from "@utils/media";
 export type CaptionsConfig = undefined;
 
 export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState, HTMLButtonElement> {
@@ -22,9 +22,8 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
     // Event Listeners
     addSafeClicks(this.el, this.handleClick, this.handleDblClick, { signal: this.signal });
     // Ctlr Media Listeners
-    for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
+    for (const p of ["state.currentTextTrack", "status.textTracks", "state.textVisible", "state.secondaryTextTracks"] as const) this.media.on(p, this.syncUI, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- Config --------
-    this.ctlr.config.on("settings.captions.secondaryTracks", this.syncBadge, { signal: this.signal });
     for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.captions`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
 
@@ -40,8 +39,8 @@ export class CaptionsButton extends BaseComponent<CaptionsConfig, ComponentState
   }
   protected syncBadge(): void {
     const track = this.media.status.textTracks[this.media.state.currentTextTrack],
-      c = this.plug?.config.multiple && this.plug.config.secondaryTracks.length;
-    this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase() || (c ? "M" : "")}${c ? `+${c}` : ""}` : "");
+      c = this.plug?.config.multiple && this.media.state.secondaryTextTracks.length;
+    this.setBadge(track && this.media.state.textVisible ? `${getTrackLang(track).toUpperCase() || (c ? "M" : "")}${getTrackNum(this.media.status.textTracks, this.media.state.currentTextTrack)}${c ? `+${c}` : ""}` : "");
   }
 
   public syncARIA(): void {

@@ -176,7 +176,7 @@ export class IconRegistry extends BaseRegistry<string> {
     this.instance.unregister(name as string);
   }
   public static registerAll(icons: Record<keyof IconRegistryMap, IconRegistryMap[keyof IconRegistryMap]>): void {
-    for (const k in icons) this.instance.register(k, icons[k as keyof IconRegistryMap]);
+    for (const k of Object.keys(icons)) this.instance.register(k, icons[k as keyof IconRegistryMap]);
   } // Bulk register a map of icons { play: "<svg...>", pause: "<svg...>" }
   public static getKeys(): string[] {
     return this.instance.items.map((i) => i.name);

@@ -11,18 +11,18 @@ import { IconRegistry } from "@core/registries";
 export class ToastsPlug extends BasePlug<ToastsConfig> {
   public static readonly plugName = "toasts";
   public static readonly BUILD = TOASTS_BUILD;
-  public container!: HTMLElement;
+  public container?: HTMLElement;
   public toast?: Toast;
   public timeouts = new Map<string, { tid: number; after: number }>();
 
   public override mount(): void {
-    this.container = this.media.container.appendChild(createEl("div", { className: "tmg-media-toasts-container tmg-media-cover tmg-media-fill tmg-media-no-pointer tmg-media-curve" }));
+    this.media.container.append((this.container = createEl("div", { className: "tmg-media-toasts-container tmg-media-cover tmg-media-fill tmg-media-no-pointer tmg-media-curve" })));
     const t = t007.toaster({ rootElement: this.container, signal: this.signal, ...this.config }, this.ctlr.config.id),
       fmt = (opts: any, raw = opts?.icon, icon = (raw && IconRegistry.get(raw, true)) || raw) => (icon ? { ...opts, icon } : opts);
     this.toast = new Proxy(t, { apply: (t, _, [msg, opts]) => t(msg, fmt(opts)), get: (t, k) => (k === "update" ? (id: any, opts: any) => t.update(id, fmt(opts)) : (t as any)[k]) });
   }
   public override unmount(): void {
-    this.container.remove();
+    this.container?.remove();
   }
 
   public override wire(): void {
@@ -48,9 +48,9 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
 
   protected trigger(id: string, rmdr = this.config.reminders[id]): void {
     if (!rmdr) return;
-    const { id: _i, message, after: _a, actionId, ...opts } = rmdr;
-    this.timeouts.delete(id), delete this.config.reminders[id];
-    this.ctlr.perform(actionId), this.toast?.(message, { ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) });
+    const { id: _i, message, after, actionId, repeat, ...opts } = rmdr;
+    repeat ? ((rmdr.target = Date.now() + after), this.timeouts.set(id, { tid: setTimeout(() => this.trigger(id), clamp(0, after, 2147483647), this.signal), after })) : (this.timeouts.delete(id), delete this.config.reminders[id]);
+    this.ctlr.perform(actionId), this.toast?.(message, { tag: id, renotify: true, ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) });
   }
 
   protected override onDestroy(): void {
@@ -58,7 +58,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
   }
 }
 
-export const tutorialOpts = (onGotIt: () => void = NOOP): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, actions: { "Got it!": onGotIt } });
+export const tutorialOpts = (onGotIt: () => void = NOOP): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, actions: { "Got it!": (_, t) => (onGotIt(), t007.toast?.dismiss(t.opts.id)) } });
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {

@@ -61,9 +61,9 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
           getValue: () => (plug.config.next.preview.usePoster ? "Poster" : "Teaser"),
           configPaths: ["settings.auto.next.preview.usePoster", "settings.auto.next.preview.tease"],
           items: [
-            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => (plug.config.next.preview.usePoster ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], title: "Display the next video's poster during the countdown" },
-            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => (plug.config.next.preview.tease ? "On" : "Off"), onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], title: "Play a short silent preview of the next when no poster is present" },
-            { id: "autoNextPreviewLoop", label: "Loop teaser", widget: "toggle", getValue: () => (plug.config.next.preview.loop ? "On" : "Off"), getDisabled: () => !plug.config.next.preview.tease, onChange: (val: boolean) => (plug.config.next.preview.loop = val), configPaths: ["settings.auto.next.preview.loop", "settings.auto.next.preview.tease"], title: "Loop the video tease continuously instead of pausing at the end" },
+            { id: "autoNextPreviewUsePoster", label: "Use poster", widget: "toggle", getValue: () => plug.config.next.preview.usePoster, onChange: (val: boolean) => (plug.config.next.preview.usePoster = val), configPaths: ["settings.auto.next.preview.usePoster"], title: "Display the next video's poster during the countdown" },
+            { id: "autoNextPreviewTease", label: "Tease video", widget: "toggle", getValue: () => plug.config.next.preview.tease, onChange: (val: boolean) => (plug.config.next.preview.tease = val), configPaths: ["settings.auto.next.preview.tease"], title: "Play a short silent preview of the next when no poster is present" },
+            { id: "autoNextPreviewLoop", label: "Loop teaser", widget: "toggle", getValue: () => plug.config.next.preview.loop, getDisabled: () => !plug.config.next.preview.tease, onChange: (val: boolean) => (plug.config.next.preview.loop = val), configPaths: ["settings.auto.next.preview.loop", "settings.auto.next.preview.tease"], title: "Loop the video tease continuously instead of pausing at the end" },
             {
               id: "autoNextPreviewBounds",
               label: "Teaser bounds",

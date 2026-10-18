@@ -1,5 +1,5 @@
 import { BasePin } from "../../base";
-import { MODES_THEATER_BUILD } from "./build";
+import { MODES_THEATER_BUILD, MODES_THEATER_SNUBLIST } from "./build";
 import { ModesPlug } from "./index";
 import type { ModesTheaterConfig } from "./types";
 import type { REvent } from "sia-reactor";
@@ -11,7 +11,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
     return ModesPlug;
   }
   public static readonly BUILD = MODES_THEATER_BUILD;
-  public UISnublist: string[] = ["fullscreen", "miniplayer", "floatingPlayer"]; // #DEFAULT: build privilege
+  public snubList = MODES_THEATER_SNUBLIST;
 
   public override wire(): void {
     // Ctlr Media Watchers
@@ -24,7 +24,7 @@ export class ModesTheaterPin extends BasePin<ModesPlug, ModesTheaterConfig> {
 
   protected handleTheaterIntent(e: REvent<CtlrMedia, "intent.theater">): void {
     if (e.resolved) return;
-    if (e.value && this.UISnublist.some(this.ctlr.isUIActive)) return e.stopImmediatePropagation();
+    if (e.value && this.snubList.some(this.ctlr.isUIActive)) return e.stopImmediatePropagation();
     this.media.container.classList.toggle("tmg-media-theater", e.value);
     this.media.state.theater = e.value;
     e.resolve(this.name);

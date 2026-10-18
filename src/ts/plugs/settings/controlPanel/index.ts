@@ -13,6 +13,7 @@ import { createEl, createListRenderer, observeMutation, observeResize } from "@u
 import { getPanelSplitCtrls, parsePanelBottomObj } from "@utils/obj";
 import { initScrollAssist, removeScrollAssist } from "@t007/utils/hooks/vanilla";
 import { createReactorSync } from "sia-reactor/utils";
+import { silence } from "sia-reactor/modules";
 
 export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
   public static readonly plugName = "controlPanel";
@@ -45,13 +46,13 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
     this.shells.center = { zone: this.bigWrapper, cover: createEl("div", { className: "tmg-media-big-controls-wrapper-cover" }) };
     for (const i of ROWS_ARR) this.shells.bottom[i] = { left: this.buildShell("left"), center: this.buildShell("center"), right: this.buildShell("right") };
     this.slots = { top: {}, center: this.shells.center, bottom: { 1: {}, 2: {}, 3: {} } } as ControlPanelSlots;
-    this.zoneEls = [...Object.values(this.shells.top), ...Object.values(this.shells.bottom).map((v) => Object.values(v))].flat().map((w) => w.zone);
+    this.zoneEls = [...Object.values(this.shells.top), ...Object.values(this.shells.bottom).map(Object.values)].flat().map((w) => w.zone);
     // DOM Injection
     this.shells.center.cover.append(this.shells.center.zone);
     for (const i of ROWS_ARR) this.bottomWrapper.append(createEl("div", { className: `tmg-media-bottom-sub-controls-wrapper tmg-media-bottom-${i}-sub-controls-wrapper tmg-media-apt-controls-wrapper` }, { dropZone: "", dragId: "wrapper" }));
-    this.ctlr.DOM.controlsContainer?.append(this.topWrapper, this.shells.center.cover, this.bottomWrapper);
+    this.ctlr.DOM.controlsContainer?.prepend(this.topWrapper, this.shells.center.cover, this.bottomWrapper);
     // DOM! -> Ctlr Config Setters
-    this.ctlr.config.set("settings.controlPanel.bottom", (v) => parsePanelBottomObj(v), { init: true, signal: this.signal });
+    silence(() => this.ctlr.config.set("settings.controlPanel.bottom", (v) => parsePanelBottomObj(v), { init: true, signal: this.signal })); // silent init
     // DOM! -> Ctlr Config Listeners
     this.ctlr.config.on("settings.controlPanel.top", this.handleTop, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.controlPanel.center", this.handleCenter, { init: true, signal: this.signal });
