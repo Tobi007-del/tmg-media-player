@@ -36,7 +36,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       pictureInPicture: !isAudio && supportsPictureInPicture(), fullscreen: !isAudio && supportsFullscreen(),
       // Markup & States
       poster: !isAudio, autoplay: true, loop: true, playsInline: !isAudio, controls: true,
-      crossOrigin: true, preload: true, controlsList: true, sources: true, tracks: true,
+      crossOrigin: true, preload: true, sources: true, tracks: true,
       // Lists
       textTracks: canTxtTrack, videoTracks: !isAudio && canVidTrack, audioTracks: canAudTrack,
       // Currents
@@ -159,9 +159,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected wireControls(): void {
     this.bindAttribute("controls", true);
-  }
-  protected wireControlsList(): void {
-    this.bindAttribute("controlsList");
   }
   // --- Lists Wiring ---
   protected wireSources(): void {
@@ -314,8 +311,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
       case "playsinline":
       case "webkit-playsinline":
         return (s.playsInline = this.el.playsInline);
-      case "controlslist":
-        return (s.controlsList = this.el.controlsList);
       case "muted":
         return (s.muted = this.el.muted), (set.defaultMuted = this.el.defaultMuted);
     } // Mutations report before Queued MicroTasks so double "state.*" sets is safely batched for `on` listeners :)
@@ -418,9 +413,9 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   protected handleStalledStatus(): void {
     this.config.status.stalled = true;
   }
-  protected handleErrorStatus(e: any, target = e?.target): void {
-    if (target && target !== this.el) return this.ctlr?.log({ message: `Media ${target.nodeName || "Child"} element error occurred!`, event: e, target }, "error", true); // not an error but u gotta know
-    this.config.status.error = this.el.error ?? { message: (isStr(e) && e) || e?.message };
+  protected handleErrorStatus(e: ErrorEvent, t = e.target as Element): void {
+    if (t && t !== this.el) return this.ctlr?.log({ message: `Media ${t.nodeName || "Child"} element error occurred!`, event: e, target: t }, "error", true); // not an error but u gotta know
+    this.config.status.error = this.el.error ?? { message: (isStr(e) && e) || e.message, native: e.error };
     this.config.status.waiting = false;
   }
   protected handleTracksStatus(type: TrackType, list: any, init = false): void {

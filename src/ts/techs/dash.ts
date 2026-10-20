@@ -83,8 +83,8 @@ export class DashTech extends HTML5Tech {
       });
       this.config.settings.protection && this.host.setProtectionData(this.config.settings.protection);
       this.host.initialize(this.el, src, truth.autoplay || !truth.paused, truth.currentTime);
-    } catch (err) {
-      this.handleHostError(err);
+    } catch (err: any) {
+      this.handleHostError(err, true);
     }
   }
   // ===========================================================================
@@ -129,9 +129,9 @@ export class DashTech extends HTML5Tech {
     this.ctlr.when("hostReady", e, (track = this.config.status[`${type}Tracks`][e.value as number] as dashjs.MediaInfo | undefined) => track && this.host!.setCurrentTrack(track)); // #VALIDATED: mediated for cast conformity; no-opy
     e.resolve(this.name);
   }
-  protected handleHostError(err: any): void {
+  protected handleHostError(err: any, preflight = false): void {
     if (!this.signal || this.signal.aborted) return;
-    this.config.status.error = { ...err, code: err?.code ?? 5, message: err.error ?? err.message ?? "Fatal DASH error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
+    this.config.status.error = err ? { ...err, code: preflight ? 2 : err.code, message: err.error ?? err.message, native: err } : { native: err };
     this.config.status.waiting = false;
   }
   // --- Lifecycle ---

@@ -25,9 +25,9 @@ export function getMimeTypeFromExtension(name: string, generic = true): string {
 export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (item: any) => item.name || "", debug = false, stripExt = noExtension, log = debug ? (title: string, ...body: any[]) => console.log(`[Sorter][${title}]`, ...body) : NOOP, bCache = new Map(), kCache = new Map(), groups = new Map()) {
   debug && console.time("[Sorter]"), log("Init", `Sorting ${files.length} items...`);
   // Extracts the main series title + optional season
-  function getNamePrefix(name: string, base = stripExt(name), match = base.match(/(.*?)(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)?/i)) {
+  function getNamePrefix(name: string, base = stripExt(name).replace(/_/g, " ").replace(/\b(?:\d{3,4}[pi]|[248]k|[fqu]?hd)\b/gi, ""), match = base.match(/(.*?)(?:(?:s|season)[\s\-]?)(\d+).*?(?:(?:e|ep|episode)[\s\-]?)(\d+)?/i)) {
     // prettier-ignore
-    return bCache.set(name, base), (match ? (`${match[1].replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()} s${match[2].padStart(2, "0")}`) : base.replace(/(?:(?:e|ep|episode|part)[\s\-]?)\d+/gi, "").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()) || "unknown";
+    return bCache.set(name, base), (match ? (`${match[1].replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()} s${match[2].padStart(2, "0")}`) : base.replace(/\b(?:e|ep|episode|part)[\s\-]?\d+/gi, "").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()) || "unknown";
   }
   // Extract episode key: season, episode number(s), or special flags
   function extractEpisodeKey(name: string, base = bCache.get(name).toLowerCase()) {
@@ -41,7 +41,7 @@ export function smartFlatSort<F>(files: F[], getName: (item: F) => string = (ite
     const roman = base.match(/(?:(?:s|season)[\s\-]?)([ivxlcdm]+).*?(?:(?:e|ep|episode)[\s\-]?)([ivxlcdm]+)/i);
     if (roman) return [parseRomanNum(roman[1], true), parseRomanNum(roman[2], true)];
     // Match fallback single-episode formats like "Ep12", "Episode 5", "E7", "Part 2" without season info
-    const loose = base.match(/(?:(?:e|ep|episode|part)[\s\-]?)(\d+)/);
+    const loose = base.match(/\b(?:e|ep|episode|part)[\s\-]?(\d+)/i);
     if (loose) return [999, parseInt(loose[1])]; // Put these at the end with fake season 999
     // Totally unmatchable junk (e.g. "Behind the Scenes", "Bonus Feature")
     return [Infinity, Infinity]; // Hard fallback, gets sorted dead last

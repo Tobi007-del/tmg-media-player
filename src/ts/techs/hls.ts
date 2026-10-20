@@ -72,8 +72,8 @@ export class HLSTech extends HTML5Tech {
       this.host.on(HLS.Events.LEVELS_UPDATED, (_, data) => ((this.config.status.levels = inert(data.levels)), silence(() => (this.config.intent.currentLevel = this.config.intent.currentLevel)), this.config.tick("intent.currentLevel"))); // #RE-TRIGGER: sync intent resolution
       this.host.on(HLS.Events.ERROR, (_, data) => data.fatal && (data.type === HLS.ErrorTypes.NETWORK_ERROR ? this.host!.startLoad() : data.type === HLS.ErrorTypes.MEDIA_ERROR ? this.host!.recoverMediaError() : this.handleHostError(data)));
       this.host.attachMedia(this.el);
-    } catch (err) {
-      this.handleHostError(err);
+    } catch (err: any) {
+      this.handleHostError(err, true);
     }
   }
   // ===========================================================================
@@ -124,9 +124,9 @@ export class HLSTech extends HTML5Tech {
     this.ctlr.when("hostReady", e, () => e.value && (this.host!.liveSyncPosition ? (this.config.intent.currentTime = this.host!.liveSyncPosition) : super.handleLiveIntent(e))); // #FACADED: silenced intent actual op
     e.resolve(this.name);
   }
-  protected handleHostError(err: any): void {
+  protected handleHostError(err: any, preflight = false): void {
     if (!this.signal || this.signal.aborted) return;
-    this.config.status.error = { ...err, code: err?.code ?? 5, message: err.message ?? "Fatal HLS error" }; // 5: MEDIA_ERR_UNKNOWN to allow mssg fallback
+    this.config.status.error = err ? { ...err, code: preflight ? 2 : err.code, message: err.message, native: err } : { native: err };
     this.config.status.waiting = false;
   }
   // --- Lifecycle ---

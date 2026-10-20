@@ -1,7 +1,7 @@
 import { BasePlug } from "@plugs/base";
 import type { Controller } from "@core/controller";
 import { force, getPath, setPath, mirror } from "sia-reactor/utils";
-import { limited } from "@utils/fn";
+import { limited, setTimeout } from "@utils/fn";
 import type { VoiceStage, VoiceConfig, VoiceState } from "./types";
 import { VOICE_BUILD } from "./build";
 import { capitalize, camelize, uncamelize, fuzzyBlobMatch, fuzzyChunkMatch, getLevenshteinSimilarity, luid, uncam, fpath, fvalue } from "@utils/str";
@@ -162,14 +162,14 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
         if (this.ctlr.isLogical(this.goTo(match), true)) return this.execute(transcript, match, true), true; // If a S.I.A path strongly matches what they said, TAKE IT. Bypasses commands completely.
       } else if (isSubmit) {
         const path = this.state.ctx === "*" ? transcript : `${this.state.ctx}.${camelize(transcript)}`,
-          val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, mirror(path)) : undefined;
+          val = this.ctlr.isLogical(path) ? getPath(this.ctlr.logicRoot as any, mirror(path, this.ctlr.logicRoot)) : undefined;
         if (val !== undefined && this.ctlr.isLogical(this.goTo(path), true, val)) return this.execute(transcript, path, true), true; // Hey dev or explorer, here u go!
       }
     } else if (this.execute(transcript, undefined, false)) return true;
     // --- 4. POST-ROUTE STAGE ---
     return this.trigger(transcript, "post-route");
   }
-  protected parse(transcript: string, path = this.state.ctx, isNav = false, value = getPath(this.ctlr.logicRoot as any, mirror(path)), type = isArr(value) ? "array" : typeof value): any {
+  protected parse(transcript: string, path = this.state.ctx, isNav = false, value = getPath(this.ctlr.logicRoot as any, mirror(path, this.ctlr.logicRoot)), type = isArr(value) ? "array" : typeof value): any {
     if (type === "boolean") return isNav && this.config.routing.autoToggles ? !value : fuzzyChunkMatch(this.config.commands.voiceToggleOn, transcript, this.config.process.accuracy) ? true : fuzzyChunkMatch(this.config.commands.voiceToggleOff, transcript, this.config.process.accuracy) ? false : null;
     if (isNav) return null;
     if (type === "number") {
@@ -185,7 +185,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       if (input) input.value = type === "array" ? value.join(", ") : String(value);
       return this.view?.update(this.TIDS.ROUTER, { render: transcript || fvalue(value), ...this.getRouterOptions(false) }), true;
     } // Auto-Strict: Blocks execution for strings only (or everything if true)
-    return setPath(this.ctlr.logicRoot as any, path as any, value), this.view?.success(`${fpath(path)} -> <code>${fvalue(value)}</code>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.goBack(), true;
+    return setPath(this.ctlr.logicRoot as any, path as any, value), this.goBack(), setTimeout(() => (this.view?.success(`${fpath(path)} -> <code>${fvalue(value)}</code>`, { id: this.TIDS.ROUTER, icon: true, autoClose: this.config.toasts.router.autoClose }), this.ctlr.plug("settings.timeTravel")?.teachBasics()), 200, this.signal), true; // last to render
   }
   protected submit(render = this.container?.querySelector<HTMLInputElement>(clame("word-input"))?.value.trim(), process = false): void {
     if (render) this.view?.update(this.TIDS.ROUTER, { render, ...this.getRouterOptions(false) }), !process ? this.execute(render, undefined, false, true) : this.process(render, undefined, true); // Execute with isSubmit = true
@@ -199,12 +199,12 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       actions[`<span title='Go forward${formatActionTooltip(this.settings, "voiceCtxNext")}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
     }
     if (this.ctlr.isLogical(this.state.ctx, true)) {
-      const value = getPath(this.ctlr.logicRoot as any, mirror(this.state.ctx)),
+      const value = getPath(this.ctlr.logicRoot, mirror<any>(this.state.ctx, this.ctlr.logicRoot)),
         type = isArr(value) ? "array" : typeof value,
         showInput = this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type !== "boolean"),
         showSubmit = this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")),
         display = type === "array" ? value.join(", ") : value ?? "",
-        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-word-input" placeholder="${display || "value 1, value 2, value 3, ..."}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings, "voiceSubmit")}' class="tmg-media-voice-word-submit">↳</button>` : ""}</div>` : "",
+        inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-word-input" placeholder="${display || (type === "boolean" ? "true" : type === "number" ? "0" : type === "array" ? "value 1, value 2, value 3, ..." : "...text")}" value="${display}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings, "voiceSubmit")}' class="tmg-media-voice-word-submit">↳</button>` : ""}</div>` : "",
         // prettier-ignore
         hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}):</small> ${inputHtml}` : type === "array" ? `comma-separated values:</small> ${inputHtml}` : `the exact text:</small> ${inputHtml}`;
       return void this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${showInput ? '<small style="font-weight: 500;">' : ""}Try ${this.config.muted ? (showInput ? "typing" : IS_MOBILE ? "tapping" : "clicking") : "saying"} ${hints}</div>`, this.getHelperOptions(actions));
@@ -216,7 +216,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
 
   protected linked(text: string, value = text.toLowerCase(), isGoto = false, punc = isGoto || this.config.muted ? "" : '"'): string {
-    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title="${isGoto ? "Go to" : "Say"} ${value}" tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${isGoto || this.config.muted ? text : value}</u>${punc}`;
+    return `${punc}<u class="tmg-media-voice-link" ${isGoto ? "data-goto" : "data-cmd"}="${value}" title='${isGoto ? "Go to" : "Say"} "${value}"' tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${isGoto ? "accent-" : ""}color) r g b / 0.75);">${isGoto || this.config.muted ? text : value}</u>${punc}`;
   } // `""` is my lil UI Experiment, crafting a standard here :)
   protected stayWoke(e: Event): void {
     this.state.routing && this.ctlr.throttle("voiceWaking", () => e.composedPath().some((el) => (el as HTMLElement)?.matches?.(`:is([id="${this.TIDS.HELPER}"],[id="${this.TIDS.ROUTER}"])`)) && this.snooze(), 500);

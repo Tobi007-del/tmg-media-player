@@ -59,7 +59,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.hostSrc = url;
       this.element = this.hostDiv.querySelector("iframe")!;
       this.el.src = `https://www.youtube${truth.crossOrigin === "use-credentials" ? "" : "-nocookie"}.com/embed/${id}?${new URLSearchParams({ autoplay: +(truth.autoplay || !truth.paused), controls: +truth.controls, playsinline: +truth.playsInline, loop: +truth.loop, start: truth.currentTime, rel: +truth.controls, modestbranding: +truth.controls, fs: +truth.controls, iv_load_policy: truth.controls ? 1 : 3, cc_load_policy: "1", disablekb: "1", enablejsapi: "1", origin: window.location.origin } as any).toString()}`;
-      this.el.toggleAttribute("data-hide-ui", !truth.controls);
+      this.el.toggleAttribute("data-hide-ui", !(this.config.state.controls = truth.controls));
       (this.el as any).tmgPlayer = this.config.element.tmgPlayer; // ref is maintained
       this.host = new window.YT.Player(this.el, {
         events: {
@@ -84,7 +84,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         },
       });
     } catch (err: any) {
-      this.handleHostError(err);
+      this.handleHostError(err, true);
     }
   }
   public hostAttempts = 3;
@@ -287,13 +287,9 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
         break;
     }
   }
-  protected handleHostError(err: { data?: number; message?: string }): void {
+  protected handleHostError(err: any, preflight = false, data = err?.data, d = data < 100 ? data + 100 : data): void {
     if (!this.signal || this.signal.aborted) return;
-    let msg = "Unknown YouTube Error";
-    if (err.data === 2 || err.data === 100) msg = "YouTube Video Not Found";
-    else if (err.data === 101 || err.data === 150) msg = "Playback disabled by owner";
-    else if (err.data === 5) msg = "HTML5 Player Error";
-    this.config.status.error = { ...err, code: err.data, message: err.message || msg };
+    this.config.status.error = err ? { ...err, code: preflight ? 2 : err.code ?? d, message: err.message ?? (d === 102 ? "The video ID format is invalid" : d === 100 ? "The video has been removed or is private" : d === 101 || d === 150 ? "The video cannot play outside YouTube" : d === 105 ? "The video player failed to load" : d === 153 ? "The network connection is not secure" : undefined), native: err } : { native: err };
     this.config.status.waiting = false;
   }
   protected syncCurrentStats(): void {
@@ -309,15 +305,15 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     st.seekable = createTimeRanges([[st.isLive ? Math.max(0, st.duration - 43200) : 0, st.duration]]); // yt has a 12-Hour max DVR
   }
   public syncMetadata(data = this.host!.getVideoData(), meta = this.config.settings.metadata): void {
-    data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined, links: { title: data.video_id ? `https://youtube.com/watch?v=${data.video_id}` : undefined } }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
+    data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author && data.author !== meta.artist ? data.author : undefined, profile: meta.profile ? undefined : "https://www.youtube.com/img/favicon_144.png", links: { title: data.video_id ? `https://youtube.com/watch?v=${data.video_id}` : undefined, profile: meta.links?.profile ? undefined : "https://youtube.com" } }, { skipUndef: true, txLabel: "YouTube Metadata Override" });
   }
   // --- Lifecycle ---
   protected reInitInfo = false;
   protected setInitInfo(data = this.config.status.hostReady && this.host!.getVideoData(), isShort = this.hostSrc?.includes("/shorts/")): void {
     if (!this.host || !data) return;
     // Status (Infos & Lists)
-    this.config.status.duration = this.host.getDuration();
-    this.config.status.isLive = (data as any).isLive || this.config.status.duration === 0; // #PAMPERING: observed quirk
+    this.config.status.duration = this.host.getDuration() || NaN;
+    this.config.status.isLive = (data as any).isLive ?? (!this.config.status.duration && data.title?.includes("live")); // #PAMPERING: observed quirk
     (this.config.status.videoWidth = isShort ? 1080 : 1920), (this.config.status.videoHeight = isShort ? 1920 : 1080);
     this.config.status.textTracks = []; // wait for API change
     this.config.status.waiting = false;

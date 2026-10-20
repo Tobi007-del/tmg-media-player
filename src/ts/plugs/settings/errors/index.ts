@@ -27,7 +27,7 @@ export class ErrorsPlug extends BasePlug<ErrorsConfig> {
 
   protected async handleErrorStatus({ value }: REvent<CtlrMedia, "status.error">): Promise<void> {
     if (!value) return (this.state.code = this.state.message = null), this.ctlr.plug("disabled")?.reactivate();
-    this.ctlr.log(value, "error"); // no `.notice` since that's our job, no "swallow" since we breaking the player
+    this.ctlr.log(value?.native ?? value, "error"); // no `.notice` since that's our job, no "swallow" since we breaking the player
     let { code = 5, message = "" } = value;
     code = this.state.code = code > 5 ? (!message.includes(`${code}`) || this.config[code] ? code : 5) : code;
     message = this.state.message = this.config[code]?.replace(/media/g, this.media.type) || message || "";

@@ -8,13 +8,19 @@ import { getCtlrIdx } from "@tools/player";
 import { CtlrConfig } from "@defs/config";
 import { REvent } from "sia-reactor";
 import { isArr } from "@utils/obj";
+import { IconRegistry } from "@core/registries";
+import { limited } from "@utils/fn";
+import { luid } from "@utils/str";
+import { tutorialOpts } from "../toasts";
+import { IS_MOBILE } from "@utils/env";
 
 export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   public static readonly plugName = "timeTravel";
   public static readonly BUILD = TIME_TRAVEL_BUILD;
   public module!: TimeTravelModule<any>;
   public console?: TimeTravelConsole | undefined;
-  public dockList = TIME_TRAVEL_DOCKLIST;
+  public docklist = TIME_TRAVEL_DOCKLIST;
+  public teachBasics = limited(() => this.ctlr.toast?.(`Undo your actions ${!IS_MOBILE && this.teachBasics.left > 3 ? "with <b>Ctrl</b>+<b>Z</b>" : "in settings"}`, { ...tutorialOpts(this.teachBasics.block, { [`<span title='Open history'>${IconRegistry.get("settings")}</span>`]: (_, __, menu = this.ctlr.plug("settings.panel")?.menu) => (menu?.open(), menu?.goTo("timeTravelHistory")) }), tag: "tmg-untr", signal: this.signal }), { key: `${luid()}_undo_basics`, maxTimes: 8, perSession: 2 });
 
   public override mount(): void {
     // Variables Assignment
@@ -29,7 +35,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
     // Utility Injection
     createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     // Ctlr Media Listeners
-    for (const p of this.dockList) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
+    for (const p of this.docklist) this.media.on(p as any, ({ value }) => this.redock(value), { signal: this.signal }); // if dev didn't hardcode
     // ---- Config --------
     this.ctlr.config.on("settings.timeTravel.console.disabled", this.handleConsoleDisabled, { init: true, signal: this.signal });
     this.ctlr.config.on("settings.timeTravel.persist", this.handlePersist, { init: true, signal: this.signal });

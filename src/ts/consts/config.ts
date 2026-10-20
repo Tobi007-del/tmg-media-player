@@ -6,24 +6,24 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
   actions: {
     entries: ACTIONS_ENTRIES,
     devlist: [
-      /^media\.intent\.(preload|crossOrigin|controls|controlsList)/,
-      /^media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
-      /^settings\.(techOrder|persist|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
-      /^settings\.keys\.(rankedMatch|linkedPhase|overrides|blocks|moddedlist)/,
-      /^settings\.timeTravel\.(console|module)/,
+      /media\.intent\.(preload|crossOrigin|controls)/,
+      /media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
+      /settings\.(techOrder|persist|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
+      /settings\.keys\.(rankedMatch|linkedPhase|overrides|blocks|moddedlist)/,
+      /settings\.timeTravel\.(console|module)/,
       "settings.notifiers.centerBlocks",
       "settings.frame.main",
       /\.(whitelist|blacklist|min|max|skip|start|end|css)($|\.)/, // Safe because nodes (like volume) are already blocked above
     ],
     blacklist: [
-      /^media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
-      /^media\.intent\.(sources|tracks|xrInputSource)/,
-      /^media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
-      /^settings\.toasts\.reminders\.[^.]+\.(target|id)/,
+      /media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
+      /media\.intent\.(sources|tracks|xrInputSource)/,
+      /media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
+      /settings\.toasts\.reminders\.[^.]+\.target/,
       "settings.sleepTimer.target",
       /\.(on|before)[A-Z]\w+$/,
-      /\.(options)($|\.)/,
-    ],
+      /\.(id|options|ads)($|\.)/,
+    ], // hop on d console if u more dev :)
   },
   settings: {
     techOrder: [
@@ -54,4 +54,3 @@ export const STATE_BUILD: CtlrState = {
 };
 
 export const ZENLIST: string[] = [];
-

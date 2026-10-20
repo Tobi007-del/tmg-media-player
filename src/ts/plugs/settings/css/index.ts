@@ -23,7 +23,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
     // ---- State --------
     (["container.width", "container.height", "object.width", "object.height", "object.top", "object.left", "poster.width", "poster.height", "poster.top", "poster.left"] as const).forEach((p, _, __, camped = capitalize(camelize(p, /\./))) => this.ctlr.state.watch(`dimensions.${p}`, (v) => (this.config[`current${camped}`] = `${v || 0}px`), { init: true, signal: this.signal }));
     // ---- Media Listeners
-    this.media.on("status.loadedMetadata", this.handleLoadedMetadataStatus, { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.src", this.handleSrcState, { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State ----------
     for (const k of ["container", "pseudoContainer"] as const) this.ctlr.state.on(`dimensions.${k}.tier`, ({ value: tier }) => (this.media[k].dataset.sizeTier = tier || ""), { init: true, signal: this.signal });
     // Post Wiring
@@ -31,10 +31,13 @@ export class CSSPlug extends BasePlug<CssConfig> {
     super.wire();
   }
 
-  protected async handleLoadedMetadataStatus({ value }: REvent<CtlrMedia, "status.loadedMetadata">, keys = Object.keys(this.settings.css.syncWithMedia)): Promise<void> {
-    if (!value || !keys.some((k) => this.settings.css.syncWithMedia[k])) return;
-    const color = await this.ctlr.plug("settings.frame")?.getMainColor();
-    for (const k of keys) if (this.settings.css.syncWithMedia[k]) this.settings.css[k] = String(color ?? this.build[k]);
+  protected handleSrcState(e: REvent<CtlrMedia, "state.src">, keys = Object.keys(this.settings.css.syncWithMedia)): void {
+    if (!keys.some((k) => this.settings.css.syncWithMedia[k])) return;
+    const handle = async () => {
+      const color = await this.ctlr.plug("settings.frame")?.getMainColor();
+      for (const k of keys) if (this.settings.css.syncWithMedia[k]) this.settings.css[k] = String(color ?? this.build[k]);
+    };
+    this.ctlr.when(this.media.features.frameCapture ? "loadedData" : "loadedMetadata", e, handle, this.signal);
   }
 
   public getCSSKey(key: string): { isClass: boolean; id: string } {

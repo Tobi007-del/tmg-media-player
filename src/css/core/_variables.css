@@ -126,7 +126,6 @@
   --tmg-media-timeline-buffered-bar-background: hsl(from var(--tmg-media-theme-color) h s calc(l + 20) / 0.25);
   --tmg-media-timeline-previews-border-color: var(--tmg-media-current-control-color);
   --tmg-media-timeline-no-previews-background: var(--tmg-media-notifier-color);
-  --tmg-media-timeline-no-previews-pointer-color: var(--tmg-media-notifier-color);
   --tmg-media-progress-bar-background: var(--tmg-media-timeline-preview-bar-background);
   --tmg-media-progress-bar-opacity: 0.5;
   --tmg-media-advert-bar-background: #ffcc00;

@@ -68,7 +68,7 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging");
     this.replaced = this.draggingEl = null;
     if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") setPath(this.plug.slots, this.getShellPath(t), t);
-    transaction(this.syncConfig, "Control panel reorder"), this.teachBasics(t.dataset.controlId as any);
+    transaction(this.syncConfig, "Control panel reorder"), this.teachBasics.left ? this.teachBasics(t.dataset.controlId as any) : this.ctlr.plug("settings.timeTravel")?.teachBasics();
   }
 
   protected handleDragEnter(e: DragEvent): void {

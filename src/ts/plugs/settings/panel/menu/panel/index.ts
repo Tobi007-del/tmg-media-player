@@ -1,4 +1,4 @@
-import { setTimeout, getActiveEl } from "@t007/utils";
+import { setTimeout } from "@t007/utils";
 import { createEl } from "@utils/dom";
 import { Controllable } from "@core/controllable";
 import type { Controller } from "@core/controller";
@@ -17,18 +17,17 @@ export abstract class BaseMenuPanel extends Controllable {
     this.element = createEl("div", { className: `tmg-media-smenu-panel tmg-media-cover tmg-media-no-pointer ${className}` });
     this.element.append((this.content = createEl("div", { className: "tmg-media-smenu-panel-content" })));
     this.content.addEventListener("scroll", () => this.isActive && (this.savedScroll = this.content.scrollTop), { passive: true, signal: this.signal });
+    this.element.addEventListener("focusin", ({ target }) => (this.lastFocused = target as HTMLElement), { signal: this.signal });
   }
 
   public enter(dir: PanelDir = "forward", restore = false): void {
-    !restore && ((this.lastFocused = null), (this.savedScroll = 0));
+    if (!restore) (this.lastFocused = null), (this.savedScroll = 0);
     this.element.classList.remove("tmg-media-smenu-panel-exit", "tmg-media-smenu-panel-active");
     (this.element.dataset.dir = dir), this.element.style.removeProperty("display"), this.element.removeAttribute("inert");
     void this.element.offsetWidth, this.element.classList.add("tmg-media-smenu-panel-active");
-    restore && setTimeout(() => this.isActive && (this.lastFocused?.focus({ preventScroll: true }), (this.content.scrollTop = this.savedScroll)), 50, this.signal);
+    restore && setTimeout(() => this.isActive && (this.lastFocused ? this.lastFocused.focus({ preventScroll: true }) : this.focusFirst()), 50, this.signal);
   }
   public exit(dir: PanelDir = "backward"): void {
-    const active = getActiveEl(this.element.ownerDocument) as HTMLElement;
-    this.lastFocused = this.element.contains(active) ? active : this.lastFocused;
     (this.element.dataset.dir = dir), this.element.setAttribute("inert", "");
     this.element.classList.remove("tmg-media-smenu-panel-active", "tmg-media-smenu-panel-exit");
     this.element.style.display = "none";

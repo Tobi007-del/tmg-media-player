@@ -56,7 +56,6 @@ export const MEDIA_STATE_BUILD: Partial<MediaState> = {
   playsInline: true,
   crossOrigin: null,
   controls: false, // We disable native controls
-  controlsList: "",
   // HTML Lists
   sources: [],
   tracks: [],

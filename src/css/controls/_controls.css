@@ -1,10 +1,11 @@
-:is(.tmg-media-content, .tmg-media-content button) {
+.tmg-media-content,
+:where(.tmg-media-content) button {
   color: var(--tmg-media-current-control-color);
 }
-.tmg-media-content svg {
+:where(.tmg-media-content) svg {
   color: currentColor;
 }
-.tmg-media-content button:is(:hover, :focus-visible) {
+:where(.tmg-media-content) button:is(:hover, :focus-visible) {
   --tmg-media-current-control-color: var(--tmg-media-control-active-color);
 }
 :is(.tmg-media-side-controls-wrapper button, .tmg-media-control-btn) {

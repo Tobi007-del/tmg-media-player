@@ -37,7 +37,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     // ----------- Watchers
     this.media.watch("tech", (t) => ((this.isNative = t.constructor === HTML5Tech), this.syncFeatures()), { init: true, signal: this.signal });
     // ---- Config --------
-    STYLE_PATHS.forEach((p) => this.ctlr.config.watch(`settings.captions.${p}.value`, (v) => (setPath(this.settings.css, camelize(`captions.${p}`, /\./), p.includes("opacity") ? +v / 100 : (v as string)), this.views.forEach((v) => v.rerender()), this.iView?.rerender()), { init: true, signal: this.signal }));
+    STYLE_PATHS.forEach((p) => this.ctlr.config.watch(`settings.captions.${p}.value`, (v) => (setPath(this.settings.css, camelize(`captions.${p}`, /\./), p.includes("opacity") ? +v / 100 : (v as string)), !/color|opacity/.test(p) && (this.views.forEach((v) => v.rerender(true)), this.sViewsMaps.forEach((map) => map.forEach((v) => v.rerender(true))), this.iView?.rerender(true))), { init: true, signal: this.signal }));
     this.media.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.secondaryTextTracks", this.handleSecondaryTextTracksIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal });
     this.media.on("intent.textVisible", this.handleTextVisibleIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration

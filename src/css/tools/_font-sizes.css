@@ -5,10 +5,10 @@
   font-size: calc(var(--tmg-media-current-unit) / 1.325);
 }
 .tmg-media-artist {
-  font-size: calc(var(--tmg-media-current-unit) / 2);
+  font-size: calc(var(--tmg-media-current-unit) / 2.25);
 }
 .tmg-host-container:is([data-size-tier^="xx"], .tmg-media-mobile) .tmg-media-artist {
-  font-size: calc(var(--tmg-media-current-unit) / 1.925);
+  font-size: calc(var(--tmg-media-current-unit) / 2);
 }
 .tmg-media-control-text-btn,
 .tmg-media-preview-container::after,

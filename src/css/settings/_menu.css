@@ -252,7 +252,6 @@
 
 /* Toggle Widget */
 .tmg-media-smenu-toggle-wrapper {
-  --tmg-media-toggle-size: var(--tmg-media-current-unit);
   cursor: pointer;
 }
 .tmg-media-smenu-toggle-input {
@@ -260,9 +259,9 @@
 }
 .tmg-media-smenu-toggle-track {
   position: relative;
-  width: calc(var(--tmg-media-toggle-size) * 1.4);
-  height: calc(var(--tmg-media-toggle-size) / 1.28);
-  border-radius: calc(var(--tmg-media-toggle-size) / 2);
+  width: calc(var(--tmg-media-current-unit) * 1.4);
+  height: calc(var(--tmg-media-current-unit) / 1.28);
+  border-radius: calc(var(--tmg-media-current-unit) / 2);
   background-color: var(--tmg-media-range-track-base-color);
   transition: background-color var(--tmg-media-fade-transition-time) ease;
 }
@@ -271,16 +270,23 @@
 }
 .tmg-media-smenu-toggle-thumb {
   position: absolute;
-  top: calc(var(--tmg-media-toggle-size) / 13);
-  left: calc(var(--tmg-media-toggle-size) / 13);
-  width: calc(var(--tmg-media-toggle-size) / 1.6);
-  height: calc(var(--tmg-media-toggle-size) / 1.6);
-  border-radius: 50%;
+  top: calc(var(--tmg-media-current-unit) / 13);
+  left: calc(var(--tmg-media-current-unit) / 13);
+  width: calc(var(--tmg-media-current-unit) / 1.6);
+  height: calc(var(--tmg-media-current-unit) / 1.6);
+  border-radius: calc(var(--tmg-media-current-unit) / 3.2);
   background-color: var(--tmg-media-range-track-color);
-  transition: transform var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
+  transition: all var(--tmg-media-fade-transition-time) var(--tmg-media-bounce-timing);
 }
 .tmg-media-smenu-toggle-on .tmg-media-smenu-toggle-thumb {
-  transform: translateX(calc(var(--tmg-media-toggle-size) / 1.6));
+  left: calc((var(--tmg-media-current-unit) / 13) + (var(--tmg-media-current-unit) / 1.6));
+}
+[role="menuitem"]:active .tmg-media-smenu-toggle-on .tmg-media-smenu-toggle-thumb {
+  left: calc((var(--tmg-media-current-unit) / 13) + (var(--tmg-media-current-unit) / 4));
+}
+[role="menuitem"]:active .tmg-media-smenu-toggle-thumb {
+  width: var(--tmg-media-current-unit);
+  transition-delay: 100ms;
 }
 
 /* Range Widget */

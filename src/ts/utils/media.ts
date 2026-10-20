@@ -42,7 +42,6 @@ export const getMediaState = (m: HTMLMediaElement, _isVid = m instanceof HTMLVid
   playsInline: m.playsInline,
   crossOrigin: m.crossOrigin,
   controls: m.controls,
-  controlsList: m.controlsList,
   sources: getSources(m),
   tracks: getTracks(m),
 });

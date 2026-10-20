@@ -18,7 +18,7 @@ const NAV_NODE_ID = (actionId: string, stepTag: string, path: string = "*") => (
 
 function buildPathNavNode(actionId: string, stepTag: string, path: string, root: any, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem {
   const label = path === "*" ? "Choose Key" : uncam(path.split(".").pop()!),
-    val = path === "*" ? undefined : getPath(root, mirror(path));
+    val = path === "*" ? undefined : getPath(root, mirror(path, root));
   if (ctlr.isLogical(path, true, val, true)) {
     const type = isArr(val) ? "array" : typeof val,
       tempStep: ActionLogic = { path, fpath: fpath(path), op: existingStep?.path === path && existingStep?.op ? existingStep?.op : type === "boolean" ? "toggle" : "set", value: existingStep?.path === path ? existingStep?.value : undefined };
@@ -109,7 +109,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
         match = typed ? childPaths.find((p) => p.split(".").pop()?.toLowerCase() === typed.toLowerCase()) : null;
       if (match) return void requestAnimationFrame(() => ctlr.plug("settings.panel")?.menu.goTo(NAV_NODE_ID(actionId, stepTag, match)), ctlr.signal);
       const fullPath = path === "*" ? typed : `${path}.${typed}`,
-        val = ctlr.isLogical(fullPath, true, undefined, true) ? getPath(root, mirror(fullPath)) : undefined,
+        val = ctlr.isLogical(fullPath, true, undefined, true) ? getPath(root, mirror(fullPath, root)) : undefined,
         id = NAV_NODE_ID(actionId, stepTag, fullPath),
         menu = ctlr.plug("settings.panel")?.menu;
       if (typed && val !== undefined && menu) !menu.getItem(id) && menu.register(buildPathNavNode(actionId, stepTag, fullPath, root, ctlr, onConfirm, existingStep)), requestAnimationFrame(() => menu.goTo(id), ctlr.signal);
@@ -359,7 +359,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           configPaths: [`actions.entries.${action.id}.gates` as any],
           hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode },
         },
-        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenList.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => !!live().zen, onChange: (val: boolean) => (live().zen = val), hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode }, configPaths: [`actions.entries.${action.id}.zen` as any] },
+        { id: `actions-zen-${action.id}`, label: `Zen (in ${ctlr.zenlist.map(uncam).join(" or ").toLowerCase()} too)`, widget: "toggle", getValue: () => !!live().zen, onChange: (val: boolean) => (live().zen = val), hidden: { configPaths: ["devMode"], is: () => !ctlr.config.devMode }, configPaths: [`actions.entries.${action.id}.zen` as any] },
       ],
     },
   ];

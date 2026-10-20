@@ -31,11 +31,12 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
       this.media.container.addEventListener("contextmenu", this.handleRightClick, { signal: this.signal });
       addSafeClicks(this.ctlr.DOM.controlsContainer, this.handleClick, this.handleDblClick, { capture: true, signal: this.signal });
       for (const el of [this.ctlr.DOM.controlsContainer, this.ctlr.DOM.bottomControlsWrapper]) {
-        el?.addEventListener("click", this.handleAnyClick, { capture: true, signal: this.signal });
-        el?.addEventListener("focusin", this.handleFocusIn, { capture: true, signal: this.signal });
-        el?.addEventListener("keydown", this.handleKeyFocusIn, { capture: true, signal: this.signal });
-        for (const evt of ["pointermove", "dragenter", "scroll"]) el?.addEventListener(evt, this.handleHoverPointerActive, { capture: true, signal: this.signal });
-        el?.addEventListener("mouseleave", this.handleHoverPointerOut, { capture: true, signal: this.signal });
+        if (!el) continue;
+        el.addEventListener("click", this.handleAnyClick, { capture: true, signal: this.signal });
+        el.addEventListener("focusin", this.handleFocusIn, { capture: true, signal: this.signal });
+        el.addEventListener("keydown", this.handleKeyDown, { capture: true, signal: this.signal });
+        for (const evt of ["pointermove", "dragenter", "scroll"]) el.addEventListener(evt, this.handleHoverPointerActive, { capture: true, signal: this.signal });
+        el.addEventListener("mouseleave", this.handleHoverPointerOut, { capture: true, signal: this.signal });
       }
       // Utility Injection
       this.wheel?.wire(), this.touch?.wire();
@@ -78,9 +79,9 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   }
 
   protected handleFocusIn({ target }: FocusEvent, t = target as HTMLElement): void {
-    this.focusSubjectId = String(!t?.matches?.(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId));
+    this.focusSubjectId = String(!t?.matches?.(":focus-visible") && (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId)); // could be a wild animal
   }
-  protected handleKeyFocusIn({ target }: KeyboardEvent, t = target as HTMLElement): void {
+  protected handleKeyDown({ target }: KeyboardEvent, t = target as HTMLElement): void {
     (t?.dataset?.controlId ?? t?.parentElement?.dataset?.controlId) === this.focusSubjectId && t.blur();
   }
 

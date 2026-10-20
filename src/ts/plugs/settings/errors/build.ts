@@ -14,4 +14,4 @@ export const ERRORS_BUILD: Partial<ErrorsConfig> = {
   3: "The media could not be decoded",
   4: "The media source is not supported",
   5: "An unknown error occurred with the media :(",
-};
+}; // YT <100 -> +100

@@ -71,7 +71,6 @@ export interface MediaState {
   playsInline: boolean;
   crossOrigin: "anonymous" | "use-credentials" | string | null;
   controls: boolean; // Native controls enabled?
-  controlsList: Inert<DOMTokenList> | string | null; // Native controls disabled (e.g. "nodownload")
   // ---  HTML Lists ---
   sources: Sources; // HTML courtesy
   tracks: Tracks; // HTML courtesy
@@ -99,7 +98,7 @@ export interface MediaStatus {
   // --- Network & Health ---
   readyState: number;
   networkState: number;
-  error: Inert<{ code?: number; message?: string; [key: string]: any }> | null;
+  error: Inert<{ code?: number; message?: string; native?: unknown; [key: string]: any }> | null; // native on spreads for logs, YT <100 -> +100 
   bandwidth: number | null; // Estimated bps
   // --- Buffering & Time ---
   waiting: boolean; // Spinner Active?

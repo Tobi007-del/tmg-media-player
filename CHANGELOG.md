@@ -1,5 +1,65 @@
 # tmg-media-player
 
+## 0.0.78
+
+### Patch Changes
+
+- Deps update
+
+## 0.0.77
+
+### Patch Changes
+
+- Bug fixes
+
+## 0.0.76
+
+### Patch Changes
+
+- Dynamic colors update on non natives
+
+## 0.0.75
+
+### Patch Changes
+
+- Timeline tx bug fix
+
+## 0.0.74
+
+### Patch Changes
+
+- Bug fixes
+
+## 0.0.73
+
+### Patch Changes
+
+- Playlist sore resolution support
+
+## 0.0.72
+
+### Patch Changes
+
+- Bug fixes
+
+## 0.0.71
+
+### Patch Changes
+
+- Blacklisted ids from voice paths
+
+## 0.0.70
+
+### Patch Changes
+
+- Adding playlist to logic root
+
+## 0.0.69
+
+### Patch Changes
+
+- Playlist reorder diff
+
 ## 0.0.68
 
 ### Patch Changes

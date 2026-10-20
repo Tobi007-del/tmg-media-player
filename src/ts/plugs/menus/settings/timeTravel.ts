@@ -1,9 +1,9 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { TimeTravelPlug } from "@plugs/settings/timeTravel";
-import { isArr, isObj } from "@t007/utils";
+import { isArr } from "@t007/utils";
 import { fpath, fvalue } from "@utils/str";
 
-const formatEntry = (entry: any, index: number) => ({ display: `${index + 1}) ${!entry ? "Unknown" : entry.nodes ? entry.label || `Batch of ${entry.nodes.length}` : fpath(entry.rid === "media" ? `media.${entry.path}` : entry.path)}`, infoText: !entry || entry.nodes  ? "" : fvalue(entry.to) });
+const formatEntry = (entry: any, index: number) => ({ display: `${index + 1}) ${!entry ? "Unknown" : entry.nodes ? entry.label || `Batch of ${entry.nodes.length}` : fpath(entry.rid === "media" ? `media.${entry.path}` : entry.path)}`, infoText: !entry || entry.nodes ? "" : fvalue(entry.to) });
 
 export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuItem => ({
   id: "advanced",

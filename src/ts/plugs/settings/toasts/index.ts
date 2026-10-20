@@ -27,7 +27,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
 
   public override wire(): void {
     // Ctlr Config Listeners
-    this.ctlr.config.on("settings.toasts", ({ type, value, path, target: { key } }) => type === "update" && !/reminders/.test(path) && t007.toast?.doForAll("update", { [key]: ((this.toast!.defaults as any)[key] = value) }, this.ctlr.config.id), { signal: this.signal });
+    this.ctlr.config.on("settings.toasts", ({ type, value, path, target: { key } }) => type === "update" && !path.includes("reminders") && t007.toast?.doForAll("update", { [key]: ((this.toast!.defaults as any)[key] = value) }, this.ctlr.config.id), { signal: this.signal });
     this.ctlr.config.on("settings.toasts.reminders", this.handleReminders, { init: true, signal: this.signal });
     // Post Wiring
     super.wire();
@@ -58,7 +58,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
   }
 }
 
-export const tutorialOpts = (onGotIt: () => void = NOOP): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, actions: { "Got it!": (_, t) => (onGotIt(), t007.toast?.dismiss(t.opts.id)) } });
+export const tutorialOpts = (onGotIt: () => void = NOOP, actions?: ToastOptions["actions"]): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, compact: true, actions: { ...actions, "Got it": (_, t) => (onGotIt(), t007.toast?.dismiss(t.opts.id)) } });
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {

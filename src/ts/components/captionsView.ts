@@ -54,9 +54,9 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     this.media.on("state.objectFit", this.rerender, { signal: this.signal });
   }
 
-  public syncSize(): void {
+  public syncSize(force = false): void {
     const w = this.ctlr.state.dimensions.container.width;
-    if (this.lastSyncW === w) return;
+    if (!force && this.lastSyncW === w) return;
     (this.lastSyncW = w), this.el.style.setProperty("display", "block", "important");
     const measurer = this.el.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" })),
       { lineHeight, fontSize } = getComputedStyle(measurer);
@@ -74,8 +74,8 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     return this.el.classList.contains("tmg-media-captions-preview");
   }
 
-  public rerender(): void {
-    if (this.media.state.textVisible || this.previewing) this.syncSize(), this.cues && this.render(this.cues, this.previewing, true);
+  public rerender(force: boolean | unknown = false): void {
+    if (this.media.state.textVisible || this.previewing) this.syncSize(force === true), this.cues && this.render(this.cues, this.previewing, true);
   }
   public render(cues: CueLike[] | null, isPreview = false, transition = false): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);

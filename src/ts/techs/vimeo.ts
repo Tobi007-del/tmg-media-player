@@ -63,8 +63,8 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       for (const e of VIMEO_EVENTS) this.host.on(e, (data) => this.handleHostStateChange(e, data)); // EXHAUSTIVE EVENT ROUTING: Mapping every documented Vimeo event
       await this.host.ready(), (this.config.status.hostReady = true);
       this.setInitInfo();
-    } catch (err) {
-      this.handleHostError(err);
+    } catch (err: any) {
+      this.handleHostError(err, true);
     }
   }
   // ===========================================================================
@@ -296,13 +296,13 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       case "fullscreenchange":
         return void (s.fullscreen = data.fullscreen);
       case "error":
-        return void (data.method || this.errSnublist.includes(data.name) ? this.ctlr.log(`Vimeo ${data.name} occurred: ${data.message}`, "error", true) : this.handleHostError(data)); // RangeError for out-of-range seeks and TypeError for invalid API calls
+        return void (data.method || this.noFailList.includes(data.name) ? this.ctlr.log(`Vimeo ${data.name} occurred: ${data.message}`, "error", true) : this.handleHostError(data)); // RangeError for out-of-range seeks and TypeError for invalid API calls
     }
   }
-  public errSnublist = ["Error", "RangeError", "TypeError"];
-  protected handleHostError(err: any): void {
+  public noFailList = ["Error", "RangeError", "TypeError"];
+  protected handleHostError(err: any, preflight = false): void {
     if (!this.signal || this.signal.aborted) return;
-    this.config.status.error = { ...err, code: err?.code ?? 5, message: err?.message || "Vimeo Video Not Found." }; // 5 = MEDIA_ERR_UNKNOWN to allow mssg fallback
+    this.config.status.error = err ? { ...err, code: preflight ? 2 : err.code, message: err.message, native: err } : { native: err }; // 5 = MEDIA_ERR_UNKNOWN to allow mssg fallback
     this.config.status.waiting = false;
   }
   // --- Lifecycle ---
@@ -321,16 +321,16 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       this.config.state.currentLevel = (this.config.status.levels as VimeoQuality[]).findIndex((q) => q.active);
       this.config.state.autoLevel = qualities.find((q) => q.active)?.id === "auto";
     }); // no intent sync as lists wait for metadata
-    Promise.all([this.host.getVideoWidth().catch(() => 1920), this.host.getVideoHeight().catch(() => 1080)]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h)));
+    Promise.all([this.host.getVideoWidth().catch(() => 1920), this.host.getVideoHeight().catch(() => 1080)]).then(([w, h]) => ((this.config.status.videoWidth = w), (this.config.status.videoHeight = h))), this.syncMetadata();
   }
-  public syncMetadata(data: any, meta = this.config.settings.metadata): void {
-    data && meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author_name && data.author_name !== meta.artist ? data.author_name : undefined, links: { artist: data.author_url && data.author_url !== meta.links.artist ? data.author_url : undefined, title: data.video_id ? `https://vimeo.com/${data.video_id}` : undefined } }, { skipUndef: true, txLabel: "Vimeo Metadata Override" });
+  public syncMetadata(data: any = {}, meta = this.config.settings.metadata): void {
+    meta.allowMediaOverride && fanout(meta, { title: data.title && data.title !== meta.title ? data.title : undefined, artist: data.author_name && data.author_name !== meta.artist ? data.author_name : undefined, profile: meta.profile ? undefined : "https://i.vimeocdn.com/favicon/main-touch_180.png", links: { artist: data.author_url && data.author_url !== meta.links.artist ? data.author_url : undefined, title: data.video_id ? `https://vimeo.com/${data.video_id}` : undefined, profile: meta.links?.profile ? undefined : "https://vimeo.com" } }, { skipUndef: true, txLabel: "Vimeo Metadata Override" });
   }
   public fetchEmbedData(url = ""): void {
     if (!this.config.settings.metadata.allowMediaOverride) return;
     const seq = ++this.posterSeq;
     // prettier-ignore
-    fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`).then((r) => r.json()).then((d) => seq === this.posterSeq && ((this.config.state.poster = d.thumbnail_url?.replace(/_\d+x\d+/, "")), this.syncMetadata(d))).catch(NOOP);
+    fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`).then((r) => r.json()).then((d) => seq === this.posterSeq && ((this.config.state.poster = d.thumbnail_url?.replace(/_\d+x\d+/, "")), this.syncMetadata(d))).catch(() => this.syncMetadata());
   }
   private posterSeq = 0;
   protected destroyHost(): void {

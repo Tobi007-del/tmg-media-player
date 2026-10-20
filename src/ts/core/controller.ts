@@ -46,7 +46,7 @@ export class Controller {
   // --- DOM ---
   public DOM: ControllerDOMMap = {}; // To be populated with common elements for easy reach
   public hash = "#tmg-auto-gen";
-  public zenList = ZENLIST; // #DEFAULT: build privilege; block actions while UI is active
+  public zenlist = ZENLIST; // #DEFAULT: build privilege; block actions while UI is active
   public mutating = true; // for external watchers that need to know
 
   constructor(medium: HTMLMediaElement, build: CtlrConfig) {
@@ -155,21 +155,21 @@ export class Controller {
   }
   public perform(id?: string, ...args: any[]): boolean {
     const act = id && this.actions.entries[id];
-    if (!act || act.disabled || (!act.zen && this.zenList.some(this.isUIActive))) return false;
+    if (!act || act.disabled || (!act.zen && this.zenlist.some(this.isUIActive))) return false;
     const can = !act.gates?.some((g) => !this.media.features[g]);
     transaction((root = act.logic?.length ? (this.logicRoot as any) : undefined) => {
-      if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, mirror(path)) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
-      can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed ${act.label ?? capitalize(uncamelize(act.id))}`, { tag: act.id, renotify: true, ...act.toast });
+      if (act.logic?.length) for (const { op, path, value, curr = op === "set" ? value : getPath(root, mirror(path, root)) } of act.logic as any) setPath(root, path, op === "toggle" ? !curr : op === "increment" ? curr + (value ?? 1) : op === "decrement" ? curr - (value ?? 1) : value);
+      can && act.notify && this.notify?.(act.notify), act.fn?.(...args), can && act.toast && this.toast?.((isFunc(act.toast.render) ? act.toast.render() : act.toast.render) || `Performed <b>${act.label ?? capitalize(uncamelize(act.id))}</b>`, { tag: act.id, renotify: true, ...act.toast });
     }, act.label ?? act.id);
     return can;
   }
-  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, mirror(path)), force = false): boolean {
+  public isLogical(path: string, leaf = false, value = leaf && getPath(this.logicRoot as any, mirror(path, this.logicRoot)), force = false): boolean {
     if (matchPaths(this.actions.blacklist, path) || (!this.config.devMode && matchPaths(this.actions.devlist, path))) return false;
     if (!force && /^media\.(intent|settings)\./.test(path) && !isFeatured(this.media, path.slice(path.lastIndexOf(".") + 1))) return false;
-    return !leaf || isArr(value) || isLeafPath(this.logicRoot as any, path as any, undefined, value);
+    return !leaf || (isArr(value) ? !isObj(value[0], false) : isLeafPath(this.logicRoot as any, path as any, undefined, value));
   }
   public get logicRoot() {
-    return { media: this.media, settings: this.config.settings };
+    return { media: this.media, settings: this.config.settings, playlist: this.config.playlist };
   }
   public get logicActions() {
     return (Object.values(this.actions.entries) as Action[]).filter((a) => !a.system || this.config.devMode).sort((a, b) => collator.compare(a.label || "", b.label || ""));

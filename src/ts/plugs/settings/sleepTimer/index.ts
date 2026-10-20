@@ -28,7 +28,7 @@ export class SleepTimerPlug extends BasePlug<SleepTimerConfig> {
     if (value == null) return void delete this.config.target;
     if (value > 0 && (this.timeoutId !== -1 || !this.config.target)) this.config.target = Date.now() + value;
     const rem = value > 0 ? this.config.target! - Date.now() : 0;
-    this.ctlr.toast?.(`Sleep timer ${value > 0 ? `set for ${formatUITime(rem, false, false)}` : !value ? "turned off" : `set to end of ${this.media.type}`}`, { icon: IconRegistry.get("timer", true), tag: "tmg-stmr", signal: this.signal });
+    this.ctlr.toast?.(`Sleep timer ${value > 0 ? `set for ${formatUITime(rem, false, false)}` : !value ? "turned off" : `set to end of ${this.media.type}`}`, { icon: IconRegistry.get("timer", true), compact: true, tag: "tmg-stmr", signal: this.signal });
     if (value > 0) rem <= 0 ? this.trigger() : (this.timeoutId = setTimeout(this.trigger, clamp(0, rem, 2147483647), this.signal));
   }
 

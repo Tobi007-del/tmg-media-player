@@ -119,7 +119,10 @@ export class Timeline extends RangeInput<TimelineConfig> {
 
   public override stopScrubbing(): void {
     if (!this.state.scrubbing) return;
-    if (!this.state.cancelScrub) this.media.intent.currentTime = getTime(this.media, this.config.value / 100);
+    if (!this.state.cancelScrub) {
+      this.media.intent.currentTime = getTime(this.media, this.config.value / 100);
+      Math.abs(this.currThumbPos - this.lastThumbPos) > 0.005 && this.ctlr.plug("settings.timeTravel")?.teachBasics();
+    }
     super.stopScrubbing();
   }
 

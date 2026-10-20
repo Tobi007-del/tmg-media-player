@@ -23,9 +23,9 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   protected rect!: DOMRect;
   protected lastPtrPos = 0;
   protected lastThumbPos = 0;
-  protected currentThumbPos = 0;
-  protected stallCancelScrub = false;
-  protected cancelScrubTimeoutId: number | null = null;
+  protected currThumbPos = 0;
+  protected stallCancel = false;
+  protected cancelTimeoutId: number | null = null;
 
   constructor(ctlr: Controller, config?: Partial<Config>, state?: Partial<State>) {
     super(ctlr, reactive(mergeObjs(deepClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, previewing: false, cancelScrub: false, ...state } as any));
@@ -48,7 +48,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handlePointerDown, { signal: this.signal });
     this.el.addEventListener("keydown", this.handleKeyDown, { signal: this.signal });
-    this.el.addEventListener("keyup", () => this.useTx(), { signal: this.signal });
+    this.media.container.addEventListener("keyup", () => this.tx && this.useTx(), { signal: this.signal });
     this.el.addEventListener("wheel", this.handleWheel, { passive: false, signal: this.signal });
     this.el.addEventListener("mouseover", () => (this.rect = this.el.getBoundingClientRect()), { signal: this.signal });
     this.el.addEventListener("mousemove", this.handleInput, { signal: this.signal });
@@ -97,7 +97,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.el.setPointerCapture(e.pointerId);
     const s = getWindow(this.el).getComputedStyle(this.el);
     (this.isVertical = s.writingMode.includes("vertical")), (this.isRTL = s.direction === "rtl");
-    (this.rect = this.el.getBoundingClientRect()), (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currentThumbPos = this.getValuePos()), this.handleInput(e);
+    (this.rect = this.el.getBoundingClientRect()), (this.lastPtrPos = this.getPos(e)), (this.lastThumbPos = this.currThumbPos = this.getValuePos()), this.handleInput(e);
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) getWindow(this.el).addEventListener(evt, evt === "pointermove" ? this.handleInput : this.stopScrubbing, { signal: this.signal });
   }
 
@@ -105,9 +105,9 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     if (!this.state.scrubbing) return;
     this.state.scrubbing = this.state.previewing = false;
     this.ctlr.cancelRAFLoop(`${this.config.label}Inputing`);
-    this.scrub(this.getPosValue(this.state.cancelScrub ? this.lastThumbPos : this.currentThumbPos), this.state.cancelScrub);
+    this.scrub(this.getPosValue(this.state.cancelScrub ? this.lastThumbPos : this.currThumbPos), this.state.cancelScrub);
     this.allowScrubbing(), this.stopPreviewing();
-    this.stallCancelScrub = true;
+    this.stallCancel = true;
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) getWindow(this.el).removeEventListener(evt, evt === "pointermove" ? this.handleInput : this.stopScrubbing);
   }
   protected stopPreviewing(): void {
@@ -117,14 +117,14 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   }
 
   protected cancelScrubbing(): void {
-    if (this.stallCancelScrub || this.state.cancelScrub || this.cancelScrubTimeoutId) return;
+    if (this.stallCancel || this.state.cancelScrub || this.cancelTimeoutId) return;
     this.state.cancelScrub = true;
-    this.cancelScrubTimeoutId = setTimeout(() => this.allowScrubbing(false), this.config.scrub.cancel.timeout, this.signal);
+    this.cancelTimeoutId = setTimeout(() => this.allowScrubbing(false), this.config.scrub.cancel.timeout, this.signal);
   }
   protected allowScrubbing(reset = true): void {
-    this.stallCancelScrub = this.state.cancelScrub = false;
-    clearTimeout(this.cancelScrubTimeoutId!);
-    if (reset) this.cancelScrubTimeoutId = null;
+    this.stallCancel = this.state.cancelScrub = false;
+    clearTimeout(this.cancelTimeoutId!);
+    if (reset) this.cancelTimeoutId = null;
   }
 
   protected handleInput(e: MouseEvent | PointerEvent): void {
@@ -134,7 +134,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
       (this.prevEX = e.clientX), (this.prevEY = e.clientY);
       this.state.previewing ||= true;
       const progress = this.getPos(e),
-        pos = (this.currentThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1));
+        pos = (this.currThumbPos = clamp(0, !this.state.scrubbing || this.config.scrub.relative ? progress : this.lastThumbPos + progress - this.lastPtrPos, 1));
       this.config.previewValue = this.getPosValue(pos);
       if (this.state.scrubbing) {
         !this.config.scrub.sync ? this.syncElPos(this.thumbEl, pos, false, "auto") : this.scrub(this.config.previewValue);

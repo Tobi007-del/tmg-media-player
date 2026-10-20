@@ -3,7 +3,7 @@ import type { PlaylistConfig, PlaylistState } from "./types";
 import { PLAYLIST_BUILD, PLAYLIST_ITEM_BUILD, PLAYLIST_ITEM_FORMATTED } from "./build";
 import type { CtlrConfig } from "@defs/config";
 import { type REvent } from "sia-reactor";
-import { mergeObjs, fanout, parsePathObj, deepClone, getPaths, setPath, withMeta } from "sia-reactor/utils";
+import { mergeObjs, fanout, parsePathObj, deepClone, getPaths, setPath, withMeta, mirror } from "sia-reactor/utils";
 import { silence, transaction } from "sia-reactor/modules";
 import { isNum } from "@utils/obj";
 import { isSameURL } from "@utils/str";
@@ -37,10 +37,8 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     // ---- Media & Config Watchers
     for (const k of ["tech", "state.currentItem"] as const) this.media.watch(k, this.syncFeatures, { signal: this.signal });
     for (const p of getPaths(PLAYLIST_ITEM_BUILD, "*", { leavesOnly: true }))
-      if (p.startsWith("media.")) {
-        const path = p.slice(6);
-        this.media.on((!path.includes("intent") ? path : path.replace("intent", "state")) as any, (e) => !e.internal && this.item && silence(() => setPath(this.item!, p as any, e.currentTarget.value)), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
-      } else !p.startsWith("ads.") && this.ctlr.config.on(p as any, (e) => !e.internal && this.item && silence(() => setPath(this.item!, p as any, e.currentTarget.value)), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+      if (p.startsWith("media.")) this.media.on(mirror<any>(p.slice(6)), (e) => !e.internal && this.item && silence(() => setPath(this.item!, p as any, e.currentTarget.value)), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
+      else !p.startsWith("ads.") && this.ctlr.config.on(p as any, (e) => !e.internal && this.item && silence(() => setPath(this.item!, p as any, e.currentTarget.value)), { init: this.ctlr.flags.wired && "auto", signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.currentItem", this.handleCurrentItemIntent, { capture: true, signal: this.signal });
     // ---- Config --------
@@ -95,7 +93,7 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
     transaction(() => (this.config.content = shuffled), "Playlist shuffle");
   }
   public move(from: number, to: number, list = this.config.content): void {
-    if (!list || from < 0 || from >= list.length || to < 0 || to >= list.length) return;
+    if (!list || from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
     const c = [...list];
     c.splice(to, 0, c.splice(from, 1)[0]);
     transaction(() => (this.config.content = c), "Playlist reorder");

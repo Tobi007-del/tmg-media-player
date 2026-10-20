@@ -70,15 +70,15 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     await breath(this.floatingWindow); // rendering style to keep UI visible during heavy lifting
     const cssTexts = [],
       { whitelist, blacklist } = this.config.floatingPlayer.css,
-      hrefList = whitelist.url.concat([window.TMG_MEDIA_CSS_SRC, window.T007_TOAST_CSS_SRC, window.T007_INPUT_CSS_SRC, window.T007_DIALOG_CSS_SRC].filter((src) => (isStr(src) ? src : false)) as string[]); // CSS too experimental; needs a link (href) :)
+      hrefsList = whitelist.url.concat([window.TMG_MEDIA_CSS_SRC, window.T007_TOAST_CSS_SRC, window.T007_INPUT_CSS_SRC, window.T007_DIALOG_CSS_SRC].filter((src) => (isStr(src) ? src : false)) as string[]); // CSS too experimental; needs a link (href) :)
     for (const sht of document.styleSheets)
       try {
-        if (!hrefList.some((s = "") => isSameURL(s, sht.href)) && !blacklist.url.some((s = "") => isSameURL(s, sht.href))) for (const { cssText: txt } of sht.cssRules) whitelist.token.some((t) => txt.includes(t)) && !blacklist.token.some((t) => txt.includes(t)) && cssTexts.push(txt);
+        if (!hrefsList.some((s = "") => isSameURL(s, sht.href)) && !blacklist.url.some((s = "") => isSameURL(s, sht.href))) for (const { cssText: txt } of sht.cssRules) whitelist.token.some((t) => txt.includes(t)) && !blacklist.token.some((t) => txt.includes(t)) && cssTexts.push(txt);
       } catch {
         continue;
       }
     this.floatingWindow.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
-    await Promise.allSettled(hrefList.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
+    await Promise.allSettled(hrefsList.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
     this.ctlr.plug("skeleton")?.enterPseudoMode();
     (this.pseudoPlaceholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr)) && this.media.pseudoContainer.prepend(this.pseudoPlaceholder.el);
     this.media.container.classList.add("tmg-media-floating-player", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-in-floating-player");

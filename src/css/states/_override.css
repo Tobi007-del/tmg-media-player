@@ -10,13 +10,17 @@
 .tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) :is(.tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),
 .tmg-media-container:where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)):not(.tmg-media-progress-bar) .tmg-media-timeline-container {
   opacity: 1;
-  pointer-events: all;
+  pointer-events: auto;
 }
 .tmg-media-container:is(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) .tmg-media-curtain {
   opacity: 1;
 }
+.tmg-media-controls-container:not(:has([class$="-controls-wrapper"])),
 .tmg-media-container:not(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) .tmg-media-bottom-controls-wrapper {
   pointer-events: none;
+}
+:where(.tmg-media-controls-container:not(:has([class$="-controls-wrapper"]))) > * {
+  pointer-events: auto;
 }
 .tmg-media-container:has(.tmg-media-top-text-notifier.tmg-media-control-active) :is(.tmg-media-top-controls-wrapper, .tmg-media-top-curtain),
 .tmg-media-container:is(:is(.tmg-media-miniplayer, .tmg-media-mobile):is(.tmg-media-scrubbing, :has(.tmg-media-notifier.tmg-media-control-persist)), :has(:is(.tmg-media-fast-play-notifier, .tmg-media-touch-vb-notifier).tmg-media-control-active)) :is(.tmg-media-top-curtain, .tmg-media-bottom-curtain, .tmg-media-top-controls-wrapper, .tmg-media-big-controls-wrapper-cover, .tmg-media-bottom-controls-wrapper > * > *:not(.tmg-media-timeline-container)),

@@ -71,8 +71,8 @@ export class ShakaTech extends HTML5Tech {
       this.host.addEventListener("error", (ev: any) => this.handleHostError(ev.detail));
       await this.host.attach(this.el), this.config.settings.protection && this.host.configure({ drm: this.config.settings.protection });
       await this.host.load(src, this.config[this.ctlr.gospel].currentTime), (this.config.status.hostReady = true), this.syncCurrentStats();
-    } catch (e: any) {
-      this.handleHostError(e);
+    } catch (err: any) {
+      this.handleHostError(err, true);
     }
   }
   // ===========================================================================
@@ -142,9 +142,9 @@ export class ShakaTech extends HTML5Tech {
   //   e.resolve(this.name);
   // }
   // --- API Logic ---
-  protected handleHostError(err: any): void {
+  protected handleHostError(err: any, preflight = false): void {
     if (!this.signal || this.signal.aborted) return;
-    this.config.status.error = { code: err.code ?? 5, message: err.message ?? `Shaka Error: Category ${err.category}`, native: err };
+    this.config.status.error = err ? { ...err, code: preflight ? 2 : err.code, message: err.message, native: err } : { native: err };
     this.config.status.waiting = false;
   }
   protected syncCurrentStats(): void {
