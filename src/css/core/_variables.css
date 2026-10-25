@@ -138,7 +138,6 @@
 :where(:root, .tmg-host-container) {
   --tmg-media-control-color: var(--tmg-media-theme-color);
   --tmg-media-control-active-color: var(--tmg-media-control-color);
-  --tmg-media-control-voice-color: var(--tmg-media-control-active-color);
   --tmg-media-control-background: transparent;
   --tmg-media-control-active-background: var(--tmg-media-control-background);
   --tmg-media-control-active-scale: 0.9;
@@ -148,6 +147,7 @@
   --tmg-media-buffer-color: currentColor;
   --tmg-media-buffer-base-color: var(--tmg-media-theme-inverse-accent-color);
   --tmg-media-notifier-color: rgb(from var(--tmg-media-theme-inverse-color) r g b / 0.6);
+  --tmg-media-voice-pulse-color: var(--tmg-media-control-active-color);
 }
 :is(:root, .tmg-host-container) {
   --tmg-media-current-control-color: var(--tmg-media-control-color);
@@ -245,6 +245,8 @@
   --t007-input-height: calc(var(--tmg-media-current-unit) * 1.5);
   --t007-input-border-radius: calc(var(--t007-input-height) / 2);
   --t007-input-color: var(--tmg-media-theme-color);
+  --t007-input-focused-color: var(--tmg-media-brand-color);
+  --t007-input-base-background-color: rgb(from var(--t007-input-color) r g b / 0.15);
   --t007-input-select-timing: var(--tmg-media-bounce-timing);
   --t007-input-select-transition-time: var(--tmg-media-fade-transition-time);
   --t007-input-select-picker-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%23FFF' %3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E%0A");

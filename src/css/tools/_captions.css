@@ -11,7 +11,6 @@
   --cmptd-cue-box-ceil: calc(100% - (var(--tmg-media-current-captions-offset-bottom) + (var(--cmptd-cue-box-height) / 2)));
   --cmptd-cue-box-x-min: calc(var(--cmptd-cue-box-width) / 2);
   --cmptd-cue-box-x-max: calc(100% - (var(--cmptd-cue-box-width) / 2));
-  display: none;
   position: absolute;
   top: clamp(var(--cmptd-cue-box-floor), var(--tmg-media-current-captions-y), var(--cmptd-cue-box-ceil)); /* offset edgecase handling, old: bottom needed min() first value; clamp:- min-priority */
   left: clamp(var(--cmptd-cue-box-x-min), var(--tmg-media-current-captions-x), var(--cmptd-cue-box-x-max));
@@ -20,10 +19,14 @@
   padding: 0.2em 1em;
   text-align: var(--tmg-media-captions-text-alignment);
   overflow-y: auto;
+  overflow-x: hidden;
   background: rgb(from var(--tmg-media-captions-window-color) r g b / var(--tmg-media-captions-window-opacity));
   touch-action: none;
   contain: layout;
   transition: var(--tmg-media-motion-transition);
+}
+.tmg-media-captions-container:not([data-is-solo="true"]) {
+  display: none;
 }
 .tmg-media-container:where(.tmg-media-captions) .tmg-media-captions-container:not(:empty, :has(> :empty)),
 .tmg-media-captions-container.tmg-media-captions-preview:not(:empty, :has(> :empty)) {

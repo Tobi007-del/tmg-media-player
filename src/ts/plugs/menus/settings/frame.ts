@@ -27,7 +27,7 @@ export const getSettingsFrameMenu = (plug: FramePlug): SettingsMenuItem => ({
               id: "frameCaptureToast",
               label: "Notification",
               widget: "input",
-              getValue: () => "",
+              getValue: () => "On",
               inputs: getToastMenuInputs(plug.config.toast, ["type", "compact"]),
               onChange: (val: any) => syncToastConfig(val, plug.config.toast),
               configPaths: ["settings.frame.toast"],

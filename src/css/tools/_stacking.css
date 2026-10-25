@@ -18,7 +18,7 @@
 .tmg-media-captions-container {
   z-index: 50;
 }
-.tmg-media-captions-container[data-is-main="true"] {
+.tmg-media-captions-container:is([data-is-main="true"], [data-is-solo="true"]) {
   z-index: 51;
 }
 .tmg-media-cover-curtain {

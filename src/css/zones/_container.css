@@ -146,14 +146,16 @@ body:where(:has(.tmg-media-floating-player)) {
 .tmg-media-container:has(.tmg-media-notifier.tmg-media-control-persist) {
   --tmg-media-notifiers-animation-time: var(--tmg-media-slow-transition-time);
 }
-
-.tmg-media-container.tmg-media-voice-routing .tmg-media-content-wrapper::after,
+.tmg-media-container.tmg-media-ai {
+  --tmg-media-voice-pulse-color: var(--tmg-media-brand-color);
+}
+.tmg-media-container.tmg-media-path-routing .tmg-media-content-wrapper::after,
 .tmg-media-controls-container {
   position: absolute;
   background-color: transparent;
   border-radius: inherit;
 }
-.tmg-media-container.tmg-media-voice-routing .tmg-media-content-wrapper::after {
+.tmg-media-container.tmg-media-path-routing .tmg-media-content-wrapper::after {
   content: "";
   width: 100%;
   height: 100%;

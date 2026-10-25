@@ -2,7 +2,32 @@ import { DeepPartial } from "sia-reactor";
 import { OptRange } from "@defs/generics";
 import { UISettings, UIOption } from "@defs/UIOptions";
 
-export type CueLike = (TextTrackCue | { text: string }) & DeepPartial<{ id: string; text: string; align: string; region: { id: string; width: number; lines: number; viewportAnchorX: number; viewportAnchorY: number; scroll: string }; position: number | "auto"; positionAlign: string; line: number | string; lineAlign: string; snapToLines: boolean; size: number; vertical: "" | "lr" | "rl" }>;
+export interface CueRegion {
+  id: string;
+  width: number;
+  lines: number;
+  viewportAnchorX: number;
+  viewportAnchorY: number;
+  scroll: string;
+  fluid: boolean; // #MONKEY: responsive sizing, true = maxWidth, false = width
+}
+
+export type CueLike = (TextTrackCue | { text: string }) &
+  DeepPartial<{
+    id: string;
+    text: string;
+    align: string;
+    region: CueRegion;
+    position: number | "auto";
+    positionAlign: string;
+    line: number | string;
+    lineAlign: string;
+    snapToLines: boolean;
+    size: number;
+    vertical: "" | "lr" | "rl";
+    scroll: string; // #MONKEY
+    fluid: boolean; // #MONKEY
+  }>;
 
 export interface CaptionsConfig {
   multiple: boolean;

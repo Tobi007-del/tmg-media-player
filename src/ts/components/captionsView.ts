@@ -9,19 +9,20 @@ import { setTimeout, requestAnimationFrame } from "@utils/fn";
 import { startTx, endTx, Transaction, transaction } from "sia-reactor/modules";
 import { getTrackNum } from "@utils/media";
 
-export type CaptionsViewConfig = {
-  secOrder?: number;
+export interface CaptionsViewConfig {
   isMain?: boolean;
+  isSolo?: boolean;
   ofMedia?: boolean;
+  secOrder?: number;
   language?: string;
   trackIdx?: number;
-};
+  initialX?: string;
+  initialY?: string;
+}
 
 export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentState, HTMLDivElement> {
   public static readonly componentName: string = "captionsView";
   protected cues: CueLike[] | null = null;
-  protected timeNodes: timeNode[] | null = null;
-  protected timeoutId = -1;
   protected charW = 0;
   protected lineHPx = 0;
   protected fontSize = 0;
@@ -29,9 +30,11 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   protected lastPosY = 0;
   protected lastPtrX = 0;
   protected lastPtrY = 0;
+  protected timeNodes: timeNode[] | null = null;
+  protected timeoutId = -1;
 
   public override create(): HTMLDivElement {
-    return (this.element = createEl("div", { className: "tmg-media-captions-container" }, { part: "region", isMain: String(!!this.config.isMain) }));
+    return (this.element = createEl("div", { className: "tmg-media-captions-container" }, { part: "region", isMain: String(!!this.config.isMain), isSolo: String(!!this.config.isSolo) }));
   }
 
   public override mount(): void {
@@ -41,8 +44,6 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   }
 
   public override wire(): void {
-    //Variables Assignment
-    if (this.config.secOrder) this.dragY = this.orderDragY;
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handleDragStart, { signal: this.signal });
     // Ctlr State Listeners
@@ -82,15 +83,16 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!(this.cues = cues)?.length) return existing?.remove();
     this.syncSize(), this.el.removeAttribute("data-active"), this.el.removeAttribute("data-scroll"), this.el.removeAttribute("style");
-    const { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
-      wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) - this.fontSize * 2, // Padding allowance
+    const cue = cues![0],
+      cueSize = cue?.region?.width ?? (this.canOverride ? cue?.size : undefined),
+      { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
+      wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) * (cueSize && cueSize !== 100 ? cueSize / 100 : 1) - this.fontSize * 2, // Padding allowance
       wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }));
     if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
     (wrapper.innerHTML = ""), this.syncBadge();
     for (const cue of cues!) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
-      const lines = cue.text.replace(/(<br\s*\/>)|\\N/gi, "\n").split(/\n/);
-      for (const p of lines) for (const l of formatVttLine(p, Math.floor(wrapWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, cue.align && cue.align !== "center" && this.canOverride ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
+      for (const l of formatVttLine(cue.text.replace(/\\N/gi, "\n"), Math.floor(wrapWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, cue.align && cue.align !== "center" && this.canOverride ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
     }
     if (!transition) this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
@@ -102,11 +104,10 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       const { width, lines: rLines, viewportAnchorX: vpAnX, viewportAnchorY: vpAnY, scroll } = regionCue.region;
       if (isDef(vpAnX)) this.el.style.setProperty("--tmg-media-current-captions-x", `${vpAnX}%`);
       if (isDef(vpAnY)) this.el.style.setProperty("--tmg-media-current-captions-y", `${vpAnY}%`);
-      if (isDef(width)) this.el.style.width = `${width}%`;
-      if (isDef(rLines)) this.el.style.height = `${Number(rLines) * ((this.lineHPx / vCHeight) * 100)}%`;
+      if (isDef(width)) this.el.style[regionCue.fluid ? "maxWidth" : "width"] = `${width}%`;
+      if (isDef(rLines)) this.el.style[regionCue.fluid ? "maxHeight" : "height"] = `${Number(rLines) * ((this.lineHPx / vCHeight) * 100)}%`;
       if (scroll === "up") (this.el.dataset.scroll = scroll), this.ctlr.config.stall(() => (this.el.scrollTop = wrapper.scrollHeight));
     } else if (this.canOverride) {
-      const cue = cues![0];
       if (isDef(cue.position) && cue.position !== "auto") {
         const elHalfWPct = ((cWidth / vCWidth) * 100) / 2,
           posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elHalfWPct : -elHalfWPct;
@@ -121,14 +122,15 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
           topVal = cue.snapToLines ? (line < 0 ? 100 - (Math.abs(line) - 1) * lhPct : line * lhPct) : line;
         this.el.style.setProperty("--tmg-media-current-captions-y", `calc(${topVal}% + ${lineOffset}% + ${elHalfHPct}%)`);
       }
-      if (isDef(cue.size) && cue.size !== 100) this.el.style.width = `${cue.size}%`;
-      if (cues![0].vertical) this.el.style.writingMode = cues![0].vertical === "lr" ? "vertical-lr" : "vertical-rl";
+      if (cueSize && cueSize !== 100) this.el.style[cue.fluid ? "maxWidth" : "width"] = `${cueSize}%`;
+      if (cue.vertical) this.el.style.writingMode = cue.vertical === "lr" ? "vertical-lr" : "vertical-rl";
+      if (cue.scroll === "up") (this.el.dataset.scroll = cue.scroll), this.ctlr.config.stall(() => (this.el.scrollTop = wrapper.scrollHeight));
     }
     this.timeNodes = Array.from(wrapper.querySelectorAll<HTMLElement>("[data-part='timed']"), (el, _, [, m, s, ms] = (el.dataset.time || "").match(/(\d+):(\d+)\.(\d+)/) || []) => ({ el, time: m ? +m * 60 + +s + +ms / 1000 : 0 }));
     this.syncKaraoke();
   }
-  protected dragX?: string;
-  protected dragY?: string;
+  protected dragX = this.config.initialX;
+  protected dragY = this.config.secOrder ? this.orderDragY : this.config.initialY;
 
   public syncBadge(): void {
     this.settings.captions.multiple && this.media.state.secondaryTextTracks.length && (this.config.language || this.config.isMain) ? this.el.firstElementChild?.setAttribute("data-badge", `${this.config.language?.toUpperCase() || "M"}${getTrackNum(this.media.status.textTracks, this.config.isMain ? this.media.state.currentTextTrack : this.config.trackIdx!)}`) : this.el.firstElementChild?.removeAttribute("data-badge");

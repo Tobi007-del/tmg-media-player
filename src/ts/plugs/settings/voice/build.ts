@@ -1,6 +1,7 @@
 import { DeepPartial } from "sia-reactor";
-import { VoiceConfig } from "./types";
+import { VoiceConfig, VoiceAiConfig } from "./types";
 import { ACTIONS_DICT } from "@consts/actions";
+import { VOICE_AI_SYSTEM_PROMPT } from "./prompt";
 
 export const VOICE_COMMANDS: Record<string, string | string[]> = {
   next: ["next video", "next item"],
@@ -23,8 +24,12 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   timeTravelRedo: "redo",
   voiceWake: "player",
   voiceQuit: "quit",
-  voiceMute: "snub",
   voiceSleep: "sleep",
+  voiceMute: "snub",
+  voiceAi: ["copilot", "spark"],
+  voiceAiStop: ["stop thinking", "stop working"],
+  voiceAiTimeTravelUndo: ["copilot undo", "spark undo"],
+  voiceAiTimeTravelRedo: ["copilot redo", "spark redo"],
   voiceSubmit: ["submit", "enter"],
   voiceCtxPrevious: "go back",
   voiceCtxNext: "go front",
@@ -33,6 +38,14 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   voiceToggleOff: ["no", "off", "false"],
 }; // speech bait
 for (const k of Object.keys(ACTIONS_DICT)) VOICE_COMMANDS[k] ??= ""; // UX boost
+
+export const VOICE_AI_BUILD: DeepPartial<VoiceAiConfig> = {
+  active: false,
+  endpoint: "",
+  model: "gemini-1.5-flash",
+  systemPrompt: VOICE_AI_SYSTEM_PROMPT,
+  preference: "",
+};
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {
@@ -44,6 +57,7 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     ],
   },
   muted: false,
+  ai: VOICE_AI_BUILD,
   process: {
     accuracy: 0.75,
     allowCommands: true,
@@ -80,7 +94,7 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     autoToggles: false,
   },
   commands: VOICE_COMMANDS,
-  toasts: {
+  feedback: {
     behavior: {
       value: "persistent",
       options: [
@@ -96,8 +110,14 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     },
     helper: {
       position: "bottom-left",
-      icon: "✨",
+      icon: "🧭",
       autoClose: false,
+    },
+    copilot: {
+      speech: true,
+      captions: true,
     },
   },
 };
+
+export * from "./prompt";

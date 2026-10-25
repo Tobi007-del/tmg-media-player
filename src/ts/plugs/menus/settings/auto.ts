@@ -83,7 +83,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
           id: "autoNextToast",
           label: "Notification",
           widget: "input",
-          getValue: () => "",
+          getValue: () => "On",
           inputs: getToastMenuInputs(plug.config.next.toast, ["icon", "type", "autoClose"]),
           onChange: (val: any) => syncToastConfig(val, plug.config.next.toast),
           configPaths: ["settings.auto.next.toast"],

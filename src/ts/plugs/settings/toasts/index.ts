@@ -58,7 +58,7 @@ export class ToastsPlug extends BasePlug<ToastsConfig> {
   }
 }
 
-export const tutorialOpts = (onGotIt: () => void = NOOP, actions?: ToastOptions["actions"]): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, compact: true, actions: { ...actions, "Got it": (_, t) => (onGotIt(), t007.toast?.dismiss(t.opts.id)) } });
+export const tutorialOpts = (onGotIt: () => void = NOOP, actions?: ToastOptions["actions"]): Partial<ToastOptions> => ({ type: "info", icon: "💡", position: "center-center", hideProgressBar: false, compact: true, autoClose: 7000, actions: { ...actions, "Got it": (_, t) => (onGotIt(), t007.toast?.dismiss(t.opts.id)) } });
 
 declare module "@defs/registries" {
   interface PlugRegistryMap {

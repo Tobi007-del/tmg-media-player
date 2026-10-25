@@ -34,9 +34,9 @@ export function parseVttText(text: string): string {
       state.o += state.p ? `<span data-part="timed" data-time="${state.p}">${state.c}${state.spans.map(() => "</span>").join("")}</span>` : state.c + state.spans.map(() => "</span>").join("");
       (state.p = tag_n), (state.c = state.spans.join(""));
     } else if (cls) /^(c|v|lang)$/.test(low) ? ((state.c += "</span>"), state.spans.pop()) : (state.c += `</${low}>`);
-    else if (/^(b|i|u|ruby|rt)$/.test(low)) state.c += `<${low}>`;
+    else if (/^(b|i|u|ruby|rt|code)$/.test(low)) state.c += `<${low}>`;
     else if (low === "c") state.c += state.spans[state.spans.push(`<span class="vtt-c ${rest.replace(/\.([a-z0-9_-]+)/gi, "$1 ").trim()}">`) - 1];
-    else if (low === "v") state.c += state.spans[state.spans.push(`<span data-part="voice" data-badge="${esc(rest.trim()) || "Speaker"}">`) - 1];
+    else if (low === "v") state.c += state.spans[state.spans.push(`<span data-part="voice"${rest.trim() ? ` data-badge="${esc(rest.trim())}"` : ""}>`) - 1];
     else if (low === "lang") state.c += state.spans[state.spans.push(`<span lang="${esc(rest.trim())}">`) - 1];
     state.l = state.tag.lastIndex;
   }
@@ -46,10 +46,14 @@ export function parseVttText(text: string): string {
 }
 
 export function formatVttLine(p: string, maxChars: number): string[] {
-  const state = { tokens: p.match(/<[^>]+>|\s+|[^<\s]+/g) || [], stack: [] as string[], parts: [] as string[], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false, pendingSpace: false },
-    updateTags = () => ((state.openStr = state.stack.map((n) => `<${n}>`).join("")), (state.closeStr = state.stack.reduceRight((a, n) => a + `</${n}>`, ""))),
-    flush = () => state.line && (state.parts.push(state.line + state.closeStr), (state.line = (state.timeTag || "") + state.openStr), (state.len = 0), (state.lastWasTag = true));
+  const state = { tokens: p.replace(/\r\n?/g, "\n").match(/<[^>]+>|\n|[^\S\n]+|[^<\s]+/g) || [], stack: [] as string[], parts: [] as string[], line: "", len: 0, openStr: "", closeStr: "", timeTag: "", lastWasTag: false, pendingSpace: false },
+    updateTags = () => ((state.openStr = state.stack.map((n) => `<${n}>`).join("")), (state.closeStr = state.stack.reduceRight((a, n) => a + `</${n.split(".")[0]}>`, ""))),
+    flush = () => state.line && (stripTags(state.line) || !state.parts.length) && (state.parts.push(state.line + state.closeStr), (state.line = (state.timeTag || "") + state.openStr), (state.len = 0), (state.lastWasTag = true));
   for (const tok of state.tokens) {
+    if (tok === "\n" || /^<br\s*\/?>$/i.test(tok)) {
+      (state.pendingSpace = false), flush();
+      continue;
+    }
     const tag = tok[0] === "<",
       closeTag = tag && tok[1] === "/";
     if (tag) {
@@ -73,9 +77,9 @@ export function formatVttLine(p: string, maxChars: number): string[] {
       continue;
     }
     state.pendingSpace = false;
-    const len = stripTags(tok).length,
-      needSpace = state.line && !state.lastWasTag;
-    if (state.len + (needSpace ? 1 : 0) + len > maxChars) flush();
+    const len = stripTags(tok).length;
+    if (state.len + (state.line && !state.lastWasTag ? 1 : 0) + len > maxChars) flush();
+    const needSpace = state.line && !state.lastWasTag;
     if (needSpace) (state.line += " "), (state.len += 1);
     (state.line += tok), (state.len += len), (state.lastWasTag = false);
   }

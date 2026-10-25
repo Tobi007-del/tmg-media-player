@@ -4,7 +4,7 @@
   top: var(--tmg-smenu-anchor-y);
   left: var(--tmg-smenu-anchor-x);
   width: var(--tmg-media-settings-menu-width);
-  max-height: min(calc(100% - (var(--tmg-media-current-top-wrapper-height) + var(--tmg-media-current-bottom-wrapper-height))), calc(var(--tmg-media-current-unit) * 13));
+  max-height: min(var(--tmg-smenu-max-height, calc(100% - (var(--tmg-media-current-top-wrapper-height) + var(--tmg-media-current-bottom-wrapper-height)))), calc(var(--tmg-media-current-unit) * 13));
   background-color: var(--tmg-media-settings-menu-background-color);
   border-radius: calc(var(--tmg-media-current-unit) / 2);
   color: var(--tmg-media-settings-text-color);
@@ -19,7 +19,7 @@
   transform: translate(0, calc(var(--tmg-media-current-unit))) translateY(calc(var(--tmg-media-current-unit) / 5));
 }
 .tmg-host-container[data-size-tier^="xx"] .tmg-media-settings-menu {
-  max-height: min(calc(100% - var(--tmg-media-current-bottom-wrapper-height)), calc(var(--tmg-media-current-unit) * 13));
+  max-height: min(var(--tmg-smenu-max-height, calc(100% - var(--tmg-media-current-bottom-wrapper-height))), calc(var(--tmg-media-current-unit) * 13));
 }
 .tmg-media-smenu-open {
   scale: 1;
@@ -33,11 +33,11 @@
   transform: none;
 }
 
-.tmg-media-settings-menu svg {
+:where(.tmg-media-settings-menu) svg {
   width: calc(var(--tmg-media-current-unit) / 1.3);
   height: calc(var(--tmg-media-current-unit) / 1.3);
 }
-.tmg-media-smenu-row-icon svg {
+:where(.tmg-media-smenu-row-icon) svg {
   width: calc(var(--tmg-media-current-unit) / 1.1);
   height: calc(var(--tmg-media-current-unit) / 1.1);
 }
@@ -421,7 +421,8 @@
 .tmg-media-smenu-limits-btn,
 .tmg-media-smenu-input-btn {
   margin-block-start: calc(var(--tmg-media-current-unit) / 4);
-  border: 1px solid currentColor;
+  background-color: rgb(from currentColor r g b / 0.15);
+  border: 1px solid rgb(from currentColor r g b / 0.3);
   border-radius: calc(var(--tmg-media-current-unit));
   font-size: 85%;
   padding: calc(var(--tmg-media-current-unit) / 4) calc(var(--tmg-media-current-unit) / 2);

@@ -17,7 +17,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   }
   public ad: google.ima.Ad | null = null;
   public readonly caching = true;
-  protected readonly TIDS = { SKIP: `tmg-media-ads-skip-for-${this.ctlr.config.id}`, SITE: `tmg-media-ads-site-for-${this.ctlr.config.id}` };
+  protected readonly TIDS = { SKIP: `tmg-media-ads-skipper-for-${this.ctlr.config.id}`, SITE: `tmg-media-ads-linker-for-${this.ctlr.config.id}` };
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {

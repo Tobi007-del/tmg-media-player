@@ -48,9 +48,9 @@
   justify-content: center;
   font-size: calc(var(--tmg-media-current-unit) / 1.4);
   opacity: 0.95;
-  transition: opacity var(--tmg-media-fade-transition-time) ease-in-out;
+  transition: all var(--tmg-media-fade-transition-time) ease, opacity var(--tmg-media-fade-transition-time) ease-in-out;
 }
-:where(.tmg-host-container button):is(:hover, :focus-visible) {
+:where(.tmg-host-container) button:is(:hover, :focus-visible) {
   opacity: 1;
   cursor: pointer;
 }
@@ -64,18 +64,18 @@
   max-width: unset;
   max-height: unset;
 }
-.tmg-host-container svg {
+:where(.tmg-host-container) svg {
   width: var(--tmg-media-current-unit);
   height: var(--tmg-media-current-unit);
   transition: transform var(--tmg-media-fade-transition-time) ease;
 }
-.tmg-host-container svg:where(:not(.no-css-fill)) {
+:where(.tmg-host-container) svg:where(:not(.no-css-fill)) {
   color: currentColor;
 }
-.tmg-host-container svg * {
+:where(.tmg-host-container) svg * {
   transition: all var(--tmg-media-fade-transition-time) ease, d var(--tmg-media-motion-transition-time) ease;
 }
-.tmg-host-container svg:where(:not(.no-css-fill)) *:where(:not(.no-css-fill, [fill="none"])) {
+:where(.tmg-host-container) svg:where(:not(.no-css-fill)) *:where(:not(.no-css-fill, [fill="none"])) {
   fill: currentColor;
 }
 :is(.tmg-media-big-controls-wrapper > *, :where(button[class^="tmg-media-big-"])) > svg {
@@ -141,7 +141,7 @@
   transition: outline-offset var(--tmg-media-fade-transition-time) ease !important;
 }
 .tmg-host-container .tmg-media-settings-menu :is(*:focus-visible, #o#o#o#o#o),
-:is(.tmg-media-voice-path-input, .tmg-media-voice-word-input):is(:focus-visible, #o#o#o#o#o) {
+.tmg-media-voice-input:is(:focus-visible, #o#o#o#o#o) {
   outline-offset: calc(var(--tmg-media-current-unit) / -13);
 }
 .tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, :is(.tmg-media-big-controls-wrapper, .tmg-media-next-preview-wrapper) > *, .tmg-media-voice-link):focus-visible, #o#o#o#o#o) {

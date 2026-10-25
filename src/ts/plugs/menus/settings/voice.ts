@@ -3,6 +3,8 @@ import type { VoicePlug } from "@plugs/settings/voice";
 import { getUIOpt } from "@utils/obj";
 import { formatUITime } from "@utils/time";
 import { getToastMenuInputs, syncToastConfig } from "./toasts";
+import { getTimeTravelHistoryMenu } from "./timeTravel";
+
 export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
   id: "advanced",
   label: "Advanced",
@@ -24,8 +26,23 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
           getValue: () => (plug.config.active.value ? "On" : "Off"),
           configPaths: ["settings.voice.active.value"],
           items: [
-            { id: "voiceActive", label: "Active", widget: "select", getValue: () => getUIOpt(plug.config.active.options, plug.config.active.value), getOptions: () => plug.config.active.options!, onChange: (val: any) => (plug.config.active.value = val), configPaths: ["settings.voice.active.value"], getTipHTML: () => "Turn the voice control engine on or off or passive (listens for the wake word to turn on)" },
+            { id: "voiceActive", label: "Active", widget: "select", getValue: () => getUIOpt(plug.config.active.options, plug.config.active.value), getOptions: () => plug.config.active.options!, onChange: (val: any) => (plug.config.active.value = val), configPaths: ["settings.voice.active.value"], getTipHTML: () => "Turn the voice control engine on, off or passive (listens for the wake word to turn on)" },
             { id: "voiceMuted", label: "Muted", widget: "toggle", getValue: () => plug.config.muted, onChange: (val: boolean) => (plug.config.muted = val), configPaths: ["settings.voice.muted"], title: "Temporarily mute the microphone. Path and command routing will remain active." },
+            {
+              id: "voiceAi",
+              label: "Copilot",
+              widget: "group",
+              feature: "voiceAi",
+              getValue: () => (plug.config.ai.active ? "On" : "Off"),
+              configPaths: ["settings.voice.ai.active"],
+              items: [
+                { id: "voiceAiActive", label: "Active", widget: "toggle", getValue: () => plug.config.ai.active, onChange: (val: boolean) => (plug.config.ai.active = val), getDisabled: () => !plug.config.active.value, configPaths: ["settings.voice.active.value", "settings.voice.ai.active"], title: "Turn AI copilot mode on or off after the voice control engine is turned on too" },
+                { id: "voiceAiPreference", label: "Preference", widget: "input", inputs: [{ name: "preference", label: "User preference", placeholder: "e.g. Gen Z, concise, poetic...", helperText: { info: "Custom style, persona, or instructions for the AI" }, type: "text", value: () => plug.config.ai.preference || "" }], getValue: () => plug.config.ai.preference || "None", onChange: (val: any) => (plug.config.ai.preference = val.preference), configPaths: ["settings.voice.ai.preference"] },
+                { id: "voiceAiEndpoint", label: "Endpoint", widget: "input", inputs: [{ name: "endpoint", label: "Endpoint URL", placeholder: "https://api...", helperText: { info: "Custom LLM endpoint URL. Leave blank for Built-in AI." }, type: "text", value: () => plug.config.ai.endpoint || "" }], getValue: () => plug.config.ai.endpoint || "Built-in AI", onChange: (val: any) => (plug.config.ai.endpoint = val.endpoint), configPaths: ["settings.voice.ai.endpoint"] },
+                { id: "voiceAiModel", label: "Model", widget: "input", inputs: [{ name: "model", label: "Model name", placeholder: "gemini-1.5-flash", helperText: { info: "Model identifier sent in payload when querying custom endpoint" }, type: "text", value: () => plug.config.ai.model }], getValue: () => plug.config.ai.model, onChange: (val: any) => (plug.config.ai.model = val.model), configPaths: ["settings.voice.ai.model"] },
+                { id: "voiceAiApiKey", label: "API Key", widget: "input", inputs: [{ name: "apiKey", label: "API Key", placeholder: "Bearer token", helperText: { info: "Authorization header for custom LLM endpoint requests" }, type: "password", passwordMeter: false, value: () => plug.config.ai.apiKey || "" } as any], getValue: () => (plug.config.ai.apiKey ? "••••••••" : "None"), onChange: (val: any) => (plug.config.ai.apiKey = val.apiKey), configPaths: ["settings.voice.ai.apiKey"] },
+              ],
+            },
             {
               id: "voiceProcess",
               label: "Process",
@@ -53,20 +70,32 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
               ],
             },
             {
-              id: "voiceToastsGroup",
-              label: "Notification",
+              id: "voiceFeedback",
+              label: "Feedback",
               widget: "group",
               getValue: () => "On",
               items: [
-                { id: "voiceBehavior", label: "Behavior", widget: "select", getOptions: () => plug.config.toasts.behavior.options!, getValue: () => getUIOpt(plug.config.toasts.behavior.options, plug.config.toasts.behavior.value), onChange: (val: string) => (plug.config.toasts.behavior.value = val as typeof plug.config.toasts.behavior.value), configPaths: ["settings.voice.toasts.behavior.value"], getTipHTML: () => "Determines how and when the mic transcript appears on screen" },
-                { id: "voiceToastsRouter", label: "Router", widget: "input", getValue: () => "", inputs: getToastMenuInputs(plug.config.toasts.router, ["type", "autoClose"]), onChange: (val: any) => syncToastConfig(val, plug.config.toasts.router), configPaths: ["settings.voice.toasts.router"], getTipHTML: (icon = plug.config.toasts.router.icon) => `Customize the mic transcript${icon ? ` (${icon}) ` : " "}that shows at the ${plug.config.toasts.router.position?.replace("-", " ")}` },
-                { id: "voiceToastsHelper", label: "Helper", widget: "input", getValue: () => "", inputs: getToastMenuInputs(plug.config.toasts.helper, ["type", "autoClose"]), onChange: (val: any) => syncToastConfig(val, plug.config.toasts.helper), configPaths: ["settings.voice.toasts.helper"], getTipHTML: (icon = plug.config.toasts.helper.icon) => `Customize the helper${icon ? ` (${icon}) ` : " "}that show at the ${plug.config.toasts.helper.position?.replace("-", " ")} when routing` },
+                { id: "voiceBehavior", label: "Behavior", widget: "select", getOptions: () => plug.config.feedback.behavior.options!, getValue: () => getUIOpt(plug.config.feedback.behavior.options, plug.config.feedback.behavior.value), onChange: (val: string) => (plug.config.feedback.behavior.value = val as typeof plug.config.feedback.behavior.value), configPaths: ["settings.voice.feedback.behavior.value"], getTipHTML: () => "Determines how and when the mic transcript appears on screen" },
+                { id: "voiceToastsRouter", label: "Router", widget: "input", getValue: () => "On", inputs: getToastMenuInputs(plug.config.feedback.router, ["type", "autoClose"]), onChange: (val: any) => syncToastConfig(val, plug.config.feedback.router), configPaths: ["settings.voice.feedback.router"], getTipHTML: (icon = plug.config.feedback.router.icon) => `Customize the mic transcript${icon ? ` (${icon}) ` : " "}that shows at the ${plug.config.feedback.router.position?.replace("-", " ")}` },
+                { id: "voiceToastsHelper", label: "Helper", widget: "input", getValue: () => "On", inputs: getToastMenuInputs(plug.config.feedback.helper, ["type", "autoClose"]), onChange: (val: any) => syncToastConfig(val, plug.config.feedback.helper), configPaths: ["settings.voice.feedback.helper"], getTipHTML: (icon = plug.config.feedback.helper.icon) => `Customize the helper${icon ? ` (${icon}) ` : " "}that show at the ${plug.config.feedback.helper.position?.replace("-", " ")} when routing` },
+                {
+                  id: "voiceFeedbackCopilot",
+                  label: "Copilot",
+                  widget: "group",
+                  getValue: () => (plug.config.feedback.copilot.speech || plug.config.feedback.copilot.captions ? "On" : "Off"),
+                  configPaths: ["settings.voice.feedback.copilot.speech", "settings.voice.feedback.copilot.captions"],
+                  items: [
+                    { id: "voiceAiSpeech", label: "Speech", widget: "toggle", getValue: () => plug.config.feedback.copilot.speech, onChange: (val: boolean) => (plug.config.feedback.copilot.speech = val), configPaths: ["settings.voice.feedback.copilot.speech"], title: "Speak AI responses aloud if unmuted" },
+                    { id: "voiceAiCaptions", label: "Captions", widget: "toggle", getValue: () => plug.config.feedback.copilot.captions, onChange: (val: boolean) => (plug.config.feedback.copilot.captions = val), configPaths: ["settings.voice.feedback.copilot.captions"], title: "Show AI responses in captions" },
+                  ],
+                },
               ],
             },
           ],
         },
       ],
     },
+    ...(plug.ai?.module ? [{ id: "timeTravel", label: "Time travel", widget: "group" as const, getValue: () => "", items: [getTimeTravelHistoryMenu(plug.ctlr, plug.ai.module, { id: "voiceAiTimeTravelHistory", label: "AI History", feature: "voiceAi", signal: plug.signal })] }] : []),
   ],
 });
 

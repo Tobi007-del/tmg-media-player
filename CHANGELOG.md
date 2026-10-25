@@ -1,5 +1,29 @@
 # tmg-media-player
 
+## 0.0.82
+
+### Patch Changes
+
+- Slight bug fix
+
+## 0.0.81
+
+### Patch Changes
+
+- Actions showing links on voice toast
+
+## 0.0.80
+
+### Patch Changes
+
+- Bug fixes and AI control
+
+## 0.0.79
+
+### Patch Changes
+
+- Bug fix on destroy for alien techs
+
 ## 0.0.78
 
 ### Patch Changes

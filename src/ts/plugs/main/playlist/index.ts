@@ -26,7 +26,7 @@ export class PlaylistPlug extends BasePlug<PlaylistConfig, PlaylistState> {
   }
 
   public override wire(): void {
-    // Plug Listeners
+    // State Listeners
     this.state.on("sortOrder", ({ value }) => (this.media.container.dataset.playlistSort = value), { init: true, signal: this.signal });
     // Ctlr Config Getters
     this.ctlr.config.get("playlist.content", (v) => (v?.length ? v : null), { signal: this.signal }); // nvm length checks

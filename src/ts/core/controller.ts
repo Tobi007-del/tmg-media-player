@@ -226,7 +226,7 @@ export class Controller {
   public destroy(): HTMLMediaElement {
     this.mutating = true; // destruction will mutate, raise flag
     this.setReadyState(-1), this.ac.abort("[TMG Controller] Instance annihilation"), this.cancelRAFLoops();
-    this.disconnectPlugs(), this.media.tech.destroy();
+    this.media.tech.destroy(), this.disconnectPlugs();
     const el = this.config.safeDetach ? cloneMedia(this.media.element) : this.media.element;
     this.state.destroy(), this.config.destroy(), this.media.destroy();
     return nuke(this), el;

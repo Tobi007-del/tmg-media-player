@@ -209,7 +209,9 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     if (this.lastAnchorX === x && this.lastAnchorY === y) return;
     (this.lastAnchorX = x), (this.lastAnchorY = y);
     this.el.style.setProperty("--tmg-smenu-anchor-x", isStr(x) ? x : `${x}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", isStr(y) ? y : `${y}px`);
-    this.el.classList.toggle("tmg-media-smenu-fallback", fallback), this.el.classList.toggle("tmg-media-smenu-down", isNum(y) && y < cHeight / 2);
+    const isDown = isNum(y) && y < cHeight / 2;
+    isNum(y) && this.el.style.setProperty("--tmg-smenu-max-height", `${Math.round(isDown ? cHeight - y - this.safeMargin : y - (parseFloat(this.ctlr.settings.css.currentTopWrapperHeight as string) || 0) - this.safeMargin)}px`);
+    this.el.classList.toggle("tmg-media-smenu-fallback", fallback), this.el.classList.toggle("tmg-media-smenu-down", isDown);
   }
   public safeMargin = 12;
 }

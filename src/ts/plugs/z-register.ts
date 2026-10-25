@@ -40,6 +40,7 @@ import { ModesCastPin } from "./settings/modes/cast";
 import { ModesAirPlayPin } from "./settings/modes/airplay";
 import { GestureWheelPin } from "./settings/gesture/wheel";
 import { GestureTouchPin } from "./settings/gesture/touch";
+import { VoiceAiPin } from "./settings/voice/ai";
 
 for (const Plug of [
   // Priority Order
@@ -89,5 +90,6 @@ for (const Pin of [
   ModesAirPlayPin,
   GestureWheelPin,
   GestureTouchPin,
+  VoiceAiPin,
 ])
   PinRegistry.register(Pin);
