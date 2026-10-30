@@ -102,8 +102,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected handleDragging(e: globalThis.Event): void {
     if ((e as TouchEvent).touches?.length > 1) return;
     e.preventDefault();
-    this.ctlr.plug("settings.overlay")?.hide("force");
-    this.media.container.classList.add("tmg-media-player-dragging");
+    this.ctlr.plug("settings.overlay")?.hide("force"), this.media.container.classList.add("tmg-media-player-dragging");
     this.ctlr.RAFLoop("miniplayerDragging", (x = (e as MouseEvent).clientX ?? (e as TouchEvent).changedTouches[0].clientX, y = (e as MouseEvent).clientY ?? (e as TouchEvent).changedTouches[0].clientY) => {
       if (this.prevEX === x && this.prevEY === y) return; // #CONSERVATION: peak stays peak
       (this.prevEX = x), (this.prevEY = y);
@@ -121,8 +120,7 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   private prevEY?: number;
 
   protected handleDragEnd(): void {
-    this.ctlr.cancelRAFLoop("miniplayerDragging");
-    this.media.container.classList.remove("tmg-media-player-dragging");
+    this.ctlr.cancelRAFLoop("miniplayerDragging"), this.media.container.classList.remove("tmg-media-player-dragging");
     this.media.container.style.setProperty("left", this.wildMiniplayerX, "important"), this.media.container.style.setProperty("top", this.wildMiniplayerY, "important"), this.media.container.style.removeProperty("transform");
     setTimeout(() => ((this.settings.css.currentMiniplayerX = this.nextMiniplayerX), (this.settings.css.currentMiniplayerY = this.nextMiniplayerY), ["transition", "left", "top"].forEach((prop) => this.media.container.style.removeProperty(prop)), this.useTx()), 0, this.signal);
     document.removeEventListener("mousemove", this.handleDragging), document.removeEventListener("touchmove", this.handleDragging);

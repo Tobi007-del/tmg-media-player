@@ -128,12 +128,12 @@ export class Controller {
     this.fire("tmgreadystatechange", this.flags), this.fire(rS === 0 ? "tmgcreate" : rS === 1 ? "tmginit" : rS === 2 ? "tmgwire" : rS === 3 ? "tmgplay" : rS === -1 ? "tmgdestroy" : "", this.flags);
   }
 
-  public guard = <Fn extends Function>(fn: Fn, silent = false) => (fn.name?.includes("notice") || fn.name?.includes("log") ? fn : guardMethod(fn, (e) => this.config && this.notice(e, "error", !silent))); // `()=>{}`: bounded even before init
+  public guard = <Fn extends Function>(fn: Fn, silent = false) => (fn.name === "notice" || fn.name === "log" ? fn : guardMethod(fn, (e) => this.config && this.notice(e, "error", !silent))); // `()=>{}`: bounded even before init
   public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null, swallow = true): void {
-    this.config && this.log(mssg, type, swallow), toast !== false && ((type = type === "error" && swallow ? "warn" : type) === "log" ? this.toast : this.toast?.[type])?.(toast === null || this.config.devMode ? mssg : isStr(toast) ? toast : "Something went wrong", { tag: "tmg-swrg" });
+    this.config && this.log(mssg, type, swallow), toast !== false && mssg?.name !== "AbortError" && ((type = type === "error" && swallow ? "warn" : type) === "log" ? this.toast : this.toast?.[type])?.(isStr(toast) ? toast : toast === null || this.config.devMode ? mssg : "Something went wrong", { tag: "tmg-swrg" });
   }
   public log(mssg: any, type: "error" | "warn" | "log" = "log", swallow = false): void {
-    if (this.config?.devMode) type === "error" ? (swallow ? console.warn(`[TMG Controller] Error swallowed →`, mssg) : console.error(`[TMG Controller] Error occurred →`, mssg)) : type === "warn" ? console.warn(`[TMG Controller] Warning →`, mssg) : console.log(`[TMG Controller] Log →`, mssg); // swallow = errors that don't leave cracks
+    if (this.config?.devMode) type === "error" ? (swallow ? console.warn("[TMG Controller] Error swallowed →", mssg) : console.error("[TMG Controller] Error occurred →", mssg)) : type === "warn" ? console.warn("[TMG Controller] Warning →", mssg) : console.log("[TMG Controller] Log →", mssg); // swallow = errors that don't leave cracks
   }
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));

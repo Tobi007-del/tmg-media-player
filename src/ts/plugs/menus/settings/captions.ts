@@ -8,19 +8,17 @@ import type { UIOption, UITuple } from "@defs/UIOptions";
 import { camelize, capitalize, uncamelize } from "@utils/str";
 import { safeNum } from "@utils/num";
 import { formatUITime } from "@utils/time";
-import { silence, transaction } from "sia-reactor/modules";
+import { transaction } from "sia-reactor/modules";
 
 const getPreviewStyle = (plug: CaptionsPlug, id: string, u: any): { className?: string; style?: string } => {
-  const cssPlug = plug.ctlr.plug("settings.css");
-  if (!cssPlug) return {};
-  const { isClass, id: cssId } = cssPlug.getCSSKey(id);
-  return isClass ? { className: `${cssId}-${u.value}` } : { style: `--${cssId}: ${id.toLowerCase().includes("opacity") ? Number(u.value) / 100 : u.value};` };
+  const { isClass, id: cssId } = plug.ctlr.plug("settings.css")?.getCSSKey(id) ?? { isClass: false, id: "" };
+  return isClass ? { className: `${cssId}-${u.value}` } : cssId ? { style: `--${cssId}: ${id.toLowerCase().includes("opacity") ? Number(u.value) / 100 : u.value};` } : {};
 };
 
 export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] => {
   const mapStyle = (p: string) => {
     const id = camelize(`captions.${p}`, /\./),
-      getCurr = () => getPath(plug.config as any, p) as any,
+      getCurr = () => getPath(plug.config as any, p),
       isBoolean = isBool(getCurr()),
       options = isBoolean ? undefined : getCurr().options.map(parseUIOpt),
       hasNum = !!options?.length && options.every((opt: any) => !isBool(opt.value) && !isNaN(Number(opt.value))),
@@ -33,39 +31,18 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
       label: capitalize(uncamelize(p.split(".").pop()!)),
       widget: isBoolean ? "toggle" : hasNum || (isColor && !p.includes("window")) || p === "characterEdgeStyle" ? "group" : isColor && p.includes("window") ? "color" : "select",
       getValue: (curr = getCurr()) => (isBoolean ? !!curr : capitalize(getUIOpt(curr.options.map(parseUIOpt), hasNum ? Number(curr.value) : isStr(curr.value) ? curr.value.trim() : curr.value))),
-      getOptions: () =>
-        isBoolean
-          ? undefined
-          : getCurr().options.map((opt: any) => {
-              const u = parseUIOpt(opt),
-                preview = getPreviewStyle(plug, id, u);
-              return { ...u, className: p.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style };
-            }),
+      getOptions: () => (isBoolean ? undefined : getCurr().options.map((opt: any, _: any, __: any, u = parseUIOpt(opt), preview = getPreviewStyle(plug, id, u)) => ({ ...u, className: p.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style }))),
       onChange: (val: any) => (isBoolean ? setPath(plug.config as any, p, val) : (getCurr().value = val)),
-      onInput: (val: any) => (isBoolean ? silence(() => setPath(plug.config as any, p, val)) : silence(() => (getCurr().value = val))),
+
       getRange: (curr = getCurr()) => ({ min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => `${Math.round(v)}%`, options: curr.options as UIOption<number>[] }),
       getTipHTML: () => (p.includes("font.variant") ? "Apply variants like small capitals to the text" : p.includes("window.color") ? "Change the background color of the entire caption bounding box (differs from text background)" : p.includes("window.opacity") ? "Adjust how transparent the entire caption bounding box is" : p.includes("characterEdgeStyle") ? "Add borders or shadows to the text to make it more readable" : p.includes("lockToVideo") ? "Constrain captions to the actual letterboxed video boundaries rather than the player container boundaries." : p.includes("lockToPanel") ? "Push captions up when the bottom control panel is active so they don't overlap." : ""),
       items:
         hasNum || (isColor && !p.includes("window")) || p === "characterEdgeStyle"
           ? [
-              ...(hasNum ? [{ id: `${id}Slider`, label: "Custom", widget: "range", inline: true, getValue: () => `${Number(getCurr().value)}%`, onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)), getRange: (curr = getCurr()) => ({ min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => `${Math.round(v)}%`, options: curr.options as UIOption<number>[] }), configPaths } as any] : []),
-              {
-                id: `${id}Select`,
-                label: "Presets",
-                widget: "select",
-                inline: true,
-                getOptions: () =>
-                  getCurr().options.map((opt: any) => {
-                    const u = parseUIOpt(opt),
-                      preview = getPreviewStyle(plug, id, u);
-                    return { ...u, className: p.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style };
-                  }),
-                getValue: () => String(getCurr().value),
-                onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)),
-                configPaths,
-              },
-              ...(!hasNum && p !== "characterEdgeStyle" ? [{ id: `${id}Picker`, label: "Custom", widget: "color", inline: true, getValue: () => getCurr().value, onChange: (val: string) => (getCurr().value = val), onInput: (val: string) => silence(() => (getCurr().value = val)), configPaths } as any] : []),
-              ...(p === "characterEdgeStyle" ? [{ id: "captionsCharacterEdgeStyleShadowColor", label: "Shadow color", widget: "color", inline: true, getValue: () => plug.settings.css.captionsBaseShadow as string, onChange: (val: string) => (plug.settings.css.captionsBaseShadow = val), onInput: (val: string) => silence(() => (plug.settings.css.captionsBaseShadow = val)), configPaths: ["settings.css.captionsBaseShadow"] } as any] : []),
+              ...(hasNum ? [{ id: `${id}Slider`, label: "Custom", widget: "range", inline: true, getValue: () => `${Number(getCurr().value)}%`, onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)), getRange: (curr = getCurr()) => ({ min: Math.min((curr.min as number) ?? actMin, actMin), max: Math.max((curr.max as number) ?? actMax, actMax), formatTooltip: (v: number) => `${Math.round(v)}%`, options: curr.options as UIOption<number>[] }), configPaths }] : []),
+              { id: `${id}Select`, label: "Presets", widget: "select", inline: true, getOptions: () => getCurr().options.map((opt: any, _: any, __: any, u = parseUIOpt(opt), preview = getPreviewStyle(plug, id, u)) => ({ ...u, className: p.includes("window") ? undefined : `tmg-media-captions-text ${u.className || ""} ${preview.className || ""}`.trim(), style: preview.style })), getValue: () => String(getCurr().value), onChange: (val: number | string, curr = getCurr()) => (curr.value = isStr(curr.value) ? String(val) : Number(val)), configPaths },
+              ...(!hasNum && p !== "characterEdgeStyle" ? [{ id: `${id}Picker`, label: "Custom", widget: "color", inline: true, getValue: () => getCurr().value, onChange: (val: string) => (getCurr().value = val), configPaths }] : []),
+              ...(p === "characterEdgeStyle" ? [{ id: "captionsCharacterEdgeStyleShadowColor", label: "Shadow color", widget: "color", inline: true, getValue: () => plug.settings.css.captionsBaseShadow as string, onChange: (val: string) => (plug.settings.css.captionsBaseShadow = val), configPaths: ["settings.css.captionsBaseShadow"] }] : []),
             ]
           : undefined,
       configPaths,
@@ -147,7 +124,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
               getValue: () => "",
               items: [...STYLE_PATHS.filter((p) => !p.includes("font.") && !p.includes("background.") && !p.includes("window.")).map(mapStyle), { id: "captionsPreviewTimeout", label: "Preview timeout", widget: "input", inputs: [{ name: "secs", label: "secs", placeholder: "1.5", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "0.5", step: "any", required: true, value: () => plug.config.previewTimeout / 1000 }], getValue: () => formatUITime(plug.config.previewTimeout), onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.secs * 1000), configPaths: ["settings.captions.previewTimeout"] }],
             },
-            { id: "captionsAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => plug.config.allowMediaOverride, onChange: (val: boolean) => (plug.config.allowMediaOverride = val), configPaths: ["settings.captions.allowMediaOverride"], title: "Allow media content to override your custom caption styling with its own styling (if available)" },
+            { id: "captionsAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => plug.config.allowMediaOverride, onChange: (val: boolean) => (plug.config.allowMediaOverride = val), configPaths: ["settings.captions.allowMediaOverride"], title: "Allow for a different caption style if specified by the media" },
             {
               id: "captionsReset",
               label: "Reset",
@@ -158,7 +135,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
                 transaction(() => {
                   plug.settings.css.captionsBaseShadow = plug.ctlr.plug("settings.css")?.build.captionsBaseShadow ?? plug.settings.css.captionsBaseShadow;
                   plug.resetCuesPos(), (plug.config.allowMediaOverride = build.allowMediaOverride!), (plug.config.previewTimeout = build.previewTimeout!);
-                  STYLE_PATHS.forEach((p) => setPath(plug.config as any, `${p}.value`, getPath(build as any, `${p}.value`)));
+                  STYLE_PATHS.forEach((p) => setPath(plug.config, `${p}.value`, getPath(build, `${p}.value`)));
                 }, "Captions styles reset");
               },
             },

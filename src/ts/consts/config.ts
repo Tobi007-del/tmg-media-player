@@ -20,6 +20,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /media\.intent\.(sources|tracks|xrInputSource)/,
       /media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
       /settings\.toasts\.reminders\.[^.]+\.target/,
+      "settings.voice.ai.systemPrompt",
       "settings.sleepTimer.target",
       /\.(on|before)[A-Z]\w+$/,
       /\.(id|options|ads)($|\.)/,

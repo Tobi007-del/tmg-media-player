@@ -93,7 +93,7 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
                       widget: "drag-select",
                       getValue: () => `${plug.config.timeline.marks.length}`,
                       getTipHTML: () => "Custom points of interest on the timeline to easily jump to when desired",
-                      getOptions: () => plug.config.timeline.marks.map((m, i) => ({ value: i, display: m.label || `Bookmark ${i + 1}`, infoText: `${m.start}%` + (m.end ? ` - ${m.end}%` : "") })),
+                      getOptions: () => plug.config.timeline.marks.map((m, i) => ({ value: i, display: m.label || `Bookmark ${i + 1}`, infoText: `${Math.round(m.start)}%` + (m.end ? ` - ${Math.round(m.end)}%` : "") })),
                       onChange: (val: number, mark = plug.config.timeline.marks[val]) => void (mark && (plug.media.intent.currentTime = getMediaTime(plug.media, mark.start / 100))),
                       getDisabled: () => false,
                       onDelete: (idx: number) => (plug.config.timeline.marks = plug.config.timeline.marks.filter((_, i) => i !== idx)),

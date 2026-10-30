@@ -11,12 +11,13 @@
   --cmptd-cue-box-ceil: calc(100% - (var(--tmg-media-current-captions-offset-bottom) + (var(--cmptd-cue-box-height) / 2)));
   --cmptd-cue-box-x-min: calc(var(--cmptd-cue-box-width) / 2);
   --cmptd-cue-box-x-max: calc(100% - (var(--cmptd-cue-box-width) / 2));
+  display: none;
   position: absolute;
   top: clamp(var(--cmptd-cue-box-floor), var(--tmg-media-current-captions-y), var(--cmptd-cue-box-ceil)); /* offset edgecase handling, old: bottom needed min() first value; clamp:- min-priority */
   left: clamp(var(--cmptd-cue-box-x-min), var(--tmg-media-current-captions-x), var(--cmptd-cue-box-x-max));
   translate: -50% -50%;
   max-height: max(calc(0.4em + 5px + (var(--cmptd-cue-font-size) * 1.4)), calc(var(--cmptd-cue-box-ceil) - var(--cmptd-cue-box-floor) + var(--cmptd-cue-box-height)));
-  padding: 0.2em 1em;
+  padding: calc(var(--tmg-media-inset-size) / 4) var(--tmg-media-inset-size);
   text-align: var(--tmg-media-captions-text-alignment);
   overflow-y: auto;
   overflow-x: hidden;
@@ -25,14 +26,11 @@
   contain: layout;
   transition: var(--tmg-media-motion-transition);
 }
-.tmg-media-captions-container:not([data-is-solo="true"]) {
-  display: none;
-}
 .tmg-media-container:where(.tmg-media-captions) .tmg-media-captions-container:not(:empty, :has(> :empty)),
-.tmg-media-captions-container.tmg-media-captions-preview:not(:empty, :has(> :empty)) {
+.tmg-media-captions-container:is(.tmg-media-captions-preview, [data-is-solo="true"]):not(:empty, :has(> :empty)) {
   display: block;
 }
-.tmg-media-container.tmg-media-captions-lock-to-video:not(.tmg-media-captions-dragging) .tmg-media-captions-container {
+.tmg-media-captions-lock-to-video:not(.tmg-media-captions-dragging) .tmg-media-captions-container {
   --cmptd-cue-box-floor-offset: max(var(--tmg-media-current-object-top), var(--tmg-media-current-captions-offset-top));
   --cmptd-cue-box-floor: calc(var(--cmptd-cue-box-floor-offset) + (var(--cmptd-cue-box-height) / 2));
   --cmptd-cue-box-ceil-offset: max(calc(100% - (var(--tmg-media-current-object-top) + var(--tmg-media-current-object-height))), var(--tmg-media-current-captions-offset-bottom));
@@ -40,11 +38,15 @@
   --cmptd-cue-box-x-min: calc(var(--tmg-media-current-object-left) + (var(--cmptd-cue-box-width) / 2));
   --cmptd-cue-box-x-max: calc(var(--tmg-media-current-object-left) + var(--tmg-media-current-object-width) - (var(--cmptd-cue-box-width) / 2));
 }
-.tmg-media-container.tmg-media-captions-lock-to-panel:not(.tmg-media-captions-dragging) {
+.tmg-media-captions-lock-to-panel:not(.tmg-media-captions-dragging):where(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)) .tmg-media-content {
   --tmg-media-current-captions-offset-top: var(--tmg-media-current-safe-inset-top);
   --tmg-media-current-captions-offset-bottom: var(--tmg-media-current-safe-inset-bottom);
 }
-.tmg-media-container.tmg-media-locked:is(.tmg-media-locked-overlay, :has(:focus-visible)) {
+.tmg-media-captions-lock-to-panel:not(.tmg-media-captions-dragging) .tmg-media-captions-container:not(.tmg-media-content *) {
+  --tmg-media-current-captions-offset-top: var(--tmg-media-current-global-safe-inset-top);
+  --tmg-media-current-captions-offset-bottom: var(--tmg-media-current-global-safe-inset-bottom);
+}
+.tmg-media-container.tmg-media-locked:is(.tmg-media-locked-overlay, :has(:focus-visible)) .tmg-media-content {
   --tmg-media-current-captions-offset-bottom: calc(var(--tmg-media-current-unit) * 5);
 }
 .tmg-media-captions-text {
@@ -71,6 +73,9 @@
 :is(.tmg-media-captions-character-edge-style-outline .tmg-media-captions-text, .tmg-media-captions-character-edge-style-outline.tmg-media-captions-text) {
   --s-s: 0 0 calc(var(--s-b) * var(--f-f)) var(--tmg-media-captions-base-shadow); /* shadow-step */
   text-shadow: var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s), var(--s-s); /* just had to, 21! :) */
+}
+:is(.tmg-media-captions-character-edge-style-none .tmg-media-captions-text, .tmg-media-captions-character-edge-style-none.tmg-media-captions-text) {
+  text-shadow: none;
 }
 .tmg-media-captions-container [data-part="timed"][data-future] {
   opacity: 0.5;

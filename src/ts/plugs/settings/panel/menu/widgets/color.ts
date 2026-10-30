@@ -2,6 +2,7 @@ import { UITuple } from "@defs/UIOptions";
 import { BaseWidget, WidgetRegistry } from ".";
 import { createEl, createListRenderer } from "@utils/dom";
 import { parseUIOpt } from "@utils/obj";
+import { startTx, endTx, type Transaction } from "sia-reactor/modules";
 
 export class ColorWidget<T = unknown> extends BaseWidget<T> {
   private renderSwatches!: ReturnType<typeof createListRenderer<UITuple<T>>>;
@@ -18,7 +19,7 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
       createNode: (opt) => {
         const btn = createEl("button", { type: "button", className: "tmg-media-smenu-color-swatch", title: opt.display, ariaLabel: opt.display }, { colorVal: opt.value as string });
         btn.style.setProperty("--swatch", opt.value as string);
-        btn.addEventListener("click", () => ((this.freeInput.value = btn.dataset.colorVal!), this.syncColor("onChange", opt.value as string)), { signal: this.signal });
+        btn.addEventListener("click", () => ((this.freeInput.value = btn.dataset.colorVal!), this.syncColor(opt.value as string)), { signal: this.signal });
         return btn;
       },
       updateNode: (node, opt) => {
@@ -31,8 +32,8 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
     });
     const field = (this.field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free" }));
     ((this.freeInput = field.inputEl) as any).t007Field = field;
-    this.freeInput.addEventListener("input", this.handleColor, { signal: this.signal });
-    this.freeInput.addEventListener("change", this.handleColor, { signal: this.signal });
+    for (const ev of ["input", "change"]) this.freeInput.addEventListener(ev, this.handleColor, { signal: this.signal });
+    this.freeInput.addEventListener("blur", () => this.useTx(false), { signal: this.signal });
     return this.element.append(grid, field), this.syncUI(), this.element;
   }
   public override syncUI(): void {
@@ -46,16 +47,16 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
     this.syncActive();
   }
 
-  private syncColor(type: "onInput" | "onChange" = "onChange", value = this.freeInput.value): void {
+  private handleColor(e: Event): void {
+    e.type === "input" && this.useTx(true), this.syncColor(this.freeInput.value), e.type === "change" && this.useTx(false);
+  }
+
+  private syncColor(value = this.freeInput.value): void {
     const activeBtn = this.element.querySelector<HTMLElement>(`[data-color-val="${value}"]`);
     this.currentValue = activeBtn?.ariaLabel ?? value;
     this.field.style.setProperty("--input-color", value);
     this.syncActive();
-    (type === "onInput" ? this.item.onInput ?? this.item.onChange : this.item.onChange)?.(value as T);
-  }
-
-  private handleColor(e: Event): void {
-    this.syncColor(e.type === "input" ? "onInput" : "onChange");
+    this.item.onChange?.(value as T);
   }
 
   private syncActive(): void {
@@ -64,6 +65,11 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
       btn.classList.toggle("tmg-media-smenu-color-active", active);
       btn.ariaSelected = String(active);
     }
+  }
+
+  private tx: Transaction | null = null;
+  private useTx(bool = false): void {
+    bool ? (this.tx ??= startTx(this.item.label || this.item.id)) : this.tx && (endTx(this.tx), (this.tx = null));
   }
 }
 

@@ -75,8 +75,8 @@ export class PanelPlug extends BasePlug<PanelConfig, PanelState> {
       cTField = t007.field({ type: "color" }),
       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
-    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.inputEl.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
-    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), cTField.inputEl.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
+    this.ctlr.config.watch("settings.css.themeColor", (v = defs.theme) => ((v = (v as string).toLowerCase()), (cTField.inputEl.value = v), cTField.style.setProperty("--input-color", v), (tField.inputEl.value = !defs.tcolors.includes(v) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
     this.ctlr.DOM.settingsBottomPanel?.append((bWrapper.append(bField, cBField), bWrapper), (tWrapper.append(tField, cTField), tWrapper));
     const id = { theme: "", brand: "" },
       sync = (cb: any, req = true, type = "brand") => ((this.settings.css.syncWithMedia[`${type}Color`] = req), cb(req)),

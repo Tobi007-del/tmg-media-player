@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.83
+
+### Patch Changes
+
+- AI Integration refinements
+
 ## 0.0.82
 
 ### Patch Changes

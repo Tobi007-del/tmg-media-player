@@ -9,11 +9,11 @@ export interface VoiceCommands extends Record<Action["id"], string | string[]> {
 
 export interface VoiceAiConfig {
   active: boolean;
+  preference: string;
   model: string;
-  apiKey?: string;
-  endpoint?: string;
+  apiKey: string;
+  endpoint: string;
   systemPrompt: string;
-  preference?: string;
 }
 
 export interface VoiceConfig {
@@ -35,8 +35,8 @@ export interface VoiceConfig {
   commands: VoiceCommands;
   feedback: {
     behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
+    quoter: ToastOptions;
     router: ToastOptions;
-    helper: ToastOptions;
     copilot: Record<"speech" | "captions", boolean>;
   };
 }
@@ -56,6 +56,7 @@ export interface AiResponse {
   action?: Action["id"];
   path?: string;
   value?: any;
+  type?: "delete" | string;
   query?: string;
   speech?: string;
 }

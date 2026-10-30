@@ -32,14 +32,14 @@ export abstract class Controllable<Config = any, State = any> {
   protected abstract onSetup(): void;
 
   public destroy(): void {
-    this.ac.abort(`[TMG Controllable] Instance annihilation`); // ctlr may have aborted
+    this.ac.abort("[TMG Controllable] Instance annihilation"); // ctlr may have aborted
     this.onDestroy(), (this.state as any)?.destroy?.(), this.config !== this.media && isFunc((this.config as any)?.destroy) && (this.config as any)?.destroy?.(); // Can I clean here?... Anatoly :)
     nuke(this);
   }
   protected onDestroy(): void {}
 
   public hibernate(): void {
-    if (!this.hibernated) (this.hibernated = true), this.ac.abort(`[TMG Controllable] Instance hibernation`), this.onHibernate?.();
+    if (!this.hibernated) (this.hibernated = true), this.ac.abort("[TMG Controllable] Instance hibernation"), this.onHibernate?.();
   }
   protected onHibernate?(): void {}
 

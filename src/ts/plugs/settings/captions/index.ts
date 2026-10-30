@@ -20,10 +20,10 @@ import { KeyMod } from "../keys";
 export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
   public static readonly plugName = "captions";
   public static readonly BUILD = CAPTIONS_BUILD;
+  protected isNative = false;
   protected views = new Map<string, CaptionsView>();
   protected iView: CaptionsView | null = null; // info view
   protected sViewsMaps = new Map<number, Map<string, CaptionsView>>();
-  protected isNative = false;
   protected shadowCurrentIndex?: number;
 
   constructor(ctlr: Controller, config = ctlr.settings.captions) {
@@ -37,7 +37,8 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     // ----------- Watchers
     this.media.watch("tech", (t) => ((this.isNative = t.constructor === HTML5Tech), this.syncFeatures()), { init: true, signal: this.signal });
     // ---- Config --------
-    STYLE_PATHS.forEach((p) => this.ctlr.config.watch(`settings.captions.${p}.value`, (v) => (setPath(this.settings.css, camelize(`captions.${p}`, /\./), p.includes("opacity") ? +v / 100 : (v as string)), !/color|opacity/.test(p) && (this.views.forEach((v) => v.rerender(true)), this.sViewsMaps.forEach((map) => map.forEach((v) => v.rerender(true))), this.iView?.rerender(true))), { init: true, signal: this.signal }));
+    for (const p of STYLE_PATHS) this.ctlr.config.watch(`settings.captions.${p}.value`, (v) => setPath(this.settings.css, camelize(`captions.${p}`, /\./), p.includes("opacity") ? +v / 100 : (v as string)), { init: true, signal: this.signal });
+    // ---- Media Listeners
     this.media.on("intent.currentTextTrack", this.handleCurrentTextTrackIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("intent.secondaryTextTracks", this.handleSecondaryTextTracksIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal });
     this.media.on("intent.textVisible", this.handleTextVisibleIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
@@ -56,7 +57,7 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.ctlr.learn("captionsResetPos", { fn: this.resetCuesPos }, this.signal);
     for (const k of ["Up", "Down"] as const) this.ctlr.learn(`captionsFontSize${k}`, { fn: (_: KeyboardEvent, mod: KeyMod) => this.changeFontSize((this.ctlr.plug("settings.keys")?.getModded("captionsFontSize", mod, this.config.font.size.skip) ?? this.config.font.size.skip) * (k === "Up" ? 1 : -1)), keyboard: { phase: "keydown" } }, this.signal);
     // prettier-ignore
-    ROTATE_PATHS.forEach((p) => this.ctlr.learn(camelize(`captions.${p}`, /\./), { fn: () => this.rotateProp(getPath(this.config, p as any).options.map((opt: any) => parseUIOpt(opt).value), p), keyboard: { phase: "keydown" } }, this.signal));
+    for (const p of ROTATE_PATHS) this.ctlr.learn(camelize(`captions.${p}`, /\./), { fn: () => this.rotateProp(getPath(this.config, p as any).options.map((opt: any) => parseUIOpt(opt).value), p), keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 
@@ -87,11 +88,10 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     this.ctlr.when("loadedMetadata", e, handle, this.signal);
     e.resolve(this.name); // hid everytin already but need minors to shutup
   }
-
   protected handleTextVisibleState({ value }: REvent<CtlrMedia, "state.textVisible">): void {
     this.media.container.classList.toggle("tmg-media-captions", this.canVisible && value);
     const track = value && this.media.status.textTracks[this.media.state.currentTextTrack];
-    track && (this.iView ??= ComponentRegistry.init("captionsView", this.ctlr) || null)?.preview(this.getPreviewTip(track));
+    track && (this.iView ??= ComponentRegistry.init("captionsView", this.ctlr, { initialX: "12.5%", initialY: "20%" }))?.preview(this.getInfoTip(track));
     if (!this.media.features.activeCues) return;
     if (value) this.handleActiveCuesStatus(undefined, this.media.status.activeCues), this.sViewsMaps.forEach((map, i) => this.handleCueChange(undefined, this.media.status.textTracks[i]));
     else !this.mainView?.previewing && this.syncCues(null, this.views, this.initView), this.iView?.render(null), this.sViewsMaps.forEach((map) => this.syncCues(null, map));
@@ -101,7 +101,6 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     const language = getTrackLang(this.media.status.textTracks[this.media.state.currentTextTrack]);
     this.media.state.textVisible && (this.views.forEach((v) => (v.config.language = language)), this.syncCues(value as CueLike[] | null, this.views, (key) => this.initView(key, language)));
   }
-
   protected handleCueChange(e?: globalThis.Event, track = e?.target as TextTrack | null): void {
     const idx = this.media.state.textVisible ? Array.prototype.indexOf.call(this.media.status.textTracks, track) : -1;
     if (!track || idx === -1 || idx === this.media.state.currentTextTrack) return;
@@ -131,21 +130,6 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
         if (size < this.config.font.size.max) this.config.font.size.value = size + (size % value ? size % value : value);
     }
     this.media.features.activeCues && this.ctlr.config.stall(() => (this.views.size ? this.views.forEach((v) => v.preview()) : this.mainView?.preview()));
-  }
-
-  protected initView(key: string, language = ""): CaptionsView | undefined {
-    const view = ComponentRegistry.init("captionsView", this.ctlr, { isMain: key === "main", ofMedia: true, language }) || undefined;
-    return view && this.views.set(key, view), view;
-  }
-  public get mainView(): CaptionsView | undefined {
-    return this.views.get("main") || this.initView("main", getTrackLang(this.media.status.textTracks[this.media.state.currentTextTrack]));
-  }
-
-  public get canVisible(): boolean {
-    return (this.media.features.textTracks ? !!this.media.status.textTracks.length : !this.media.features.activeCues) && !!this.media.features.textVisible;
-  }
-  public getPreviewTip(track = this.media.status.textTracks[this.media.state.currentTextTrack], idx = this.media.state.currentTextTrack): CueLike {
-    return { text: `${getTrackLabel(track, idx)} ${getTrackKind(track)}`.trim() + "\n Click ⚙ for settings", region: { viewportAnchorX: 12.5, viewportAnchorY: 20 } };
   }
 
   public syncUI(): void {
@@ -179,18 +163,34 @@ export class CaptionsPlug extends BasePlug<CaptionsConfig, CaptionsState> {
     for (const [key, cues] of groups) (map.get(key) ?? spawn(key))?.render(cues);
     for (const [key, view] of map) groups.has(key) || (view.destroy(), map.delete(key));
   }
+  public rerenderCues(): void {
+    this.views.forEach((v) => v.rerender(true)), this.iView?.rerender(true), this.sViewsMaps.forEach((map) => map.forEach((v) => v.rerender(true)));
+  }
+  public resetCuesPos(): void {
+    this.views.forEach((v) => v.resetPos()), this.iView?.resetPos(), this.sViewsMaps.forEach((map) => map.forEach((v) => v.resetPos())), this.ctlr.plug("settings.voice")?.ai?.texter?.resetPos();
+  }
+
+  protected initView(key: string, language = ""): CaptionsView | undefined {
+    const view = ComponentRegistry.init("captionsView", this.ctlr, { isMain: key === "main", ofMedia: true, language }) || undefined;
+    return view && this.views.set(key, view), view;
+  }
+  public get mainView(): CaptionsView | undefined {
+    return this.views.get("main") || this.initView("main", getTrackLang(this.media.status.textTracks[this.media.state.currentTextTrack]));
+  }
+  public get canVisible(): boolean {
+    return (this.media.features.textTracks ? !!this.media.status.textTracks.length : !this.media.features.activeCues) && !!this.media.features.textVisible;
+  }
+  public getInfoTip(track = this.media.status.textTracks[this.media.state.currentTextTrack], idx = this.media.state.currentTextTrack): CueLike {
+    return { text: `${getTrackLabel(track, idx)} ${getTrackKind(track)}`.trim() + "\n Click ⚙ for settings" };
+  }
+
   public syncFeatures(): void {
     this.media.tech.polyfill("textTracks", this.isNative), this.media.tech.polyfill(["currentTextTrack", "secondaryTextTracks"], this.isNative && this.media.features.textTracks);
     this.media.tech.polyfill("textVisible", this.media.features.activeCues), this.media.tech.polyfill("textsVisible", this.isNative && this.media.features.currentTextTrack); // this.media.features.activeCues -> true
   }
-  public resetCuesPos(): void {
-    this.iView?.resetPos(), this.views.forEach((v) => v.resetPos()), this.sViewsMaps.forEach((map) => map.forEach((v) => v.resetPos()));
-  }
-
   protected override registerMenu(items = MenuRegistry.get("settings.captions")?.(this), menu = this.ctlr.plug("settings.panel")?.menu): void {
     if (items && menu) menu.unregister("captions"), isArr(items) ? items.forEach((item) => menu.registerBefore("chapters", item)) : menu.registerBefore("chapters", items);
   }
-
   protected override onDestroy(): void {
     this.iView?.destroy(), this.views.forEach((v) => v.destroy()), this.sViewsMaps.forEach((map) => map.forEach((v) => v.destroy()));
     super.onDestroy();

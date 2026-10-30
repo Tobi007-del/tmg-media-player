@@ -52,7 +52,7 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
     this.ctlr.config.on("settings.timeTravel.console", ({ currentTarget: { value } }) => (this.console && fanout(this.console.config, value), this.aiConsole && fanout(this.aiConsole.config, value)), { signal: this.signal });
     this.ctlr.config.on("settings.css.brandColor", ({ value }) => (this.console && (this.console.config.color = value as string), this.aiConsole && (this.aiConsole.config.color = value as string)), { signal: this.signal });
     // Post Wiring
-    this.ctlr.learn("timeTravelUndo", { fn: this.module.undo }, this.signal), this.ctlr.learn("timeTravelRedo", { fn: this.module.redo }, this.signal);
+    this.ctlr.learn("timeTravelUndo", { fn: this.module.undo, keyboard: { phase: "keydown" } }, this.signal), this.ctlr.learn("timeTravelRedo", { fn: this.module.redo, keyboard: { phase: "keydown" } }, this.signal);
     super.wire();
   }
 

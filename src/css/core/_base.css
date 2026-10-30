@@ -141,7 +141,7 @@
   transition: outline-offset var(--tmg-media-fade-transition-time) ease !important;
 }
 .tmg-host-container .tmg-media-settings-menu :is(*:focus-visible, #o#o#o#o#o),
-.tmg-media-voice-input:is(:focus-visible, #o#o#o#o#o) {
+:is(.tmg-media-voice-input, .tmg-media-voice-input-btn):is(:focus-visible, #o#o#o#o#o) {
   outline-offset: calc(var(--tmg-media-current-unit) / -13);
 }
 .tmg-host-container :is(:is(.tmg-media-profile-link, .tmg-media-meta-text, :is(.tmg-media-big-controls-wrapper, .tmg-media-next-preview-wrapper) > *, .tmg-media-voice-link):focus-visible, #o#o#o#o#o) {

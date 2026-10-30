@@ -102,11 +102,13 @@ export class SubMenuPanel extends BaseMenuPanel {
     }
     if (this.item?.actions?.length) {
       const btns = this.headerActions.querySelectorAll<HTMLButtonElement>("button");
-      this.item.actions.forEach((action, i) => {
-        if (!btns[i]) return;
-        btns[i].innerHTML = action.icon ? IconRegistry.get(action.icon, true) || action.getLabel() : action.getLabel();
-        if (action.getDisabled) btns[i].disabled = action.getDisabled();
-        if (action.hidden) btns[i].style.display = action.hidden() ? "none" : "";
+      this.item.actions.forEach((action, i, _, btn = btns[i]) => {
+        if (!btn) return;
+        const label = action.getLabel();
+        btn.innerHTML = action.icon ? IconRegistry.get(action.icon, true) || label : label;
+        btn.ariaLabel = btn.title = label;
+        if (action.getDisabled) btn.disabled = action.getDisabled();
+        if (action.hidden) btn.style.display = action.hidden() ? "none" : "";
       });
     }
     if (this.item?.getTipHTML) {

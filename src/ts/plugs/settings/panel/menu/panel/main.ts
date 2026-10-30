@@ -26,9 +26,9 @@ export class MainMenuPanel extends BaseMenuPanel {
     this.renderRows = createListRenderer<SettingsMenuItem, SettingsRowEl>({ container: list, getKey: (item) => item.id, createNode: this.buildRow, updateNode: this.updateRow, destroyNode: (node) => (node._ac?.abort(), node.widget?.destroy(), node.remove()) });
     this.content.append(list);
     if (this.menuConfig.showMore) {
-      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-view-btn", innerHTML: `<span class="tmg-media-smenu-row-icon tmg-media-flex-center">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-view-label">See More</span>` });
+      this.viewBtn = createEl("button", { type: "button", className: "tmg-media-smenu-more-btn", innerHTML: `<span class="tmg-media-smenu-row-icon tmg-media-flex-center">${IconRegistry.get("returnBack")}</span><span class="tmg-media-smenu-more-label">See More</span>` });
       this.viewBtn.addEventListener("click", () => this.onMoreClick?.(), { signal: this.signal }), this.content.append(createEl("div", { className: "tmg-media-smenu-divider" }), this.viewBtn);
-      this.ctlr.plug("settings.panel")?.state.on("moreOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-view-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
+      this.ctlr.plug("settings.panel")?.state.on("moreOpen", ({ value }, lbl = this.viewBtn?.querySelector(".tmg-media-smenu-more-label")) => lbl && (lbl.textContent = value ? "Hide More" : "See More"), { init: true, signal: this.signal });
     }
   }
 

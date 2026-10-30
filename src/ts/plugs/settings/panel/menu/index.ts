@@ -150,7 +150,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.isOpen = false;
     this.lastClosedTime = performance.now();
     clearInterval(this.anchorIntervalId);
-    this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-open", "tmg-media-smenu-down"), this.media.container.classList.remove("tmg-media-menu-settings");
+    this.el.setAttribute("inert", ""), this.el.classList.remove("tmg-media-smenu-open", "tmg-media-smenu-down", "tmg-media-smenu-fallback"), this.media.container.classList.remove("tmg-media-menu-settings");
     removeOutsideClick(this.element), removeArrowNavigation(this.element), removeFocusTrap(this.element), this.ctlr.plug("settings.overlay")?.delay();
     this.anchor = undefined;
   }
@@ -201,9 +201,10 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   private reposition(anchor = this.anchor): void {
     if (!anchor && !this.isOpen) return;
     const menuWidth = this.el.offsetWidth || 320,
-      fallback = !anchor || !this.ctlr.plug("settings.overlay")?.state.visible,
+      isContext = isPOJO(anchor),
+      fallback = !anchor || (!isContext && !this.ctlr.plug("settings.overlay")?.state.visible),
       { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
-      { top: aTop, left: aLeft, width: aWidth } = fallback ? NIL : isPOJO(anchor) ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
+      { top: aTop, left: aLeft, width: aWidth } = fallback ? NIL : isContext ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
       y = fallback ? `calc(100% - var(--tmg-media-current-global-safe-inset-bottom))` : aTop - cTop,
       x = fallback ? `calc(100% - var(--tmg-media-current-safe-inset-x) - ${menuWidth}px)` : clamp(this.safeMargin, aLeft - cLeft + aWidth / 2 - menuWidth / 2, cWidth - menuWidth - this.safeMargin);
     if (this.lastAnchorX === x && this.lastAnchorY === y) return;
@@ -211,7 +212,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     this.el.style.setProperty("--tmg-smenu-anchor-x", isStr(x) ? x : `${x}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", isStr(y) ? y : `${y}px`);
     const isDown = isNum(y) && y < cHeight / 2;
     isNum(y) && this.el.style.setProperty("--tmg-smenu-max-height", `${Math.round(isDown ? cHeight - y - this.safeMargin : y - (parseFloat(this.ctlr.settings.css.currentTopWrapperHeight as string) || 0) - this.safeMargin)}px`);
-    this.el.classList.toggle("tmg-media-smenu-fallback", fallback), this.el.classList.toggle("tmg-media-smenu-down", isDown);
+    this.el.classList.toggle("tmg-media-smenu-fallback", fallback || isContext), this.el.classList.toggle("tmg-media-smenu-down", isDown);
   }
   public safeMargin = 12;
 }

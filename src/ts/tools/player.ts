@@ -70,8 +70,8 @@ export class Player {
     this.configure(build as BuildParam, false);
   }
 
-  private notice({ error, warning, tip }: Partial<Record<"error" | "warning" | "tip", string>>): void {
-    if (this.build.devMode) error && console.error(`[TMG Player] ${error}`), warning && console.warn(`[TMG Player] ${warning}`), tip && console.info(`[TMG Player] ${tip}`);
+  private notice({ error, warning, tip }: Partial<Record<"error" | "warning" | "tip", string>>, prefix = "[TMG Player]"): void {
+    if (this.build.devMode) error && console.error(prefix, error), warning && console.warn(prefix, warning), tip && console.info(prefix, tip);
   }
 }
 

@@ -1,7 +1,7 @@
 import { DeepPartial } from "sia-reactor";
 import { VoiceConfig, VoiceAiConfig } from "./types";
 import { ACTIONS_DICT } from "@consts/actions";
-import { VOICE_AI_SYSTEM_PROMPT } from "./prompt";
+import { AI_SYSTEM_PROMPT } from "./prompt";
 
 export const VOICE_COMMANDS: Record<string, string | string[]> = {
   next: ["next video", "next item"],
@@ -26,10 +26,10 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   voiceQuit: "quit",
   voiceSleep: "sleep",
   voiceMute: "snub",
-  voiceAi: ["copilot", "spark"],
+  voiceAi: ["pilot", "spark"],
   voiceAiStop: ["stop thinking", "stop working"],
-  voiceAiTimeTravelUndo: ["copilot undo", "spark undo"],
-  voiceAiTimeTravelRedo: ["copilot redo", "spark redo"],
+  voiceAiTimeTravelUndo: ["pilot undo", "spark undo"],
+  voiceAiTimeTravelRedo: ["pilot redo", "spark redo"],
   voiceSubmit: ["submit", "enter"],
   voiceCtxPrevious: "go back",
   voiceCtxNext: "go front",
@@ -41,10 +41,11 @@ for (const k of Object.keys(ACTIONS_DICT)) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_AI_BUILD: DeepPartial<VoiceAiConfig> = {
   active: false,
-  endpoint: "",
-  model: "gemini-1.5-flash",
-  systemPrompt: VOICE_AI_SYSTEM_PROMPT,
   preference: "",
+  model: "", // "gemini-3.5-flash-lite"
+  apiKey: "",
+  endpoint: "", // "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+  systemPrompt: AI_SYSTEM_PROMPT,
 };
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
@@ -103,12 +104,12 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
         { value: "strict", display: "Strict (Only when awake)" },
       ],
     },
-    router: {
+    quoter: {
       position: "top-center",
       icon: "🎙️",
       compact: true,
     },
-    helper: {
+    router: {
       position: "bottom-left",
       icon: "🧭",
       autoClose: false,

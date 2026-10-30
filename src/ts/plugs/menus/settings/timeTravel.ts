@@ -81,7 +81,7 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
       onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("timeTravel"))) => {
         for (const k of ["devMode", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
       },
-      items: [getTimeTravelHistoryMenu(plug.ctlr, plug.module, { id: "timeTravelHistory", label: "History", signal: plug.signal }), { id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => plug.config.persist, getBadge: () => ({ label: "labs" }), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" }],
+      items: [{ id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => plug.config.persist, getBadge: () => ({ label: "labs" }), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" }, getTimeTravelHistoryMenu(plug.ctlr, plug.module, { id: "timeTravelHistory", label: "History", signal: plug.signal })],
     },
   ],
 });

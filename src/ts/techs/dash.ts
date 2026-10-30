@@ -78,7 +78,7 @@ export class DashTech extends HTML5Tech {
         for (const T of ["TextTrack", "AudioTrack", "VideoTrack", "Level"] as const) silence(() => (this.config.intent[`current${T}`] = this.config.intent[`current${T}`])), this.config.tick(`intent.current${T}`), T === "TextTrack" && silence(() => (this.config.intent.textVisible = this.config.intent.textVisible)); // #RE-TRIGGER: sync intent resolution
       }); // Dynamic Track List Updates (Mid-stream changes, e.g. multi-period live streams)
       this.host.on(DASHJS.MediaPlayer.events.ERROR, (ev) => {
-        if (ev.error === "download") return this.ctlr.notice(`DASH Download error occurred: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`, true);
+        if (ev.error === "download") return this.ctlr.notice(`DASH download failed: ${ev.event}`, "error", `Download failed for "${ev.event?.url}"`, true);
         ev.error === "mediasource" && this.handleHostError(ev);
       });
       this.config.settings.protection && this.host.setProtectionData(this.config.settings.protection);

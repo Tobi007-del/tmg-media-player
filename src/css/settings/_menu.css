@@ -145,7 +145,7 @@
 .tmg-media-smenu-row,
 .tmg-media-smenu-select-option,
 .tmg-media-smenu-group-row,
-.tmg-media-smenu-view-btn {
+.tmg-media-smenu-more-btn {
   display: flex;
   align-items: center;
   padding: calc(var(--tmg-media-current-unit) / 2.5) calc(var(--tmg-media-current-unit) / 1.75);
@@ -153,15 +153,15 @@
   position: relative;
   cursor: pointer;
 }
-:where(.tmg-media-smenu-row, .tmg-media-smenu-select-option, .tmg-media-smenu-group-row, .tmg-media-smenu-view-btn, .tmg-media-smenu-color-swatch, .tmg-media-smenu-input-btn, .tmg-media-smenu-limits-btn, .tmg-media-smenu-sub-action-btn):is(:hover, :focus-visible) {
+:where(.tmg-media-smenu-row, .tmg-media-smenu-select-option, .tmg-media-smenu-group-row, .tmg-media-smenu-more-btn, .tmg-media-smenu-color-swatch, .tmg-media-smenu-input-btn, .tmg-media-smenu-limits-btn, .tmg-media-smenu-sub-action-btn):is(:hover, :focus-visible) {
   background-color: rgb(from currentColor r g b / 0.1);
 }
-.tmg-media-smenu-view-btn {
+.tmg-media-smenu-more-btn {
   width: 100%;
   font-size: inherit;
   font-weight: 600;
 }
-.tmg-media-smenu-view-btn > .tmg-media-smenu-row-icon {
+.tmg-media-smenu-more-btn > .tmg-media-smenu-row-icon {
   margin-right: calc(var(--tmg-media-current-unit) / 3);
 }
 :is(.tmg-media-smenu-row-hidden, #o#o#o#o#o) {

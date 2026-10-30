@@ -6,7 +6,6 @@ import { createEl } from "@utils/dom";
 import { clamp, safeNum } from "@utils/num";
 import { parseCSSTime } from "@utils/str";
 import { formatMediaTime } from "@utils/time";
-import { silence } from "sia-reactor/modules";
 import { setTimeout } from "@utils/fn";
 import { getMediaMin, getMediaMax } from "@utils/time";
 import { NIL } from "sia-reactor";
@@ -97,7 +96,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   }
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
-    this.media.state.paused && this.ctlr.throttle("frameStepping", () => silence(() => (this.media.intent.currentTime = clamp(getMediaMin(this.media), Math.round(this.media.state.currentTime * this.config.fps) + (dir === "backwards" ? -1 : 1), Math.floor(getMediaMax(this.media) * this.config.fps)) / this.config.fps)), Math.round(1000 / this.config.fps));
+    this.media.state.paused && this.ctlr.throttle("frameStepping", () => (this.media.intent.currentTime = clamp(getMediaMin(this.media), Math.round(this.media.state.currentTime * this.config.fps) + (dir === "backwards" ? -1 : 1), Math.floor(getMediaMax(this.media) * this.config.fps)) / this.config.fps), Math.round(1000 / this.config.fps));
   }
 
   public syncFeatures(): void {

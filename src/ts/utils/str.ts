@@ -23,6 +23,14 @@ export function formatMenuPx(v: string | number, long = false): string {
   return isNaN(num) ? `0${long ? " px" : "px"}` : `${Math.round(num)}${long ? " px" : "px"}`;
 }
 
+export function canMorphSVG(...svgs: string[]): string[][] | null {
+  if (svgs.length < 2) return null;
+  const parse = (s: string) => [...s.matchAll(/<path[^>]*d=["']([^"']+)["'][^>]*>/gi)].map((m) => m[1]),
+    paths = svgs.map(parse),
+    p0 = paths[0];
+  return p0.length && paths.every((p) => p.length === p0.length && p.every((d, i) => d.match(/[a-zA-Z]/g)?.join("") === p0[i].match(/[a-zA-Z]/g)?.join(""))) ? paths : null;
+}
+
 // Checkers
 export const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
@@ -81,10 +89,41 @@ export function fuzzyChunkMatch(targets: string | string[], transcript: string, 
   return null;
 }
 
-export function canMorphSVG(...svgs: string[]): string[][] | null {
-  if (svgs.length < 2) return null;
-  const parse = (s: string) => [...s.matchAll(/<path[^>]*d=["']([^"']+)["'][^>]*>/gi)].map((m) => m[1]),
-    paths = svgs.map(parse),
-    p0 = paths[0];
-  return p0.length && paths.every((p) => p.length === p0.length && p.every((d, i) => d.match(/[a-zA-Z]/g)?.join("") === p0[i].match(/[a-zA-Z]/g)?.join(""))) ? paths : null;
+// AI Utilities
+
+export const formatAiText = (t = "") =>
+  t
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/(?:^|\n)\s*[*•-]\s+/g, "<br>• ")
+    .replace(/\*(.*?)\*/g, "<i>$1</i>")
+    .replace(/\n+/g, "<br>")
+    .replace(/^(?:<br\s*\/?>)+/i, "")
+    .trim();
+
+export async function* readSSEStream(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader(),
+    dec = new TextDecoder();
+  let buf = "";
+  try {
+    for (let res; (res = await reader.read()); ) {
+      buf += dec.decode(res.value, { stream: !res.done });
+      const lines = buf.split("\n");
+      buf = res.done ? "" : lines.pop() || "";
+      for (const l of lines) {
+        const line = l.trim();
+        if (line === "data: [DONE]") return;
+        if (!line.startsWith("data:")) continue;
+        try {
+          const d = JSON.parse(line.slice(5).trim()),
+            c = d.choices?.[0]?.delta?.content ?? d.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+          if (c) yield c;
+          if (d.choices?.[0]?.finish_reason === "stop" || d.candidates?.[0]?.finishReason?.toUpperCase() === "STOP") return;
+        } catch (_) {}
+      }
+      if (res.done) break;
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
 }

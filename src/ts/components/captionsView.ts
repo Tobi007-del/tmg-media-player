@@ -1,5 +1,5 @@
 import { BaseComponent, ComponentState } from "./base";
-import type { CueLike } from "@plugs/settings/captions";
+import { type CueLike, STYLE_PATHS } from "@plugs/settings/captions";
 import { capitalize } from "@utils/str";
 import { clamp, parseIfPercent, safeNum } from "@utils/num";
 import { createEl } from "@utils/dom";
@@ -48,11 +48,12 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     this.el.addEventListener("pointerdown", this.handleDragStart, { signal: this.signal });
     // Ctlr State Listeners
     this.ctlr.state.on("dimensions.container.width", this.rerender, { init: true, signal: this.signal });
+    // ---- Media ---------
+    this.media.on("state.objectFit", this.rerender, { signal: this.signal });
+    this.config.isMain && this.media.on("state.secondaryTextTracks", this.syncBadge, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.rerender, { signal: this.signal });
-    // ---- Media ---------
-    this.config.isMain && this.media.on("state.secondaryTextTracks", this.syncBadge, { signal: this.signal });
-    this.media.on("state.objectFit", this.rerender, { signal: this.signal });
+    for (const p of STYLE_PATHS) !/color|opacity/.test(p) && this.ctlr.config.on(`settings.captions.${p}`, () => this.rerender(true), { signal: this.signal });
   }
 
   public syncSize(force = false): void {
@@ -75,8 +76,8 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     return this.el.classList.contains("tmg-media-captions-preview");
   }
 
-  public rerender(force: boolean | unknown = false): void {
-    if (this.media.state.textVisible || this.previewing) this.syncSize(force === true), this.cues && this.render(this.cues, this.previewing, true);
+  public rerender(force?: unknown): void {
+    if (this.media.state.textVisible || this.previewing || this.config.isSolo) this.syncSize(force === true), this.cues && this.render(this.cues, this.previewing, true);
   }
   public render(cues: CueLike[] | null, isPreview = false, transition = false): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
@@ -88,7 +89,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
       wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) * (cueSize && cueSize !== 100 ? cueSize / 100 : 1) - this.fontSize * 2, // Padding allowance
       wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }));
-    if (!this.config.isMain) this.dragX && this.el.style.setProperty("--tmg-media-current-captions-x", this.dragX), this.dragY && this.el.style.setProperty("--tmg-media-current-captions-y", this.dragY);
+    if (!this.config.isMain) this.dragX && this.el.style.setProperty(`${sPfx}x`, this.dragX), this.dragY && this.el.style.setProperty(`${sPfx}y`, this.dragY);
     (wrapper.innerHTML = ""), this.syncBadge();
     for (const cue of cues!) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
@@ -96,14 +97,13 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     }
     if (!transition) this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
-    this.config.isMain ? (this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`) : this.el.style.setProperty("--cmptd-cue-box-height", `${cHeight}px`);
-    this.config.isMain ? (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`) : this.el.style.setProperty("--cmptd-cue-box-width", `${cWidth}px`);
+    this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`), (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${cHeight}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${cWidth}px`));
     const regionCue = cues!.find((c) => c.region);
     if (regionCue?.region) {
       this.el.setAttribute("data-active", "");
       const { width, lines: rLines, viewportAnchorX: vpAnX, viewportAnchorY: vpAnY, scroll } = regionCue.region;
-      if (isDef(vpAnX)) this.el.style.setProperty("--tmg-media-current-captions-x", `${vpAnX}%`);
-      if (isDef(vpAnY)) this.el.style.setProperty("--tmg-media-current-captions-y", `${vpAnY}%`);
+      if (isDef(vpAnX)) this.el.style.setProperty(`${sPfx}x`, `${vpAnX}%`);
+      if (isDef(vpAnY)) this.el.style.setProperty(`${sPfx}y`, `${vpAnY}%`);
       if (isDef(width)) this.el.style[regionCue.fluid ? "maxWidth" : "width"] = `${width}%`;
       if (isDef(rLines)) this.el.style[regionCue.fluid ? "maxHeight" : "height"] = `${Number(rLines) * ((this.lineHPx / vCHeight) * 100)}%`;
       if (scroll === "up") (this.el.dataset.scroll = scroll), this.ctlr.config.stall(() => (this.el.scrollTop = wrapper.scrollHeight));
@@ -111,7 +111,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       if (isDef(cue.position) && cue.position !== "auto") {
         const elHalfWPct = ((cWidth / vCWidth) * 100) / 2,
           posOffset = cue.positionAlign === "line-left" ? 0 : cue.positionAlign === "line-right" ? -2 * elHalfWPct : -elHalfWPct;
-        this.el.style.setProperty("--tmg-media-current-captions-x", `calc(${cue.position}% + ${posOffset}% + ${elHalfWPct}%)`);
+        this.el.style.setProperty(`${sPfx}x`, `calc(${cue.position}% + ${posOffset}% + ${elHalfWPct}%)`);
       }
       if (isDef(cue.line) && cue.line !== "auto") {
         const line = parseIfPercent(cue.line, 100),
@@ -120,7 +120,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
           lAlign = cue.lineAlign && cue.lineAlign !== "auto" ? cue.lineAlign : line < 0 ? "end" : "start",
           lineOffset = lAlign === "start" ? 0 : lAlign === "end" ? -2 * elHalfHPct : -elHalfHPct,
           topVal = cue.snapToLines ? (line < 0 ? 100 - (Math.abs(line) - 1) * lhPct : line * lhPct) : line;
-        this.el.style.setProperty("--tmg-media-current-captions-y", `calc(${topVal}% + ${lineOffset}% + ${elHalfHPct}%)`);
+        this.el.style.setProperty(`${sPfx}y`, `calc(${topVal}% + ${lineOffset}% + ${elHalfHPct}%)`);
       }
       if (cueSize && cueSize !== 100) this.el.style[cue.fluid ? "maxWidth" : "width"] = `${cueSize}%`;
       if (cue.vertical) this.el.style.writingMode = cue.vertical === "lr" ? "vertical-lr" : "vertical-rl";
@@ -157,15 +157,14 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
         posX = clamp(w / 2, this.lastPosX + (e.clientX - this.lastPtrX), ww - w / 2),
         posY = clamp(h / 2, this.lastPosY + (e.clientY - this.lastPtrY), hh - h / 2);
       if (this.config.isMain) (this.settings.css.currentCaptionsX = `${(posX / ww) * 100}%`), (this.settings.css.currentCaptionsY = `${(posY / hh) * 100}%`);
-      else this.el.style.setProperty("--tmg-media-current-captions-x", (this.dragX = `${(posX / ww) * 100}%`)), this.el.style.setProperty("--tmg-media-current-captions-y", (this.dragY = `${(posY / hh) * 100}%`));
+      else this.el.style.setProperty(`${sPfx}x`, (this.dragX = `${(posX / ww) * 100}%`)), this.el.style.setProperty(`${sPfx}y`, (this.dragY = `${(posY / hh) * 100}%`));
     });
   }
   private prevEX?: number;
   private prevEY?: number;
 
   protected handleDragEnd(): void {
-    this.ctlr.cancelRAFLoop("captionsDragging"), this.useTx();
-    this.media.container.classList.remove("tmg-media-captions-dragging");
+    this.ctlr.cancelRAFLoop("captionsDragging"), this.useTx(), this.media.container.classList.remove("tmg-media-captions-dragging");
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) this.el.removeEventListener(evt, evt === "pointermove" ? this.handleDragging : this.handleDragEnd);
   }
 
@@ -174,8 +173,8 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       const sache = this.ctlr.plug("settings.css")?.build;
       sache && transaction(() => ((this.settings.css.currentCaptionsX = sache.currentCaptionsX!), (this.settings.css.currentCaptionsY = sache.currentCaptionsY!)), "Captions position reset");
     } else {
-      if (this.dragX === this.el.style.getPropertyValue("--tmg-media-current-captions-x")) (this.dragX = undefined), this.el.style.removeProperty("--tmg-media-current-captions-x");
-      if (this.dragY === this.el.style.getPropertyValue("--tmg-media-current-captions-y")) this.el.style.setProperty("--tmg-media-current-captions-y", (this.dragY = this.orderDragY!));
+      if (this.dragX === this.el.style.getPropertyValue(`${sPfx}x`)) (this.dragX = this.config.initialX), isDef(this.dragX) ? this.el.style.setProperty(`${sPfx}x`, this.dragX!) : this.el.style.removeProperty(`${sPfx}x`);
+      if (this.dragY === this.el.style.getPropertyValue(`${sPfx}y`)) (this.dragY = this.orderDragY ?? this.config.initialY), isDef(this.dragY) ? this.el.style.setProperty(`${sPfx}y`, this.dragY!) : this.el.style.removeProperty(`${sPfx}y`);
     }
     this.canOverride && this.rerender();
   }
@@ -197,6 +196,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     super.onDestroy();
   }
 }
+const sPfx = "--tmg-media-current-captions-";
 
 type timeNode = {
   el: HTMLElement;
