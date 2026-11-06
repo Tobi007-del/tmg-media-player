@@ -45,7 +45,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
 
   public override wire(): void {
     // Event Listeners
-    ["click", "click", "keydown", "mousemove", "touchmove", "scroll"].forEach((ev, i) => this.container?.addEventListener(ev, !i ? this.handleClick : i < 3 ? this.handleInput : this.stayWoke, { passive: i > 3, signal: this.signal }));
+    ["click", "click", "keydown", "input", "mousemove", "touchmove", "scroll"].forEach((ev, i) => this.container?.addEventListener(ev, !i ? this.handleClick : i < 4 ? this.handleInput : this.stayWoke, { passive: i > 4, signal: this.signal }));
     // State Watchers
     this.state.watch("ctx", this.onCtx, { signal: this.signal });
     // ----- Listeners
@@ -56,8 +56,8 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     // ---- Media Watchers
     this.media.watch("tech", () => this.media.tech.polyfill("voice", true), { init: true, signal: this.signal }); // falls back to tap routing
     // ---- State Listeners
-    this.ctlr.state.on("mediaIntersecting", () => this.ctlr.debounce("syncingListener", this.syncListener, 500, false, this.signal), { signal: this.signal });
-    globalState.on("isVisible", () => this.ctlr.debounce("syncingListener", this.syncListener, 500, false, this.signal), { signal: this.signal });
+    this.ctlr.state.on("mediaIntersecting", () => this.ctlr.debounce("listenerSyncing", this.syncListener, 500, false, this.signal), { signal: this.signal });
+    globalState.on("isVisible", () => this.ctlr.debounce("listenerSyncing", this.syncListener, 500, false, this.signal), { signal: this.signal });
     // ---- Config -------
     this.ctlr.config.on("settings.voice.active.value", this.handleActive, { signal: this.signal });
     this.ctlr.config.on("settings.voice.muted", ({ value }) => this.config.active.value && (value && this.recognition?.abort(), this.start()), { signal: this.signal });
@@ -198,23 +198,22 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
   public predict(): void {
     if (!this.state.routing) return;
-    const crumbHtml = `<div class="tmg-media-voice-crumb-wrap">` + (this.config.ai.active ? `<small><b>AI Copilot</b></small>` : this.history.length < 2 ? `<small><b>Path Router</b></small>` : this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small style="${active ? "font-weight: 500;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, "goto")}</small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ")) + `</div>`,
-      actions: ToastOptions["actions"] = {};
+    const isBusy = !!this.ai?.state.status,
+      actions: ToastOptions["actions"] = {},
+      crumbHtml = `<div class="tmg-media-voice-crumb-wrap">` + (this.config.ai.active ? `<small><b>AI Copilot</b></small>` : this.history.length < 2 ? `<small><b>Path Router</b></small>` : this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small style="${active ? "font-weight: 500;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, "goto")}</small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ")) + `</div>`;
+    if (this.media.features.ai) actions[`<span title='Toggle AI Copilot${formatActionTooltip(this.settings, "ai")}' ${this.config.ai.active ? "data-auto" : ""}>🤖</span>`] = () => this.ctlr.perform("ai");
     if (this.media.features.voiceItems) {
-      actions[`<span title='Clear context${formatActionTooltip(this.settings, "voiceCtxClear")}'>×</span>`] = () => this.clearCtx(false);
       actions[`<span title='Go back${formatActionTooltip(this.settings, "voiceCtxPrevious")}' ${this.media.features.previousVoiceItem ? "" : "disabled"}>‹</span>`] = this.goBack;
-      actions[`<span title='Go forward${formatActionTooltip(this.settings, "voiceCtxNext")}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward;
+      actions[`<span title='Go forward${formatActionTooltip(this.settings, "voiceCtxNext")}'${this.media.features.nextVoiceItem ? "" : " disabled"}>›</span>`] = this.goForward; // actions[`<span title='Clear context${formatActionTooltip(this.settings, "voiceCtxClear")}'>×</span>`] = () => this.clearCtx(false);
+    } else if (!isBusy && (this.ai?.module.canUndo || this.ai?.module.canRedo)) {
+      actions[`<span title='Undo AI Changes${formatActionTooltip(this.settings, "aiTimeTravelUndo")}' ${this.ai.module.canUndo ? "" : "disabled"}>‹</span>`] = this.ai.module.undo;
+      actions[`<span title='Redo AI Changes${formatActionTooltip(this.settings, "aiTimeTravelRedo")}' ${this.ai.module.canRedo ? "" : "disabled"}>›</span>`] = this.ai.module.redo;
     }
-    if (this.media.features.voiceAi) actions[`<span title='Toggle AI Copilot${formatActionTooltip(this.settings, "voiceAi")}' ${this.config.ai.active ? "data-auto" : ""}>✨</span>`] = () => this.ctlr.perform("voiceAi");
     if (this.ai?.config.active) {
-      const isBusy = !!this.ai.state.status,
-        showSubmit = this.media.tech.polyfill("voiceAiStop", isBusy) || this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || this.config.routing.strict.value === "auto"),
-        feedback = isBusy ? `<div class="tmg-media-voice-ai-bubble"><small>${this.ai.state.status}</small></div>` : "",
-        undoHtml = !isBusy && this.ai.module.canUndo ? `<button type="button" class="tmg-media-voice-input-btn" title='Undo changes${formatActionTooltip(this.settings, "voiceAiTimeTravelUndo")}' data-action="undo">↺</button>` : "",
-        redoHtml = !isBusy && this.ai.module.canRedo ? `<button type="button" class="tmg-media-voice-input-btn" title='Redo changes${formatActionTooltip(this.settings, "voiceAiTimeTravelRedo")}' data-action="redo">↻</button>` : "",
-        submitHtml = isBusy || showSubmit ? `<button type="button" class="tmg-media-voice-input-btn" title='${isBusy ? `Stop ${formatActionTooltip(this.settings, "voiceAiStop")}` : `Submit ${formatActionTooltip(this.settings, "voiceSubmit")}`}' data-action="${isBusy ? "stop" : "submit"}">${isBusy ? "■" : "↳"}</button>` : "",
-        inputHtml = `<div class="tmg-media-voice-input-wrap"><textarea rows="${isBusy ? 1 : 2}" name="voice_prompt" class="tmg-media-voice-input" placeholder="${isBusy ? "AI is working" : "Ask AI or tell it to control playback..."}" ${isBusy ? "disabled" : ""}></textarea>${undoHtml}${submitHtml}${redoHtml}</div>`;
-      return this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${feedback}${inputHtml}</div>`, this.getHelperOptions(actions)), this.input(this.ai.state.prompt || "")?.focus();
+      const showSubmit = this.media.tech.polyfill("aiStop", isBusy) || this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || this.config.routing.strict.value === "auto"),
+        submitHtml = isBusy || showSubmit ? `<button type="button" class="tmg-media-voice-input-btn" title='${isBusy ? `Stop ${formatActionTooltip(this.settings, "aiStop")}` : `Submit ${formatActionTooltip(this.settings, "voiceSubmit")}`}' data-action="${isBusy ? "stop" : "submit"}">${isBusy ? "■" : "↳"}</button>` : "",
+        inputHtml = `<div class="tmg-media-voice-input-wrap"><textarea rows="${isBusy ? 1 : 2}" name="voice_prompt" class="tmg-media-voice-input" placeholder="${isBusy ? "AI is working" : "Ask AI or tell it to control playback..."}" ${isBusy ? "disabled" : ""}></textarea>${submitHtml}</div>`;
+      return this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${isBusy ? `<div class="tmg-media-voice-ai-bubble"><small><i>${this.ai.state.status}</i></small></div>` : ""}${inputHtml}</div>`, this.getHelperOptions(actions)), this.input(this.ai.state.prompt || "")?.focus();
     } else if (this.ctlr.isLogical(this.state.ctx, true)) {
       const value = getPath(this.ctlr.logicRoot, mirror<any>(this.state.ctx, this.ctlr.logicRoot)),
         type = isArr(value) ? "array" : typeof value,
@@ -222,14 +221,12 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
         showSubmit = this.media.tech.polyfill("voiceSubmit", this.config.routing.strict.value === true || (this.config.routing.strict.value === "auto" && type === "string")),
         display = type === "array" ? value.join(", ") : value ?? "",
         inputHtml = showInput ? `<div class="tmg-media-voice-input-wrap"><input name="voice_value" type="${type === "number" ? "number" : "text"}" class="tmg-media-voice-input" placeholder="${display || (type === "boolean" ? "true" : type === "number" ? "0" : type === "array" ? "value 1, value 2, value 3, ..." : "...text")}"/>${showSubmit ? `<button type="button" title='Submit ${formatActionTooltip(this.settings, "voiceSubmit")}' class="tmg-media-voice-input-btn" data-action="submit">↳</button>` : ""}</div>` : "",
-        // prettier-ignore
         hints = type === "boolean" ? `${(isArr(this.config.commands.voiceToggleOn) ? this.config.commands.voiceToggleOn.slice(0, 2) : [this.config.commands.voiceToggleOn]).map((v) => this.linked(v)).join(", ")} or ${(isArr(this.config.commands.voiceToggleOff) ? this.config.commands.voiceToggleOff.slice(0, 2) : [this.config.commands.voiceToggleOff]).map((v) => this.linked(v)).join(", ")} ${inputHtml}` : type === "number" ? `a number (like ${this.linked("0")}, ${this.linked("50")}):</small> ${inputHtml}` : type === "array" ? `comma-separated values:</small> ${inputHtml}` : `the exact text:</small> ${inputHtml}`;
       return this.view?.(`${crumbHtml}<div class="tmg-media-voice-content">${showInput ? '<small style="font-weight: 500;">' : ""}Try ${this.config.muted ? (showInput ? "typing" : IS_MOBILE ? "tapping" : "clicking") : "saying"} ${hints}</div>`, this.getHelperOptions(actions)), this.input(display)?.focus();
     }
-    const paths = this.ctlr.getLogicPaths(this.state.ctx);
-    if (!paths.length) return;
-    const inputHtml = `<input name="voice_path" type="text" class="tmg-media-voice-input" placeholder="...text"/>`;
-    this.view?.(`${crumbHtml}<div class="tmg-media-voice-content"><small style="font-weight: 500;">Try ${this.config.muted ? (IS_MOBILE ? "tapping" : "clicking") : "saying"} any of these:</small><br>${inputHtml} • ${paths.map((p) => this.linked(uncam(p.split(".").pop()!))).join(" • ")}</div>`, this.getHelperOptions(actions));
+    const paths = this.ctlr.getLogicPaths(this.state.ctx),
+      inputHtml = `<input name="voice_path" type="text" class="tmg-media-voice-input" placeholder="...text"/>`;
+    paths.length && this.view?.(`${crumbHtml}<div class="tmg-media-voice-content"><small style="font-weight: 500;">Try ${this.config.muted ? (IS_MOBILE ? "tapping" : "clicking") : "saying"} any of these:</small><br>${inputHtml} <span style='opacity: 0.4;'><small>•</small></span> ${paths.map((p) => this.linked(uncam(p.split(".").pop()!))).join(" <span style='opacity: 0.4;'><small>•</small></span> ")}</div>`, this.getHelperOptions(actions));
   }
   public linked(text: string, value = text.toLowerCase(), type?: "menu" | "goto", rebuild = false, punc = type || this.config.muted ? "" : '"'): string {
     return `${punc}<u class="tmg-media-voice-link" title='${type ? "Go to" : "Say"} "${value}"' ${type ? `data-${type}` : "data-cmd"}="${value}" ${rebuild ? 'data-rebuild="true"' : ""} tabindex="0" style="cursor:pointer; text-decoration-color: rgb(from var(--tmg-media-brand-${type ? "accent-" : ""}color) r g b / 0.75);">${type || this.config.muted ? text : value}</u>${punc}`;
@@ -247,9 +244,10 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   }
   protected handleInput(e: Event, t = e.target as HTMLInputElement, isEnter = e.type === "keydown" && (e as KeyboardEvent).key === "Enter" && !(e as KeyboardEvent).shiftKey, isClick = e.type === "click", isBtn = isClick && t.matches(clame("input-btn"))): void {
     this.stayWoke(e);
+    if (e.type === "input" && t.name === "voice_prompt") return this.ai?.draft(t.value);
     if (!t?.tagName || !(isEnter || isBtn)) return;
     if (!this.ai?.config.active) e.preventDefault(), e.stopPropagation(), this.submit(this.input()?.value ?? t.value, !t.closest(clame("input-wrap")));
-    else e.preventDefault(), e.stopPropagation(), t.dataset.action === "undo" ? this.ai!.module.undo() : t.dataset.action === "redo" ? this.ai.module.redo() : t.dataset.action === "stop" ? this.ai?.stop() : this.ai.submit(this.input()?.value);
+    else e.preventDefault(), e.stopPropagation(), t.dataset.action === "stop" ? this.ai?.stop() : this.ai.submit(this.input()?.value);
   }
   public snooze(): void {
     !this.ai?.state.status && !this.ai?.talker?.speaking ? this.ctlr.debounce("voiceSleeping", this.snoozeCb, this.config.routing.timeout, false, this.signal) : this.ctlr.cancelTimeout("debounce", "voiceSleeping");
@@ -261,7 +259,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       const idx = this.history.indexOf(this.state.ctx);
       idx === -1 && this.history.splice(this.historyIdx + 1, this.history.length, value), (this.historyIdx = idx !== -1 ? idx : this.history.length - 1);
     }
-    this.media.tech.polyfill(["voiceSubmit", "voiceAiStop"], false), this.media.tech.polyfill("voiceItems", this.history.length > 1 && !this.config.ai.active);
+    this.media.tech.polyfill(["voiceSubmit", "aiStop"], false), this.media.tech.polyfill("voiceItems", this.history.length > 1 && !this.config.ai.active);
     this.media.tech.polyfill("previousVoiceItem", this.historyIdx > 0), this.media.tech.polyfill("nextVoiceItem", this.historyIdx < this.history.length - 1);
   }
   protected goTo(path = this.state.ctx, useForce = path === this.state.ctx, rebuild = false): string {

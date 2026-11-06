@@ -16,7 +16,9 @@ export class BackwardButton extends BaseComponent<BackwardConfig, ComponentState
   public override wire(): void {
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
-    // Ctlr Config Listeners
+    // Ctlr Media Listeners
+    this.media.on("status.loadedMetadata", this.syncUI, { signal: this.signal });
+    // ---- Config --------
     this.ctlr.config.on("settings.time.skip", () => (this.syncUI(), this.syncARIA()), { init: true, signal: this.signal });
     for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.timeSkipBwd`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
@@ -27,7 +29,8 @@ export class BackwardButton extends BaseComponent<BackwardConfig, ComponentState
 
   public syncUI(): void {
     const textEl = this.el.querySelector("text");
-    if (textEl) textEl.textContent = String(this.settings.time.skip);
+    if (textEl) textEl.textContent = this.media.status.loadedMetadata ? String(this.settings.time.skip) : "";
+    this[!this.media.status.loadedMetadata ? "disable" : "enable"]();
   }
 
   public syncARIA(): void {

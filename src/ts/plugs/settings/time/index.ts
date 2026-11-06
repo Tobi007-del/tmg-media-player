@@ -90,11 +90,11 @@ export class TimePlug extends BasePlug<TimeConfig> {
     notifier?.setAttribute("data-skip", String(Math.trunc(Math.abs(duration))));
   }
 
-  protected skipFwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
+  public skipFwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
     this.skip(offset != null ? Math.abs(offset) : this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip);
   }
-  protected skipBwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
+  public skipBwd(_?: KeyboardEvent, mod?: KeyMod, offset?: number): void {
     this.ctlr.plug("settings.gesture")?.ceaseSkip();
     this.skip(offset != null ? -Math.abs(offset) : -(this.ctlr.plug("settings.keys")?.getModded("timeSkip", mod, this.config.skip) ?? this.config.skip));
   }

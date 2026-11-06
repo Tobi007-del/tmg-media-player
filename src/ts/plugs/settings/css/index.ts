@@ -10,14 +10,15 @@ export class CSSPlug extends BasePlug<CssConfig> {
   public static readonly BUILD = CSS_BUILD;
   public classList = CSS_CLASSLIST;
   public build: Record<string, string | number | undefined> = {};
+  public banned = { prop: /\.(?:(constructor|syncWithMedia))/, var: /^(t007|sia)/ }; // __proto__|prototype|toString|valueOf|hasOwnProperty|
 
   public override wire(): void {
     // Variables Assignment
     const entries = Object.entries(this.config);
     this.settings.css.altImgUrl = `url(${window.TMG_MEDIA_ALT_IMG_SRC})`;
     // Blackbox Handlers
-    this.ctlr.config.get("*", (val, { target: { key, path }, live }: any) => val ?? (!path.startsWith("settings.css.") || banRgx.test(path) ? val : live ? this.get(key) : (this.build[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
-    this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !banRgx.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
+    this.ctlr.config.get("*", (val, { target: { key, path }, live }: any) => val ?? (!path.startsWith("settings.css.") || this.banned.prop.test(path) ? val : live ? this.get(key) : (this.build[key] ??= this.get(key))), { signal: this.signal }); // #BLACKBOX: immediacy requirement
+    this.ctlr.config.watch("*", (val, { target: { key, path } }: any) => path.startsWith("settings.css.") && !this.banned.prop.test(path) && this.set(key, val), { signal: this.signal }); // #BLACKBOX: immediacy requirement
     // ---- Media Watchers
     for (const p of ["videoWidth", "videoHeight"] as const) this.media.watch(`status.${p}`, this.syncAspectRatio, { init: p === "videoWidth", signal: this.signal });
     // ---- State --------
@@ -41,7 +42,7 @@ export class CSSPlug extends BasePlug<CssConfig> {
   }
 
   public getCSSKey(key: string): { isClass: boolean; id: string } {
-    return { isClass: this.classList.includes(key), id: `tmg-media-${uncamelize(key, "-")}` };
+    return { isClass: this.classList.includes(key), id: !this.banned.var.test(key) ? `tmg-media-${uncamelize(key, "-")}` : uncamelize(key, "-") };
   }
   protected getCSSValue(id: string): string {
     return getComputedStyle(this.media.container).getPropertyValue(`--${id}`) || "";
@@ -73,7 +74,6 @@ export class CSSPlug extends BasePlug<CssConfig> {
     this.settings.css.aspectRatio = w && h ? `${w} / ${h}` : "16 / 9";
   }
 }
-const banRgx = /\.(?:(constructor|syncWithMedia))/; // __proto__|prototype|toString|valueOf|hasOwnProperty|
 
 export type * from "./types";
 export * from "./build";

@@ -22,7 +22,8 @@ export class PersistPlug extends BasePlug<PersistConfig> {
     // Ctlr Config Setters
     this.ctlr.config.set("settings.persist.beforeSave", this.beforeSaveHook, { init: true, signal: this.signal });
     // Post Wiring
-    this.module.clearCache(), super.wire();
+    this.ctlr.flags.wired ? this.module.clearCache() : this.ctlr.state.once("readyState", this.module.clearCache, { signal: this.signal });
+    super.wire();
   }
 
   protected beforeSaveHook(v?: (payload: any) => any) {

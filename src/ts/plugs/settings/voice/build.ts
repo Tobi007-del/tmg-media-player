@@ -26,10 +26,10 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   voiceQuit: "quit",
   voiceSleep: "sleep",
   voiceMute: "snub",
-  voiceAi: ["pilot", "spark"],
-  voiceAiStop: ["stop thinking", "stop working"],
-  voiceAiTimeTravelUndo: ["pilot undo", "spark undo"],
-  voiceAiTimeTravelRedo: ["pilot redo", "spark redo"],
+  ai: ["pilot", "spark"],
+  aiStop: ["stop thinking", "stop working"],
+  aiTimeTravelUndo: ["pilot undo", "spark undo"],
+  aiTimeTravelRedo: ["pilot redo", "spark redo"],
   voiceSubmit: ["submit", "enter"],
   voiceCtxPrevious: "go back",
   voiceCtxNext: "go front",
@@ -40,12 +40,14 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
 for (const k of Object.keys(ACTIONS_DICT)) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_AI_BUILD: DeepPartial<VoiceAiConfig> = {
-  active: false,
+  active: true,
   preference: "",
   model: "", // "gemini-3.5-flash-lite"
   apiKey: "",
   endpoint: "", // "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
   systemPrompt: AI_SYSTEM_PROMPT,
+  history: [],
+  draft: { frame: -1, text: "" },
 };
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {

@@ -19,8 +19,8 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
       /media\.intent\.(sources|tracks|xrInputSource)/,
       /media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
+      /settings\.voice\.ai\.(systemPrompt|history|draft)/,
       /settings\.toasts\.reminders\.[^.]+\.target/,
-      "settings.voice.ai.systemPrompt",
       "settings.sleepTimer.target",
       /\.(on|before)[A-Z]\w+$/,
       /\.(id|options|ads)($|\.)/,

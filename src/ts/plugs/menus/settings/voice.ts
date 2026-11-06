@@ -32,7 +32,7 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
               id: "voiceAi",
               label: "Copilot",
               widget: "group",
-              feature: "voiceAi",
+              feature: "ai",
               getValue: () => (plug.config.ai.active ? "On" : "Off"),
               configPaths: ["settings.voice.ai.active"],
               items: [
@@ -95,7 +95,7 @@ export const getSettingsVoiceMenu = (plug: VoicePlug): SettingsMenuItem => ({
         },
       ],
     },
-    ...(plug.ai?.module ? [{ id: "timeTravel", label: "Time travel", widget: "group" as const, getValue: () => "", items: [getTimeTravelHistoryMenu(plug.ctlr, plug.ai.module, { id: "voiceAiTimeTravelHistory", label: "AI History", feature: "voiceAi", signal: plug.signal })] }] : []),
+    ...(plug.ai?.module ? [{ id: "timeTravel", label: "Time travel", widget: "group" as const, getValue: () => "", items: [getTimeTravelHistoryMenu(plug.ctlr, plug.ai.module, { id: "voiceAiTimeTravelHistory", label: "AI History", feature: "ai", signal: plug.signal })] }] : []),
   ],
 });
 

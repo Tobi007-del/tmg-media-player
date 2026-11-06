@@ -63,7 +63,7 @@ export class DashTech extends HTML5Tech {
         this.config.state[`current${capitalize(ev.mediaType) as TrackType}Track`] = i ?? -1;
       });
       this.host.on(DASHJS.MediaPlayer.events.QUALITY_CHANGE_RENDERED, (ev: any) => ev.mediaType === "video" && (this.config.state.currentLevel = ev.newQuality ?? ev.index)); // v4+ uses newQuality, v3 uses index
-      this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidthing", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round(this.host!.getAverageThroughput("video") * 1000)), 2000)); // kbps to bps
+      this.host.on(DASHJS.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, (ev) => this.ctlr.throttle("dashBandWidth", () => ev.request?.mediaType === "video" && (this.config.status.bandwidth = Math.round(this.host!.getAverageThroughput("video") * 1000)), 2000)); // kbps to bps
       this.host.on(DASHJS.MediaPlayer.events.EVENT_MODE_ON_RECEIVE, (ev: any) => {
         if (!this.config.settings.metadata.allowMediaOverride) return;
         if (!ev.schemeIdUri?.includes("chapter") && !ev.schemeIdUri?.includes("title")) return;

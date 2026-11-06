@@ -14,7 +14,7 @@
   flex-shrink: 0;
   justify-content: center;
   gap: calc(var(--t007-toast-actions-container-gap) / 2) var(--t007-toast-actions-container-gap);
-  width: calc(var(--t007-toast-unit) * 3.1);
+  width: calc(var(--t007-toast-unit) * 3.15);
 }
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button {
   padding-inline: calc(var(--t007-toast-unit) / 2.25);
@@ -49,16 +49,19 @@
   color: inherit;
   font-size: inherit;
   background-color: rgb(from currentColor r g b / 0.15);
-  border: 1px solid rgb(from currentColor r g b / 0.3);
+  border: 1px solid rgb(from currentColor r g b / 0.45);
   border-radius: calc(var(--t007-toast-unit) / 5);
+}
+.tmg-media-voice-input::placeholder {
+  color: rgb(from currentColor r g b / 0.55);
 }
 .tmg-media-voice-input-wrap .tmg-media-voice-input {
   flex: 1;
 }
 .tmg-media-voice-input-wrap textarea {
-  min-height: calc(var(--t007-toast-unit) * 1.75);
+  min-height: calc(var(--t007-toast-unit) * 1.95);
+  max-height: calc(var(--t007-toast-max-height) - var(--t007-toast-padding) - (var(--t007-toast-unit) * 1.5));
   padding: calc(var(--t007-toast-unit) / 4);
-  font-size: 88%;
   resize: vertical;
 }
 .tmg-media-voice-input-wrap textarea[disabled] {
@@ -68,10 +71,10 @@
 .tmg-media-voice-input[name="voice_path"] {
   width: calc(var(--t007-toast-unit) * 3.5);
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="✨"] {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="🤖"] {
   transition: transform var(--tmg-media-slow-transition-time) var(--tmg-media-bounce-timing), background-color var(--tmg-media-slow-transition-time) var(--tmg-media-bounce-timing);
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="✨"]:is(:not(:has([data-auto])):hover, :has([data-auto]):not(:hover)) {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="🤖"]:is(:not(:has([data-auto])):hover, :has([data-auto]):not(:hover)) {
   color: var(--tmg-media-brand-inverse-color);
   background-color: var(--tmg-media-brand-color);
   transform: rotate(360deg);
@@ -79,6 +82,9 @@
 .tmg-media-voice-input-btn {
   font-weight: 900;
   cursor: pointer;
+}
+.tmg-media-voice-input-btn:is([data-action="submit"], [data-action="stop"]) {
+  padding-inline: 4px;
 }
 .tmg-media-voice-input-btn[data-action="stop"] {
   color: var(--tmg-media-danger-color);
@@ -89,5 +95,4 @@
   background-color: rgb(from currentColor r g b / 0.08);
   border-left: 2px solid var(--tmg-media-brand-color);
   border-radius: calc(var(--t007-toast-unit) / 5);
-  font-style: italic;
 }

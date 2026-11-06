@@ -14,6 +14,8 @@ export interface VoiceAiConfig {
   apiKey: string;
   endpoint: string;
   systemPrompt: string;
+  history: Array<{ role: "user" | "assistant"; content: string }>;
+  draft: { frame: number; text: string };
 }
 
 export interface VoiceConfig {

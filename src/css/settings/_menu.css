@@ -73,6 +73,9 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+.tmg-host-container .sia-tt-console-dock {
+  bottom: var(--tmg-media-current-global-safe-inset-bottom);
+}
 
 /* Panel Header */
 .tmg-media-smenu-sub-header {

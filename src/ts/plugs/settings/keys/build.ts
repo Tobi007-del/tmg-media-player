@@ -52,10 +52,11 @@ export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
   voiceQuit: "Shift+q",
   voiceSleep: "Shift+z", // zz
   voiceMute: "Shift+m",
-  voiceAi: "Shift+i",
-  voiceAiStop: "Shift+s",
-  voiceAiTimeTravelUndo: "Ctrl+[",
-  voiceAiTimeTravelRedo: "Ctrl+]",
+  voiceCtxClear: "Shift+w",
+  ai: "Shift+i",
+  aiStop: "Shift+s",
+  aiTimeTravelUndo: "Ctrl+[",
+  aiTimeTravelRedo: "Ctrl+]",
 };
 for (const k of Object.keys(ACTIONS_DICT)) KEYS_SHORTCUTS[k] ??= ""; // UX boost
 

@@ -4,7 +4,7 @@ import { capitalize } from "@utils/str";
 import { clamp, parseIfPercent, safeNum } from "@utils/num";
 import { createEl } from "@utils/dom";
 import { formatVttLine, parseVttText } from "@utils/text";
-import { isDef, isObj } from "@utils/obj";
+import { isDef, isNum, isObj } from "@utils/obj";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
 import { startTx, endTx, Transaction, transaction } from "sia-reactor/modules";
 import { getTrackNum } from "@utils/media";
@@ -47,7 +47,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     // Event Listeners
     this.el.addEventListener("pointerdown", this.handleDragStart, { signal: this.signal });
     // Ctlr State Listeners
-    this.ctlr.state.on("dimensions.container.width", this.rerender, { init: true, signal: this.signal });
+    this.ctlr.state.on("dimensions.container.width", () => this.ctlr.debounce("captionsResizing", this.rerender), { init: true, signal: this.signal });
     // ---- Media ---------
     this.media.on("state.objectFit", this.rerender, { signal: this.signal });
     this.config.isMain && this.media.on("state.secondaryTextTracks", this.syncBadge, { signal: this.signal });
@@ -87,13 +87,15 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     const cue = cues![0],
       cueSize = cue?.region?.width ?? (this.canOverride ? cue?.size : undefined),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
-      wrapWidth = (this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth) * (cueSize && cueSize !== 100 ? cueSize / 100 : 1) - this.fontSize * 2, // Padding allowance
+      baseW = this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth;
+    if (cueSize && cueSize !== 100) this.el.style[cue.fluid ? "maxWidth" : "width"] = `${cueSize}${isNum(cueSize) ? "%" : ""}`;
+    const wrapW = (cueSize && cueSize !== 100 ? (isNum(cueSize) ? baseW * (cueSize / 100) : safeNum(parseFloat(getComputedStyle(this.el)[cue.fluid ? "maxWidth" : "width"]), baseW)) : baseW) - this.fontSize * 2, // Padding allowance
       wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }));
     if (!this.config.isMain) this.dragX && this.el.style.setProperty(`${sPfx}x`, this.dragX), this.dragY && this.el.style.setProperty(`${sPfx}y`, this.dragY);
     (wrapper.innerHTML = ""), this.syncBadge();
     for (const cue of cues!) {
       (cue.text ||= ""), (cue.align = cue.align === "left" ? "start" : cue.align === "right" ? "end" : cue.align);
-      for (const l of formatVttLine(cue.text.replace(/\\N/gi, "\n"), Math.floor(wrapWidth / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, cue.align && cue.align !== "center" && this.canOverride ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
+      for (const l of formatVttLine(cue.text.replace(/\\N/gi, "\n"), Math.floor(wrapW / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, cue.align && cue.align !== "center" && this.canOverride ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
     }
     if (!transition) this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
     const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
@@ -122,7 +124,6 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
           topVal = cue.snapToLines ? (line < 0 ? 100 - (Math.abs(line) - 1) * lhPct : line * lhPct) : line;
         this.el.style.setProperty(`${sPfx}y`, `calc(${topVal}% + ${lineOffset}% + ${elHalfHPct}%)`);
       }
-      if (cueSize && cueSize !== 100) this.el.style[cue.fluid ? "maxWidth" : "width"] = `${cueSize}%`;
       if (cue.vertical) this.el.style.writingMode = cue.vertical === "lr" ? "vertical-lr" : "vertical-rl";
       if (cue.scroll === "up") (this.el.dataset.scroll = cue.scroll), this.ctlr.config.stall(() => (this.el.scrollTop = wrapper.scrollHeight));
     }

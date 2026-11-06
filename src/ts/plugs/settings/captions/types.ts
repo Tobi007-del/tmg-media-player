@@ -23,7 +23,7 @@ export type CueLike = (TextTrackCue | { text: string }) &
     line: number | string;
     lineAlign: string;
     snapToLines: boolean;
-    size: number;
+    size: number | string;
     vertical: "" | "lr" | "rl";
     scroll: string; // #MONKEY
     fluid: boolean; // #MONKEY

@@ -125,8 +125,6 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public get anchored(): boolean {
     return !!(this.anchor as HTMLElement)?.tagName;
   }
-  private lastAnchorX: number | string = 0;
-  private lastAnchorY: number | string = 0;
   private anchorIntervalId: any = -1;
   private lastClosedTime = 0;
 
@@ -199,7 +197,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   private reposition(anchor = this.anchor): void {
-    if (!anchor && !this.isOpen) return;
+    if (!this.isOpen) return;
     const menuWidth = this.el.offsetWidth || 320,
       isContext = isPOJO(anchor),
       fallback = !anchor || (!isContext && !this.ctlr.plug("settings.overlay")?.state.visible),
@@ -207,8 +205,6 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
       { top: aTop, left: aLeft, width: aWidth } = fallback ? NIL : isContext ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
       y = fallback ? `calc(100% - var(--tmg-media-current-global-safe-inset-bottom))` : aTop - cTop,
       x = fallback ? `calc(100% - var(--tmg-media-current-safe-inset-x) - ${menuWidth}px)` : clamp(this.safeMargin, aLeft - cLeft + aWidth / 2 - menuWidth / 2, cWidth - menuWidth - this.safeMargin);
-    if (this.lastAnchorX === x && this.lastAnchorY === y) return;
-    (this.lastAnchorX = x), (this.lastAnchorY = y);
     this.el.style.setProperty("--tmg-smenu-anchor-x", isStr(x) ? x : `${x}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", isStr(y) ? y : `${y}px`);
     const isDown = isNum(y) && y < cHeight / 2;
     isNum(y) && this.el.style.setProperty("--tmg-smenu-max-height", `${Math.round(isDown ? cHeight - y - this.safeMargin : y - (parseFloat(this.ctlr.settings.css.currentTopWrapperHeight as string) || 0) - this.safeMargin)}px`);

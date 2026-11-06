@@ -31,12 +31,11 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
   }
 
   public override wire(): void {
-    // Variables Assignment
+    // Utility Injection
     const pmdle = this.ctlr.plug("settings.persist")?.module,
       aim = this.ctlr.plug("settings.voice")?.ai?.module;
-    // Utility Injection
-    if (pmdle) pmdle?.attach(this.module.state, "timeTravel.state"), !pmdle.state.hydrated && (this.module.untrack(), pmdle.state.once("hydrated", this.module.track, { signal: this.signal }));
-    if (aim && pmdle) pmdle.attach(aim.state, "voiceAiTimeTravel.state"), !pmdle.state.hydrated && (aim.untrack(), pmdle.state.once("hydrated", aim.track, { signal: this.signal }));
+    if (pmdle) pmdle.attach(this.module.state, "timeTravel.state"), !pmdle.state.hydrated && (this.module.untrack(), pmdle.state.once("hydrated", this.module.track, { signal: this.signal }));
+    if (aim && pmdle) pmdle.attach(aim.state, "aiTimeTravel.state"), !pmdle.state.hydrated && (aim.untrack(), pmdle.state.once("hydrated", aim.track, { signal: this.signal }));
     createReactorSync(this.module.config, this.ctlr.config, "", "settings.timeTravel.module", this.signal);
     // State Watchers
     this.module.state.watch("currentFrame", this.syncFeatures, { signal: this.signal });
@@ -60,19 +59,16 @@ export class TimeTravelPlug extends BasePlug<TimeTravelConfig> {
     return (entry: any, history: any, e: any) => !e.ai && (v ? v(entry, history, e) : entry);
   }
 
-  protected handleConsoleDisabled(e: REvent<CtlrConfig, "settings.timeTravel.console.disabled">, aim = this.ctlr.plug("settings.voice")?.ai?.module, idx = getCtlrIdx(this.ctlr) + 1, col = this.ctlr.settings.css.brandColor as string, cont = this.media.state.fullscreen ? this.media.container : undefined): void {
-    if (e.value) (this.console?.destroy(), (this.console = undefined)), (this.aiConsole?.destroy(), (this.aiConsole = undefined));
-    else {
-      this.console ||= new TimeTravelConsole(this.module, { title: `Controller ${idx} Tape`, color: col, container: cont, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
-      if (aim) this.aiConsole ||= new TimeTravelConsole(aim, { title: `Controller ${idx} AI Tape`, color: col, container: cont, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
-    }
+  protected handleConsoleDisabled(e: REvent<CtlrConfig, "settings.timeTravel.console.disabled">, aim = this.ctlr.plug("settings.voice")?.ai?.module, idx = getCtlrIdx(this.ctlr) + 1, color = this.ctlr.settings.css.brandColor as string, container = this.media.state.fullscreen ? this.media.container : undefined): void {
+    if (e.value) return this.console?.destroy(), this.aiConsole?.destroy(), (this.aiConsole = this.console = undefined);
+    this.console ||= new TimeTravelConsole(this.module, { title: `Player ${idx} Tape`, color, container, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
+    if (aim) this.aiConsole ||= new TimeTravelConsole(aim, { title: `Player ${idx} AI Tape`, color, container, ...(this.config.console as Partial<TimeTravelConfig["console"]>) });
   }
 
   protected handlePersist(e: REvent<CtlrConfig, "settings.timeTravel.persist">, pmdle = this.ctlr.plug("settings.persist")?.module): void {
     if (!pmdle) return;
     isArr(pmdle.config.whitelist) ? (pmdle.config.whitelist = { "0": pmdle.config.whitelist } as any) : (pmdle.config.whitelist ||= {} as any);
     (pmdle.config.whitelist as Record<string, string[]>)["timeTravel.state"] = e.value ? ["*"] : [];
-    (pmdle.config.whitelist as Record<string, string[]>)["voiceAiTimeTravel.state"] = e.value ? ["*"] : [];
   }
 
   public redock(scoped = false, cont = scoped ? this.media.container : undefined): void {
