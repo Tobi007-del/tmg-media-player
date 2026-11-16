@@ -11,7 +11,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
     return GesturePlug;
   }
   public static readonly BUILD = GESTURE_WHEEL_BUILD;
-  protected timeoutId: number | null = null;
+  protected timeoutId?: number;
   protected zone: { x: "left" | "right"; y: "top" | "bottom" } | null = null;
   protected xCheck = false;
   protected yCheck = false;
@@ -26,7 +26,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   }
 
   protected canHandle(e: WheelEvent): boolean {
-    return e.target === this.ctlr.DOM.controlsContainer && !this.media.state.locked && !this.ctlr.config.disabled && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || !!this.media.status.floatingPlayer);
+    return e.target === this.ctlr.DOM.controlsContainer && !this.media.state.locked && !this.ctlr.config.disabled && !this.plug?.touch?.xCheck && !this.plug?.touch?.yCheck && !this.ctlr.plug("settings.fastPlay")?.state.active && (this.media.state.fullscreen || !!this.media.status.floating);
   }
 
   protected handleWheel(e: WheelEvent): void {
@@ -72,7 +72,7 @@ export class GestureWheelPin extends GestureBasePin<GestureWheelConfig> {
   }
 
   protected handleStop(): void {
-    this.timeoutId = null;
+    this.timeoutId = undefined;
     if (this.yCheck) {
       this.yCheck = false;
       this.ctlr.plug("settings.overlay")?.hide();

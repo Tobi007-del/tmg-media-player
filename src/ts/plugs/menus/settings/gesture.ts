@@ -58,8 +58,8 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                       label: "Swipe ratio (X, Y)",
                       widget: "input",
                       inputs: [
-                        { name: "x", label: "Horizontal", type: "number", compact: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.xRatio },
-                        { name: "y", label: "Vertical", type: "number", compact: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.yRatio },
+                        { name: "x", label: "Horizontal", type: "number", inline: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.xRatio },
+                        { name: "y", label: "Vertical", type: "number", inline: true, min: "0", max: "10", step: "0.25", value: () => plug.config.touch.yRatio },
                       ],
                       getValue: () => `${plug.config.touch.xRatio}, ${plug.config.touch.yRatio}`,
                       onChange: (val: any) => (val.x && (plug.config.touch.xRatio = val.x), val.y && (plug.config.touch.yRatio = val.y)),
@@ -87,8 +87,8 @@ export const getSettingsGestureMenu = (plug: GesturePlug): SettingsMenuItem => (
                   label: "Scroll ratio (X, Y)",
                   widget: "input",
                   inputs: [
-                    { name: "x", label: "Horizontal", type: "number", compact: true, min: "1", max: "50", value: () => plug.config.wheel.xRatio },
-                    { name: "y", label: "Vertical", type: "number", compact: true, min: "1", max: "50", value: () => plug.config.wheel.yRatio },
+                    { name: "x", label: "Horizontal", type: "number", inline: true, min: "1", max: "50", value: () => plug.config.wheel.xRatio },
+                    { name: "y", label: "Vertical", type: "number", inline: true, min: "1", max: "50", value: () => plug.config.wheel.yRatio },
                   ],
                   getValue: () => `${plug.config.wheel.xRatio}, ${plug.config.wheel.yRatio}`,
                   onChange: (val: any) => (val.x && (plug.config.wheel.xRatio = val.x), val.y && (plug.config.wheel.yRatio = val.y)),

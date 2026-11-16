@@ -25,7 +25,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   protected lastThumbPos = 0;
   protected currThumbPos = 0;
   protected stallCancel = false;
-  protected cancelTimeoutId: number | null = null;
+  protected cancelTimeoutId?: number;
 
   constructor(ctlr: Controller, config?: Partial<Config>, state?: Partial<State>) {
     super(ctlr, reactive(mergeObjs(deepClone(RANGE_INPUT_BUILD), config) as unknown as Reactive<Config>, { scrubbing: false, previewing: false, cancelScrub: false, ...state } as any));
@@ -74,7 +74,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
     this.config.on("divs", ({ currentTarget: { value } }) => this.syncDivs(value), { init: true, signal: this.signal });
     this.config.on("marks", ({ currentTarget: { value } }) => this.syncMarks(value), { init: true, signal: this.signal });
     // Post Wiring
-    observeResize(this.el, () => this.ctlr.throttle(`${this.config.label}Resizing`, this.handleResize, 30, false, this.signal), this.signal);
+    observeResize(this.el, () => this.ctlr.throttle(`${this.el.className}Resizing`, this.handleResize, 30, false, this.signal), this.signal);
   }
   public get canScrub(): boolean {
     return !this.config.readonly && !this.config.disabled;
@@ -123,8 +123,7 @@ export class RangeInput<Config extends RangeInputConfig = RangeInputConfig, Stat
   }
   protected allowScrubbing(reset = true): void {
     this.stallCancel = this.state.cancelScrub = false;
-    clearTimeout(this.cancelTimeoutId!);
-    if (reset) this.cancelTimeoutId = null;
+    clearTimeout(this.cancelTimeoutId), reset && (this.cancelTimeoutId = undefined);
   }
 
   protected handleInput(e: MouseEvent | PointerEvent): void {

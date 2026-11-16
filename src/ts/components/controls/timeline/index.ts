@@ -53,7 +53,6 @@ export class Timeline extends RangeInput<TimelineConfig> {
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.thumbnailImg, this.thumbnailCanvas);
   }
 
@@ -121,35 +120,32 @@ export class Timeline extends RangeInput<TimelineConfig> {
     if (!this.state.scrubbing) return;
     if (!this.state.cancelScrub) {
       this.media.intent.currentTime = getTime(this.media, this.config.value / 100);
-      Math.abs(this.currThumbPos - this.lastThumbPos) > 0.005 && this.ctlr.plug("settings.timeTravel")?.teachBasics();
+      Math.abs(this.currThumbPos - this.lastThumbPos) > 0.005 && this.ctlr.plug("settings.temporal")?.teachBasics();
     }
     super.stopScrubbing();
   }
 
   protected onInput(_e: MouseEvent | PointerEvent, pos: number): void {
-    this.ctlr.throttle(
-      `${this.config.label}Previewing`,
-      () => {
-        this.syncElPos(this.previewContainer, !this.config.compact ? pos : 0.5, false, true);
-        const previews = this.config.previews,
-          type = this.media.container.dataset.previewType;
-        if (type === "sprite" && previews && !isBool(previews) && previews.cols && previews.rows) {
-          const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
-            { cols, rows } = previews,
-            clampedI = Math.min(frameIndex, cols * rows - 1),
-            xPercent = ((clampedI % cols) * 100) / (cols - 1 || 1),
-            yPercent = (Math.floor(clampedI / cols) * 100) / (rows - 1 || 1);
-          if (!this.config.compact) this.settings.css.currentPreviewPosition = `${xPercent}% ${yPercent}%`;
-          if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailPosition = `${xPercent}% ${yPercent}%`;
-        } else if (type === "image" && previews && !isBool(previews) && previews.address) {
-          const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
-            url = `url(${previews.address.replace("$", String(frameIndex))})`;
-          if (!this.config.compact) this.settings.css.currentPreviewUrl = url;
-          if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailUrl = url;
-        } else if (previews && !this.ctlr.state.frameReadyPromise) this.media.pseudoElement.currentTime = safeNum(getTime(this.media, pos));
-      },
-      30
-    );
+    const handle = () => {
+      this.syncElPos(this.previewContainer, !this.config.compact ? pos : 0.5, false, true);
+      const previews = this.config.previews,
+        type = this.media.container.dataset.previewType;
+      if (type === "sprite" && previews && !isBool(previews) && previews.cols && previews.rows) {
+        const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
+          { cols, rows } = previews,
+          clampedI = Math.min(frameIndex, cols * rows - 1),
+          xPercent = ((clampedI % cols) * 100) / (cols - 1 || 1),
+          yPercent = (Math.floor(clampedI / cols) * 100) / (rows - 1 || 1);
+        if (!this.config.compact) this.settings.css.currentPreviewPosition = `${xPercent}% ${yPercent}%`;
+        if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailPosition = `${xPercent}% ${yPercent}%`;
+      } else if (type === "image" && previews && !isBool(previews) && previews.address) {
+        const frameIndex = Math.floor((pos * getMax(this.media)) / (previews.spf || 1)) || 1,
+          url = `url(${previews.address.replace("$", String(frameIndex))})`;
+        if (!this.config.compact) this.settings.css.currentPreviewUrl = url;
+        if (this.state.scrubbing && this.config.autopause) this.settings.css.currentThumbnailUrl = url;
+      } else if (previews && !this.ctlr.state.frameReadyPromise) this.media.pseudoElement.currentTime = safeNum(getTime(this.media, pos));
+    };
+    this.ctlr.throttle(`${this.config.label}Previewing`, handle, 30);
   }
 
   public syncChapters(): void {

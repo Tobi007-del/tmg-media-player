@@ -91,7 +91,7 @@
   --pulse-color: red;
 }
 .tmg-media-container:not(.tmg-media-paused) .tmg-media-live-badge::before {
-  animation: tmg-live-pulse calc(var(--tmg-media-notifiers-animation-time) * 2) infinite ease-in-out;
+  animation: tmg-live-pulse calc(var(--tmg-media-notifier-animation-time) * 2) infinite ease-in-out;
 }
 
 .tmg-host-container [data-badge] {

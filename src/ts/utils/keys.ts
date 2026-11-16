@@ -9,7 +9,7 @@ type CmdValue = string | string[];
 
 export function formatAction(settings: Partial<Settings> | Record<string, any>, cmdKey: Action["id"], keyFn?: (c?: string) => string, wordFn?: (c?: string) => string): string;
 export function formatAction(keyShortcut?: CmdValue, voiceCmd?: CmdValue, keyFn?: (c?: string) => string, wordFn?: (c?: string) => string): string;
-export function formatAction(arg1?: Partial<Settings> | Record<string, any> | CmdValue, arg2?: CmdValue, keyFn = (c = "") => cleanKeyCombo(c).replace(" ", "space"), wordFn = (c = "") => `"${c}"`): string {
+export function formatAction(arg1?: Partial<Settings> | Record<string, any> | CmdValue, arg2?: CmdValue, keyFn = (c = "") => cleanKeyCombo(c).replace(" ", "space").replace("meta", "cmd"), wordFn = (c = "") => `"${c}"`): string {
   const isConfig = isObj(arg1),
     keyShortcut: CmdValue = isConfig ? (arg1 as any).keys.shortcuts[arg2 as string] : arg1,
     voiceCmd: CmdValue = isConfig ? (arg1 as any).voice.commands[arg2 as string] : arg2;

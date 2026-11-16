@@ -37,12 +37,12 @@ class Boombox {
   }
   constructor() {
     tmg.utils.bindAllMethods(this);
-    tmg.utils.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
+    tmg.utils.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/temporal-console.min.css`);
     this.store = window.bbStore = sia.reactive(structuredClone(bbStore));
-    window.TTM = new sia.modules.TimeTravelModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
-    window.PMP = new sia.modules.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new sia.modules.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150, blacklist: ["audio.intent", "audio.state.paused"] }).attach(TTM.state, "timeTravel.state");
+    window.TTM = new sia.modules.TemporalModule({ blacklist: ["audio.state", "audio.settings.vibe"] });
+    window.PMP = new sia.modules.PersistModule({ key: "NINO'S_BOOMBOX", adapter: new sia.modules.IndexedDBAdapter({ durability: "relaxed" }), snapshot: true, throttle: 150, blacklist: ["audio.intent", "audio.state.paused"] }).attach(TTM.state, "temporal.state");
     this.store.use(PMP, "app"), PMP.state.once("hydrated", () => this.store.use(TTM));
-    window.TTC = new sia.adapters.vanilla.TimeTravelConsole(window.TTM, { title: `NINO's Boombox Tape` });
+    window.TTC = new sia.adapters.vanilla.TemporalConsole(window.TTM, { title: `NINO's Boombox Tape` });
     this.media = new Audio("/tmg-media-player/assets/media/Subway-Surfers-Theme-Sound-Effect.mp3");
     this.media.loop = true;
     this.bbSens = { translate: 1.2, rotate: 0.6, zoom: 2.4, overflow: 70 }; // S.I.A. configuration

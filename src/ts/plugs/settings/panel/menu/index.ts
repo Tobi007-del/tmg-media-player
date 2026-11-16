@@ -29,9 +29,9 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public override create(): HTMLElement {
     this.element = createEl("div", { className: "tmg-media-settings-menu tmg-media-no-pointer", inert: true });
     this.el.addEventListener("keydown", (e: KeyboardEvent, active = getActiveEl(this.el.ownerDocument) as HTMLElement) => {
-      if ((e.key === "Enter" || e.key === " ") && active && !active.matches("input,textarea,[contenteditable]") && active.tagName !== "BUTTON" && active.closest(".tmg-media-smenu-panel-active")) e.preventDefault(), active.click();
+      if ((e.key === "Enter" || e.key === " ") && active && !active.matches("input,textarea,select,option,[contenteditable]") && active.tagName !== "BUTTON" && active.closest(".tmg-media-smenu-panel-active")) e.preventDefault(), active.click();
       else if (e.key === "ArrowRight" && active?.querySelector(".tmg-media-smenu-row-arrow, .tmg-media-smenu-group-arrow")) e.stopImmediatePropagation(), active.click();
-      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,[contenteditable]")) e.stopImmediatePropagation(), this.goBack(true);
+      else if (e.key === "ArrowLeft" && !active?.matches("input,textarea,select,option,[contenteditable]")) e.stopImmediatePropagation(), this.goBack(true);
     });
     return this.element;
   }
@@ -49,7 +49,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   public override wire(): void {
     // ---- Media Listeners
     this.media.on("features", () => this.isOpen && this.syncUI(), { signal: this.signal });
-    this.media.on("status.floatingPlayer", () => this.isOpen && (syncOutsideClick(this.element), syncFocusTrap(this.element)), { signal: this.signal });
+    this.media.on("status.floating", () => this.isOpen && (syncOutsideClick(this.element), syncFocusTrap(this.element)), { signal: this.signal });
     // ---- State --------
     for (const k of ["width", "height"] as const) this.ctlr.state.on(`dimensions.container.${k}`, () => this.isOpen && this.syncUI(), { signal: this.signal });
     this.ctlr.config.on("settings.panel.menu.blacklist", () => this.isOpen && this.syncUI(), { signal: this.signal });
@@ -140,7 +140,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
     else this.syncUI(this.navStack[this.navStack.length - 1]), this.hidePanel(this.mainPanel), this.subPanels.forEach((p, idx) => idx !== this.navStack.length - 1 && this.hidePanel(p)), this.showPanel(this.subPanels[this.navStack.length - 1], "none", preserveStack);
     if (this.anchor) this.anchorIntervalId = setInterval(this.reposition, 250, this.signal);
     this.reposition(), this.el.removeAttribute("inert"), this.el.classList.add("tmg-media-smenu-open"), this.el.classList.remove("tmg-media-smenu-closed"), this.media.container.classList.add("tmg-media-menu-settings");
-    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR });
+    initOutsideClick(this.element, { enabled: true, onOutside: (e) => !(this.anchor as HTMLElement)?.contains?.(((e as FocusEvent).relatedTarget || e.target) as Node) && this.close() }), initFocusTrap(this.element, { enabled: true, initialSelector: MENU_FOCUS_SELECTOR, focusOptions: { preventScroll: true } });
     initArrowNavigation(this.element, { enabled: true, rovingTab: false, grid: { x: 1 }, typeahead: true, selector: `.tmg-media-smenu-panel-active ${MENU_FOCUS_SELECTOR}` });
   }
   public close(): void {
@@ -166,6 +166,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
   }
 
   public goTo(id: string): void {
+    if (id.includes(".")) return id.split(".").forEach(this.goTo);
+    if (this.navStack[this.navStack.length - 1] === id) return;
     const item = this.getItem(id);
     if (!item || (!item.items && !item.widget) || item.widget === "button" || item.widget === "toggle") return;
     const activePanel = this.navStack.length === 0 ? this.mainPanel : this.subPanels[this.navStack.length - 1];
@@ -198,8 +200,8 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
 
   private reposition(anchor = this.anchor): void {
     if (!this.isOpen) return;
-    const menuWidth = this.el.offsetWidth || 320,
-      isContext = isPOJO(anchor),
+    const isContext = isPOJO(anchor),
+      menuWidth = this.el.offsetWidth || 320,
       fallback = !anchor || (!isContext && !this.ctlr.plug("settings.overlay")?.state.visible),
       { top: cTop, left: cLeft, width: cWidth, height: cHeight } = this.media.container.getBoundingClientRect(),
       { top: aTop, left: aLeft, width: aWidth } = fallback ? NIL : isContext ? { top: (anchor as any).y, left: (anchor as any).x + menuWidth / 2, width: 0 } : (anchor as any).getBoundingClientRect(),
@@ -207,7 +209,7 @@ export class SettingsMenu extends BaseComponent<SettingsMenuConfig, ComponentSta
       x = fallback ? `calc(100% - var(--tmg-media-current-safe-inset-x) - ${menuWidth}px)` : clamp(this.safeMargin, aLeft - cLeft + aWidth / 2 - menuWidth / 2, cWidth - menuWidth - this.safeMargin);
     this.el.style.setProperty("--tmg-smenu-anchor-x", isStr(x) ? x : `${x}px`), this.el.style.setProperty("--tmg-smenu-anchor-y", isStr(y) ? y : `${y}px`);
     const isDown = isNum(y) && y < cHeight / 2;
-    isNum(y) && this.el.style.setProperty("--tmg-smenu-max-height", `${Math.round(isDown ? cHeight - y - this.safeMargin : y - (parseFloat(this.ctlr.settings.css.currentTopWrapperHeight as string) || 0) - this.safeMargin)}px`);
+    isNum(y) ? this.el.style.setProperty("--tmg-smenu-max-height", `${Math.round(isDown ? cHeight - y - this.safeMargin : y - (parseFloat(this.ctlr.settings.css.currentTopWrapperHeight as string) || 0) - this.safeMargin)}px`) : this.el.style.removeProperty("--tmg-smenu-max-height");
     this.el.classList.toggle("tmg-media-smenu-fallback", fallback || isContext), this.el.classList.toggle("tmg-media-smenu-down", isDown);
   }
   public safeMargin = 12;

@@ -19,7 +19,6 @@ export class ErrorPlaceholder extends BaseComponent<ErrorPlaceholderConfig, Comp
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.el);
   }
 

@@ -4,10 +4,10 @@ import { DeepPartial } from "sia-reactor";
 export const OVERLAY_BUILD: DeepPartial<OverlayConfig> = {
   delay: 3000,
   behavior: {
-    value: "strict",
+    value: "auto",
     options: [
-      { value: "strict", display: "Strict" },
       { value: "auto", display: "Auto" },
+      { value: "strict", display: "Strict" },
       { value: "persistent", display: "Persistent" },
       { value: "hidden", display: "Hidden" },
     ],

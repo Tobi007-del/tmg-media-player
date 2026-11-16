@@ -22,7 +22,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: rgb(from var(--tmg-media-captions-window-color) r g b / var(--tmg-media-captions-window-opacity));
-  touch-action: none;
+  touch-action: pan-y;
   contain: layout;
   transition: var(--tmg-media-motion-transition);
 }

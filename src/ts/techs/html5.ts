@@ -196,7 +196,6 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     return Array.prototype.find.call(this.el.textTracks, (t) => t.mode === "showing") || null;
   }
   // --- Settings Wiring ---
-  // --- Settings Wiring ---
   protected wireDefaultMuted(): void {
     this.config.on("settings.defaultMuted", this.handleDefaultMutedSetting, this.evtOpts.CONFIG);
   }
@@ -207,7 +206,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.on("settings.srcObject", this.handleSrcObjectSetting, this.evtOpts.CONFIG);
   }
   // ===========================================================================
-  // HANDLERS (The Logic - Auto-Guarded)
+  // HANDLERS (The Logic - Auto-guarded)
   // ===========================================================================
   // --- Core States ---
   protected setTimeUpdateState(): void {

@@ -3,7 +3,8 @@ import { Controller } from "@core/controller";
 import { syncToastConfig, getToastMenuInputs } from "../settings/toasts";
 import { capitalize, camelize, uncam, fpath, fvalue } from "@utils/str";
 import type { Action, ActionLogic, ActionLogicOp } from "@defs/action";
-import { getPath, mirror } from "sia-reactor/utils";
+import { NEW_ACTIONS } from "@consts/actions";
+import { getPath, mirror, fanout } from "sia-reactor/utils";
 import { isFunc, getBoolOrStr, isArr, parseUIOpt } from "@utils/obj";
 import { requestAnimationFrame } from "@utils/fn";
 import { formatAction } from "@utils/keys";
@@ -120,7 +121,7 @@ function buildPathNavNode(actionId: string, stepTag: string, path: string, root:
 
 const makeLogicNavTree = (actionId: string, stepTag: string, ctlr: Controller, onConfirm: (step: ActionLogic) => void, existingStep?: ActionLogic): SettingsMenuItem => buildPathNavNode(actionId, stepTag, "*", ctlr.logicRoot, ctlr, onConfirm, existingStep);
 
-const stepLabel = (step: ActionLogic) => (step.path ? `${(step.fpath ??= fpath(step.path))} (${step.op ?? "set"}${fvalue(step.value)})` : "Empty step");
+const stepLabel = (step: ActionLogic) => (step.path ? `${(step.fpath ??= fpath(step.path))} (${step.op ?? "set"}${step.op === "toggle" ? "" : fvalue(step.value)})` : "Empty step");
 
 function makeLogicStepView(step: ActionLogic, idx: number, actionId: string, ctlr: Controller, logicItems: SettingsMenuItem[]): SettingsMenuItem {
   const navTree = makeLogicNavTree(
@@ -188,7 +189,7 @@ function makeLogicGroup(action: Action, ctlr: Controller, logicItems: SettingsMe
         ]
       : undefined,
     items: logicItems,
-    getTipHTML: () => (hasLogicSupport ? "Logic runs top-to-bottom when triggered. Use + to add a step. Drag to reorder." : "This action runs native code. Logic steps are not supported."),
+    getTipHTML: () => (hasLogicSupport ? "Logic runs top-to-bottom when triggered. Use + to add a step, drag to reorder." : "This action runs native code. Logic steps are not supported."),
   };
 }
 
@@ -227,7 +228,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           label: "Key(s)",
           type: "text",
           placeholder: "f, Shift+f",
-          compact: true,
+          inline: true,
           value: () => {
             const s = action.system ? action.id : ctlr.settings.keys.shortcuts[action.id];
             return isArr(s) ? s.join(", ") : s ?? "";
@@ -238,7 +239,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           name: "phase",
           label: "Phase",
           type: "select",
-          compact: true,
+          inline: true,
           options: ctlr.settings.keys.phase.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().keyboard?.phase ?? "",
           helperText: { info: "Trigger on keydown or keyup?" },
@@ -251,7 +252,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           .map((k) => k.trim())
           .filter(Boolean);
         ctlr.settings.keys.shortcuts[action.id] = keys.length > 1 ? keys : keys[0] ?? "";
-        live().keyboard = { ...live().keyboard, phase: val.phase as any };
+        fanout(live().keyboard ??= {}, { phase: val.phase as any });
       },
       getDisabled: () => !!action.system,
       configPaths: [`settings.keys.shortcuts.${action.id}` as any],
@@ -276,7 +277,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           name: "stage",
           label: "Stage",
           type: "select",
-          compact: true,
+          inline: true,
           options: ctlr.settings.voice.process.stage.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.stage ?? "",
           helperText: { info: "When allowed to trigger the action" },
@@ -285,7 +286,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           name: "match",
           label: "Match",
           type: "select",
-          compact: true,
+          inline: true,
           options: ctlr.settings.voice.process.match.options.map((o, _, __, opt = parseUIOpt(o)) => ({ option: opt.display, value: String(opt.value) })),
           value: () => live().voice?.match ?? "",
           helperText: { info: "Match all said or a part?" },
@@ -298,7 +299,7 @@ function makeActionContent(action: Action, ctlr: Controller, logicItems: Setting
           .map((s) => s.trim())
           .filter(Boolean);
         ctlr.settings.voice.commands[action.id] = triggers.length > 1 ? triggers : triggers[0] ?? "";
-        _live.voice = { ..._live.voice, stage: val.stage as any, match: val.match as any };
+        fanout(_live.voice ??= {}, { stage: val.stage as any, match: val.match as any });
       },
       configPaths: [`actions.entries.${action.id}.voice` as any, `settings.voice.commands.${action.id}` as any],
     },
@@ -374,6 +375,7 @@ function makeActionDetail(action: Action, ctlr: Controller, onDeleteAction: () =
     label: action.label ?? uncam(action.id),
     getBadge: () => {
       const badges = [];
+      NEW_ACTIONS.includes(action.id) && badges.push("new");
       action.system ? badges.push("sys") : action.userCreated && badges.push("own"), live().disabled && badges.push("off");
       return badges.length ? { label: badges.join(" • ") } : undefined;
     },

@@ -1,3 +1,8 @@
+@keyframes tmg-spin {
+  to {
+    rotate: 1turn;
+  }
+}
 @keyframes tmg-beat {
   from,
   to {
@@ -5,11 +10,6 @@
   }
   50% {
     transform: scale(1);
-  }
-}
-@keyframes tmg-spin {
-  to {
-    rotate: 1turn;
   }
 }
 @keyframes tmg-slide-from-right {
@@ -76,7 +76,7 @@
     opacity: 1;
   }
 }
-@keyframes tmg-miniplayer-enter {
+@keyframes tmg-player-enter {
   0% {
     opacity: 0;
     transform: scale(0.85) translateY(15px);
@@ -103,6 +103,14 @@
   }
   to {
     opacity: 0;
+  }
+}
+@keyframes tmg-shimmer {
+  from {
+    mask-position: 100% 0;
+  }
+  to {
+    mask-position: -100% 0;
   }
 }
 @keyframes tmg-live-pulse {
@@ -167,6 +175,24 @@
   }
   to {
     box-shadow: 
-      /* Layer 1: Core edge glow intensifies */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.05) 0 rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.6), /* Layer 2: Deep ambient mist pushes further into the video */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.15) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.3), /* Layer 3: The "Siri" massive soft fade reaching the center */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.3) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.1);
+      /* Layer 1: Core edge glow intensifies */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.05) 0 rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.5), /* Layer 2: Deep ambient mist pushes further into the video */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.15) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.25), /* Layer 3: The "Siri" massive soft fade reaching the center */ inset 0 0 calc(var(--tmg-media-current-container-width) * 0.3) 0 rgb(from var(--tmg-media-theme-color) r g b / 0.1);
+  }
+}
+@keyframes tmg-voice-ai-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.96) rotate(0deg);
+  }
+  20% {
+    transform: translate(-46%, -54%) scale(1.06, 1.02) rotate(1.2deg);
+  }
+  40% {
+    transform: translate(-48%, -62%) scale(1.18, 1.12) rotate(-0.8deg);
+  }
+  60% {
+    transform: translate(-54%, -56%) scale(1.08, 1.04) rotate(-1.5deg);
+  }
+  80% {
+    transform: translate(-52%, -48%) scale(0.98, 0.96) rotate(0.6deg);
   }
 }

@@ -168,7 +168,7 @@ Snapshots for reset/undo are cheap only if unchanged branches are reused, not cl
 
 **TMG Media Player Usage**:
 - [PersistModule](tmg-media-player/src/ts/plugs/settings/persist/index.ts): Hooks into reactor to auto-sync state to storage
-- [TimeTravelModule](tmg-media-player/src/ts/plugs/settings/timeTravel/index.ts): Mediates all sets to build undo/redo stack
+- [TemporalModule](tmg-media-player/src/ts/plugs/settings/temporal/index.ts): Mediates all sets to build undo/redo stack
 - [Each Plug](tmg-media-player/src/ts/plugs/base/index.ts#L8): Inherits from BasePlug, uses reactor internally to wire behavior
 
 **Why it Matters**:

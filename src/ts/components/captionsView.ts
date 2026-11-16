@@ -2,7 +2,7 @@ import { BaseComponent, ComponentState } from "./base";
 import { type CueLike, STYLE_PATHS } from "@plugs/settings/captions";
 import { capitalize } from "@utils/str";
 import { clamp, parseIfPercent, safeNum } from "@utils/num";
-import { createEl } from "@utils/dom";
+import { createEl, observeResize } from "@utils/dom";
 import { formatVttLine, parseVttText } from "@utils/text";
 import { isDef, isNum, isObj } from "@utils/obj";
 import { setTimeout, requestAnimationFrame } from "@utils/fn";
@@ -38,9 +38,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   }
 
   public override mount(): void {
-    // DOM Injection
-    this.ctlr.DOM.controlsContainer?.prepend(this.el);
-    if (this.config.isMain) this.ctlr.DOM.captionsContainer ||= this.el;
+    this.ctlr.DOM.controlsContainer?.prepend(this.el), this.config.isMain && (this.ctlr.DOM.captionsContainer ||= this.el);
   }
 
   public override wire(): void {
@@ -54,18 +52,9 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     // ---- Config --------
     this.ctlr.config.on("settings.captions.window.position.lockToVideo", this.rerender, { signal: this.signal });
     for (const p of STYLE_PATHS) !/color|opacity/.test(p) && this.ctlr.config.on(`settings.captions.${p}`, () => this.rerender(true), { signal: this.signal });
+    // Post Wiring
+    observeResize(this.el, () => this.syncStyles(), this.signal);
   }
-
-  public syncSize(force = false): void {
-    const w = this.ctlr.state.dimensions.container.width;
-    if (!force && this.lastSyncW === w) return;
-    (this.lastSyncW = w), this.el.style.setProperty("display", "block", "important");
-    const measurer = this.el.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" })),
-      { lineHeight, fontSize } = getComputedStyle(measurer);
-    (this.charW = measurer.offsetWidth / 52), (this.fontSize = safeNum(parseFloat(fontSize), 16)), (this.lineHPx = !safeNum(parseFloat(lineHeight), 0) ? this.fontSize * 1.2 : parseFloat(lineHeight));
-    measurer.remove(), this.el.style.removeProperty("display");
-  }
-  private lastSyncW = 0;
 
   public preview(cue: CueLike | string = `${capitalize(this.media.status.textKind || "captions")} look like this`, flush = this.previewing): void {
     const should = flush || !this.ctlr.isUIActive("captions") || !this.el.textContent;
@@ -77,13 +66,13 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   }
 
   public rerender(force?: unknown): void {
-    if (this.media.state.textVisible || this.previewing || this.config.isSolo) this.syncSize(force === true), this.cues && this.render(this.cues, this.previewing, true);
+    if (this.media.state.textVisible || this.previewing || this.config.isSolo) this.syncMetrics(force === true), this.cues && this.render(this.cues, this.previewing, true);
   }
   public render(cues: CueLike[] | null, isPreview = false, transition = false): void {
     this.el.classList.toggle("tmg-media-captions-preview", isPreview), !isPreview && clearTimeout(this.timeoutId);
     const existing = this.el.querySelector<HTMLElement>(".tmg-media-captions-wrapper");
     if (!(this.cues = cues)?.length) return existing?.remove();
-    this.syncSize(), this.el.removeAttribute("data-active"), this.el.removeAttribute("data-scroll"), this.el.removeAttribute("style");
+    this.syncMetrics(), this.el.removeAttribute("data-active"), this.el.removeAttribute("data-scroll"), this.el.removeAttribute("style");
     const cue = cues![0],
       cueSize = cue?.region?.width ?? (this.canOverride ? cue?.size : undefined),
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
@@ -98,9 +87,8 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       for (const l of formatVttLine(cue.text.replace(/\\N/gi, "\n"), Math.floor(wrapW / this.charW))) wrapper.append(createEl("div", { className: "tmg-media-captions-line" }, cue.id ? { part: "cue", id: cue.id } : { part: "cue" }, cue.align && cue.align !== "center" && this.canOverride ? { textAlign: cue.align } : undefined)!.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: parseVttText(l) })!).parentElement!);
     }
     if (!transition) this.el.style.setProperty("transition", "none", "important"), requestAnimationFrame(() => this.el.style.removeProperty("transition"), this.signal);
-    const { offsetWidth: cWidth, offsetHeight: cHeight } = this.el;
-    this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${cHeight}px`), (this.settings.css.currentCaptionsContainerWidth = `${cWidth}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${cHeight}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${cWidth}px`));
-    const regionCue = cues!.find((c) => c.region);
+    const regionCue = cues!.find((c) => c.region),
+      { width: cWidth, height: cHeight } = this.syncStyles();
     if (regionCue?.region) {
       this.el.setAttribute("data-active", "");
       const { width, lines: rLines, viewportAnchorX: vpAnX, viewportAnchorY: vpAnY, scroll } = regionCue.region;
@@ -139,16 +127,31 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   public syncKaraoke(): void {
     if (this.timeNodes) for (const { el, time } of this.timeNodes) el.toggleAttribute("data-past", safeNum(this.media.state.currentTime) > time), el.toggleAttribute("data-future", !el.hasAttribute("data-past"));
   }
+  public syncStyles({ offsetWidth: width, offsetHeight: height } = this.el) {
+    return this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${height}px`), (this.settings.css.currentCaptionsContainerWidth = `${width}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${height}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${width}px`)), { width, height };
+  }
+  public syncMetrics(force = false): void {
+    const w = this.ctlr.state.dimensions.container.width;
+    if (!force && this.lastSyncW === w) return;
+    (this.lastSyncW = w), this.el.style.setProperty("display", "block", "important");
+    const measurer = this.el.appendChild(createEl("span", { className: "tmg-media-captions-text", innerHTML: "abcdefghijklmnopqrstuvwxyz".repeat(2) }, {}, { visibility: "hidden" })),
+      { lineHeight, fontSize } = getComputedStyle(measurer);
+    (this.charW = measurer.offsetWidth / 52), (this.fontSize = safeNum(parseFloat(fontSize), 16)), (this.lineHPx = !safeNum(parseFloat(lineHeight), 0) ? this.fontSize * 1.2 : parseFloat(lineHeight));
+    measurer.remove(), this.el.style.removeProperty("display");
+  }
+  private lastSyncW = 0;
 
   protected handleDragStart(e: PointerEvent): void {
     this.el.setPointerCapture(e.pointerId), this.useTx(true);
     const { left, top } = getComputedStyle(this.el);
     (this.lastPosX = parseFloat(left)), (this.lastPosY = parseFloat(top));
-    (this.lastPtrX = e.clientX), (this.lastPtrY = e.clientY);
+    (this.lastPtrX = e.clientX), (this.lastPtrY = e.clientY), (this.locked = this.prevEX = this.prevEY = undefined);
     for (const evt of ["pointermove", "pointerup", "pointercancel"] as const) this.el.addEventListener(evt, evt === "pointermove" ? this.handleDragging : this.handleDragEnd, { signal: this.signal });
   }
 
   protected handleDragging(e: PointerEvent): void {
+    if (!isDef(this.prevEX) && e.pointerType !== "mouse" && Math.abs(e.clientY - this.lastPtrY) > Math.abs(e.clientX - this.lastPtrX) / 3 && this.el.scrollHeight >= this.el.clientHeight + 3) this.locked = "y";
+    if (this.locked) return this.handleDragEnd();
     this.media.container.classList.add("tmg-media-captions-dragging");
     this.ctlr.RAFLoop("captionsDragging", () => {
       if (e.clientX === this.prevEX && e.clientY === this.prevEY) return; // #CONSERVATION: peak stays peak
@@ -161,6 +164,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       else this.el.style.setProperty(`${sPfx}x`, (this.dragX = `${(posX / ww) * 100}%`)), this.el.style.setProperty(`${sPfx}y`, (this.dragY = `${(posY / hh) * 100}%`));
     });
   }
+  private locked?: "x" | "y";
   private prevEX?: number;
   private prevEY?: number;
 

@@ -16,7 +16,6 @@ export class AirPlayPlaceholder extends BaseComponent<AirPlayPlaceholderConfig, 
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.el);
   }
 

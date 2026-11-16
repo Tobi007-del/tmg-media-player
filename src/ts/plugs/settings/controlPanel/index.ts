@@ -142,9 +142,8 @@ export class ControlPanelPlug extends BasePlug<ControlPanelConfig> {
 
   protected initScrollAndResize(): void {
     for (const el of [...this.zoneEls, this.shells.center.zone]) {
-      this.handleCompsView(el);
-      this.scrollers.push((initScrollAssist(el, { pxPerSecond: el.dataset.dragId === "big" ? 120 : 60 }), el));
-      observeResize(el, () => this.handleCompsView(el), this.signal), observeMutation(el, (m) => m.attributeName && (m.target as HTMLElement).dataset?.controlId && this.handleCompsFlex(el), { attributes: true, subtree: true, attributeFilter: ["class"] }, this.signal);
+      this.handleCompsView(el), this.scrollers.push((initScrollAssist(el, { pxPerSecond: el.dataset.dragId === "big" ? 120 : 60 }), el)), observeResize(el, () => this.handleCompsView(el), this.signal);
+      observeMutation(el, (m) => m.attributeName && (m.target as HTMLElement).dataset?.controlId && this.handleCompsFlex(el), { attributes: true, subtree: true, attributeFilter: ["class"] }, this.signal);
       el.addEventListener("scroll", this.handleDirtyScroll, { passive: true, signal: this.signal });
     }
   }

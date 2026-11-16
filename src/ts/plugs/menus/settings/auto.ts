@@ -34,6 +34,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
       label: "Auto-pause",
       widget: "select",
       getMultiple: () => true,
+      getBadge: () => ({ label: "new" }),
       getValue: () => (plug.config.pause.value === false ? ["Off"] : isArr(plug.config.pause.value) ? plug.config.pause.value.map((v) => getUIOpt(plug.config.pause.options, v)) : [getUIOpt(plug.config.pause.options, plug.config.pause.value)]),
       getOptions: () => plug.config.pause.options,
       onChange(v: any) {
@@ -50,6 +51,7 @@ export const getSettingsAutoMenu = (plug: AutoPlug): SettingsMenuItem => ({
       id: "autoNext",
       label: "Auto-next",
       widget: "group",
+      feature: "nextItem",
       getValue: () => formatUITime(plug.config.next.countdown * 1000),
       configPaths: ["settings.auto.next.countdown"],
       items: [

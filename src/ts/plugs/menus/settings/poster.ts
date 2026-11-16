@@ -16,7 +16,7 @@ export const getSettingsPosterMenu = (plug: PosterPlug): SettingsMenuItem => ({
       items: [
         {
           id: "poster",
-          label: "Poster",
+          label: "Media poster",
           widget: "group",
           getValue: () => (plug.state.visible && plug.media.state.poster ? "On" : "Off"),
           onWire: (syncUI, signal) => plug.state.on("visible", syncUI, { signal }),

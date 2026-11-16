@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.85
+
+### Patch Changes
+
+- Deps update and AI bug fixes
+
 ## 0.0.84
 
 ### Patch Changes

@@ -80,7 +80,7 @@ export class KeysPlug extends BasePlug<KeysConfig> {
     return mod ? this.config.mods[action]?.[mod] ?? base : base;
   }
   public getWindows(): Window[] {
-    const floater = this.ctlr.plug("settings.modes")?.pictureInPicture?.floatingWindow;
+    const floater = this.ctlr.plug("settings.modes")?.pictureInPicture?.window;
     return floater ? [window, floater] : [window];
   }
 

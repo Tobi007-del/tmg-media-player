@@ -30,7 +30,7 @@ export class ColorWidget<T = unknown> extends BaseWidget<T> {
         node.classList.toggle("tmg-media-smenu-color-active", opt.display === this.currentValue || node.dataset.colorVal === this.currentValue);
       },
     });
-    const field = (this.field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free" }));
+    const field = (this.field = t007.field({ type: "color", value: this.currentValue, className: "tmg-media-smenu-color-free", helperText: false }));
     ((this.freeInput = field.inputEl) as any).t007Field = field;
     for (const ev of ["input", "change"]) this.freeInput.addEventListener(ev, this.handleColor, { signal: this.signal });
     this.freeInput.addEventListener("blur", () => this.useTx(false), { signal: this.signal });

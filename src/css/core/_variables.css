@@ -74,7 +74,7 @@
   --tmg-media-fade-transition-time: 225ms;
   --tmg-media-motion-transition-time: 350ms;
   --tmg-media-slow-transition-time: 600ms;
-  --tmg-media-notifiers-animation-time: 1000ms;
+  --tmg-media-notifier-animation-time: 1000ms;
   --tmg-media-buffer-animation-time: 1250ms;
   --tmg-media-bounce-timing: cubic-bezier(0.68, -0.55, 0.27, 1.55);
   --tmg-media-motion-timing: cubic-bezier(0.1, 0, 0, 1);
@@ -204,8 +204,6 @@
   --t007-toast-image-object-fit: var(--tmg-media-object-fit);
   --t007-toast-image-background: var(--tmg-media-background);
   --t007-toast-no-image-background: var(--tmg-media-image-background);
-  --t007-toast-progress-background: var(--tmg-media-timeline-played-bar-background);
-  --t007-toast-progress-backdrop-background: var(--tmg-media-timeline-base-bar-background);
   --t007-toast-action-button-color: var(--tmg-media-theme-inverse-color);
   --t007-toast-action-button-background: var(--tmg-media-theme-color);
   --t007-toast-action-button-active-background: var(--tmg-media-theme-accent-color);

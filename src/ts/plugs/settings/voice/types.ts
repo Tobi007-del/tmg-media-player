@@ -9,11 +9,10 @@ export interface VoiceCommands extends Record<Action["id"], string | string[]> {
 
 export interface VoiceAiConfig {
   active: boolean;
-  preference: string;
-  model: string;
+  persona: { model: string; limit: number; voice: string; preference: string };
+  feedback: { captions: boolean; volume: number; rate: number };
   apiKey: string;
   endpoint: string;
-  systemPrompt: string;
   history: Array<{ role: "user" | "assistant"; content: string }>;
   draft: { frame: number; text: string };
 }
@@ -35,11 +34,10 @@ export interface VoiceConfig {
     autoToggles: boolean;
   };
   commands: VoiceCommands;
-  feedback: {
+  toasts: {
     behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
     quoter: ToastOptions;
     router: ToastOptions;
-    copilot: Record<"speech" | "captions", boolean>;
   };
 }
 
@@ -47,6 +45,7 @@ export interface VoiceAiState {
   status: string;
   prompt: string;
   speech: string;
+  speaking: boolean;
 }
 
 export interface VoiceState {

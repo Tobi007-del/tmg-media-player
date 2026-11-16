@@ -17,8 +17,8 @@ const getBadge = (src = "") => (MATCH_URL_YOUTUBE.test(src) ? "YouTube" : MATCH_
     const item = () => (isEdit ? getContent(plug)[ctx.editIdx] : null);
     return [
       { name: "src", label: "Media URL", placeholder: "https://youtu.be/...", type: "url", required: true, minLength: 10, helperText: { info: "Input any video or audio url" }, value: isEdit ? () => item()?.media.intent.src || "" : undefined },
-      { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", compact: true, minLength: 1, maxLength: 179, value: isEdit ? () => item()?.media.settings.metadata.title || "" : undefined },
-      { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", compact: true, minLength: 1, maxLength: 179, value: isEdit ? () => item()?.media.settings.metadata.artist || "" : undefined },
+      { name: "title", label: "Title", placeholder: "The Kosi Paradox", type: "text", inline: true, minLength: 1, maxLength: 179, value: isEdit ? () => item()?.media.settings.metadata.title || "" : undefined },
+      { name: "artist", label: "Artist", placeholder: "Tobi007-del", type: "text", inline: true, minLength: 1, maxLength: 179, value: isEdit ? () => item()?.media.settings.metadata.artist || "" : undefined },
     ];
   };
 

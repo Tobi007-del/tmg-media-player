@@ -13,13 +13,13 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
     sassPlugin(),
-    {
-      name: "watch-and-reload",
-      handleHotUpdate({ server, file: _ }) {
-        // Send a full page reload signal down the socket line
-        server.ws.send({ type: "full-reload", path: "*" });
-        return []; // Return empty array to stop HMR from propagating
-      },
-    },
+    // {
+    //   name: "watch-and-reload",
+    //   handleHotUpdate({ server, file: _ }) {
+    //     // Send a full page reload signal down the socket line
+    //     server.ws.send({ type: "full-reload", path: "*" });
+    //     return []; // Return empty array to stop HMR from propagating
+    //   },
+    // },
   ],
 });

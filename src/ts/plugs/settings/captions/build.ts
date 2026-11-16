@@ -1,6 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { CaptionsConfig } from "./types";
-import { TIME_TRAVEL_BUILD } from "@plugs/settings/timeTravel/build";
+import { TEMPORAL_BUILD } from "@plugs/settings/temporal/build";
 import { CSS_CLASSLIST } from "@plugs/settings/css/build";
 
 export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
@@ -166,5 +166,5 @@ export const CAPTIONS_BUILD: DeepPartial<CaptionsConfig> = {
 export const STYLE_PATHS = ["font.family", "font.size", "font.color", "font.opacity", "font.weight", "font.variant", "background.color", "background.opacity", "window.color", "window.opacity", "textAlignment", "characterEdgeStyle"] as const;
 export const ROTATE_PATHS = ["font.family", "font.weight", "font.variant", "font.opacity", "background.opacity", "window.opacity", "characterEdgeStyle", "textAlignment"] as const;
 
-TIME_TRAVEL_BUILD.module.whitelist.config.push(...STYLE_PATHS.map((p) => `settings.captions.${p}.value`), "settings.css.captionsBaseShadow", "settings.css.currentCaptionsX", "settings.css.currentCaptionsY");
+TEMPORAL_BUILD.module.whitelist.config.push(...STYLE_PATHS.map((p) => `settings.captions.${p}.value`), "settings.css.captionsBaseShadow", "settings.css.currentCaptionsX", "settings.css.currentCaptionsY");
 CSS_CLASSLIST.push("captionsCharacterEdgeStyle");

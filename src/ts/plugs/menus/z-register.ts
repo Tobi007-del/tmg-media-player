@@ -18,7 +18,7 @@ import { getSettingsPlaybackRateMenu } from "./settings/playbackRate";
 import { getSettingsPosterMenu } from "./settings/poster";
 import { getSettingsSleepTimerMenu } from "./settings/sleepTimer";
 import { getSettingsTimeMenu } from "./settings/time";
-import { getSettingsTimeTravelMenu } from "./settings/timeTravel";
+import { getSettingsTemporalMenu } from "./settings/temporal";
 import { getSettingsToastsMenu } from "./settings/toasts";
 import { getSettingsVolumeMenu } from "./settings/volume";
 import { getSettingsVoiceMenu } from "./settings/voice";
@@ -46,7 +46,7 @@ for (const [key, menu] of [
   ["settings.poster", getSettingsPosterMenu],
   ["settings.sleepTimer", getSettingsSleepTimerMenu],
   ["settings.time", getSettingsTimeMenu],
-  ["settings.timeTravel", getSettingsTimeTravelMenu],
+  ["settings.temporal", getSettingsTemporalMenu],
   ["settings.toasts", getSettingsToastsMenu],
   ["settings.volume", getSettingsVolumeMenu],
   ["settings.voice", getSettingsVoiceMenu],

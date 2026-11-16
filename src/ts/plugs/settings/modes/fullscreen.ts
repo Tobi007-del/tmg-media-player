@@ -57,7 +57,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
       this.media.status.shapeShifting = "fullscreen";
       if (this.media.state.pictureInPicture) {
         silence(() => (this.media.intent.pictureInPicture = false));
-        if (this.media.status.floatingPlayer) return this.media.wonce("status.floatingPlayer", this.enter, { signal: this.signal }), e.resolve(this.name);
+        if (this.media.status.floating) return this.media.wonce("status.floating", this.enter, { signal: this.signal }), e.resolve(this.name);
       }
       this.enter();
     } else if (!e.value && isActive) !this.media.container.matches(":fullscreen") ? this.onDocInFullscreen(false) : exitFullscreen(this.media.container);

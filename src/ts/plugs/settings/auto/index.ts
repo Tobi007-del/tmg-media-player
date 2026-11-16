@@ -14,19 +14,20 @@ import { capitalize, isArr, isSameURL } from "@t007/utils";
 export class AutoPlug extends BasePlug<AutoConfig> {
   public static readonly plugName = "auto";
   public static readonly BUILD = AUTO_BUILD;
+  public readonly TID = `tmg-media-next-preview-for-${this.ctlr.config.id}`;
   public autoClupPaths = ["state.currentTime", "state.paused", "state.playbackRate", "status.waiting"] as const;
   protected nextPreview: HTMLVideoElement | null = null;
-  protected canMovePlaylist = true;
+  protected canAutoNext = true;
 
   public override wire(): void {
     // Ctlr Config Getters
     for (const k of ["min", "max"] as const) this.ctlr.config.get(`settings.auto.next.preview.${k}`, (v) => this.ctlr.plug("settings.time")?.toTime(v, this.nextPreview?.duration) ?? v, { signal: this.signal });
     // ---- Media Watchers
-    this.media.watch("state.currentItem", () => ((this.canMovePlaylist = true), this.nextClup?.()), { signal: this.signal });
+    this.media.watch("state.currentItem", () => ((this.canAutoNext = true), this.nextClup?.()), { signal: this.signal });
     // // ---- Config -------
     this.ctlr.config.watch("settings.auto.play.value", (value) => silence(() => (this.media.intent.autoplay = value === true)), { signal: this.signal });
     // ---- Media Listeners
-    this.media.on("state.currentTime", ({ value }, st = this.media.status) => value && this.ctlr.flags.wired && st.readyState && (st.isLive ? st.ended : this.toNextTime() <= this.config.next.countdown) && this.autonextMedia(), { init: this.ctlr.flags.wired, signal: this.signal });
+    this.media.on("state.currentTime", ({ value }, st = this.media.status) => value && this.ctlr.flags.wired && st.readyState && (st.isLive ? st.ended : this.toNextTime() <= this.config.next.countdown) && this.autoNextMedia(), { init: this.ctlr.flags.wired, signal: this.signal });
     // ---- State ---------
     this.ctlr.state.on("parentIntersecting", () => (this.aptAutoplay(this.config.pause.value, false), this.aptAutoplay()), { signal: this.signal });
     globalState.on("isVisible", this.handleGlobalIsVisible, { signal: this.signal });
@@ -51,13 +52,14 @@ export class AutoPlug extends BasePlug<AutoConfig> {
     if (isArr(auto)) if (auto.includes(`${p}-view-always`) || (auto.includes(`${p}-view`) && !this.ctlr.flags.played)) silence(() => (this.media.intent.paused = !bool)); // #PATIENT: only before first play
   }
 
-  protected autonextMedia(): void {
-    if (!this.canMovePlaylist || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.countdown < 0 || !this.media.features.nextItem || this.media.state.paused || this.media.status.waiting) return;
-    this.canMovePlaylist = false;
+  public autoNextMedia(): void {
+    if (!this.canAutoNext || this.media.state.loop || !this.media.status.loadedMetadata || !this.ctlr.config.playlist.content || this.config.next.countdown < 0 || !this.media.features.nextItem || this.media.state.paused || this.media.status.waiting) return;
+    this.canAutoNext = false;
     const count = this.toNextTime() || 1,
       m = this.ctlr.config.playlist.content[this.media.state.currentItem + 1].media,
       type = m.intent.src && AUDIO_EXTENSIONS.test(m.intent.src) ? "audio" : "video";
-    const nVTId = this.ctlr.toast?.("", {
+    this.ctlr.toast?.("", {
+      id: this.TID,
       autoClose: count * 1000,
       bodyHTML: `<span title="Play next ${type}" class="tmg-media-next-preview-wrapper tmg-media-flex-center">
         <button type="button" class="tmg-media-cover">${IconRegistry.get("play", true)?.replace('class="', 'class="tmg-media-no-pointer ') || ""}</button>
@@ -72,7 +74,7 @@ export class AutoPlug extends BasePlug<AutoConfig> {
       signal: this.signal,
       ...this.config.next.toast,
     });
-    const clup = (permanent = false) => (nVTId && t007.toast?.dismiss(nVTId, "instant"), (this.nextClup = this.nextPreview = null), (this.canMovePlaylist = !permanent)),
+    const clup = (permanent = false) => (t007.toast?.dismiss(this.TID, "instant"), (this.nextClup = this.nextPreview = null), (this.canAutoNext = !permanent)),
       autoClup = () => this.toNextTime() > this.config.next.countdown && clup();
     this.nextClup = () => !this.media.status.ended && clup();
     const removeListeners = () => this.autoClupPaths.forEach((p) => this.media.off(p, p === "state.currentTime" ? autoClup : this.nextClup!));

@@ -10,7 +10,7 @@
   display: flex;
   white-space: pre;
   opacity: 0;
-  animation-duration: var(--tmg-media-notifiers-animation-time);
+  animation-duration: var(--tmg-media-notifier-animation-time);
   animation-timing-function: ease;
   animation-fill-mode: forwards;
 }
@@ -171,10 +171,10 @@
 :is(.tmg-media-fwd-notifier, .tmg-media-bwd-notifier, .tmg-media-scrub-notifier) svg {
   opacity: 0.25;
   animation-iteration-count: infinite;
-  animation-duration: var(--tmg-media-notifiers-animation-time);
+  animation-duration: var(--tmg-media-notifier-animation-time);
 }
 .tmg-media-scrub-notifier svg {
-  animation-duration: calc(var(--tmg-media-notifiers-animation-time) / 1.5);
+  animation-duration: calc(var(--tmg-media-notifier-animation-time) / 1.5);
 }
 .tmg-media-notifier.tmg-media-control-persist {
   background-color: var(--tmg-media-dbc-backdrop-color);

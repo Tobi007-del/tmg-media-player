@@ -9,19 +9,17 @@ export type PanelDir = "forward" | "backward" | "none";
 export abstract class BaseMenuPanel extends Controllable {
   public readonly element: HTMLElement;
   public readonly content: HTMLElement;
-  public savedScroll = 0;
   public lastFocused: HTMLElement | null = null;
 
   constructor(ctlr: Controller, config: any, className: string) {
     super(ctlr, config);
     this.element = createEl("div", { className: `tmg-media-smenu-panel tmg-media-cover tmg-media-no-pointer ${className}` });
     this.element.append((this.content = createEl("div", { className: "tmg-media-smenu-panel-content" })));
-    this.content.addEventListener("scroll", () => this.isActive && (this.savedScroll = this.content.scrollTop), { passive: true, signal: this.signal });
     this.element.addEventListener("focusin", ({ target }) => (this.lastFocused = target as HTMLElement), { signal: this.signal });
   }
 
   public enter(dir: PanelDir = "forward", restore = false): void {
-    if (!restore) (this.lastFocused = null), (this.savedScroll = 0);
+    if (!restore) this.lastFocused = null;
     this.element.classList.remove("tmg-media-smenu-panel-exit", "tmg-media-smenu-panel-active");
     (this.element.dataset.dir = dir), this.element.style.removeProperty("display"), this.element.removeAttribute("inert");
     void this.element.offsetWidth, this.element.classList.add("tmg-media-smenu-panel-active");

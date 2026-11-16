@@ -1,26 +1,28 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
-import type { TimeTravelPlug } from "@plugs/settings/timeTravel";
+import type { TemporalPlug } from "@plugs/settings/temporal";
 import { isArr } from "@t007/utils";
 import { fpath, fvalue } from "@utils/str";
 import type { Controller } from "@core/controller";
 import type { MediaFeatures } from "@defs/contract";
-import type { TimeTravelModule } from "sia-reactor/modules";
+import type { TemporalModule } from "sia-reactor/modules";
 
 const formatEntry = (entry: any, index: number) => ({ display: `${index + 1}) ${!entry ? "Unknown" : entry.nodes ? entry.label || `Batch of ${entry.nodes.length}` : fpath(entry.rid === "media" ? `media.${entry.path}` : entry.path)}`, infoText: !entry || entry.nodes ? "" : fvalue(entry.to) });
 
-export interface TimeTravelHistoryMenuOptions {
+export interface TemporalHistoryMenuOptions {
   id?: string;
   label?: string;
   feature?: keyof MediaFeatures;
   signal?: AbortSignal;
+  getBadge?: () => { label?: string; value?: string } | string | undefined;
 }
 
-export const getTimeTravelHistoryMenu = (ctlr: Controller, mdle: TimeTravelModule<any>, options: TimeTravelHistoryMenuOptions = {}): SettingsMenuItem => {
-  const { id = "timeTravelHistory", label = "History", feature, signal = ctlr.signal } = options;
+export const getTemporalHistoryMenu = (ctlr: Controller, mdle: TemporalModule<any>, options: TemporalHistoryMenuOptions = {}): SettingsMenuItem => {
+  const { id = "temporalHistory", label = "History", feature, signal = ctlr.signal, getBadge } = options;
   return {
     id,
     label,
     ...(feature ? { feature } : {}),
+    ...(getBadge ? { getBadge } : {}),
     widget: "select",
     closeOnSelect: false,
     getValue: () => (mdle.state.history.length ? `(${mdle.state.currentFrame}) of ${mdle.state.history.length}` : "Empty"),
@@ -62,7 +64,7 @@ export const getTimeTravelHistoryMenu = (ctlr: Controller, mdle: TimeTravelModul
   };
 };
 
-export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuItem => ({
+export const getSettingsTemporalMenu = (plug: TemporalPlug): SettingsMenuItem => ({
   id: "advanced",
   label: "Advanced",
   icon: "settings",
@@ -70,24 +72,24 @@ export const getSettingsTimeTravelMenu = (plug: TimeTravelPlug): SettingsMenuIte
   getValue: () => "",
   items: [
     {
-      id: "timeTravel",
+      id: "temporal",
       label: "Time travel",
       getBadge: () => ({ label: "beta" }),
       widget: "group",
       getValue: () => (plug.config.module.limit ? "On" : "Off"),
-      configPaths: ["settings.timeTravel.module.limit"],
+      configPaths: ["settings.temporal.module.limit"],
       getTipHTML: () => "🌌 Step through the space-time continuum. Rewind your mistakes, replay interactions.",
       actions: [{ id: "toggleConsole", getLabel: () => (plug.config.console.disabled ? "Show console" : "Hide console"), onClick: () => (plug.config.console.disabled = !plug.config.console.disabled), hidden: () => !plug.ctlr.config.devMode }],
-      onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("timeTravel"))) => {
-        for (const k of ["devMode", "settings.timeTravel.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
+      onWire: (syncUI, signal, _sync = () => (syncUI(), plug.ctlr.plug("settings.panel")?.menu?.syncUI("temporal"))) => {
+        for (const k of ["devMode", "settings.temporal.console.disabled"]) plug.ctlr.config.on(k as any, _sync, { signal });
       },
-      items: [{ id: "timeTravelPersist", label: "Persistence", widget: "toggle", getValue: () => plug.config.persist, getBadge: () => ({ label: "labs" }), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.timeTravel.persist"], title: "Save your state history across page reloads" }, getTimeTravelHistoryMenu(plug.ctlr, plug.module, { id: "timeTravelHistory", label: "History", signal: plug.signal })],
+      items: [{ id: "temporalPersist", label: "Persistence", widget: "toggle", getValue: () => plug.config.persist, getBadge: () => ({ label: "labs" }), onChange: (val: boolean) => (plug.config.persist = val), configPaths: ["settings.temporal.persist"], title: "Save your state history across page reloads" }, getTemporalHistoryMenu(plug.ctlr, plug.module, { id: "temporalHistory", label: "History", signal: plug.signal })],
     },
   ],
 });
 
 declare module "@defs/registries" {
   interface MenuRegistryMap {
-    "settings.timeTravel": typeof getSettingsTimeTravelMenu;
+    "settings.temporal": typeof getSettingsTemporalMenu;
   }
 }

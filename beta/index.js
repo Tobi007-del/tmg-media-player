@@ -2,8 +2,8 @@ import { isDef, isIter, isObj, isArr, loadResource, isSameURL, uid, clamp, bindA
 import { rippleHandler, initScrollAssist, removeScrollAssist } from "@t007/utils/hooks/vanilla";
 import { reactive, TERMINATOR, volatile } from "sia-reactor";
 import { setPath, getPath, parsePathObj, fanout, mergeObjs, deepClone, force } from "sia-reactor/utils";
-import { IndexedDBAdapter, PersistModule, TimeTravelModule, silence } from "sia-reactor/modules";
-import { TimeTravelConsole } from "sia-reactor/adapters/vanilla";
+import { IndexedDBAdapter, PersistModule, TemporalModule, silence } from "sia-reactor/modules";
+import { TemporalConsole } from "sia-reactor/adapters/vanilla";
 
 class tmg_Video_Controller {
   constructor(medium, build) {
@@ -2639,16 +2639,16 @@ var tmg = {
   _currentFullscreenController: null,
   PersistModule: PersistModule,
   IndexedDBAdapter: IndexedDBAdapter,
-  TimeTravelModule: TimeTravelModule,
-  TimeTravelConsole: TimeTravelConsole,
+  TemporalModule: TemporalModule,
+  TemporalConsole: TemporalConsole,
   async timeTravel() {
     await tmg.loadResource(`https://cdn.jsdelivr.net/npm/sia-reactor/dist/styles/time-travel-console.min.css`);
     for (let i = 0, n = 0, len = tmg.Controllers.length; i < len; i++) {
       const con = tmg.Controllers[i];
       if (con.config.__Reactor__.modules?.has(window[`TTM${n + 1}`])) continue;
-      con.config.use((window[`TTM${++n}`] = new TimeTravelModule({ blacklist: ["settings.css.syncWithMedia"] })));
-      window[`TTO${n}`] = new TimeTravelConsole(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
-      con.config.watch("settings.css.brandColor", (v) => (window[`TTO${n}`].config.color = v), { init: true });
+      con.config.use((window[`TTM${++n}`] = new TemporalModule({ blacklist: ["settings.css.syncWithMedia"] })));
+      window[`TTC${n}`] = new TemporalConsole(window[`TTM${n}`], { title: `TMG Controller ${n} Tape` });
+      con.config.watch("settings.css.brandColor", (v) => (window[`TTC${n}`].config.color = v), { init: true });
     }
   },
   breath: (w = window) => new Promise((res) => w.requestAnimationFrame(res)), // The "Single Frame" breathe - GPU Readiness, the loading animation is the build process itself. Sike!!

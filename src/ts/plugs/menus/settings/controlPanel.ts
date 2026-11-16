@@ -1,6 +1,6 @@
 import type { SettingsMenuItem } from "@plugs/settings/panel/types";
 import type { ControlPanelPlug } from "@plugs/settings/controlPanel";
-import { CONTROLS } from "@plugs/settings/controlPanel/build";
+import { CONTROLS, NEW_CONTROLS } from "@plugs/settings/controlPanel/build";
 import type { AnyControl } from "@plugs/settings/controlPanel/types";
 import { getUIOpt, insertPanelCtrl, getPanelLocation, inPanel, isArr } from "@utils/obj";
 import { capitalize, uncamelize, formatMenuPx } from "@utils/str";
@@ -23,8 +23,8 @@ const getMarkerInputs = (plug: ControlPanelPlug, ctx: { markerEditIdx: number },
   const mark = () => (isEdit ? plug.config.timeline.marks[ctx.markerEditIdx] : null);
   return [
     { name: "label", label: "Label", placeholder: "Bookmark 2", helperText: { info: "e.g. The Plight of Kosi's Anchor" }, value: isEdit ? () => mark()?.label || "" : undefined },
-    { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 to 100" }, type: "number", step: "any", required: true, compact: true, value: isEdit ? () => mark()?.start || "" : () => String(safeNum(getMediaProgress(plug.media)) * 100) },
-    { name: "end", label: "End (%)", helperText: { info: "0 to 100 (Optional)" }, type: "number", compact: true, value: isEdit ? () => mark()?.end || "" : undefined },
+    { name: "pos", label: "Position (%)", placeholder: "50", helperText: { info: "0 to 100" }, type: "number", step: "any", required: true, inline: true, value: isEdit ? () => mark()?.start || "" : () => String(safeNum(getMediaProgress(plug.media)) * 100) },
+    { name: "end", label: "End (%)", helperText: { info: "0 to 100 (Optional)" }, type: "number", inline: true, value: isEdit ? () => mark()?.end || "" : undefined },
   ];
 };
 
@@ -54,14 +54,15 @@ export const getSettingsControlPanelMenu = (plug: ControlPanelPlug, ctx = { mark
               label: "Controls",
               widget: "group",
               getValue: () => "",
+              getBadge: () => (NEW_CONTROLS.length ? { label: `${NEW_CONTROLS.length} new` } : undefined),
               configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"],
               items: CONTROLS.filter((id) => id !== "spacer")
                 .sort()
-                .map((id) => ({ id: `toggle-cp-${id}`, label: capitalize(uncamelize(id)), widget: "toggle" as const, getValue: () => inPanel(plug.config, id), onChange: (val: boolean) => setEnabled(plug, id, val), configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"] })),
+                .map((id) => ({ id: `toggle-cp-${id}`, label: capitalize(uncamelize(id)), widget: "toggle" as const, getBadge: () => (NEW_CONTROLS.includes(id) ? { label: "new" } : undefined), getValue: () => inPanel(plug.config, id), onChange: (val: boolean) => setEnabled(plug, id, val), configPaths: ["settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom"] })),
             },
             {
               id: "layoutTimeline",
-              label: "Timeline",
+              label: "Media timeline",
               widget: "group",
               getValue: () => (plug.config.timeline.disabled || plug.config.timeline.readonly || !inPanel(plug.config, "timeline") ? "Off" : "On"),
               configPaths: ["settings.controlPanel.timeline.disabled", "settings.controlPanel.timeline.readonly"],

@@ -31,7 +31,7 @@ Explains the **strategic reasoning** behind key sia-reactor choices and their do
 
 **Why It Matters to TMG**:
 - [FOLKLORE.md](tmg-media-player/FOLKLORE.md#L33): Explicitly documents why three phases are needed
-- [Plug priority ordering](tmg-media-player/src/ts/plugs/z-register.ts#L42): Plugs are registered in order so they can capture in priority order (e.g., PersistPlug first, then TimeTravelPlug)
+- [Plug priority ordering](tmg-media-player/src/ts/plugs/z-register.ts#L42): Plugs are registered in order so they can capture in priority order (e.g., PersistPlug first, then TemporalPlug)
 - [Component listeners](tmg-media-player/src/ts/components/controls/timeline/index.ts): Listens on BUBBLE to *see* the final state, not intervene
 
 **Concrete Consequence**:

@@ -53,9 +53,9 @@ export class GesturePlug extends BasePlug<GestureConfig, GestureState> {
   protected handleAnyClick(): void {
     this.ctlr.plug("settings.overlay")?.delay();
   }
-  protected handleRightClick(e: PointerEvent): void {
-    if (this.ctlr.config.disabled || this.media.state.locked) return;
-    e.preventDefault(), e.stopPropagation(), (!e.pointerType || e.pointerType === "mouse") && !IS_MOBILE && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
+  protected handleRightClick(e: PointerEvent, t = e.target as HTMLElement): void {
+    if (this.ctlr.config.disabled || this.media.state.locked || t?.matches?.("img,a[href],input,textarea,[contenteditable]") || window.getSelection()?.toString()) return;
+    e.preventDefault(), e.stopPropagation(), (e.pointerType ? e.pointerType === "mouse" : !IS_MOBILE) && this.ctlr.plug("settings.panel")?.menu.open({ x: e.clientX, y: e.clientY });
   }
   protected handleClick(e: MouseEvent): void {
     if (e.target !== this.ctlr.DOM.controlsContainer) return; // no currentTarget as async safe click

@@ -10,7 +10,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /media\.settings\.(defaultMuted|defaultPlaybackRate|flushKeys)/,
       /settings\.(techOrder|persist|panel|errors|ambience|objectFit|volume|brightness|playbackRate)/,
       /settings\.keys\.(rankedMatch|linkedPhase|overrides|blocks|moddedlist)/,
-      /settings\.timeTravel\.(console|module)/,
+      /settings\.temporal\.(console|module)/,
       "settings.notifiers.centerBlocks",
       "settings.frame.main",
       /\.(whitelist|blacklist|min|max|skip|start|end|css)($|\.)/, // Safe because nodes (like volume) are already blocked above
@@ -19,7 +19,7 @@ export const CONFIG_BUILD: DeepPartial<CtlrConfig> = {
       /media\.(state|status|tech|features|type|element|pseudoElement|container|pseudoContainer)/, // no-go area
       /media\.intent\.(sources|tracks|xrInputSource)/,
       /media\.settings\.(srcObject|protection|metadata\.(artwork|chapterInfo))/,
-      /settings\.voice\.ai\.(systemPrompt|history|draft)/,
+      /settings\.voice\.ai\.(history|draft)/,
       /settings\.toasts\.reminders\.[^.]+\.target/,
       "settings.sleepTimer.target",
       /\.(on|before)[A-Z]\w+$/,

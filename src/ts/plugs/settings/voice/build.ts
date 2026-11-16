@@ -1,7 +1,6 @@
 import { DeepPartial } from "sia-reactor";
 import { VoiceConfig, VoiceAiConfig } from "./types";
 import { ACTIONS_DICT } from "@consts/actions";
-import { AI_SYSTEM_PROMPT } from "./prompt";
 
 export const VOICE_COMMANDS: Record<string, string | string[]> = {
   next: ["next video", "next item"],
@@ -20,20 +19,18 @@ export const VOICE_COMMANDS: Record<string, string | string[]> = {
   timeEnd: "end now",
   capture: "screenshot",
   skipAd: "skip ad",
-  timeTravelUndo: "undo",
-  timeTravelRedo: "redo",
+  temporalUndo: "undo",
+  temporalRedo: "redo",
   voiceWake: "player",
   voiceQuit: "quit",
   voiceSleep: "sleep",
-  voiceMute: "snub",
+  voiceMute: "stop listening",
   ai: ["pilot", "spark"],
   aiStop: ["stop thinking", "stop working"],
-  aiTimeTravelUndo: ["pilot undo", "spark undo"],
-  aiTimeTravelRedo: ["pilot redo", "spark redo"],
+  voicePrevious: ["go back", "undo work"],
+  voiceNext: ["go forward", "redo work"],
+  voiceClear: "clear context",
   voiceSubmit: ["submit", "enter"],
-  voiceCtxPrevious: "go back",
-  voiceCtxNext: "go front",
-  voiceCtxClear: "clear",
   voiceToggleOn: ["yes", "on", "true"],
   voiceToggleOff: ["no", "off", "false"],
 }; // speech bait
@@ -41,18 +38,17 @@ for (const k of Object.keys(ACTIONS_DICT)) VOICE_COMMANDS[k] ??= ""; // UX boost
 
 export const VOICE_AI_BUILD: DeepPartial<VoiceAiConfig> = {
   active: true,
-  preference: "",
-  model: "", // "gemini-3.5-flash-lite"
+  persona: { model: "", limit: 50, voice: "default", preference: "" }, // "gemini-3.5-flash-lite" ~3,500 tokens (initial & system prompt, and response)
+  feedback: { captions: true, volume: 1, rate: 1 },
   apiKey: "",
   endpoint: "", // "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-  systemPrompt: AI_SYSTEM_PROMPT,
   history: [],
   draft: { frame: -1, text: "" },
 };
 
 export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
   active: {
-    value: "passive",
+    value: false,
     options: [
       { value: true, display: "On" },
       { value: false, display: "Off" },
@@ -84,7 +80,7 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     },
   },
   routing: {
-    timeout: 15000,
+    timeout: 30000,
     direct: true,
     strict: {
       value: "auto",
@@ -97,12 +93,12 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
     autoToggles: false,
   },
   commands: VOICE_COMMANDS,
-  feedback: {
+  toasts: {
     behavior: {
       value: "persistent",
       options: [
         { value: "persistent", display: "Persistent" },
-        { value: "auto", display: "Auto (On speech)" },
+        { value: "auto", display: "Auto (On speech too)" },
         { value: "strict", display: "Strict (Only when awake)" },
       ],
     },
@@ -112,13 +108,9 @@ export const VOICE_BUILD: DeepPartial<VoiceConfig> = {
       compact: true,
     },
     router: {
-      position: "bottom-left",
+      position: "bottom-center",
       icon: "🧭",
       autoClose: false,
-    },
-    copilot: {
-      speech: true,
-      captions: true,
     },
   },
 };

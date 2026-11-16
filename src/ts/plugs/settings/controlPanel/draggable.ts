@@ -17,9 +17,10 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     return ControlPanelPlug;
   }
   public static readonly BUILD = CONTROL_PANEL_DRAGGABLE_BUILD;
-  protected draggingEl: HTMLElement | null = null;
+  protected dragging: HTMLElement | null = null;
   protected replaced: { target: HTMLElement; child: HTMLElement } | null = null;
-  protected safeTimeoutId = -1;
+  protected original: typeof this.replaced | Record<"parent" | "next", Element | null> = null;
+  protected timeoutId = -1;
 
   public override wire(): void {
     this.ctlr.config.on("settings.controlPanel.draggable", ({ value }) => this.setListeners(value ? "add" : "remove"), { init: true, signal: this.signal });
@@ -48,72 +49,50 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
   protected handleDragStart(e: DragEvent): void {
     const { target: t, dataTransfer } = e as DragEvent & { target: HTMLElement };
     if (!t?.tagName || t.dataset.draggableControl !== "true" || this.teaching) return void (this.teaching && e.preventDefault());
-    if (t.matches(":has(:is(input,[role='slider']):is(:hover, :active))")) return e.preventDefault();
-    dataTransfer!.effectAllowed = "move";
-    this.draggingEl = t;
+    if (t.matches(":has(:is(input,[role='slider']):is(:hover,:active))")) return e.preventDefault();
+    if (dataTransfer) dataTransfer.effectAllowed = "move";
     requestAnimationFrame(() => (t.classList.add("tmg-media-control-dragging"), this.media.container.classList.add("tmg-media-control-dragging")), this.signal);
-    this.safeTimeoutId = setTimeout(() => (t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging")), 1000, this.signal);
+    this.original = (this.dragging = t).parentElement ? { parent: t.parentElement, next: t.nextElementSibling } : null;
+    this.timeoutId = setTimeout(() => (t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging")), 1000, this.signal);
     if (t.dataset.dragId !== "wrapper" || t.parentElement?.dataset.dragId !== "wrapper") return;
     const { path, shell } = this.getShellPath(t, true);
     setPath(this.plug.slots, path, shell);
-    this.replaced = { target: t.parentElement!, child: shell.cover };
+    this.original = this.replaced = { target: t.parentElement!, child: shell.cover };
   }
-
-  protected handleDrag(): void {
-    clearTimeout(this.safeTimeoutId);
-  }
-
+  protected handleDrag = () => clearTimeout(this.timeoutId);
   protected handleDragEnd(e: DragEvent, t = e.target as HTMLElement): void {
     if (!t?.tagName) return;
-    t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging");
-    this.replaced = this.draggingEl = null;
+    this.handleDrag(), t.classList.remove("tmg-media-control-dragging"), this.media.container.classList.remove("tmg-media-control-dragging");
     if (t.dataset.dragId === "wrapper" && t.parentElement?.dataset.dragId === "wrapper") setPath(this.plug.slots, this.getShellPath(t), t);
-    transaction(this.syncConfig, "Control panel reorder"), this.teachBasics.left ? this.teachBasics(t.dataset.controlId as any) : this.ctlr.plug("settings.timeTravel")?.teachBasics();
+    const changed = !this.original ? false : "child" in this.original ? this.replaced && (this.original.target !== this.replaced.target || this.original.child !== this.replaced.child) : this.dragging && (this.original.parent !== this.dragging.parentElement || this.original.next !== this.dragging.nextElementSibling);
+    if (changed) transaction(this.syncConfig, "Control panel reorder"), this.teachBasics.left ? this.teachBasics(t.dataset.controlId as any) : this.ctlr.plug("settings.temporal")?.teachBasics();
+    this.original = this.replaced = this.dragging = null;
   }
 
   protected handleDragEnter(e: DragEvent): void {
-    e.clientX && e.clientY && !this.noDropOff(e.target as HTMLElement) && this.draggingEl && (e.target as HTMLElement).classList.add("tmg-media-dragover");
+    e.clientX && e.clientY && !this.noDropOff(e.target as HTMLElement) && this.dragging && (e.target as HTMLElement).classList.add("tmg-media-dragover");
   }
-
   protected handleDragOver(e: DragEvent): void {
     const { target: t, clientX: x, dataTransfer } = e as DragEvent & { target: HTMLElement };
     if (this.noDropOff(t)) return;
-    e.preventDefault();
-    if (dataTransfer) dataTransfer.dropEffect = "move";
-    this.ctlr.throttle(
-      "dragOver",
-      () => {
-        if (t.dataset.dragId === "wrapper") {
-          const atWrapper = getElSiblingAt(x, "x", t.querySelectorAll<HTMLElement>('.tmg-media-side-controls-wrapper-cover:has([data-drop-zone="true"][data-drag-id=""]:empty)'), "at");
-          if (!atWrapper) return;
-          this.replaced?.target.replaceChild(this.replaced.child, this.draggingEl!);
-          this.replaced = { target: t, child: atWrapper };
-          return t.replaceChild(this.draggingEl!, atWrapper);
-        }
-        const afterCtrl = getElSiblingAt(x, "x", t.querySelectorAll<HTMLElement>("[draggable=true]:not(.tmg-media-control-dragging)"));
-        afterCtrl ? t.insertBefore(this.draggingEl!, afterCtrl) : t.append(this.draggingEl!);
-        if (!t.dataset.dragId) for (const el of this.plug.zoneEls) this.plug.handleCompsView(el);
-      },
-      500
-    );
+    e.preventDefault(), dataTransfer && (dataTransfer.dropEffect = "move");
+    const handle = () => {
+      if (t.dataset.dragId === "wrapper") {
+        const atWrapper = getElSiblingAt(x, "x", t.querySelectorAll<HTMLElement>('.tmg-media-side-controls-wrapper-cover:has([data-drop-zone="true"][data-drag-id=""]:empty)'), "at");
+        atWrapper && this.replaced?.target.replaceChild(this.replaced.child, this.dragging!);
+        return !atWrapper || ((this.replaced = { target: t, child: atWrapper }), t.replaceChild(this.dragging!, atWrapper));
+      }
+      const afterCtrl = getElSiblingAt(x, "x", t.querySelectorAll<HTMLElement>("[draggable=true]:not(.tmg-media-control-dragging)"));
+      afterCtrl ? t.insertBefore(this.dragging!, afterCtrl) : t.append(this.dragging!);
+      if (!t.dataset.dragId) for (const el of this.plug.zoneEls) this.plug.handleCompsView(el);
+    };
+    this.ctlr.throttle("dragOver", handle, 500);
   }
-
   protected handleDragLeave(e: DragEvent): void {
     !this.noDropOff(e.target as HTMLElement) && (e.target as HTMLElement).classList.remove("tmg-media-dragover");
   }
-
-  protected noDropOff(t: HTMLElement, drop = this.draggingEl): boolean {
+  protected noDropOff(t: HTMLElement, drop = this.dragging): boolean {
     return !drop?.tagName || t.dataset.dropZone !== "true" || (t.dataset.dragId !== drop.dataset.dragId && (t.dataset.dragId === "wrapper" || drop.dataset.dragId === "wrapper"));
-  }
-
-  protected getShellPath(target: HTMLElement, both?: false): Paths<ControlPanelShells>;
-  protected getShellPath(target: HTMLElement, both?: true): { path: Paths<ControlPanelShells>; shell: PanelShell };
-  protected getShellPath(target: HTMLElement, both = false): string | { path: string; shell: PanelShell } {
-    let key = "";
-    const pos = ({ 0: "left", 1: "center", 2: "right" } as const)[[...target.parentElement!.children].indexOf(target) as 0 | 1 | 2],
-      cws = this.ctlr.queryDOM(".tmg-media-top-controls-wrapper, .tmg-media-bottom-sub-controls-wrapper", true);
-    cws.forEach((w, i) => w.contains(target) && (key = ({ 0: "top.", 1: "bottom.1.", 2: "bottom.2.", 3: "bottom.3." } as const)[i as 0 | 1 | 2 | 3]));
-    return both ? { path: key + pos, shell: getPath(this.plug.shells as any, key + pos) } : key + pos;
   }
 
   public syncConfig(): void {
@@ -122,6 +101,15 @@ export class ControlPanelDraggablePin extends BasePin<ControlPanelPlug, ControlP
     this.settings.controlPanel.top = [...derive(this.plug.slots.top.left), ...derive(this.plug.slots.top.center, true), ...derive(this.plug.slots.top.right)];
     this.settings.controlPanel.center = derive(this.plug.shells.center);
     this.settings.controlPanel.bottom = { 1: [...derive(this.plug.slots.bottom[1].left), ...derive(this.plug.slots.bottom[1].center, true), ...derive(this.plug.slots.bottom[1].right)], 2: [...derive(this.plug.slots.bottom[2].left), ...derive(this.plug.slots.bottom[2].center, true), ...derive(this.plug.slots.bottom[2].right)], 3: [...derive(this.plug.slots.bottom[3].left), ...derive(this.plug.slots.bottom[3].center, true), ...derive(this.plug.slots.bottom[3].right)] };
+  }
+
+  protected getShellPath(target: HTMLElement, both?: false): Paths<ControlPanelShells>;
+  protected getShellPath(target: HTMLElement, both?: true): { path: Paths<ControlPanelShells>; shell: PanelShell };
+  protected getShellPath(target: HTMLElement, both = false, key = ""): string | { path: string; shell: PanelShell } {
+    const pos = ({ 0: "left", 1: "center", 2: "right" } as const)[[...target.parentElement!.children].indexOf(target) as 0 | 1 | 2],
+      cws = this.ctlr.queryDOM(".tmg-media-top-controls-wrapper, .tmg-media-bottom-sub-controls-wrapper", true);
+    cws.forEach((w, i) => w.contains(target) && (key = ({ 0: "top.", 1: "bottom.1.", 2: "bottom.2.", 3: "bottom.3." } as const)[i as 0 | 1 | 2 | 3]));
+    return both ? { path: key + pos, shell: getPath(this.plug.shells as any, key + pos) } : key + pos;
   }
 
   protected teachBasics = limited(

@@ -1,12 +1,14 @@
 import { DeepPartial } from "sia-reactor";
-import { ControlPanelConfig, ControlPanelDraggable } from "./types";
+import type { Control, ControlPanelConfig, ControlPanelDraggable } from "./types";
 import { IS_MOBILE } from "@utils/env";
-import { TIME_TRAVEL_BUILD } from "@plugs/settings/timeTravel/build";
+import { TEMPORAL_BUILD } from "@plugs/settings/temporal/build";
 import { OVERLAY_WHITELIST } from "@plugs/settings/overlay/build";
 
 export const ROWS_ARR = [1, 2, 3] as const;
 
 export const CONTROLS = ["bigPrevious", "bigPlayPause", "bigNext", "expandMiniplayer", "removeMiniplayer", "meta", "timeline", "capture", "fullscreenOrientation", "fullscreenLock", "backward", "previous", "playPause", "next", "forward", "brightness", "volume", "time", "duration", "timeAndDuration", "spacer", "captions", "settings", "objectFit", "pictureInPicture", "theater", "fullscreen", "cast", "airplay", "voice", "chapters", "playlist"] as const;
+
+export const NEW_CONTROLS: Control[] = ["playlist", "brightness", "voice"];
 
 export const CONTROL_PANEL_DRAGGABLE_BUILD: ControlPanelDraggable = ["", "big", "wrapper"];
 
@@ -62,5 +64,5 @@ export const CONTROL_PANEL_BUILD: DeepPartial<ControlPanelConfig> = {
   // draggable: CONTROL_PANEL_DRAGGABLE_BUILD,
 };
 
-TIME_TRAVEL_BUILD.module.whitelist.config.push("settings.controlPanel.timeline.marks", "settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom");
+TEMPORAL_BUILD.module.whitelist.config.push("settings.controlPanel.timeline.marks", "settings.controlPanel.top", "settings.controlPanel.center", "settings.controlPanel.bottom");
 OVERLAY_WHITELIST.push("controlDragging");

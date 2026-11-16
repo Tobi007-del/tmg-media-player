@@ -20,7 +20,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   public override wire(): void {
     // Features Gating
     this.media.on("features.pictureInPicture", this.gate, { init: true, signal: this.signal });
-    this.media.on("features.floatingPlayer", this.syncUI, { init: true, signal: this.signal });
+    this.media.on("features.floating", this.syncUI, { init: true, signal: this.signal });
     // Event Listeners
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
@@ -37,7 +37,7 @@ export class PictureInPictureButton extends BaseComponent<PictureInPictureConfig
   public syncUI(): void {
     const strs = this.paths?.[this.media.state.pictureInPicture ? 1 : 0];
     strs && this.el.querySelectorAll("path").forEach((p, i) => strs[i] && p.setAttribute("d", strs[i]));
-    this[!this.media.state.pictureInPicture && !this.media.status.loadedMetadata && !this.media.features.floatingPlayer ? "disable" : "enable"]();
+    this[!this.media.state.pictureInPicture && !this.media.status.loadedMetadata && !this.media.features.floating ? "disable" : "enable"]();
   }
 
   public syncARIA(): void {

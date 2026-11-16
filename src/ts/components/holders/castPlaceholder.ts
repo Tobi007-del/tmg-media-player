@@ -16,7 +16,6 @@ export class CastPlaceholder extends BaseComponent<CastPlaceholderConfig, Compon
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.el);
   }
 

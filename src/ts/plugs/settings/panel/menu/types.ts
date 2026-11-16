@@ -60,7 +60,7 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   closeOnSelect?: boolean;
   /** Called when the user changes or commits a new value */
   onChange?(value: T | Record<string, string | number | undefined>): any;
-  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max" | "hidden"> & { name?: string; hidden?: boolean; compact?: boolean; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
+  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max" | "hidden"> & { name?: string; hidden?: boolean; inline?: boolean; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
   /** Whether this widget (e.g. select) supports selecting multiple options */
   getMultiple?(): boolean;
   /** For "limits" */

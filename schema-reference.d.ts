@@ -1,4 +1,5 @@
 // AUTO-GENERATED SCHEMA FOR TMG MEDIA PLAYER
+// DO NOT EDIT MANUALLY: Generated via "npm run build:schema" (scripts/build-schema.js)
 // This file consolidates the distributed type augmentations across the codebase.
 // Use this as a reference for the full structure of the Controller's Config and State.
 
@@ -36,8 +37,8 @@ export interface Settings {
   playbackRate: PlaybackRateConfig;
   poster: PosterConfig;
   sleepTimer: SleepTimerConfig;
+  temporal: TemporalConfig;
   time: TimeConfig;
-  timeTravel: TimeTravelConfig;
   toasts: ToastsConfig;
   voice: VoiceConfig;
   volume: VolumeConfig;
@@ -251,7 +252,32 @@ export interface BrightnessConfig extends OptRange {}
 
 export interface BrightnessState extends SliderState {}
 
-export type CueLike = (TextTrackCue | { text: string }) & DeepPartial<{ id: string; text: string; align: string; region: { id: string; width: number; lines: number; viewportAnchorX: number; viewportAnchorY: number; scroll: string }; position: number | "auto"; positionAlign: string; line: number | string; lineAlign: string; snapToLines: boolean; size: number; vertical: "" | "lr" | "rl" }>;
+export interface CueRegion {
+  id: string;
+  width: number;
+  lines: number;
+  viewportAnchorX: number;
+  viewportAnchorY: number;
+  scroll: string;
+  fluid: boolean; // #MONKEY: responsive sizing, true = maxWidth, false = width
+}
+
+export type CueLike = (TextTrackCue | { text: string }) &
+  DeepPartial<{
+    id: string;
+    text: string;
+    align: string;
+    region: CueRegion;
+    position: number | "auto";
+    positionAlign: string;
+    line: number | string;
+    lineAlign: string;
+    snapToLines: boolean;
+    size: number | string;
+    vertical: "" | "lr" | "rl";
+    scroll: string; // #MONKEY
+    fluid: boolean; // #MONKEY
+  }>;
 
 export interface CaptionsConfig {
   multiple: boolean;
@@ -466,7 +492,7 @@ export interface ModesMiniplayerConfig {
   lockToWindow: boolean;
 }
 
-export interface ModesFloatingPlayerConfig {
+export interface ModesFloatingConfig {
   disabled: boolean;
   width: number;
   height: number;
@@ -476,7 +502,7 @@ export interface ModesFloatingPlayerConfig {
 }
 export interface ModesPictureInPictureConfig {
   disabled: boolean;
-  floatingPlayer: ModesFloatingPlayerConfig;
+  floating: ModesFloatingConfig;
 }
 
 export interface ModesCastConfig {
@@ -581,11 +607,9 @@ export type SettingsMenuItem<T = unknown> = DOmit<Partial<FieldOptions>, "title"
   getValue(): T | boolean | number | string | string[] | undefined | null;
   /** Whether the sub-panel should remain open after a selection is made (defaults to true for single selects) */
   closeOnSelect?: boolean;
-  /** Called when the user commits a new value */
+  /** Called when the user changes or commits a new value */
   onChange?(value: T | Record<string, string | number | undefined>): any;
-  /** Called when the user interactively inputs or drags a value */
-  onInput?(value: T | Record<string, string | number | undefined>): any;
-  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max" | "hidden"> & { name?: string; hidden?: boolean; compact?: boolean; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
+  inputs?: (DOmit<Partial<FieldOptions>, "value" | "min" | "max" | "hidden"> & { name?: string; hidden?: boolean; inline?: boolean; value?: string | number | undefined | (() => string | number | undefined); min?: string | number | (() => string | number); max?: string | number | (() => string | number) })[];
   /** Whether this widget (e.g. select) supports selecting multiple options */
   getMultiple?(): boolean;
   /** For "limits" */
@@ -659,6 +683,12 @@ export interface SleepTimerConfig {
   minutes: number[];
 }
 
+export interface TemporalConfig {
+  module: ReactorTemporalConfig<any>;
+  console: TemporalConsoleConfig & { disabled: boolean };
+  persist: boolean;
+}
+
 export interface TimeConfig extends OptRange {
   mode: TimeMode;
   format: TimeFormat;
@@ -666,12 +696,6 @@ export interface TimeConfig extends OptRange {
   end?: number | null;
   autoCap: number;
   whitelist: string[];
-}
-
-export interface TimeTravelConfig {
-  module: ReactorTimeTravelConfig<any>;
-  console: TimeTravelConsoleConfig & { disabled: boolean };
-  persist: boolean;
 }
 
 export interface ToastReminder extends ToastOptions {
@@ -692,9 +716,20 @@ export type VoiceMatch = "blob" | "chunk" | "";
 
 export interface VoiceCommands extends Record<Action["id"], string | string[]> {}
 
+export interface VoiceAiConfig {
+  active: boolean;
+  persona: { model: string; limit: number; voice: string; preference: string };
+  feedback: { captions: boolean; volume: number; rate: number };
+  apiKey: string;
+  endpoint: string;
+  history: Array<{ role: "user" | "assistant"; content: string }>;
+  draft: { frame: number; text: string };
+}
+
 export interface VoiceConfig {
   active: UISettings<boolean | "passive">;
   muted: boolean;
+  ai: VoiceAiConfig;
   process: {
     accuracy: number;
     allowCommands: boolean;
@@ -710,14 +745,30 @@ export interface VoiceConfig {
   commands: VoiceCommands;
   toasts: {
     behavior: UISettings<"persistent" | "auto" | "strict">; // "persistent" means UI always show, "auto" means UI show on speech, "strict" means UI after wake word
+    quoter: ToastOptions;
     router: ToastOptions;
-    helper: ToastOptions;
   };
+}
+
+export interface VoiceAiState {
+  status: string;
+  prompt: string;
+  speech: string;
+  speaking: boolean;
 }
 
 export interface VoiceState {
   ctx: string; // "*" means no context, otherwise it's a path like "media" or "settings"
   routing: boolean;
+}
+
+export interface AiResponse {
+  action?: Action["id"];
+  path?: string;
+  value?: any;
+  type?: "delete" | string;
+  query?: string;
+  speech?: string;
 }
 
 export interface VolumeConfig extends OptRange {

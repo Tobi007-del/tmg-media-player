@@ -66,13 +66,13 @@ export class PanelPlug extends BasePlug<PanelConfig, PanelState> {
   private initMore() {
     // Theming
     // prettier-ignore
-    const options = [{ option: "Light blue", value: "#3198f5" }, { option: "Hot pink", value: "#ff69b4" }, { option: "Fiery red", value: "#ff0033" }, { option: "Dark turquoise", value: "#00ced1" }, { option: "Custom hue", value: "custom" }, { option: "Video derived", value: "auto" }],
+    const options = [{ option: "Light blue", value: "#3198f5" }, { option: "Hot pink", value: "#ff69b4" }, { option: "Fiery red", value: "#ff0033" }, { option: "Neon green", value: "#2cff05" }, { option: "Custom hue", value: "custom" }, { option: "Video derived", value: "auto" }],
       gcolors = options.slice(0, -2).map((opt) => opt.value),
       defs = { brand: this.settings.css.brandColor as string ?? "#e26e02", theme: this.settings.css.themeColor as string ?? "#ffffff", bcolors: ["#e26e02", ...gcolors], tcolors: ["#ffffff", ...gcolors] },
       bField = t007.field({ type: "select", label: "Brand color", helperText: { info: "Sets the primary color for the interface" }, options: [{ option: "Tastey orange", value: "#e26e02" }, ...options], value: !defs.bcolors.includes(defs.brand as string) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : defs.brand }),
-      cBField = t007.field({ type: "color" }),
+      cBField = t007.field({ type: "color", helperText: false }),
       tField = t007.field({ type: "select", label: "Theme color", helperText: { info: "Sets the base color for text and controls" }, options: [{ option: "Pure white", value: "#ffffff" }, ...options], value: !defs.tcolors.includes(defs.theme as string) ? (!this.settings.css.syncWithMedia.themeColor ? "custom" : "auto") : defs.theme }),
-      cTField = t007.field({ type: "color" }),
+      cTField = t007.field({ type: "color", helperText: false }),
       bWrapper = createEl("div", { className: "tmg-media-settings-brand-wrapper" }),
       tWrapper = createEl("div", { className: "tmg-media-settings-theme-wrapper" });
     this.ctlr.config.watch("settings.css.brandColor", (v = defs.brand) => ((v = (v as string).toLowerCase()), (cBField.inputEl.value = v), cBField.style.setProperty("--input-color", v), (bField.inputEl.value = !defs.bcolors.includes(v) ? (!this.settings.css.syncWithMedia.brandColor ? "custom" : "auto") : v)), { init: true, signal: this.signal });
@@ -115,7 +115,7 @@ export class PanelPlug extends BasePlug<PanelConfig, PanelState> {
 
   private getTipsHTML() {
     return `
-      <div style="font-family: inherit; color: inherit;">
+      <div>
         <div style="text-align: center; margin-bottom: 25px;">
           <h2 style="margin: 0 0 10px 0; letter-spacing: -0.5px;">🎬 Welcome to TVP</h2>
           <p style="margin: 0; opacity: 0.9; line-height: 1.5;">

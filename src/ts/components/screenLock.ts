@@ -15,7 +15,6 @@ export class ScreenLockButton extends BaseComponent<ScreenLockConfig, ComponentS
   }
 
   public override mount(): void {
-    // DOM Injection
     this.plug?.container?.firstElementChild?.prepend(this.el);
   }
 

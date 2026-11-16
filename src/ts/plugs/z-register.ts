@@ -1,6 +1,6 @@
 import { PlugRegistry, PinRegistry } from "@core/registries";
 import { PersistPlug } from "./settings/persist";
-import { TimeTravelPlug } from "./settings/timeTravel";
+import { TemporalPlug } from "./settings/temporal";
 import { MetadataPlug } from "./settings/metadata";
 import { CSSPlug } from "./settings/css";
 import { SkeletonPlug } from "./main/skeleton";
@@ -45,14 +45,14 @@ import { VoiceAiPin } from "./settings/voice/ai";
 for (const Plug of [
   // Priority Order
   PersistPlug,
-  TimeTravelPlug,
+  TemporalPlug,
   MetadataPlug,
   CSSPlug,
   SkeletonPlug,
   ObjectFitPlug,
   PosterPlug,
-  ControlPanelPlug,
   OverlayPlug,
+  ControlPanelPlug,
   NotifiersPlug,
   PlaylistPlug,
   AutoPlug,
@@ -63,8 +63,8 @@ for (const Plug of [
   AdsPlug,
   PlaybackRatePlug,
   CaptionsPlug,
-  GesturePlug,
   ModesPlug,
+  GesturePlug,
   KeysPlug,
   VoicePlug,
   FastPlayPlug,

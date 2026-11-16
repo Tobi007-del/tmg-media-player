@@ -46,17 +46,17 @@ export const KEYS_SHORTCUTS: Record<string, string | string[]> = {
   airplay: "Shift+a",
   escape: "Escape",
   skipAd: "x", // like pushing an "x" button
-  timeTravelUndo: ["Ctrl+z", "Cmd+z"],
-  timeTravelRedo: ["Ctrl+y", "Ctrl+Shift+z", "Cmd+Shift+z"], // "Cmd+y" -> history
+  temporalUndo: ["Ctrl+z", "Cmd+z"],
+  temporalRedo: ["Ctrl+y", "Ctrl+Shift+z", "Cmd+Shift+z"], // "Cmd+y" -> history
   voiceWake: "Shift+v",
   voiceQuit: "Shift+q",
   voiceSleep: "Shift+z", // zz
   voiceMute: "Shift+m",
-  voiceCtxClear: "Shift+w",
+  voicePrevious: ["Ctrl+[", "Cmd+["],
+  voiceNext: ["Ctrl+]", "Cmd+]"],
+  voiceClear: "Shift+w",
   ai: "Shift+i",
   aiStop: "Shift+s",
-  aiTimeTravelUndo: "Ctrl+[",
-  aiTimeTravelRedo: "Ctrl+]",
 };
 for (const k of Object.keys(ACTIONS_DICT)) KEYS_SHORTCUTS[k] ??= ""; // UX boost
 
@@ -77,21 +77,10 @@ export const KEYS_BUILD: DeepPartial<KeysConfig> = {
   showOverlay: true,
   mods: {
     disabled: false,
-    timeSkip: {
-      ctrl: 60,
-      shift: 10,
-    },
-    volume: {
-      ctrl: 50,
-      shift: 10,
-    },
-    brightness: {
-      ctrl: 50,
-      shift: 10,
-    },
-    playbackRate: {
-      ctrl: 1,
-    }, // ">|<" has shift
+    timeSkip: { ctrl: 60, shift: 10 },
+    volume: { ctrl: 50, shift: 10 },
+    brightness: { ctrl: 50, shift: 10 },
+    playbackRate: { ctrl: 1 }, // ">|<" has shift
     captionsFontSize: {},
   },
   phase: {

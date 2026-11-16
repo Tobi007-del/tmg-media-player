@@ -30,7 +30,6 @@ import { fullscreenOrientation } from "./fullscreenOrientation";
 import { returnBack } from "./returnBack";
 import { subtitles } from "./subtitles";
 import { captions } from "./captions";
-import { triangleLeft } from "./triangleLeft";
 import { doubleTriangleLeft } from "./doubleTriangleLeft";
 import { doubleTriangleRight } from "./doubleTriangleRight";
 import { tripleTriangleLeft } from "./tripleTriangleLeft";
@@ -61,6 +60,7 @@ import { sort } from "./sort";
 import { check } from "./check";
 import { goBack } from "./goBack";
 import { mic } from "./mic";
+import { micOff } from "./micOff";
 
 IconRegistry.registerAll({
   // Random Order
@@ -96,7 +96,6 @@ IconRegistry.registerAll({
   exitTheater,
   fullscreenOrientation,
   returnBack,
-  triangleLeft,
   doubleTriangleLeft,
   doubleTriangleRight,
   tripleTriangleLeft,
@@ -126,4 +125,5 @@ IconRegistry.registerAll({
   check,
   goBack,
   mic,
+  micOff,
 });

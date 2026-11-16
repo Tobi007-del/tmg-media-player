@@ -137,7 +137,7 @@ declare module "@defs/contract" {
 declare module "sia-reactor" {
   interface ReactorMeta {
     internal?: boolean;
-    silent?: boolean; // incase timeTravel ain't augmented
+    silent?: boolean; // incase temporal ain't augmented
   }
 }
 

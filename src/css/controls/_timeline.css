@@ -16,7 +16,7 @@
   margin-inline: 0;
   border-radius: 0;
 }
-.tmg-media-container:not(.tmg-media-overlay, :has(.tmg-media-content :focus-visible)).tmg-media-progress-bar .tmg-media-timeline-container {
+.tmg-media-container:not(.tmg-media-overlay, .tmg-media-previewing, :has(.tmg-media-content :focus-visible)).tmg-media-progress-bar .tmg-media-timeline-container {
   opacity: var(--tmg-media-progress-bar-opacity);
   transform: scaleY(0.75);
   transform-origin: bottom;

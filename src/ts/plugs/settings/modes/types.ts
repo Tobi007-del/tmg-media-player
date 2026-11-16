@@ -31,7 +31,7 @@ export interface ModesMiniplayerConfig {
   lockToWindow: boolean;
 }
 
-export interface ModesFloatingPlayerConfig {
+export interface ModesFloatingConfig {
   disabled: boolean;
   width: number;
   height: number;
@@ -41,7 +41,7 @@ export interface ModesFloatingPlayerConfig {
 }
 export interface ModesPictureInPictureConfig {
   disabled: boolean;
-  floatingPlayer: ModesFloatingPlayerConfig;
+  floating: ModesFloatingConfig;
 }
 
 export interface ModesCastConfig {

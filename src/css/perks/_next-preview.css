@@ -1,3 +1,7 @@
+.t007-toast[id^="tmg-media-next-preview-"] {
+  --t007-toast-progress-background: var(--tmg-media-timeline-played-bar-background);
+  --t007-toast-progress-backdrop-background: var(--tmg-media-timeline-base-bar-background);
+}
 .tmg-media-next-preview-wrapper {
   position: relative;
   flex: 0 0 var(--t007-toast-image-width);
@@ -34,11 +38,9 @@
   animation: tmg-beat 1s infinite ease-out;
 }
 .tmg-media-next-preview-wrapper > button:hover {
-  cursor: pointer;
   animation: none;
   transform: scale(var(--tmg-media-large-scale));
 }
-
 .tmg-media-next-info {
   flex-grow: 1;
   min-width: 0;

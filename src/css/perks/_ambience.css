@@ -8,7 +8,5 @@
 }
 
 .tmg-media-ambience-canvas {
-  /* THE YOUTUBE SHAPE HACK: Feather the edges so it melts into the page background seamlessly */
-  -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
-  mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%); /* THE YOUTUBE SHAPE HACK: Feather the edges so it melts into the page background seamlessly */
 }

@@ -17,7 +17,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
   }
   public ad: google.ima.Ad | null = null;
   public readonly caching = true;
-  protected readonly TIDS = { SKIP: `tmg-media-ads-skipper-for-${this.ctlr.config.id}`, SITE: `tmg-media-ads-linker-for-${this.ctlr.config.id}` };
+  public readonly TIDS = { SKIP: `tmg-media-ads-skipper-for-${this.ctlr.config.id}`, SITE: `tmg-media-ads-linker-for-${this.ctlr.config.id}` };
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
     super(ctlr, {
@@ -72,7 +72,7 @@ export class IMATech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.muted", this.handleMutedIntent, this.evtOpts.CONFIG);
   }
   // ===========================================================================
-  // HANDLERS (The Logic - Auto-Guarded)
+  // HANDLERS (The Logic - Auto-guarded)
   // ===========================================================================
   // --- Core States ---
   protected setPauseState(): void {

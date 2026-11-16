@@ -91,7 +91,7 @@ export class MainMenuPanel extends BaseMenuPanel {
     if (infoNode && item.infoText) infoNode.textContent = isFunc(item.infoText) ? item.infoText() : item.infoText;
     if (valNode) {
       valNode.textContent = "";
-      valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : value || "" }));
+      valNode.append(createEl("span", { className: "tmg-media-smenu-text", textContent: isArr(value) ? value.join(", ") : String(value || "") }));
       if (badge?.value) valNode.append(createEl("span", { className: "tmg-media-control-badge", textContent: badge.value }));
     } else {
       const el = li.widget?.element;

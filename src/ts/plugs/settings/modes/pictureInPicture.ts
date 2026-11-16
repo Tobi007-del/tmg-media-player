@@ -19,7 +19,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     return ModesPlug;
   }
   public static readonly BUILD = MODES_PICTURE_IN_PICTURE_BUILD;
-  public floatingWindow: (Window & typeof globalThis) | null = null;
+  public window: (Window & typeof globalThis) | null = null;
   protected placeholder: PiPPlaceholder | null = null;
   protected pseudoPlaceholder: PiPPlaceholder | null = null;
 
@@ -28,28 +28,28 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     this.media.watch("tech", this.syncFeatures, { init: true, signal: this.signal });
     // ---- Config --------
     this.ctlr.config.watch("settings.modes.pictureInPicture.disabled", this.syncFeatures, { signal: this.signal });
-    this.ctlr.config.watch("settings.modes.pictureInPicture.floatingPlayer.disabled", this.syncFeatures, { signal: this.signal });
+    this.ctlr.config.watch("settings.modes.pictureInPicture.floating.disabled", this.syncFeatures, { signal: this.signal });
     // ---- Media Listeners
     this.media.on("intent.pictureInPicture", this.handlePictureInPictureIntent, { capture: true, init: this.ctlr.flags.wired, initType: "set", signal: this.signal }); // #HIGHER-POWER: power arbitration
     this.media.on("state.pictureInPicture", this.handlePictureInPictureState, { init: this.ctlr.flags.wired, signal: this.signal });
   }
 
-  protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">, isPiPActive = this.ctlr.isUIActive("pictureInPicture"), canHandle = !isPiPActive && this.media.features.floatingPlayer): void {
+  protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">, isPiPActive = this.ctlr.isUIActive("pictureInPicture"), canHandle = !isPiPActive && this.media.features.floating): void {
     if (e.resolved) return;
-    const isActive = isPiPActive || this.ctlr.isUIActive("floatingPlayer") || this.media.status.shapeShifting === "pictureInPicture";
+    const isActive = isPiPActive || this.ctlr.isUIActive("floating") || this.media.status.shapeShifting === "pictureInPicture";
     if (e.value && !isActive) {
       this.media.status.shapeShifting = "pictureInPicture"; // can't catch native tech
       if (this.media.state.fullscreen) {
         silence(() => (this.media.intent.fullscreen = false));
-        if (canHandle) return this.media.wonce("state.fullscreen", this.initFloatingPlayer, { signal: this.signal }), e.resolve(this.name);
+        if (canHandle) return this.media.wonce("state.fullscreen", this.initFloating, { signal: this.signal }), e.resolve(this.name);
       }
-      canHandle && this.initFloatingPlayer();
-    } else !e.value && this.floatingWindow?.close(); // looser safer
+      canHandle && this.initFloating();
+    } else !e.value && this.window?.close(); // looser safer
     canHandle && e.resolve(this.name);
   }
 
   protected async handlePictureInPictureState({ value }: REvent<CtlrMedia, "state.pictureInPicture">): Promise<void> {
-    if (this.floatingWindow) return;
+    if (this.window) return;
     if (value) {
       this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
       this.placeholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr);
@@ -61,15 +61,15 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
     }
   }
 
-  protected async initFloatingPlayer(): Promise<void> {
-    if (this.floatingWindow) return;
+  protected async initFloating(): Promise<void> {
+    if (this.window) return;
     (window as any).documentPictureInPicture?.window?.close?.(), this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
-    this.floatingWindow = await (window as any).documentPictureInPicture.requestWindow(this.config.floatingPlayer).catch(() => (this.media.status.shapeShifting = false));
-    if (!this.floatingWindow) return;
-    this.floatingWindow.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
-    await breath(this.floatingWindow); // rendering style to keep UI visible during heavy lifting
+    this.window = await (window as any).documentPictureInPicture.requestWindow(this.config.floating).catch(() => ((this.media.status.shapeShifting = false), null));
+    if (!this.window) return;
+    this.window.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
+    await breath(this.window); // rendering style to keep UI visible during heavy lifting
     const cssTexts = [],
-      { whitelist, blacklist } = this.config.floatingPlayer.css,
+      { whitelist, blacklist } = this.config.floating.css,
       hrefsList = whitelist.url.concat([window.TMG_MEDIA_CSS_SRC, window.T007_TOAST_CSS_SRC, window.T007_INPUT_CSS_SRC, window.T007_DIALOG_CSS_SRC].filter((src) => (isStr(src) ? src : false)) as string[]); // CSS too experimental; needs a link (href) :)
     for (const sht of document.styleSheets)
       try {
@@ -77,42 +77,42 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
       } catch {
         continue;
       }
-    this.floatingWindow.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
-    await Promise.allSettled(hrefsList.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.floatingWindow!)));
+    this.window.document.head.append(createEl("style", { textContent: cssTexts.join("\n") }));
+    await Promise.allSettled(hrefsList.map((href) => href.includes(".css") && loadResource(href, "style", undefined, this.window!)));
     this.ctlr.plug("skeleton")?.enterPseudoMode();
     (this.pseudoPlaceholder ??= ComponentRegistry.init("pipPlaceholder", this.ctlr)) && this.media.pseudoContainer.prepend(this.pseudoPlaceholder.el);
     this.media.container.classList.add("tmg-media-floating-player", "tmg-media-progress-bar"), this.media.pseudoContainer.classList.add("tmg-media-in-floating-player");
-    this.floatingWindow.document.body.append(this.media.container);
-    this.floatingWindow.document.documentElement.id = document.documentElement.id;
-    this.floatingWindow.document.documentElement.className = document.documentElement.className;
-    for (const attr of document.documentElement.getAttributeNames()) this.floatingWindow.document.documentElement.setAttribute(attr, document.documentElement.getAttribute(attr)!);
-    observeMutation(this.floatingWindow.document.documentElement, handleDOMMutation, { childList: true, subtree: true }, this.signal);
-    this.floatingWindow.addEventListener("resize", this.handleFloatingPlayerResize, { signal: this.signal });
-    this.floatingWindow.addEventListener("pagehide", this.handleFloatingPlayerClose, { signal: this.signal });
+    this.window.document.body.append(this.media.container);
+    this.window.document.documentElement.id = document.documentElement.id;
+    this.window.document.documentElement.className = document.documentElement.className;
+    for (const attr of document.documentElement.getAttributeNames()) this.window.document.documentElement.setAttribute(attr, document.documentElement.getAttribute(attr)!);
+    observeMutation(this.window.document.documentElement, handleDOMMutation, { childList: true, subtree: true }, this.signal);
+    this.window.addEventListener("resize", this.handleFloatingResize, { signal: this.signal });
+    this.window.addEventListener("pagehide", this.handleFloatingClose, { signal: this.signal });
     this.ctlr.plug("settings.keys")?.setListeners();
-    this.media.state.pictureInPicture = this.media.status.floatingPlayer = true;
+    this.media.state.pictureInPicture = this.media.status.floating = true;
   } // #STANDALONE: needs scoped behavior
 
-  protected handleFloatingPlayerResize(): void {
-    if (!this.config.floatingPlayer.preferInitialWindowPlacement) (this.config.floatingPlayer.width = this.floatingWindow?.innerWidth ?? this.config.floatingPlayer.width), (this.config.floatingPlayer.height = this.floatingWindow?.innerHeight ?? this.config.floatingPlayer.height);
+  protected handleFloatingResize(): void {
+    if (!this.config.floating.preferInitialWindowPlacement) (this.config.floating.width = this.window?.innerWidth ?? this.config.floating.width), (this.config.floating.height = this.window?.innerHeight ?? this.config.floating.height);
   }
 
-  protected handleFloatingPlayerClose(): void {
-    this.floatingWindow = null;
+  protected handleFloatingClose(): void {
+    this.window = null;
     this.media.container.classList.toggle("tmg-media-progress-bar", this.settings.controlPanel.progressBar);
     this.media.container.classList.remove("tmg-media-floating-player"), this.media.pseudoContainer.classList.remove("tmg-media-in-floating-player");
     this.ctlr.plug("skeleton")?.exitPseudoMode();
-    this.media.state.pictureInPicture = this.media.status.floatingPlayer = false;
+    this.media.state.pictureInPicture = this.media.status.floating = false;
   }
 
   public syncFeatures(): void {
-    this.media.tech.polyfill("floatingPlayer", this.ctlr.isNativeEl && supportsPictureInPicture(false), this.config.disabled || this.config.floatingPlayer.disabled);
-    this.media.tech.polyfill("pictureInPicture", this.media.features.floatingPlayer, this.config.disabled);
+    this.media.tech.polyfill("floating", this.ctlr.isNativeEl && supportsPictureInPicture(false), this.config.disabled || this.config.floating.disabled);
+    this.media.tech.polyfill("pictureInPicture", this.media.features.floating, this.config.disabled);
     // this.media.state.pictureInPicture && this.media.features.pictureInPicture && silence(() => (this.media.intent.pictureInPicture = false)), this.media.wonce("state.pictureInPicture", () => silence(() => (this.media.intent.pictureInPicture = true)), { signal: this.signal });
   }
 
   protected override onDestroy(): void {
-    this.floatingWindow?.close(), this.placeholder?.destroy(), this.pseudoPlaceholder?.destroy(), super.onDestroy();
+    this.window?.close(), this.placeholder?.destroy(), this.pseudoPlaceholder?.destroy(), super.onDestroy();
   }
 }
 
@@ -124,6 +124,6 @@ declare module "@defs/registries" {
 
 declare module "@defs/contract" {
   interface MediaStatus {
-    floatingPlayer?: boolean;
+    floating?: boolean;
   }
 }

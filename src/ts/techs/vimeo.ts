@@ -125,7 +125,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
   // ===========================================================================
-  // HANDLERS (The Logic - Auto-Guarded)
+  // HANDLERS (The Logic - Auto-guarded)
   // ===========================================================================
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {

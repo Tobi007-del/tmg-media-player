@@ -16,7 +16,6 @@ export class PiPPlaceholder extends BaseComponent<PiPPlaceholderConfig, Componen
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.el);
   }
 

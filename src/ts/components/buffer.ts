@@ -11,7 +11,6 @@ export class Buffer extends BaseComponent<BufferConfig, ComponentState, HTMLDivE
   }
 
   public override mount(): void {
-    // DOM Injection
     this.ctlr.DOM.controlsContainer?.prepend(this.element);
   }
 }

@@ -24,7 +24,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
     this.el.addEventListener("click", this.handleClick, { signal: this.signal });
     // Ctlr Media Listeners
     this.media.on("state.theater", () => (this.syncUI(), this.syncARIA()), { init: this.ctlr.flags.wired, signal: this.signal });
-    for (const p of ["state.miniplayer", "status.floatingPlayer", "state.fullscreen"] as const) this.media.on(p, () => this[this.canShow ? "show" : "hide"](), { signal: this.signal });
+    for (const p of ["state.miniplayer", "status.floating", "state.fullscreen"] as const) this.media.on(p, () => this[this.canShow ? "show" : "hide"](), { signal: this.signal });
     // ---- Config --------
     for (const p of ["keys.shortcuts", "voice.commands"] as const) this.ctlr.config.on(`settings.${p}.theater`, this.syncARIA, { init: p === "keys.shortcuts", signal: this.signal });
   }
@@ -46,7 +46,7 @@ export class TheaterButton extends BaseComponent<TheaterConfig, ComponentState, 
   }
 
   protected get canShow(): boolean {
-    return !!this.media.features.theater && !this.media.state.miniplayer && !this.media.status.floatingPlayer && !this.media.state.fullscreen; // can take care of myself
+    return !!this.media.features.theater && !this.media.state.miniplayer && !this.media.status.floating && !this.media.state.fullscreen; // can take care of myself
   }
 }
 

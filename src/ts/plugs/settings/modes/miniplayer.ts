@@ -89,9 +89,9 @@ export class ModesMiniplayerPin extends BasePin<ModesPlug, ModesMiniplayerConfig
   protected wildMiniplayerX = "";
   protected wildMiniplayerY = "";
 
-  protected handleDragStart(e: globalThis.Event, target = e.target as HTMLElement, clientX = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches[0].clientX, clientY = (e as MouseEvent).clientY ?? (e as TouchEvent).targetTouches[0].clientY): void {
-    if (!this.ctlr.isUIActive("miniplayer") || target.scrollWidth >= target.clientWidth + 3 || [this.ctlr.DOM.topControlsWrapper, this.ctlr.DOM.bottomControlsWrapper, this.ctlr.DOM.captionsContainer].some((w) => w?.contains(target)) || target.closest(`:is(${INTERACTIVE_SELECTOR},.tmg-media-miniplayer-resize-handle,[class$='toast-container'])`)) return;
-    const { left, top } = getComputedStyle(this.media.container); // console.log(target.scrollWidth, target.clientWidth, target.scrollWidth >= target.clientWidth + 3);
+  protected handleDragStart(e: globalThis.Event, t = e.target as HTMLElement, clientX = (e as MouseEvent).clientX ?? (e as TouchEvent).targetTouches[0].clientX, clientY = (e as MouseEvent).clientY ?? (e as TouchEvent).targetTouches[0].clientY): void {
+    if (!this.ctlr.isUIActive("miniplayer") || t.scrollWidth >= t.clientWidth + 3 || [this.ctlr.DOM.topControlsWrapper, this.ctlr.DOM.bottomControlsWrapper, this.ctlr.DOM.captionsContainer].some((w) => w?.contains(t)) || t.closest(`:is(${INTERACTIVE_SELECTOR},.tmg-media-miniplayer-resize-handle,[class$='toast-container'])`)) return;
+    const { left, top } = getComputedStyle(this.media.container); // console.log(t.scrollWidth, t.clientWidth, t.scrollWidth >= t.clientWidth + 3);
     this.useTx(true), (this.lastMiniplayerPosX = parseFloat(left)), (this.lastMiniplayerPosY = parseFloat(top)), (this.lastMiniplayerPtrX = clientX), (this.lastMiniplayerPtrY = clientY);
     (this.nextMiniplayerX = this.settings.css.currentMiniplayerX as string), (this.nextMiniplayerY = this.settings.css.currentMiniplayerY as string), (this.wildMiniplayerX = this.nextMiniplayerX), (this.wildMiniplayerY = this.nextMiniplayerY);
     document.addEventListener("mousemove", this.handleDragging, { signal: this.signal }), document.addEventListener("touchmove", this.handleDragging, { passive: false, signal: this.signal });

@@ -1,3 +1,12 @@
+.t007-toast[id^="tmg-media-voice-router-"] {
+  --t007-toast-progress-background: rgb(from currentColor r g b / 0.1);
+}
+.tmg-media-container.tmg-media-ai .t007-toast[id^="tmg-media-voice-router-"] {
+  border: 1px solid rgb(from currentColor r g b / 0.15);
+}
+.tmg-media-container.tmg-media-ai:where(.tmg-media-ai-speaking, :not(.tmg-media-voice-muted)) .t007-toast[id^="tmg-media-voice-router-"] {
+  border-color: rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.15); /* overflow: visible; */
+}
 .t007-toast[id^="tmg-media-voice-"] .t007-toast-body-text {
   display: block;
   max-height: calc(var(--t007-toast-max-height) - var(--t007-toast-padding));
@@ -36,32 +45,37 @@
 .tmg-media-voice-content {
   overflow-y: auto;
 }
-.tmg-media-voice-content:not(:has(> small)) {
+.tmg-media-voice-content:not(:has(textarea)):not(:has(> small)) {
   margin-block-start: calc(var(--t007-toast-unit) / 3.25);
 }
 .tmg-media-voice-input-wrap {
   display: flex;
   gap: calc(var(--t007-toast-unit) / 4.33);
 }
+:is(.tmg-media-voice-input, .tmg-media-voice-input-btn, .tmg-media-voice-ai-bubble) {
+  padding: 2px;
+  border-radius: calc(var(--t007-toast-unit) / 3.5);
+}
 :is(.tmg-media-voice-input, .tmg-media-voice-input-btn) {
-  padding: 0 2px;
+  padding-block: 0;
   margin-block-start: 2px;
   color: inherit;
   font-size: inherit;
   background-color: rgb(from currentColor r g b / 0.15);
   border: 1px solid rgb(from currentColor r g b / 0.45);
-  border-radius: calc(var(--t007-toast-unit) / 5);
+}
+.tmg-media-voice-input {
+  flex: 1;
 }
 .tmg-media-voice-input::placeholder {
-  color: rgb(from currentColor r g b / 0.55);
-}
-.tmg-media-voice-input-wrap .tmg-media-voice-input {
-  flex: 1;
+  color: rgb(from currentColor r g b / 0.75);
 }
 .tmg-media-voice-input-wrap textarea {
   min-height: calc(var(--t007-toast-unit) * 1.95);
   max-height: calc(var(--t007-toast-max-height) - var(--t007-toast-padding) - (var(--t007-toast-unit) * 1.5));
   padding: calc(var(--t007-toast-unit) / 4);
+  border: 1px solid rgb(from currentColor r g b / 0.2);
+  background-color: rgb(from currentColor r g b / 0.08);
   resize: vertical;
 }
 .tmg-media-voice-input-wrap textarea[disabled] {
@@ -81,18 +95,53 @@
 }
 .tmg-media-voice-input-btn {
   font-weight: 900;
-  cursor: pointer;
+}
+.tmg-media-voice-input:placeholder-shown ~ .tmg-media-voice-input-btn[data-action="submit"] {
+  display: none;
 }
 .tmg-media-voice-input-btn:is([data-action="submit"], [data-action="stop"]) {
-  padding-inline: 4px;
+  padding-inline: calc(var(--t007-toast-unit) / 2.5);
 }
 .tmg-media-voice-input-btn[data-action="stop"] {
   color: var(--tmg-media-danger-color);
 }
 .tmg-media-voice-ai-bubble {
-  padding: 2px;
   margin-block-end: 2px;
+  font-variant-numeric: tabular-nums;
   background-color: rgb(from currentColor r g b / 0.08);
   border-left: 2px solid var(--tmg-media-brand-color);
-  border-radius: calc(var(--t007-toast-unit) / 5);
+}
+.tmg-media-voice-ai-bubble small {
+  display: inline-block;
+  mask-size: 200% 100%;
+  mask-image: linear-gradient(75deg, rgb(0 0 0 / 0.35) calc(50% - 25px), rgb(0 0 0) 50%, rgb(0 0 0 / 0.35) calc(50% + 25px));
+  animation: tmg-shimmer var(--tmg-media-buffer-animation-time) linear infinite;
+}
+
+.tmg-media-container.tmg-media-ai .t007-toast[id^="tmg-media-voice-router-"]::after {
+  content: "";
+  position: absolute;
+  top: 65%;
+  left: 40%;
+  width: 65%;
+  height: 125%;
+  transform: translate(-50%, -50%);
+  filter: blur(calc(var(--t007-toast-unit) * 1.25));
+  background: radial-gradient(ellipse at 50% 50%, rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.6) 0%, rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.3) 40%, transparent 72%);
+  border-radius: 50%;
+  z-index: -1;
+  transition: all calc(var(--tmg-media-notifier-animation-time) * 3) ease;
+  animation: tmg-voice-ai-pulse calc(var(--tmg-media-notifier-animation-time) * 3) infinite ease-in-out alternate-reverse;
+}
+.tmg-media-container.tmg-media-ai-speaking .t007-toast[id^="tmg-media-voice-router-"]::after {
+  top: 50%;
+  left: 55%;
+  width: 80%;
+  height: 140%;
+  background: radial-gradient(ellipse at 55% 50%, rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.8) 0%, rgb(from var(--tmg-media-voice-pulse-color) r g b / 0.4) 45%, transparent 75%);
+  animation-duration: var(--tmg-media-notifier-animation-time);
+}
+.tmg-media-container:not(.tmg-media-ai-speaking, :not(.tmg-media-voice-muted)) .t007-toast[id^="tmg-media-voice-router-"]::after {
+  opacity: 0;
+  animation: none;
 }

@@ -64,38 +64,30 @@ export class GestureTouchPin extends GestureBasePin<GestureTouchConfig> {
 
   protected handleXMove(e: Event, te = e as TouchEvent): void {
     if (this.canCancel) return this.config.fastSwipes && this.media.state.fullscreen ? te.preventDefault() : this.handleEnd();
-    te.preventDefault();
-    this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
-    this.ctlr.throttle(
-      "gestureTouchMove",
-      () => {
-        const { width, height } = this.ctlr.state.dimensions.container,
-          rHeight = (height * this.config.yRatio) / 2,
-          deltaX = te.touches[0].clientX - this.lastX,
-          deltaY = te.touches[0].clientY - this.lastY,
-          percent = clamp(0, Math.abs(deltaX), width * this.config.xRatio) / (width * this.config.xRatio);
-        this.applyTimeline({ percent, sign: deltaX >= 0 ? "+" : "-", multiplier: 1 - clamp(0, Math.abs(deltaY), rHeight) / rHeight });
-      },
-      30
-    );
+    te.preventDefault(), this.ctlr.plug("settings.notifiers")?.comp("touchTimelineNotifier")?.active();
+    const handle = () => {
+      const { width, height } = this.ctlr.state.dimensions.container,
+        rHeight = (height * this.config.yRatio) / 2,
+        deltaX = te.touches[0].clientX - this.lastX,
+        deltaY = te.touches[0].clientY - this.lastY,
+        percent = clamp(0, Math.abs(deltaX), width * this.config.xRatio) / (width * this.config.xRatio);
+      this.applyTimeline({ percent, sign: deltaX >= 0 ? "+" : "-", multiplier: 1 - clamp(0, Math.abs(deltaY), rHeight) / rHeight });
+    };
+    this.ctlr.throttle("gestureTouchMove", handle, 30);
   }
 
   protected handleYMove(e: Event, te = e as TouchEvent): void {
     if (this.canCancel && !this.media.state.fullscreen) return this.handleEnd();
-    te.preventDefault();
     // prettier-ignore
-    this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchVolumeNotifier" : "touchBrightnessNotifier")?.active();
-    this.ctlr.throttle(
-      "gestureTouchMove",
-      () => {
-        const rHeight = this.ctlr.state.dimensions.container.height * this.config.yRatio,
-          y = te.touches[0].clientY,
-          deltaY = y - this.lastY;
-        this.lastY = y;
-        this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", clamp(0, Math.abs(deltaY), rHeight) / rHeight, deltaY >= 0 ? "-" : "+");
-      },
-      30
-    );
+    te.preventDefault(), this.ctlr.plug("settings.notifiers")?.comp(this.zone?.x === "right" ? "touchVolumeNotifier" : "touchBrightnessNotifier")?.active();
+    const handle = () => {
+      const rHeight = this.ctlr.state.dimensions.container.height * this.config.yRatio,
+        y = te.touches[0].clientY,
+        deltaY = y - this.lastY;
+      this.lastY = y;
+      this.applyRange(this.zone?.x === "right" ? "volume" : "brightness", clamp(0, Math.abs(deltaY), rHeight) / rHeight, deltaY >= 0 ? "-" : "+");
+    };
+    this.ctlr.throttle("gestureTouchMove", handle, 30);
   }
 
   protected handleEnd(e?: Event, te = e as TouchEvent): void {

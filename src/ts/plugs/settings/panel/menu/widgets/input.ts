@@ -12,7 +12,7 @@ export class InputWidget extends BaseWidget<string | number | undefined | Record
     let row: HTMLDivElement | null = null;
     (this.item.inputs || [{ ...this.item, label: this.item.label || "Enter text" }]).forEach((inp) => {
       const field = t007.field({ required: !this.item.inputs, name: inp.name || inp.label, ...inp, value: String(isFunc(inp.value) ? inp.value() : inp.value ?? ""), title: isFunc(inp.title) ? inp.title() : inp.title || "", hidden: isObj(inp.hidden) ? inp.hidden.is() : !!inp.hidden, min: isFunc(inp.min) ? String(inp.min()) : inp.min?.toString(), max: isFunc(inp.max) ? String(inp.max()) : inp.max?.toString() });
-      inp.compact ? (!row && this.form.append((row = createEl("div", { className: "tmg-media-smenu-input-row" }))), row.append(field), row.children.length === 2 && (row = null)) : (row = null, this.form.append(field));
+      inp.inline ? (!row && this.form.append((row = createEl("div", { className: "tmg-media-smenu-input-row" }))), row.append(field), row.children.length === 2 && (row = null)) : (row = null, this.form.append(field));
     });
     this.form.append(createEl("button", { className: "tmg-media-smenu-input-btn", type: "submit", textContent: "Submit" }));
     (this.form as any).onSubmit = () => {

@@ -23,6 +23,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   public hostSrc: string | null = null;
   public hostDiv: HTMLDivElement;
   public hostHTML = `<iframe class="tmg-foreign-host tmg-youtube-host" credentialless="true" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share;"></iframe>`;
+  public maxAttempts = 2;
   public intervalId = -1;
   constructor(ctlr: Controller, features?: MediaFeatures) {
     // prettier-ignore
@@ -48,7 +49,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     ctlr.media.status.hostReady = false;
   }
   // --- API Injection ---
-  protected async initHost(url: string, id = "", retries = 0): Promise<void> {
+  protected async initHost(url: string, id = "", attempt = 0): Promise<void> {
     try {
       const truth = this.config[this.ctlr.gospel];
       if (!isFunc(this.host?.loadVideoById)) this.destroyHost();
@@ -64,7 +65,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.host = new window.YT.Player(this.el, {
         events: {
           onReady: () => {
-            if (!isFunc(this.host?.getPlayerState) && retries < this.hostAttempts) return this.ctlr.log(`Retrying host load for "${url}" (${++retries}/${this.hostAttempts})`, "warn"), this.initHost(url, id, retries); // #PAMPERING: observed quirk where YT API is broken
+            if (!isFunc(this.host?.getPlayerState) && attempt < this.maxAttempts) return this.ctlr.log(`Retrying host load for "${url}" (${++attempt}/${this.maxAttempts})`, "warn"), this.initHost(url, id, attempt); // #PAMPERING: observed quirk where YT API is broken
             this.config.status.hostReady = true;
             this.setInitInfo();
           },
@@ -87,7 +88,6 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
       this.handleHostError(err, true);
     }
   }
-  public hostAttempts = 3;
   // ===========================================================================
   // WIRING (Connections Only)
   // ===========================================================================
@@ -144,7 +144,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
     this.config.on("intent.autoLevel", this.handleAutoLevelIntent, this.evtOpts.CONFIG);
   }
   // ===========================================================================
-  // HANDLERS (The Logic - Auto-Guarded)
+  // HANDLERS (The Logic - Auto-guarded)
   // ===========================================================================
   // --- Core Intents ---
   protected handleSrcIntent(e: REvent<CtlrMedia, "intent.src">): void {
