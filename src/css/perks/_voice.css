@@ -85,10 +85,10 @@
 .tmg-media-voice-input[name="voice_path"] {
   width: calc(var(--t007-toast-unit) * 3.5);
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="🤖"] {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="✨"] {
   transition: transform var(--tmg-media-slow-transition-time) var(--tmg-media-bounce-timing), background-color var(--tmg-media-slow-transition-time) var(--tmg-media-bounce-timing);
 }
-.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="🤖"]:is(:not(:has([data-auto])):hover, :has([data-auto]):not(:hover)) {
+.t007-toast[id^="tmg-media-voice-"] .t007-toast-action-button[data-action="✨"]:is(:not(:has([data-auto])):hover, :has([data-auto]):not(:hover)) {
   color: var(--tmg-media-brand-inverse-color);
   background-color: var(--tmg-media-brand-color);
   transform: rotate(360deg);

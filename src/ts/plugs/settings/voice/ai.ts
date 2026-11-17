@@ -137,7 +137,7 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
   public text(): void {
     if (!this.config.feedback.captions) return void (this.texter?.destroy(), (this.texter = null));
     if (!this.texter) this.plug.container?.prepend((this.texter = ComponentRegistry.init("captionsView", this.ctlr, { isSolo: true, initialX: "12.5%", initialY: "30%" }))?.element || "");
-    this.texter?.render(!this.state.speech || !this.config.active || !this.plug.state.routing ? null : [{ text: `<v 🤖>${formatAiText(this.state.speech)}</v>`, size: "calc(var(--t007-toast-width) * 1.2)", scroll: "up", fluid: true }]);
+    this.texter?.render(!this.state.speech || !this.config.active || !this.plug.state.routing ? null : [{ text: `<v ✨>${formatAiText(this.state.speech)}</v>`, size: "calc(var(--t007-toast-width) * 1.2)", scroll: "up", fluid: true }]);
   }
   public talk(text = this.state.speech, speech = cleanSpeech(text)): void {
     if (speech && this.talker && this.config.feedback.volume) clearTimeout(this.utteredId), this.utterances.push(new SpeechSynthesisUtterance(speech)), this.drain();

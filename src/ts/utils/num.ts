@@ -9,9 +9,9 @@ export function safeNum(number: any, fallback = 0): number {
 }
 
 // Parsers
-export function parseIfPercent(percent: any, amount: any, autoCap?: number): number {
-  const val = percent?.endsWith?.("%") ? safeNum((parseFloat(percent) / 100) * amount) : percent;
-  return val && amount && isDef(autoCap) && amount <= val ? amount * autoCap! : val;
+export function parseIfPercent<T = any>(percent: T, amount: any, autoCap?: number): T {
+  const val = (percent as any)?.endsWith?.("%") ? safeNum((parseFloat(percent as any) / 100) * amount) : percent;
+  return (val && amount && isDef(autoCap) && amount <= parseFloat(val as any) ? amount * autoCap! : val) as T;
 }
 
 export function parseRomanNum(roman: string, valid = /^[IVXLCDM]+$/i.test(roman), ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 } as Record<string, number>): number {

@@ -78,7 +78,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
       { width: vCWidth, height: vCHeight } = this.ctlr.state.dimensions.container,
       baseW = this.settings.captions.window.position.lockToVideo ? this.ctlr.state.dimensions.object.width || vCWidth : vCWidth;
     if (cueSize && cueSize !== 100) this.el.style[cue.fluid ? "maxWidth" : "width"] = `${cueSize}${isNum(cueSize) ? "%" : ""}`;
-    const wrapW = (cueSize && cueSize !== 100 ? (isNum(cueSize) ? baseW * (cueSize / 100) : safeNum(parseFloat(getComputedStyle(this.el)[cue.fluid ? "maxWidth" : "width"]), baseW)) : baseW) - this.fontSize * 2, // Padding allowance
+    const wrapW = (cueSize && cueSize !== 100 ? (isNum(cueSize) ? baseW * (cueSize / 100) : safeNum(parseFloat(parseIfPercent(getComputedStyle(this.el)[cue.fluid ? "maxWidth" : "width"], baseW, 1)), baseW)) : baseW) - this.fontSize * 2, // Padding allowance
       wrapper = existing ?? this.el.appendChild(createEl("div", { className: "tmg-media-captions-wrapper", ariaLive: "Off", ariaAtomic: "true" }, { part: "cue-display" }));
     if (!this.config.isMain) this.dragX && this.el.style.setProperty(`${sPfx}x`, this.dragX), this.dragY && this.el.style.setProperty(`${sPfx}y`, this.dragY);
     (wrapper.innerHTML = ""), this.syncBadge();
@@ -104,7 +104,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
         this.el.style.setProperty(`${sPfx}x`, `calc(${cue.position}% + ${posOffset}% + ${elHalfWPct}%)`);
       }
       if (isDef(cue.line) && cue.line !== "auto") {
-        const line = parseIfPercent(cue.line, 100),
+        const line = Number(parseIfPercent(cue.line, 100)),
           lhPct = (this.lineHPx / vCHeight) * 100,
           elHalfHPct = ((cHeight / vCHeight) * 100) / 2,
           lAlign = cue.lineAlign && cue.lineAlign !== "auto" ? cue.lineAlign : line < 0 ? "end" : "start",
@@ -127,8 +127,8 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
   public syncKaraoke(): void {
     if (this.timeNodes) for (const { el, time } of this.timeNodes) el.toggleAttribute("data-past", safeNum(this.media.state.currentTime) > time), el.toggleAttribute("data-future", !el.hasAttribute("data-past"));
   }
-  public syncStyles({ offsetWidth: width, offsetHeight: height } = this.el) {
-    return this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${height}px`), (this.settings.css.currentCaptionsContainerWidth = `${width}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${height}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${width}px`)), { width, height };
+  public syncStyles({ offsetWidth: width, offsetHeight: height } = this.el, w = Math.min(width, this.ctlr.state.dimensions.container.width || width)) {
+    return this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${height}px`), (this.settings.css.currentCaptionsContainerWidth = `${w}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${height}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${w}px`)), { width: w, height };
   }
   public syncMetrics(force = false): void {
     const w = this.ctlr.state.dimensions.container.width;

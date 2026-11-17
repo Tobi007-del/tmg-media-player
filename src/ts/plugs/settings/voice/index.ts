@@ -203,7 +203,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const isBusy = !!this.ai?.state.status,
       actions: ToastOptions["actions"] = {},
       crumbHtml = this.config.ai.active ? "" : `<div class="tmg-media-voice-crumb-wrap">` + (this.history.length < 2 ? `<small><b>Path Router</b></small>` : this.history.map((p, idx, _, active = idx === this.historyIdx) => `<small style="${active ? "font-weight: 500;" : "opacity: 0.8;"}">${this.linked(p === "*" ? "Root" : uncam(p.split(".").pop()!), p, "goto")}</small>`).join(" <span style='opacity: 0.4;'><small>></small></span> ")) + `</div>`;
-    if (this.media.features.ai) actions[`<span title='Toggle AI Copilot${formatActionTooltip(this.settings, "ai")}' ${this.config.ai.active ? "data-auto" : ""}>🤖</span>`] = () => this.ctlr.perform("ai");
+    if (this.media.features.ai) actions[`<span title='Toggle AI Copilot${formatActionTooltip(this.settings, "ai")}' ${this.config.ai.active ? "data-auto" : ""}>✨</span>`] = () => this.ctlr.perform("ai");
     if (!isBusy && (this.media.features.voiceNext || this.media.features.voicePrevious)) {
       actions[`<span title='${this.config.ai.active ? "Undo AI changes" : "Go back"}${formatActionTooltip(this.settings, "voicePrevious")}' ${this.media.features.voicePrevious ? "" : "disabled"}>‹</span>`] = this.previous;
       actions[`<span title='${this.config.ai.active ? "Redo AI changes" : "Go forward"}${formatActionTooltip(this.settings, "voiceNext")}' ${this.media.features.voiceNext ? "" : "disabled"}>›</span>`] = this.next;
