@@ -143,7 +143,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch(NOOP));
+    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.pause() : this.host!.play()).catch((err) => !e.value && err?.name === "NotAllowedError" && this.ctlr.gesture("paused", "play", null, "Play", "Playback", false)));
     e.resolve(this.name);
   }
   // --- Feature Intents ---
@@ -165,12 +165,12 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.requestFullscreen() : this.host!.exitFullscreen())?.catch(this.ctlr.notice));
+    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.requestFullscreen()?.catch((err) => this.ctlr.gesture("fullscreen", "enterFullscreen", err)) : this.host!.exitFullscreen()?.catch(this.ctlr.notice)));
     e.resolve(this.name);
   }
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
     if (e.resolved) return;
-    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.requestPictureInPicture() : this.host!.exitPictureInPicture()).catch(this.ctlr.notice));
+    this.ctlr.when("hostReady", e, () => (e.value ? this.host!.requestPictureInPicture().catch((err) => this.ctlr.gesture("pictureInPicture", "enterPip", err)) : this.host!.exitPictureInPicture().catch(this.ctlr.notice)));
     e.resolve(this.name);
   }
   protected handleLoopIntent(e: REvent<CtlrMedia, "intent.loop">): void {
@@ -296,7 +296,7 @@ export class VimeoTech extends BaseTech<HTMLIFrameElement> {
       case "fullscreenchange":
         return void (s.fullscreen = data.fullscreen);
       case "error":
-        return void (data.method || this.noFailList.includes(data.name) ? this.ctlr.log(`Vimeo ${data.name} occurred: ${data.message}`, "error", true) : this.handleHostError(data)); // RangeError for out-of-range seeks and TypeError for invalid API calls
+        return void (data.method || this.noFailList.includes(data.name) ? this.ctlr.log(`Vimeo ${data.name} occurred: ${data.message}`, "error") : this.handleHostError(data)); // RangeError for out-of-range seeks and TypeError for invalid API calls
     }
   }
   public noFailList = ["Error", "RangeError", "TypeError"];

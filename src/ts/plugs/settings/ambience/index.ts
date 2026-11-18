@@ -74,7 +74,7 @@ export class AmbiencePlug extends BasePlug<AmbienceConfig, AmbienceState> {
       } else if (!this.ctlr.isNativeEl || this.media.element.readyState < 1) return;
       else this.ctx.drawImage(this.media.element as HTMLVideoElement, 0, 0, this.canvas.width, this.canvas.height);
     } catch (e) {
-      this.ctlr.log(e, "error", true); // #LESS: error not worth notifying
+      this.ctlr.log(e, "error"); // #LESS: error not worth notifying
     }
   }
   private posterImg?: HTMLImageElement;

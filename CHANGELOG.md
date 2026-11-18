@@ -1,5 +1,17 @@
 # tmg-media-player
 
+## 0.0.88
+
+### Patch Changes
+
+- AI bug fixes
+
+## 0.0.87
+
+### Patch Changes
+
+- AI bug fixes
+
 ## 0.0.86
 
 ### Patch Changes

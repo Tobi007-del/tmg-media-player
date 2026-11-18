@@ -33,7 +33,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
         ((window as any).__onGCastApiAvailable = (can: boolean) => (prev?.(can), can && "cast" in window && this.setupAPI())), await loadResource(window.TMG_CAST_API_SRC!, "script");
       } else this.setupAPI();
     } catch (err) {
-      this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
+      this.ctlr.log(err, "error"); // #LESS: error not worth notifying
     }
   }
 
@@ -57,7 +57,7 @@ export class ModesCastPin extends BasePin<ModesPlug, ModesCastConfig, ModesCastS
     const active = this.ctlr.isUIActive("cast");
     if (e.value && !active) {
       this.ctlr.plug("settings.metadata")?.syncSession();
-      this.ctx!.requestSession().then(this.loadMediaSession).catch(this.ctlr.notice);
+      this.ctx!.requestSession().then(this.loadMediaSession, (err) => err !== "cancel" && this.ctlr.gesture("cast", "cast", err, "Connect")); // peak
       this.ctlr.notify?.("cast"); // #STALLING: necessary optimistic distraction
     } else if (!e.value && active) {
       this.ctx!.endCurrentSession(true);

@@ -64,7 +64,7 @@ export class ModesPictureInPicturePin extends BasePin<ModesPlug, ModesPictureInP
   protected async initFloating(): Promise<void> {
     if (this.window) return;
     (window as any).documentPictureInPicture?.window?.close?.(), this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
-    this.window = await (window as any).documentPictureInPicture.requestWindow(this.config.floating).catch(() => ((this.media.status.shapeShifting = false), null));
+    this.window = await (window as any).documentPictureInPicture.requestWindow(this.config.floating).catch((err) => ((this.media.status.shapeShifting = false), this.ctlr.gesture("pictureInPicture", "enterPip", err), null));
     if (!this.window) return;
     this.window.document.documentElement.style.cssText = `height:100%; background:url(${this.media.settings.metadata.profile}) center / 32px no-repeat, url(${this.media.state.poster}) center / ${this.settings.css.bgObjectFit} no-repeat, black;`;
     await breath(this.window); // rendering style to keep UI visible during heavy lifting

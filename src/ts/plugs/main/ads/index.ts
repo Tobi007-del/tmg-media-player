@@ -41,7 +41,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
       this.loader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, this.handleError, false);
       this.media.status.IMAReady = true;
     } catch (err) {
-      this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
+      this.ctlr.log(err, "error"); // #LESS: error not worth notifying
     }
   }
 
@@ -115,7 +115,7 @@ export class AdsPlug extends BasePlug<AdsConfig, AdsState> {
     this.handleResumeRequest(), this.manager?.destroy(), (this.manager = this.state.roll = null);
   }
   protected handleError(e: google.ima.AdErrorEvent): void {
-    this.ctlr.log(e?.getError?.() ?? e, "error", true), this.handleAllCompleted(); // #LESS: error not worth notifying
+    this.ctlr.log(e?.getError?.() ?? e, "error"), this.handleAllCompleted(); // #LESS: error not worth notifying
   }
 
   protected playRoll(roll?: AdRoll): void {

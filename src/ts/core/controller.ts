@@ -1,5 +1,5 @@
 import type { CtlrConfig, CtlrState } from "@defs/config";
-import type { CtlrMedia } from "@defs/contract";
+import type { CtlrMedia, MediaIntent, MediaStatus } from "@defs/contract";
 import type { Action } from "@defs/action";
 import { TechRegistry, PlugRegistry } from "./registries";
 import { HTML5Tech } from "@techs/html5";
@@ -129,18 +129,24 @@ export class Controller {
   }
 
   public guard = <Fn extends Function>(fn: Fn, silent = false) => (fn.name === "notice" || fn.name === "log" ? fn : guardMethod(fn, (e) => this.config && this.notice(e, "error", !silent))); // `()=>{}`: bounded even before init
-  public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null, swallow = true): void {
-    this.config && this.log(mssg, type, swallow), toast !== false && mssg?.name !== "AbortError" && ((type = type === "error" && swallow ? "warn" : type) === "log" ? this.toast : this.toast?.[type])?.(isStr(toast) ? toast : toast === null || this.config.devMode ? mssg : "Something went wrong", { tag: "tmg-swrg" });
+  public notice(mssg: any, type: "error" | "warn" | "log" = "error", toast?: string | boolean | null): void {
+    this.config && this.log(mssg, type), toast !== false && mssg?.name !== "AbortError" && (type === "log" ? this.toast : this.toast?.[type])?.(isStr(toast) ? toast : toast === null || this.config.devMode ? mssg : "Something went wrong", { tag: "tmg-swrg" });
   }
-  public log(mssg: any, type: "error" | "warn" | "log" = "log", swallow = false): void {
-    if (this.config?.devMode) type === "error" ? (swallow ? console.warn("[TMG Controller] Error swallowed →", mssg) : console.error("[TMG Controller] Error occurred →", mssg)) : type === "warn" ? console.warn("[TMG Controller] Warning →", mssg) : console.log("[TMG Controller] Log →", mssg); // swallow = errors that don't leave cracks
+  public log(mssg: any, type: "error" | "warn" | "log" = "log"): void {
+    if (this.config?.devMode) console[type](`[TMG Controller] ${type === "warn" ? "Warning" : capitalize(type)} →`, mssg);
   }
   public fire(eN: string, detail: any = null, el: HTMLElement | EventTarget = this.media.element, bubbles = true, cancelable = true): void {
     eN && el?.dispatchEvent(new CustomEvent(eN, { detail, bubbles, cancelable }));
   }
-  public when(status: keyof CtlrMedia["status"], e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.media.tech.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
+  public when(status: keyof MediaStatus, e?: { path?: string; value?: any }, task: () => any = NOOP, signal = this.media.tech.signal, always = true, _key = status + (e?.path || ""), _value = (!always && this.flags.wired) || this.media.status[status], _log = this.config.devMode && !this.media.status[status]): void {
     const callback = this.guard((v: any, __: any, stall = true) => v && (stall && this.stall.get(_key)?.(), this.stall.delete(_key), _log && this.log(`${e?.path || "-"} stall by ${status}: ${isObj(e?.value, false) ? "{-}" : e?.value ?? "-"}`), task())); // RS(${this.flags.readyState})
     this.stall.get(_key)?.(), _value ? callback(_value, null, false) : this.stall.set(_key, this.media.watch(`status.${status}`, callback, { signal }));
+  } // #EXTRA-MILE: doing the most with the least
+  public gesture<K extends keyof MediaIntent>(action: K, icon: string = action, err?: any, text = "Enter", label = capitalize(uncamelize<string>(action)), val: MediaIntent[K] = true as any, signal = this.signal): boolean {
+    if (navigator.userActivation?.isActive) return err && this.notice(err), false;
+    let id: string | undefined;
+    const onClose = this.toast ? this.media.on(`state.${action}`, ({ value }) => value === val && id && t007.toast?.dismiss(id, "instant"), { signal }) : NOOP;
+    return (id = this.toast?.(`${label} requires a user gesture`, { tag: `tmg-media-${uncamelize(action, "-")}-gesture`, renotify: true, type: "error", icon, autoClose: 10000, onClose, actions: { [text]: (_, t) => (t.abort(), silence(() => (this.media.intent[action] = val)), this.media.tick(`intent.${action}`)) }, signal })), true;
   } // #EXTRA-MILE: doing the most with the least
   public get toast() {
     return this.plug("settings.toasts")?.toast;

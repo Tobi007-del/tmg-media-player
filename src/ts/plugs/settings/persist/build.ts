@@ -9,7 +9,7 @@ export const PERSIST_BUILD: Partial<PersistConfig> = {
   },
   blacklist: {
     config: ["actions.blacklist", "actions.devlist"],
-    media: ["state.sources", "state.tracks", "state.poster", "state.fullscreen", "state.pictureInPicture", "settings.srcObject"], // "state.src", "state.paused"
+    media: ["state.sources", "state.tracks", "state.poster", "settings.srcObject"], // "state.src", "state.paused", "state.fullscreen" (gesture), "state.pictureInPicture" (gesture)
   },
   mirrorReads: true,
   mirrorWrites: true,

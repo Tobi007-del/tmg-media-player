@@ -130,6 +130,7 @@ export const getSettingsCaptionsMenu = (plug: CaptionsPlug): SettingsMenuItem[] 
                   widget: "input",
                   inputs: [{ name: "secs", label: "secs", placeholder: "1.5", helperText: { info: "How long the caption stays on screen when previewing: during style changes" }, type: "number", min: "0.5", step: "any", required: true, value: () => plug.config.previewTimeout / 1000 }],
                   hidden: { configPaths: ["devMode"], is: () => !plug.ctlr.config.devMode },
+                  getTipHTML: () => "How long captions preview on screen after toggling or during keyboard triggered style changes",
                   getValue: () => formatUITime(plug.config.previewTimeout),
                   onChange: (val: Record<string, any>) => (plug.config.previewTimeout = val.secs * 1000),
                   configPaths: ["settings.captions.previewTimeout"],

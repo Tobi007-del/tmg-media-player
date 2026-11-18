@@ -203,7 +203,7 @@ export class YouTubeTech extends BaseTech<HTMLIFrameElement> {
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
     if (e.resolved) return;
-    (e.value ? enterFullscreen(this.el) : exitFullscreen(this.el))?.catch(this.ctlr.notice);
+    e.value ? enterFullscreen(this.el)?.catch((err) => this.ctlr.gesture("fullscreen", "enterFullscreen", err)) : exitFullscreen(this.el)?.catch(this.ctlr.notice);
     e.resolve(this.name);
   }
   protected handleLoopIntent(e: REvent<CtlrMedia, "intent.loop">): void {

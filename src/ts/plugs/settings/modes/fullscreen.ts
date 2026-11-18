@@ -65,7 +65,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
   }
   protected async enter(): Promise<void> {
     this.media.state.miniplayer && silence(() => (this.media.intent.miniplayer = false));
-    this.config.pseudo ? this.onDocInFullscreen(true) : await enterFullscreen(this.media.container).catch(() => (this.media.status.shapeShifting = false));
+    this.config.pseudo ? this.onDocInFullscreen(true) : await enterFullscreen(this.media.container).catch((err) => ((this.media.status.shapeShifting = false), this.ctlr.gesture("fullscreen", "enterFullscreen", err)));
   } // #STANDALONE: needs scoped behavior
 
   protected handleFullscreenOrientationIntent(e: REvent<CtlrMedia, "intent.fullscreenOrientation">): void {

@@ -22,15 +22,17 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
   public static readonly BUILD = VOICE_AI_BUILD;
   public static defaultRgx = /zira|samantha|susan|hazel|victoria|karen/i;
   public qac: AbortController | null = null;
+  public qStart: number | null = null;
   public LLM: any = null; // Local Language Model, not Large
   public module!: TemporalModule<any>;
   public talker?: SpeechSynthesis = globalThis.speechSynthesis;
   public texter: CaptionsView | null = null;
+  public maxSteps = 70 * 7; // as the bible commands
+  public maxAttempts = LLM() ? 3 : 9; // 9 = google antigravity standard
   public utterance: SpeechSynthesisUtterance | null = null;
   public utterances: SpeechSynthesisUtterance[] = [];
   public utteredId?: number;
   public utteringId?: number;
-  public maxAttempts = 3;
   public readonly TID = `tmg-media-voice-ai-informer-for-${this.ctlr.config.id}`;
 
   constructor(ctlr: Controller, config = ctlr.settings.voice.ai) {
@@ -49,13 +51,13 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
     this.prune(), (this.state.speech = parseRes((this.config.history[this.module.state.currentFrame * 2 - 1] || INITIALS.at(-1)!).content).speech || "");
     // State Watchers
     this.module.state.watch("currentFrame", this.plug.syncFeatures, { signal: this.signal });
-    this.module.state.watch("currentFrame", (v, p, c = this.config) => (p.temporal || p.type === "init") && force(() => (this.quiet(), (this.state.prompt = c.draft.frame === v ? c.draft.text : this.module.canRedo ? c.history[v * 2]?.content || "" : ""))), { init: true, signal: this.signal });
+    this.module.state.watch("currentFrame", (v, p, c = this.config, h = c.history) => (p.temporal || p.type === "init") && force(() => (this.quiet(), (this.state.prompt = c.draft.frame === v ? c.draft.text : this.module.canRedo && h[v * 2]?.role === "user" ? h[v * 2].content : ""))), { init: true, signal: this.signal });
+    this.module.state.watch("history.length" as any, (l, _, c = this.config, h = c.history) => !this.qac && (h.length > l * 2 && silence(() => (h.length = l * 2)), !l && force(() => (this.reset(), (this.state.prompt = c.draft.text), (this.state.speech = JSON.parse(INITIALS.at(-1)!.content).speech)))), { signal: this.signal });
     // ----- Listeners
     this.state.on("speech", this.text, { signal: this.signal });
     this.state.on("status", this.plug.predict, { signal: this.signal });
     this.state.on("prompt", (e) => (e.temporal || !e.silent) && this.plug.predict(), { signal: this.signal }); // this.module.state.on("currentFrame", this.plug.predict, { signal: this.signal });
     this.state.on("speaking", ({ value }) => this.media.container.classList.toggle("tmg-media-ai-speaking", value), { signal: this.signal });
-    this.module.state.on("history.length" as any, ({ value: l }, c = this.config, h = c.history) => (h.length > l * 2 && silence(() => (h.length = l * 2)), !l && !this.qac && force(() => (this.reset(), (this.state.prompt = c.draft.text), (this.state.speech = JSON.parse(INITIALS.at(-1)!.content).speech)))), { signal: this.signal });
     // Ctlr Media Watchers
     this.media.watch("tech", () => this.media.tech.polyfill("ai", true), { init: true, signal: this.signal });
     // ---- Config -------
@@ -78,18 +80,14 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
     this.media.container.classList.toggle("tmg-media-ai", value);
   }
 
-  public async query(text: string, tx: Transaction, signal: AbortSignal, start = this.config.history.length, next?: string | false | null, v?: any): Promise<void> {
-    try {
-      let res = await this.prompt(this.record("user", text), signal, tx);
-      while (!signal.aborted && res) {
-        next = this.record("assistant", res).query ? ((this.state.status = `👀 Reading ${this.getLink(res.query)}...`), !isDef((v = this.inspect(res.query))) ? `[State: {"${res.query}": undefined}]` : `[State: ${JSON.stringify({ [res.query!]: v })}]`) : this.apply(res, tx);
-        if (!next) return this.prune(start, { role: "user", content: text }, { role: "assistant", content: JSON.stringify(res) }), withMeta({ ai: true, tx, forced: true }, () => void (this.state.speech = res.speech || ""));
-        res = await this.prompt(this.record("user", next), signal, tx);
-      }
-      this.prune(start);
-    } catch (err: any) {
-      this.prune(start), !signal.aborted && this.ctlr.notice(`AI error: ${err?.message}`, "error", `Configure ${this.plug.linked("AI settings", "advanced.interaction.voice.voiceAi", "menu")} or enable Built-in AI.`);
-    }
+  public async query(text: string, tx: Transaction, signal: AbortSignal, start = (this.qStart = this.config.history.length), step = 0, next?: string | false | null, v?: any): Promise<void> {
+    let res = await this.prompt(this.record("user", text), signal, tx);
+    while (!signal.aborted && res && ++step <= this.maxSteps) {
+      next = this.record("assistant", res).query ? ((this.state.status = `👀 Reading ${this.getLink(res.query)}...`), !isDef((v = this.inspect(res.query))) ? `[State: {"${res.query}": undefined}]` : `[State: ${JSON.stringify({ [res.query!]: v })}]`) : this.apply(res, tx);
+      if (!next) return (this.qStart = null), this.prune(start, { role: "user", content: text }, { role: "assistant", content: JSON.stringify(res) }), withMeta({ ai: true, tx, forced: true }, () => void (this.state.speech = res!.speech || ""));
+      res = await this.prompt(this.record("user", next), signal, tx);
+    } // no infinite loop
+    if (!signal.aborted && this.qStart != null) this.prune(this.qStart), (this.qStart = null);
   }
   public process(transcript: string, isSubmit = false, strict = this.plug.config.routing.strict.value): boolean {
     if (!transcript || (this.state.status && strict !== false)) return false;
@@ -99,37 +97,36 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
   public async submit(prompt = this.state.prompt, text = prompt.trim()): Promise<void> {
     if (!text) return;
     const tx = { id: ++txId, label: text, parent: null };
-    this.stop(true), (this.state.prompt = text), (this.state.status = "💭 Thinking..."), this.plug.snooze();
+    this.stop(true), this.module.canRedo && this.module.prune(), (this.state.prompt = text), (this.state.status = "💭 Thinking..."), this.plug.snooze();
     const qac = (this.qac = new AbortController());
-    this.module.canRedo && this.module.prune();
     try {
-      await this.query(text, tx, qac.signal);
+      await this.query(text, tx, qac.signal), qac === this.qac && this.state.speaking && (this.state.status = "💬 Speaking...");
     } finally {
       if (qac === this.qac) (this.qac = null), !this.state.speaking && (this.state.status = this.state.prompt = ""), this.plug.snooze();
     }
   }
   public stop(light = false, prev = this.state.prompt, speaking = this.state.speaking): void {
-    this.quiet(), this.qac?.abort(), (this.qac = null);
-    light ? this.draft("", false, -1) : (this.draft(prev, false), !speaking && (this.state.status = ""), this.plug.snooze());
+    this.qac?.abort(), this.qStart != null && this.prune(this.qStart), (this.qac = this.qStart = null), this.quiet();
+    light || speaking ? this.draft("", false, -1) : (this.draft(prev, false), (this.state.status = ""), this.plug.snooze());
   }
 
-  public async prompt(text: string, signal: AbortSignal, tx?: Transaction, bypass = !navigator.onLine, attempt = 0, raw = "", s = "", si = 0): Promise<AiResponse> {
-    if (!this.config.endpoint && !LLM()) throw new Error("No AI endpoint configured and Built-in AI is unavailable");
+  public async prompt(text: string, signal: AbortSignal, tx?: Transaction, bypass = !navigator.onLine && !!LLM(), attempt = 0, raw = "", s = "", si = 0): Promise<AiResponse | null> {
     try {
+      if (!this.config.endpoint && !LLM()) throw new Error("No AI endpoint configured and Built-in AI is unavailable");
       const stream = (!bypass && this.config.endpoint ? this.cloudStreaming(signal) : null) ?? (await this.prewarm(!this.LLM, bypass, signal), this.LLM?.promptStreaming?.(text, { responseConstraint, signal }));
-      if (!this.config.endpoint && !this.LLM) throw new Error("Built-in AI failed to initialize or is unavailable");
+      if ((!this.config.endpoint || bypass) && !this.LLM) throw new Error("Built-in AI failed to initialize or is unavailable");
       // prettier-ignore
       if (stream) for await (const c of stream) if ((s = extractSpeech((raw = c.startsWith(raw) ? c : raw + c)))) for (const m of withMeta({ ai: true, tx, forced: true }, () => ((this.state.status = "💭 Thinking..."), (this.state.speech = s))).slice(si).matchAll(sepRgx)) this.talk(m[0]), (si += m[0].length);
+      const res = parseRes(raw || (await this.LLM?.prompt?.(text, { responseConstraint, signal })));
+      return !signal.aborted && (s ? (s = s.slice(si).trim()) && this.talk(s) : res.speech && this.talk(withMeta({ ai: true, tx, forced: true }, () => ((this.state.status = "💭 Thinking..."), (this.state.speech = res.speech!))))), res;
     } catch (e: any) {
-      if (!raw && !signal.aborted)
+      if (!raw && !bypass && !signal.aborted && this.config.endpoint)
         if (attempt < this.maxAttempts && canRetry(e)) {
           await new Promise<void>((res, _, rem = 6 + attempt * 20, clup?: Function) => (clup = globalState.on("clock", () => (signal.aborted || --rem <= 0 ? (clup!(), res()) : (this.state.status = `⏳ Unavailable, Retrying in ${rem}s (${attempt + 1}/${this.maxAttempts})`)), { init: true })));
           if (!signal.aborted) return (this.state.status = "💭 Thinking..."), this.prompt(text, signal, tx, bypass, ++attempt);
-        } else if (!bypass && LLM()) return this.ctlr.toast?.info("Offline, falling back to Built-in AI.", { id: this.TID, position: this.plug.config.toasts.quoter.position, compact: this.plug.config.toasts.quoter.compact, signal }), this.prompt(text, signal, tx, true);
-      throw e;
+        } else if (LLM()) return this.notice(e), this.ctlr.toast?.info("Unavailable, falling back to Built-in AI.", { id: this.TID, icon: "⏳", position: this.plug.config.toasts.quoter.position, compact: this.plug.config.toasts.quoter.compact, signal }), this.prompt(text, signal, tx, true);
+      return !signal.aborted && this.notice(e, true), null;
     }
-    const res = parseRes(raw || (await this.LLM?.prompt?.(text, { responseConstraint, signal })));
-    return !signal.aborted && (s ? (s = s.slice(si).trim()) && this.talk(s) : res.speech && this.talk(withMeta({ ai: true, tx, forced: true }, () => ((this.state.status = "💭 Thinking..."), (this.state.speech = res.speech!))))), res;
   }
   public draft(text = "", prompt = true, frame = this.module.state.currentFrame): string {
     return (this.config.draft = { frame, text }), prompt ? silence(() => (this.state.prompt = text)) : text;
@@ -143,6 +140,17 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
     if (speech && this.talker && this.config.feedback.volume) clearTimeout(this.utteredId), this.utterances.push(new SpeechSynthesisUtterance(speech)), this.drain();
   }
 
+  protected record<T extends any>(role: "user" | "assistant", raw: T, content = isStr(raw) ? raw : JSON.stringify(raw)): T {
+    return this.ctlr.log(`[VoiceAI] ${role}: ${content}`), silence(() => (this.config.history.at(-1)?.role === role ? (this.config.history.at(-1)!.content = content) : this.config.history.push({ role, content }))), raw;
+  }
+  protected prune(index?: number, ...entries: Array<{ role: "user" | "assistant"; content: string }>): void {
+    silence(() => {
+      index != null && this.config.history.length > index && (this.config.history.length = index), entries.length && this.config.history.push(...entries);
+      while (this.config.history.length > this.config.persona.limit * 2 || this.config.history[0]?.role === "assistant") this.config.history.shift();
+      while (this.config.history.at(-1)?.role === "user") this.config.history.pop();
+    });
+    this.module?.prune(Math.floor(this.config.history.length / 2));
+  }
   protected inspect(path = "root", root = this.systemRoot): any {
     const val: any = path && path !== "root" ? getPath(root, path as any) : root;
     if (isArr(val) || !isObj(val)) return val;
@@ -159,46 +167,40 @@ export class VoiceAiPin extends BasePin<VoicePlug, VoiceAiConfig, VoiceAiState> 
   protected fail(s: string, t: "path" | "action" = "path", e = "404") {
     return (this.state.status = `<span style="color: var(--tmg-media-danger-color);">❌ Failed to ${t === "path" ? "mutate path:" : "trigger action:"} ${this.getLink(s, t === "path")}</span>`), `[Error: ${t === "path" ? `Path (${s}) not found in player tree` : e ? `Action ("${s}") not found in actions.entries` : `Action ("${s}") failed to trigger`}]`;
   }
-  protected record<T extends any>(role: "user" | "assistant", raw: T, content = isStr(raw) ? raw : JSON.stringify(raw)): T {
-    return this.ctlr.log(`[VoiceAI] ${role}: ${content}`), silence(() => (this.config.history.at(-1)?.role === role ? (this.config.history.at(-1)!.content = content) : this.config.history.push({ role, content }))), raw;
+  protected notice(err: any, toast = !canRetry(err) && !this.LLM, m = (err?.message || "").replace(/\.$/, "")): void {
+    this.ctlr.notice(`AI error: ${m}`, "error", toast && `${this.ctlr.config.devMode && m ? m : "Something went wrong"}. Configure ${this.plug.linked("AI settings", "advanced.interaction.voice.voiceAi", "menu")}.`);
   }
-  protected prune(index?: number, ...entries: Array<{ role: "user" | "assistant"; content: string }>): void {
-    silence(() => {
-      index != null && (this.config.history.length = index), entries.length && this.config.history.push(...entries);
-      while (this.config.history.length > this.config.persona.limit * 2 || this.config.history[0]?.role === "assistant") this.config.history.shift();
-      while (this.config.history.at(-1)?.role === "user") this.config.history.pop();
-    });
-    this.module?.prune(Math.floor(this.config.history.length / 2));
-  }
-
-  public async prewarm(init?: unknown, bypass = !navigator.onLine, signal?: AbortSignal, LM = LLM()): Promise<void> {
+  public async prewarm(init?: unknown, bypass = !navigator.onLine, signal?: AbortSignal): Promise<void> {
     this.ctlr.state.readyState < 3 && this.talker?.getVoices?.(); // kick-start voice engine
-    if (!LM || (this.config.endpoint && !bypass)) return;
-    const monitor = (m: any) => m.addEventListener("downloadprogress", (e: any, pct = Math.round((e.loaded / e.total) * 100)) => (pct && pct < 100 ? this.ctlr.toast?.info(`Downloading Built-in AI: ${pct}%`, { id: this.TID, position: this.plug.config.toasts.quoter.position, compact: this.plug.config.toasts.quoter.compact, autoClose: false, signal: this.signal }) : t007.toast?.dismiss(this.TID)));
-    init === true && (this.state.status = "⚙️ Initializing..."), (this.LLM ??= await LM.create({ initialPrompts: [{ role: "system", content: this.systemPrompt }, ...INITIALS, ...this.config.history], outputLanguage: "en", expectedOutputs: [{ type: "text", languages: ["en"] }], temperature: 0.1, topK: 1, monitor }).catch(NOOP)), init === true && !signal?.aborted && (this.state.status = "💭 Thinking...");
+    if (!LLM() || (this.config.endpoint && !bypass)) return;
+    const monitor = (m: any) => m.addEventListener("downloadprogress", (e: any, pct = Math.round((e.loaded / e.total) * 100)) => (pct && pct < 100 ? this.ctlr.toast?.info(`Downloading Built-in AI: ${pct}%`, { id: this.TID, icon: "⚙️", position: this.plug.config.toasts.quoter.position, compact: this.plug.config.toasts.quoter.compact, autoClose: false, signal: this.signal }) : t007.toast?.dismiss(this.TID)));
+    // prettier-ignore
+    init === true && (this.state.status = "⚙️ Initializing..."), (this.LLM ??= await LLM().create({ initialPrompts: [{ role: "system", content: this.systemPrompt }, ...INITIALS, ...this.config.history.slice(0, this.config.history.at(-1)?.role ==='user' ? -1: undefined)], outputLanguage: "en", expectedOutputs: [{ type: "text", languages: ["en"] }], temperature: 0.1, topK: 1, monitor }).catch(NOOP)), init === true && !signal?.aborted && (this.state.status = "💭 Thinking...");
   }
   public drain(): void {
     if (!this.talker || this.utterance) return;
-    if (!this.utterances.length) return clearTimeout(this.utteredId), void (this.utteredId = setTimeout(() => ((this.state.speaking = false), (this.state.status = this.state.prompt = ""), this.plug.snooze()), 2000, this.signal));
+    if (!this.utterances.length) return clearTimeout(this.utteredId), void (this.utteredId = setTimeout(() => (this.quiet(true), this.plug.snooze()), 2000, this.signal));
     const voice = this.getVoice(),
       u = (this.utterance = this.utterances.shift()!),
-      done = (e?: any) => this.utterance === u && ((this.utterance = null), clearTimeout(this.utteringId), (!e || (e.error !== "canceled" && e.error !== "interrupted")) && this.drain());
+      done = (e?: any) => this.utterance === u && ((this.utterance = null), clearTimeout(this.utteringId), !e || (e.error !== "canceled" && e.error !== "interrupted") ? this.drain() : this.quiet()); // OS interrupt proof
     Object.assign(u, { voice, lang: voice?.lang || "", volume: this.config.feedback.volume, rate: this.config.feedback.rate, onend: done, onerror: done });
-    clearTimeout(this.utteringId), (this.utteringId = setTimeout(() => ((u.onend = u.onerror = null), this.talker!.cancel(), done()), Math.max(8000, (u.text.split(/\s+/).length / (2 * u.rate)) * 1000 + 4000), this.signal));
+    clearTimeout(this.utteringId), (this.utteringId = setTimeout(() => ((u.onend = u.onerror = null), this.talker!.cancel(), done()), Math.max(8000, (u.text.split(/\s+/).length / (2 * u.rate)) * 1000 + 4000), this.signal)); // no sleeping on me
     (this.state.speaking = true), this.talker.paused && this.talker.resume(), this.talker.speak(u);
   }
-  public quiet(): void {
-    (this.state.speaking = false), clearTimeout(this.utteredId), clearTimeout(this.utteringId), (this.utterance = null), (this.utterances.length = 0), this.talker?.cancel();
+  public quiet(light = false, clear = this.state.speaking && !this.qac): void {
+    (this.state.speaking = false), clear && ((this.state.status = this.state.prompt = ""), this.plug.snooze());
+    if (!light) clearTimeout(this.utteredId), clearTimeout(this.utteringId), (this.utterance = null), (this.utterances.length = 0), this.talker?.cancel();
   }
   public reset(): void {
     this.LLM?.destroy?.(), (this.LLM = null);
   }
   public async *cloudStreaming(signal: AbortSignal): AsyncGenerator<string> {
     // prettier-ignore
-    const r = await fetch(this.config.endpoint!, { method: "POST", headers: { "Content-Type": "application/json", ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}) }, body: JSON.stringify({ model: this.config.persona.model, stream: true, messages: [{ role: "system", content: this.systemPrompt }, ...INITIALS, ...this.config.history] }), signal }),
-      d: any = !r.ok && (await r.json().catch(NOOP));
-    if (!r.ok || !r.body) throw new Error((isArr(d) ? d[0] : d)?.error?.message || `HTTP ${r.status}`);
-    yield* readSSEStream(r.body);
+    const res = await fetch(this.config.endpoint!, { method: "POST", headers: { "Content-Type": "application/json", ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}) }, body: JSON.stringify({ model: this.config.persona.model, stream: true, messages: [{ role: "system", content: this.systemPrompt }, ...INITIALS, ...this.config.history] }), signal }),
+      data: any = !res.ok && (await res.json().catch(NOOP)),
+      mssg = (isArr(data) ? data[0] : data)?.error?.message;
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}${mssg ? `: ${mssg}` : ""}`);
+    yield* readSSEStream(res.body);
   }
 
   public isLogical(path = "root"): boolean {

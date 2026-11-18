@@ -95,7 +95,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     (this.prevRes = false), this.config?.active.value && this.shouldListen() && this.start();
   }
   protected onError(e: any): void {
-    if (e.error.endsWith("not-allowed")) this.config.muted ? this.start() : (this.config.active.value = false), this.view?.error("Microphone access revoked. Please check your settings.", { tag: "tmg-mard" });
+    if (e.error?.endsWith?.("not-allowed")) this.config.muted ? this.start() : ((this.config.active.value = false), this.view?.error("Microphone access revoked. Please check your settings.", { tag: "tmg-mard" }));
   }
 
   protected handleActive({ value }: REvent<CtlrConfig, "settings.voice.active.value">): void {
@@ -112,7 +112,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
     const state = (await navigator.permissions?.query({ name: "microphone" }).catch(() => null))?.state ?? "prompt";
     if (state === "granted" || state === "denied") return state;
     // prettier-ignore
-    return t007.toast?.dismiss(this.TIDS.ROUTER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.info("Voice control requires mic access", { id: this.TIDS.QUOTER, signal: this.signal, ...this.config.toasts.quoter, autoClose: false, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.TIDS.QUOTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions(false) }, onClose: (_, user) => res(user ? "cancelled" : "nuked") }) || res("nuked"))())); // #EXTRA-MILE: doing the most with the least
+    return t007.toast?.dismiss(this.TIDS.ROUTER), new Promise((res, _, req?: () => void, i = 0) => ((req = () => this.view?.("Voice control requires mic access", { id: this.TIDS.QUOTER, signal: this.signal, ...this.config.toasts.quoter, type: "info", autoClose: false, actions: { OK: () => navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => (s.getTracks().forEach((t) => t.stop()), res("granted"))).catch(async (e) => (await navigator.permissions?.query({ name: "microphone" as any }).then(p => p?.state === "denied", () => e.message === "Permission denied")) || ++i > 3 ? res("cancelled") : this.view?.warn("Grant permission to use microphone", { id: this.TIDS.QUOTER, autoClose: false, actions: { Retry: req! } })), ...this.getRouterActions(false) }, onClose: (_, user) => res(user ? "cancelled" : "nuked") }) || res("nuked"))())); // #EXTRA-MILE: doing the most with the least
   }
   public async start(): Promise<void> {
     if (!this.config.active.value) return;
@@ -176,7 +176,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
       }
     } else if (this.execute(transcript, undefined, false)) return true;
     // --- 4. POST-ROUTE STAGE ---
-    return this.trigger(transcript, "post-route") ? true : this.ai ? this.ai.process(transcript, isSubmit) : false;
+    return this.trigger(transcript, "post-route"); // ? true : this.ai ? this.ai.process(transcript, isSubmit) : false;
   }
   public parse(transcript: string, path = this.state.ctx, isNav = false, value = getPath(this.ctlr.logicRoot as any, mirror(path, this.ctlr.logicRoot)), type = isArr(value) ? "array" : typeof value): any {
     if (type === "boolean") return isNav && this.config.routing.autoToggles ? !value : chunkMatch(this.config.commands.voiceToggleOn, transcript, this.config.process.accuracy) ? true : chunkMatch(this.config.commands.voiceToggleOff, transcript, this.config.process.accuracy) ? false : null;
@@ -280,7 +280,7 @@ export class VoicePlug extends BasePlug<VoiceConfig, VoiceState> {
   protected handleInput(e: Event, t = e.target as HTMLInputElement, isClick = e.type === "click", isEnter = e.type === "keydown" && (e as KeyboardEvent).key === "Enter" && !(e as KeyboardEvent).shiftKey): string | void {
     this.stayWoke(e);
     if (e.type === "input" && t.name === "voice_prompt") return this.ai?.draft(t.value);
-    if (!t?.tagName || !(isEnter || (isClick && t.matches(clame("input-btn"))))) return;
+    if (!t?.tagName || !((isEnter && t.matches(clame("input"))) || (isClick && t.matches(clame("input-btn"))))) return;
     e.preventDefault(), e.stopPropagation(), !this.ai?.config.active ? this.submit(t.value ?? this.input()?.value, !t.closest(clame("input-wrap"))) : t.dataset.action === "stop" ? this.ai?.stop() : this.ai.submit(this.input()?.value);
   }
 

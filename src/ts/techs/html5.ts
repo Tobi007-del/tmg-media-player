@@ -258,7 +258,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePausedIntent(e: REvent<CtlrMedia, "intent.paused">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => (this.ctlr?.log(err, "error", true), this.signal && !this.signal.aborted && this.setPauseState())), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying; `.play()` promises hence `always` override
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? this.el.pause() : this.el.play())?.catch?.((err) => (this.ctlr?.log(err, "error"), !e.value && err?.name === "NotAllowedError" && this.ctlr.gesture("paused", "play", null, "Play", "Playback", false), this.signal && !this.signal.aborted && this.setPauseState())), undefined, this.isAlien && !e.value); // #LESS: error not worth notifying; `.play()` promises hence `always` override
     e.resolve(this.name);
   }
   // --- Feature States ---
@@ -333,12 +333,12 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
   }
   protected handlePictureInPictureIntent(e: REvent<CtlrMedia, "intent.pictureInPicture">): void {
     if (e.resolved) return;
-    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture?.()?.catch(this.ctlr.notice) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, !this.wired && e.value); // #EYE-SERVICE: hinged only on inits
+    this.ctlr.when("loadedMetadata", e, () => (e.value ? (this.el as HTMLVideoElement).requestPictureInPicture?.()?.catch((err) => this.ctlr.gesture("pictureInPicture", "enterPip", err)) : document.pictureInPictureElement === this.el && document.exitPictureInPicture()?.catch(this.ctlr.notice)), undefined, !this.wired && e.value); // #EYE-SERVICE: hinged only on inits
     e.resolve(this.name);
   }
   protected handleFullscreenIntent(e: REvent<CtlrMedia, "intent.fullscreen">): void {
     if (e.resolved) return;
-    (e.value ? enterFullscreen(this.el) : exitFullscreen(this.el))?.catch(this.ctlr.notice);
+    e.value ? enterFullscreen(this.el)?.catch((err) => this.ctlr.gesture("fullscreen", "enterFullscreen", err)) : exitFullscreen(this.el)?.catch(this.ctlr.notice);
     e.resolve(this.name);
   }
   protected handleCurrentTrackIntent(e: REvent<CtlrMedia, `intent.current${TrackType}Track`>, type: TrackType): void {
@@ -413,7 +413,7 @@ export class HTML5Tech extends BaseTech<HTMLMediaElement> {
     this.config.status.stalled = true;
   }
   protected handleErrorStatus(e: ErrorEvent, t = e.target as Element): void {
-    if (t && t !== this.el) return this.ctlr?.log({ message: `Media ${t.nodeName || "Child"} element error occurred!`, event: e, target: t }, "error", true); // not an error but u gotta know
+    if (t && t !== this.el) return this.ctlr?.log({ message: `Media ${t.nodeName || "Child"} element error occurred!`, event: e, target: t }, "error"); // not an error but u gotta know
     this.config.status.error = this.el.error ?? { message: (isStr(e) && e) || e.message, native: e.error };
     this.config.status.waiting = false;
   }

@@ -50,7 +50,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
     try {
       blob = (this.exportCanvas.width || this.exportCanvas.height) && (await new Promise<Blob | null>((res) => this.exportCanvas.toBlob(res)));
     } catch (err) {
-      this.ctlr.log(err, "error", true); // #LESS: error not worth notifying
+      this.ctlr.log(err, "error"); // #LESS: error not worth notifying
     }
     return { blob: blob || null, url: blob ? URL.createObjectURL(blob) : "" };
   }
@@ -92,7 +92,7 @@ export class FramePlug extends BasePlug<FrameConfig> {
   private findSeq = 0;
 
   public async getMainColor(time?: number, poster = this.config.main.usePoster || !this.media.features.frameCapture ? this.media.state.poster : "", config?: Parameters<typeof this.getGoodTime>[0]): Promise<string | null> {
-    return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas).catch((err) => (this.ctlr.log(err, "error", true), null)); // #LESS: error not worth notifying
+    return getDominantColor(poster ? poster : (await this.extract("", time ?? (await this.getGoodTime(config)), true, 1)).canvas).catch((err) => (this.ctlr.log(err, "error"), null)); // #LESS: error not worth notifying
   }
 
   public moveFrame(dir: "forwards" | "backwards" = "forwards"): void {
