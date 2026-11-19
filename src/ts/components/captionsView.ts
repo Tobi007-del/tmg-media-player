@@ -128,6 +128,7 @@ export class CaptionsView extends BaseComponent<CaptionsViewConfig, ComponentSta
     if (this.timeNodes) for (const { el, time } of this.timeNodes) el.toggleAttribute("data-past", safeNum(this.media.state.currentTime) > time), el.toggleAttribute("data-future", !el.hasAttribute("data-past"));
   }
   public syncStyles({ offsetWidth: width, offsetHeight: height } = this.el, w = Math.min(width, this.ctlr.state.dimensions.container.width || width)) {
+    this.el.style.touchAction = this.el.scrollHeight >= this.el.clientHeight + 3 ? "pan-y" : "none";
     return this.config.isMain ? ((this.settings.css.currentCaptionsContainerHeight = `${height}px`), (this.settings.css.currentCaptionsContainerWidth = `${w}px`)) : (this.el.style.setProperty("--cmptd-cue-box-height", `${height}px`), this.el.style.setProperty("--cmptd-cue-box-width", `${w}px`)), { width: w, height };
   }
   public syncMetrics(force = false): void {

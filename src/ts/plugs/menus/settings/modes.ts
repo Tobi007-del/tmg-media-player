@@ -38,10 +38,10 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
               configPaths: ["settings.modes.fullscreen.disabled"],
               getValue() {
                 const opts = this.items![0].getOptions!() as UITuple<string>[];
-                return opts.find((o) => o.value === (plug.media.state.autoFullscreenOrientation ? "auto" : plug.media.state.fullscreenOrientation))?.display || "";
+                return opts.find((o) => o.value === this.items![0].getValue!())?.display || "";
               },
-              mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
               onWire: (syncUI, signal) => globalState.on("screenOrientation.type", syncUI, { signal }),
+              mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
               items: [
                 {
                   id: "modesFullscreenOrientationSelect",
@@ -49,16 +49,17 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   widget: "select",
                   feature: "fullscreenOrientation",
                   inline: true,
-                  getValue: () => (plug.media.state.autoFullscreenOrientation ? "auto" : String(plug.media.state.fullscreenOrientation)),
-                  getOptions: () =>
-                    plug.config.fullscreen.orientation.options!.map((o, _, __, opt = parseUIOpt(o), d = "") => {
-                      if (opt.value === "auto" && plug.media.state.autoFullscreenOrientation) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === plug.media.state.fullscreenOrientation && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
-                      if (opt.value === false && !plug.media.state.fullscreenOrientation) return plug.config.fullscreen.orientation.options!.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === globalState.screenOrientation.type && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                  getValue: ({ intent: { fullscreenOrientation: ior }, state: { fullscreenOrientation: or, autoFullscreenOrientation: aor } } = plug.media) => (aor ? "auto" : or && (ior === "landscape" || ior === "portrait") && or.startsWith(ior) ? ior : or),
+                  getOptions: (opts = plug.config.fullscreen.orientation.options!) =>
+                    opts.map((o, _, __, opt = parseUIOpt(o), d = "", { intent: { fullscreenOrientation: ior }, state: { fullscreenOrientation: or, autoFullscreenOrientation: aor } } = plug.media) => {
+                      if (opt.value === "auto" && aor) return opts.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === or && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                      if (opt.value === false && !or) return opts.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === globalState.screenOrientation.type && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
+                      if (or && !aor && ior === opt.value && (opt.value === "landscape" || opt.value === "portrait") && or.startsWith(opt.value)) return opts.find((o, _, __, parsed = parseUIOpt(o)) => parsed.value === or && ((d = parsed.display), true)), { ...opt, display: `${opt.display}${d ? ` (${d})` : ""}` };
                       return opt;
                     }),
                   onChange: (val: string) => (val === "auto" ? (plug.media.intent.autoFullscreenOrientation = true) : (plug.media.intent.fullscreenOrientation = val as typeof plug.media.intent.fullscreenOrientation)),
-                  mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
                   onWire: (syncUI, signal) => globalState.on("screenOrientation.type", syncUI, { signal }),
+                  mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
                 },
                 { id: "modesFullscreenAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => plug.config.fullscreen.orientation.allowMediaOverride, onChange: (val: boolean) => (plug.config.fullscreen.orientation.allowMediaOverride = val), configPaths: ["settings.modes.fullscreen.orientation.allowMediaOverride"] },
                 {
