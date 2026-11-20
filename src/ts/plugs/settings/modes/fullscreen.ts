@@ -42,7 +42,7 @@ export class ModesFullscreenPin extends BasePin<ModesPlug, ModesFullscreenConfig
     globalState.on("screenOrientation.type", this.handleScreenOrientationType, { signal: this.signal });
     // ---- Config --------
     this.ctlr.config.on("settings.modes.fullscreen.pseudo", this.handlePseudo, { signal: this.signal });
-    this.ctlr.config.on("settings.modes.fullscreen.orientation.allowMediaOverride", ({ value }) => value && this.media.state.fullscreen && (this.media.intent.fullscreenOrientation = this.preferredOrientation), { signal: this.signal });
+    this.ctlr.config.on("settings.modes.fullscreen.orientation.allowMediaOverride", ({ value }) => value && this.media.state.fullscreen && silence(() => (this.media.intent.fullscreenOrientation = this.preferredOrientation)), { signal: this.signal });
   }
 
   protected handlePseudo(): void {

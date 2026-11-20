@@ -35,13 +35,13 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
               label: "Orientation",
               widget: "group",
               getDisabled: () => plug.config.fullscreen.disabled,
-              configPaths: ["settings.modes.fullscreen.disabled"],
               getValue() {
                 const opts = this.items![0].getOptions!() as UITuple<string>[];
                 return opts.find((o) => o.value === this.items![0].getValue!())?.display || "";
               },
               onWire: (syncUI, signal) => globalState.on("screenOrientation.type", syncUI, { signal }),
-              mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
+              configPaths: ["settings.modes.fullscreen.disabled"],
+              mediaPaths: ["state.fullscreenOrientation", "intent.fullscreenOrientation", "state.autoFullscreenOrientation"],
               items: [
                 {
                   id: "modesFullscreenOrientationSelect",
@@ -59,7 +59,7 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                     }),
                   onChange: (val: string) => (val === "auto" ? (plug.media.intent.autoFullscreenOrientation = true) : (plug.media.intent.fullscreenOrientation = val as typeof plug.media.intent.fullscreenOrientation)),
                   onWire: (syncUI, signal) => globalState.on("screenOrientation.type", syncUI, { signal }),
-                  mediaPaths: ["state.fullscreenOrientation", "state.autoFullscreenOrientation"],
+                  mediaPaths: ["state.fullscreenOrientation", "intent.fullscreenOrientation", "state.autoFullscreenOrientation"],
                 },
                 { id: "modesFullscreenAllowMediaOverride", label: "Allow media override", widget: "toggle", getValue: () => plug.config.fullscreen.orientation.allowMediaOverride, onChange: (val: boolean) => (plug.config.fullscreen.orientation.allowMediaOverride = val), configPaths: ["settings.modes.fullscreen.orientation.allowMediaOverride"] },
                 {
@@ -67,8 +67,8 @@ export const getSettingsModesMenu = (plug: ModesPlug): SettingsMenuItem => ({
                   label: "Rotation toggle",
                   widget: "group",
                   getValue: () => (plug.config.fullscreen.orientation.rotationToggle.on.value !== false || plug.config.fullscreen.orientation.rotationToggle.off.value !== false ? "On" : "Off"),
-                  configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value", "settings.modes.fullscreen.orientation.rotationToggle.off.value"],
                   getTipHTML: () => "Automatically toggle fullscreen when the device is rotated to a specific orientation",
+                  configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value", "settings.modes.fullscreen.orientation.rotationToggle.off.value"],
                   items: [
                     { id: "modesFullscreenOnRotate", label: "Auto-enter", widget: "select", getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.on.options, plug.config.fullscreen.orientation.rotationToggle.on.value), getOptions: () => plug.config.fullscreen.orientation.rotationToggle.on.options!, onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.on.value = val), configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.on.value"] },
                     { id: "modesFullscreenOffRotate", label: "Auto-exit", widget: "select", getValue: () => getUIOpt(plug.config.fullscreen.orientation.rotationToggle.off.options, plug.config.fullscreen.orientation.rotationToggle.off.value), getOptions: () => plug.config.fullscreen.orientation.rotationToggle.off.options!, onChange: (val: any) => (plug.config.fullscreen.orientation.rotationToggle.off.value = val), configPaths: ["settings.modes.fullscreen.orientation.rotationToggle.off.value"] },
