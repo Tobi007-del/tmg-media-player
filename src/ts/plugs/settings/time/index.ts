@@ -82,7 +82,7 @@ export class TimePlug extends BasePlug<TimeConfig> {
           (this.skipDuration = 0), (this.skipNotifier = null);
           overlay?.[!this.media.state.paused ? "hide" : "show"]();
         },
-        parseCSSTime(this.settings.css.notifiersAnimationTime),
+        parseCSSTime(this.settings.css.notifierAnimationTime),
         this.signal
       );
       return void notifier?.setAttribute("data-skip", String(Math.trunc(this.skipDuration)));

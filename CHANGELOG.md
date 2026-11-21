@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 0.0.91
+
+### Patch Changes
+
+- Notifiers variable fix
+
 ## 0.0.90
 
 ### Patch Changes
