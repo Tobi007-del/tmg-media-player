@@ -26,11 +26,11 @@
 .tmg-host-container :is(p, h1, h2, h3, h4, h5, h6, a) {
   font-feature-settings: normal;
 }
-.tmg-host-container :is(code, pre, samp, kbd, var, tt, plaintext, math, math *) {
+.tmg-host-container :is(code, pre, samp, kbd, var, tt, plaintext, math) {
   font-family: revert;
   font-feature-settings: normal;
 }
-.tmg-host-container:not(.tmg-media-disabled) :is(p, h1, h2, h3, h4, h5, h6, a) {
+.tmg-host-container:not(.tmg-media-disabled) :where(p, h1, h2, h3, h4, h5, h6, a):not(.t007-toast *) {
   -webkit-user-select: text;
   user-select: text;
 }

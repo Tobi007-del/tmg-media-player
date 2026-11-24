@@ -15,7 +15,7 @@ Maps every major tmg-media-player subsystem back to the **sia-reactor** primitiv
 **TMG Media Player Usage**:
 - [Controller](tmg-media-player/src/ts/core/controller.ts#L49): `media.intent.*` paths marked as rejectable
 - [LightStatePlug](tmg-media-player/src/ts/plugs/main/lightState/index.ts#L18): Captures `intent.currentTime`, calls `e.resolve()` or lets rejection propagate
-- [FOLKLORE.md](tmg-media-player/FOLKLORE.md#L33): Documents the three artist modes (Cynic, Sycophant, Prudent Apprentice) that embody these phases
+- [FOLKLORE.md](FOLKLORE.md#L33): Documents the three artist modes (Cynic, Sycophant, Prudent Apprentice) that embody these phases
 
 **Why it Matters**:
 Without phase discipline, intent requests race with state updates. Reactor's wave ensures order: arbitration first, then optimistic UI, then validation.
@@ -95,11 +95,11 @@ Without path selectivity, every listener re-runs on every state change. With it,
 **Reactor Core**:
 - `REvent.reject()` method (via ReactorEvent class): Marks intent as disapproved during CAPTURE phase
 - Listeners can check `e.rejected` during BUBBLE phase to decide whether to render optimistically
-- Rejection is **advisory, not enforcement**—tech rejects, UI chooses to honor it
+- Rejection is **advisory, not enforcement**: tech rejects, UI chooses to honor it
 
 **TMG Media Player Usage**:
 - [LightStatePlug](tmg-media-player/src/ts/plugs/main/lightState/index.ts#L18): Capture listener that calls `e.resolve()` to claim the intent, preventing other handlers
-- [FOLKLORE.md](tmg-media-player/FOLKLORE.md#L47): Documents the Apprentice mode: "checks rejection and reverses if needed"
+- [FOLKLORE.md](FOLKLORE.md#L47): Documents the Apprentice mode: "checks rejection and reverses if needed"
 - [Component slider handlers](tmg-media-player/src/ts/plugs/base/slider.ts#L60): Would check rejection to snap back instead of showing invalid seek position
 
 **Why it Matters**:

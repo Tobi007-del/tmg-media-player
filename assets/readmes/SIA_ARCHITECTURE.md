@@ -5,7 +5,7 @@ Traditional architectures (like Vidstack or Video.js) rely on deeply nested adap
 S.I.A. replaces this convoluted stack with a pure, reactive, circular flow. 
 
 ### The Old Way (Vidstack / Traditional)
-![Vidstack Architecture](./assets/images/vidstack-architecture.png)
+![Vidstack Architecture](../images/vidstack-architecture.png)
 *This is the labyrinth of managers, adapters, and context providers required just to pause a video in traditional architectures.*
 
 ### The S.I.A. Way (Pure Simplicity)

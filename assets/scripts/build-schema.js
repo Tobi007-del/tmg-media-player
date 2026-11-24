@@ -3,7 +3,7 @@ import path from 'path';
 
 const SRC_DIR = path.resolve('src/ts');
 // Put the schema outside the src directory so it doesn't break the build or slow down the editor!
-const SCHEMA_FILE = path.resolve('schema-reference.d.ts');
+const SCHEMA_FILE = path.resolve('assets/scripts/schema-reference.d.ts');
 
 function getFiles(dir, ext = '.ts') {
   let results = [];
@@ -70,7 +70,7 @@ for (const file of tsFiles) {
 }
 
 const schemaContent = `// AUTO-GENERATED SCHEMA FOR TMG MEDIA PLAYER
-// DO NOT EDIT MANUALLY: Generated via "npm run build:schema" (scripts/build-schema.js)
+// DO NOT EDIT MANUALLY: Generated via "npm run build:schema" (assets/scripts/build-schema.js)
 // This file consolidates the distributed type augmentations across the codebase.
 // Use this as a reference for the full structure of the Controller's Config and State.
 

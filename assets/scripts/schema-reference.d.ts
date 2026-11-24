@@ -1,5 +1,5 @@
 // AUTO-GENERATED SCHEMA FOR TMG MEDIA PLAYER
-// DO NOT EDIT MANUALLY: Generated via "npm run build:schema" (scripts/build-schema.js)
+// DO NOT EDIT MANUALLY: Generated via "npm run build:schema" (assets/scripts/build-schema.js)
 // This file consolidates the distributed type augmentations across the codebase.
 // Use this as a reference for the full structure of the Controller's Config and State.
 

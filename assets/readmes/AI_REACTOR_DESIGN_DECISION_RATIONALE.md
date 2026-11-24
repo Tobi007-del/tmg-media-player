@@ -30,7 +30,7 @@ Explains the **strategic reasoning** behind key sia-reactor choices and their do
 - BUBBLE phase: Target → root (listeners observe the outcome)
 
 **Why It Matters to TMG**:
-- [FOLKLORE.md](tmg-media-player/FOLKLORE.md#L33): Explicitly documents why three phases are needed
+- [FOLKLORE.md](FOLKLORE.md#L33): Explicitly documents why three phases are needed
 - [Plug priority ordering](tmg-media-player/src/ts/plugs/z-register.ts#L42): Plugs are registered in order so they can capture in priority order (e.g., PersistPlug first, then TemporalPlug)
 - [Component listeners](tmg-media-player/src/ts/components/controls/timeline/index.ts): Listens on BUBBLE to *see* the final state, not intervene
 
@@ -48,7 +48,7 @@ Explains the **strategic reasoning** behind key sia-reactor choices and their do
 
 **Why It Matters to TMG**:
 - [LightStatePlug state blocking](tmg-media-player/src/ts/plugs/main/lightState/index.ts#L16): `set("readyState", (v) => v === 2 ? TERMINATOR : v)` prevents wiring while in light mode
-- [CHRONICLES.md rejection philosophy](tmg-media-player/CHRONICLES.md#L175): "Rejection is not a rollback mechanism. It is a signal of disapproval, not enforcement."
+- [CHRONICLES.md rejection philosophy](CHRONICLES.md#L175): "Rejection is not a rollback mechanism. It is a signal of disapproval, not enforcement."
 - [Plugin safety](tmg-media-player/src/ts/plugs/base/index.ts#L8): A broken plugin can't crash the whole reactor; it just returns TERMINATOR and the mutation silently doesn't happen
 
 **Concrete Consequence**:
@@ -138,7 +138,7 @@ Explains the **strategic reasoning** behind key sia-reactor choices and their do
 **Why It Matters to TMG**:
 - [Hot path: event loop tick](tmg-media-player/src/ts/core/controller.ts#L180): Every frame, listeners fire for state changes. If using Reflect, 8x slower = worse frame rate.
 - [Gesture callbacks](tmg-media-player/src/ts/plugs/settings/gesture/index.ts): Touch handlers run per-frame, direct property access keeps them fast
-- [Real-world impact](tmg-media-player/src/ts/core/controller.ts#L18): Controller.RAFLoop runs callbacks 60x/sec—can't afford Reflect overhead
+- [Real-world impact](tmg-media-player/src/ts/core/controller.ts#L18): Controller.RAFLoop runs callbacks 60x/sec; cannot afford Reflect overhead
 
 **Concrete Consequence**:
 - Without this decision: Player runs at 30fps instead of 60fps on mid-range devices

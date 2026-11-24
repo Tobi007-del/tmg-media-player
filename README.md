@@ -2,12 +2,12 @@
 
 > The browser's `controls` attribute, but actually good. A plug-based, reactive HTML5 media player.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue.svg)](LICENSE.md)
 [![NPM Version](https://img.shields.io/npm/v/tmg-media-player.svg)](https://www.npmjs.com/package/tmg-media-player)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/tmg-media-player)](https://bundlephobia.com/package/tmg-media-player)
 [![GitHub](https://img.shields.io/badge/github-100000?style=for-the-badge&logo=github)](https://github.com/Tobi007-del/tmg-media-player)
 
-[Live Demo](https://tmg-video-player.vercel.app) | [Showcase](https://https://tobi007-del.github.io/tmg-media-player) | [Report Bug](https://github.com/Tobi007-del/tmg-media-player/issues) | [Discussions](https://github.com/Tobi007-del/tmg-media-player/discussions)
+[Live Demo](https://tmg-video-player.vercel.app) | [Showcase](https://tobi007-del.github.io/tmg-media-player) | [Report Bug](https://github.com/Tobi007-del/tmg-media-player/issues) | [Discussions](https://github.com/Tobi007-del/tmg-media-player/discussions)
 
 ---
 
@@ -357,7 +357,7 @@ The `ctlr.media` object is the unified API for interacting with the player, rega
 
 Because S.I.A. intercepts changes *before* they settle, plugins can effortlessly reject, modify, or clamp intents. For example, if you send `media.intent.volume = 200`, the Volume Limits plugin intercepts it during the capture phase and clamps the final state down to `100` before the UI ever renders it.
 
-> **Note:** For the full list of supported properties across all spheres, always refer directly to the source of truth: [`contract.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/types/contract.d.ts) (for the `.media` object) and [`schema.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/schema-reference.d.ts) (for `.config` and `.state`).
+> **Note:** For the full list of supported properties across all spheres, always refer directly to the source of truth: [`contract.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/types/contract.d.ts) (for the `.media` object) and [`schema-reference.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/assets/scripts/schema-reference.d.ts) (for `.config` and `.state`).
 
 ### Using the Reactor (State Router)
 
@@ -451,6 +451,16 @@ If you decide to replace the default icons with your own custom SVGs (via the `I
 | Safari 14+    | ⚠️ Partial (no Document PiP) |
 | Mobile Chrome | ✅ Full                      |
 | Mobile Safari | ⚠️ Partial                   |
+
+---
+
+## License & Commercial Use
+
+TMG Media Player is licensed under the [TMG Fair-Code License (FSL-1.1-MIT)](LICENSE.md).
+
+* **Free for Developers & Small Businesses:** Free for personal projects, open-source work, educational use, and any commercial entity earning under **$100,000 USD** in annual gross revenue.
+* **Commercial Licenses:** Required for organizations with gross revenue exceeding $100,000 USD or businesses offering managed video hosting. See [COMMERCIAL.md](assets/readmes/COMMERCIAL.md) for tiers and purchasing details.
+* **Open Source Sunset Guarantee:** Every release automatically converts to the standard MIT License four (4) years after release.
 
 ---
 

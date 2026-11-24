@@ -1,5 +1,11 @@
 # tmg-media-player
 
+## 1.0.0
+
+### Major Changes
+
+- Official v1.0.0 stable release: Feature-rich Web media player architecture, updated to sia-reactor v1.0.0 and @t007 ecosystem v1.0.0.
+
 ## 0.0.91
 
 ### Patch Changes
