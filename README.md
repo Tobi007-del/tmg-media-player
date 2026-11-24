@@ -50,15 +50,15 @@ What you get out of the box:
 
 - **Fullscreen, Theater, Picture-in-Picture, Miniplayer** (all modes, all wired)
 - **Timeline scrubbing** with hover preview thumbnails
-- **30+ keyboard shortcuts** that match YouTube conventions
+- **30+ Actions with keyboard shortcuts** that match YouTube conventions and more
 - **Touch & wheel gestures** for volume, brightness, and scrubbing
 - **Captions** with full WebVTT support: live font, size, color, opacity, and edge-style customization
 - **Playlist management** with auto-next countdowns
 - **HLS / DASH / YouTube / Vimeo** with source auto-detection, no extra config
 - **Media Session API** for OS-level controls on mobile & desktop
-- **Screen capture** to image
-- **Voice commands** that are fully configurable per action
-- **Settings persistence** via any storage
+- **Screen capture** to image, allowing save and share
+- **AI & Voice commands** that are fully configurable per action along with an AI Copilot 
+- **Settings persistence** via any storage using sia-reactor adapters
 - **100% accessible** with full ARIA, keyboard-first, focus-managed interactions, and much more...
 
 The browser's native `controls` are a blunt tool. TMG is the upgrade.
@@ -153,7 +153,7 @@ tmg--settings--overlay--behavior--value="persistent"
 
 ```html
 <!-- Debug mode -->
-<video tmgcontrols tmg--debug="true" src="movie.mp4"></video>
+<video tmgcontrols tmg--dev-mode="true" src="movie.mp4"></video>
 ```
 
 ---
@@ -344,7 +344,7 @@ video.play(); // ❌ WRONG: Do not touch the video directly
 media.intent.paused = false; // ✅ RIGHT: Request a change through Intent
 ```
 
-When you dispatch an Intent, the active Media Tech (e.g. HTML5 Video, YouTube, HLS) or a higher-power plugin intercepts it, validates it, performs the necessary asynchronous operations, and finally updates the **State** to confirm the change.
+When you dispatch an Intent, the active Media Tech (e.g. HTML5 Video, YouTube, HLS) or a higher-power plugin intercepts it, validates it, performs the necessary asynchronous operations, and finally updates the **State** to confirm the change when the video events fire.
 
 ### The Media Contract
 
@@ -355,7 +355,7 @@ The `ctlr.media` object is the unified API for interacting with the player, rega
 3. **`status`** - Read-only facts derived directly from the media element.
 4. **`settings`** - Writable configurations that affect the player's underlying behavior (also handled as Intents).
 
-Because S.I.A. intercepts changes *before* they settle, plugins can effortlessly reject, modify, or clamp intents. For example, if you send `media.intent.volume = 200`, the Volume Limits plugin intercepts it during the capture phase and clamps the final state down to `100` before the UI ever renders it.
+Because S.I.A. intercepts changes *before* they settle, plugins can effortlessly reject, modify, or clamp intents. For example, if you send `media.intent.volume = 200`, the Volume plug intercepts it with a setter and clamps the final state down to `100` before the UI ever renders it.
 
 > **Note:** For the full list of supported properties across all spheres, always refer directly to the source of truth: [`contract.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/src/ts/types/contract.d.ts) (for the `.media` object) and [`schema-reference.d.ts`](https://github.com/Tobi007-del/tmg-media-player/blob/main/assets/scripts/schema-reference.d.ts) (for `.config` and `.state`).
 
@@ -373,7 +373,7 @@ media.watch("state.paused", ({ value }) => console.log(value ? "Video is paused"
 media.set("intent.volume", (val) =>  Math.min(val, 50));
 
 // Reject or Claim an intent (Capture phase)
-media.on("intent.playing", (e) => (!userHasPremium)&& e.reject(), { capture: true }); // Cancel the intent completely
+media.on("intent.playing", (e) => !userHasPremium && e.reject(), { capture: true }); // Cancel the intent completely
 ```
 
 ### For React Developers
@@ -414,9 +414,7 @@ class MyCustomPlug extends BasePlug {
   
   public override wire() {
     // Ctlr Media Listeners
-    this.media.on("state.currentTime", (e) => {
-      if (e.value > 60) console.log("Past 1 minute!");
-    }, { signal: this.signal }); // Automatically cleans up when destroyed
+    this.media.on("state.currentTime", (e) => e.value > 60 && console.log("Past 1 minute!"), { signal: this.signal }); // Automatically cleans up when destroyed
     // Post Wiring
     super.wire(); // registers menu if applicable
   }
